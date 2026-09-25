@@ -426,7 +426,13 @@ function useDb() {
           firebase.initializeApp(firebaseConfig);
         }
         await firebase.auth().signInAnonymously();
-        if (alive) setDb(firebase.firestore());
+        const firestoreInstance = firebase.firestore();
+        try {
+          firestoreInstance.settings({ experimentalAutoDetectLongPolling: true, merge: true });
+        } catch (settingsErr) {
+          // Si ya se configuró antes (por un remount), ignoramos el error.
+        }
+        if (alive) setDb(firestoreInstance);
       } catch (e) {
         console.error("Error inicializando Firebase:", e);
         if (alive) setDb(null);
