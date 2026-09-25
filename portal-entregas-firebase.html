@@ -244,6 +244,7 @@ const firebaseConfig = {
   messagingSenderId: "237845351422",
   appId: "1:237845351422:web:6350a5c3e103b088cf4eaf",
 };
+const FIRESTORE_DATABASE_ID = "default";
 
 const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 let ultimoErrorDb = null;
@@ -426,7 +427,12 @@ function useDb() {
           firebase.initializeApp(firebaseConfig);
         }
         await firebase.auth().signInAnonymously();
-        const firestoreInstance = firebase.firestore();
+        // La base de Firestore de este proyecto se llama "default" (sin paréntesis),
+        // no "(default)". El SDK compat no permite elegir la base por nombre, así que
+        // armamos la instancia compat encima de la instancia modular de esa base.
+        const app = firebase.app();
+        const firestoreModular = app._delegate.container.getProvider("firestore").getImmediate({ identifier: FIRESTORE_DATABASE_ID });
+        const firestoreInstance = new firebase.firestore.Firestore(app, firestoreModular);
         try {
           firestoreInstance.settings({ experimentalAutoDetectLongPolling: true, merge: true });
         } catch (settingsErr) {
