@@ -3128,7 +3128,7 @@ function App() {
   useEffect(() => {
     if (loading || dbNoDisponible) return;
     if (zonas.length === 0) {
-      setZonas([{ id: genId(), nombre: "Ruta del día", choferId: null, choferTexto: "" }]);
+      setZonas([{ id: "zona_unica", nombre: "Ruta del día", choferId: null, choferTexto: "" }]);
     }
   }, [loading, dbNoDisponible, zonas.length]);
 
