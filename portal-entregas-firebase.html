@@ -479,6 +479,7 @@ function useDbListDoc(db, path) {
         await db.doc(path).set({ list: nextArray });
         return true;
       } catch (e) {
+        console.error("Error guardando en Firestore:", e);
         ultimoErrorDb = { codigo: (e && (e.code || e.name)) || "desconocido", mensaje: (e && e.message) || String(e) };
         if (i === 2) return false;
         await new Promise((r) => setTimeout(r, 400 * (i + 1)));
@@ -536,6 +537,7 @@ function useDbShardedByZona(db, collectionPath) {
           await col.doc(zid).set(cuerpo);
           return true;
         } catch (e) {
+          console.error("Error guardando en Firestore (sharded):", e);
           ultimoErrorDb = {
             codigo: (e && (e.code || e.name)) || "desconocido",
             mensaje: (e && e.message) || String(e),
