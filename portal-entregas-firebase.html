@@ -1579,7 +1579,9 @@ function ResumenDiaTab({ db, zonas, setZonas, facturas, setFacturas }) {
       }
     } catch (e) {}
 
-    setFacturas(facturas.filter((f) => f.zonaId !== zona.id));
+    // Solo sacamos de la lista activa las que YA se entregaron (quedan archivadas en el historial).
+    // Las pendientes se quedan activas para que se puedan seguir entregando y replanificando.
+    setFacturas(facturas.filter((f) => !(f.zonaId === zona.id && f.estado === "entregado")));
     setZonas(zonas.map((z) => z.id === zona.id ? { ...z, rutaConfirmada: false, rutaFecha: null } : z));
 
     setCerrando(false);
@@ -1627,11 +1629,11 @@ function ResumenDiaTab({ db, zonas, setZonas, facturas, setFacturas }) {
       <Card>
         <p className="de-display font-semibold mb-1">Cerrar el día</p>
         <p className="text-sm mb-4" style={{ color: "var(--slate)" }}>
-          Esto guarda un resumen del día (con el detalle de cada factura) en el historial, y vacía las facturas activas para que mañana puedas cargar un Excel nuevo sin mezclarlo con hoy.
+          Esto guarda un resumen del día (con el detalle de cada factura) en el historial, y saca de la lista activa las que ya se entregaron. Las que quedaron pendientes NO se borran: siguen activas para que las puedas entregar y replanificar más adelante, junto con lo que cargues después.
         </p>
         {pendientes.length > 0 && (
           <p className="text-xs mb-3" style={{ color: "var(--danger)" }}>
-            ⚠️ Todavía quedan {pendientes.length} facturas sin entregar. Si cerrás igual, van a quedar registradas como pendientes en el historial de hoy.
+            ℹ️ Todavía quedan {pendientes.length} facturas sin entregar. Quedan registradas en el historial de hoy, pero van a seguir activas (no se borran) para que las puedas entregar y reordenar en los próximos días.
           </p>
         )}
         <button
@@ -1646,7 +1648,7 @@ function ResumenDiaTab({ db, zonas, setZonas, facturas, setFacturas }) {
 
       {confirmandoCierre && (
         <ConfirmModal
-          mensaje={`¿Cerrar el día con ${entregadas.length} entregadas y ${pendientes.length} pendientes? Se guarda el resumen y se vacían las facturas activas.`}
+          mensaje={`¿Cerrar el día con ${entregadas.length} entregadas y ${pendientes.length} pendientes? Se guarda el resumen y se archivan las entregadas. Las ${pendientes.length} pendientes se mantienen activas para seguir trabajándolas.`}
           textoConfirmar={cerrando ? "Cerrando..." : "Sí, cerrar el día"}
           onCancelar={() => setConfirmandoCierre(false)}
           onConfirmar={cerrarDia}
