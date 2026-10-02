@@ -31,7 +31,7 @@
 /*  React globals (cargado por <script> UMD, no por import)            */
 /* ------------------------------------------------------------------ */
 
-const { useState, useEffect, useCallback, useMemo } = React;
+const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
 /* ------------------------------------------------------------------ */
 /*  Set de íconos propio (reemplaza lucide-react, no cargable en una   */
@@ -320,6 +320,144 @@ function obtenerUbicacion() {
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     );
   });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Geolocalización de clientes, ruta automática y kilómetros           */
+/* ------------------------------------------------------------------ */
+
+/** Distancia en km entre dos puntos {lat, lng} (fórmula de haversine, en línea recta). */
+function distanciaKm(a, b) {
+  const R = 6371;
+  const rad = (g) => (g * Math.PI) / 180;
+  const dLat = rad(b.lat - a.lat);
+  const dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function formatKm(km) {
+  return (km || 0).toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " km";
+}
+
+/** Busca las coordenadas de una dirección (OpenStreetMap / Nominatim, limitado a Argentina). */
+async function geocodificarDireccion(domicilio, localidad) {
+  const query = [domicilio, localidad].filter(Boolean).join(", ");
+  if (!query) return null;
+  const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ar&q=${encodeURIComponent(query)}`);
+  const datos = await resp.json();
+  if (datos && datos[0]) return { lat: parseFloat(datos[0].lat), lng: parseFloat(datos[0].lon) };
+  return null;
+}
+
+/** Geolocaliza una lista de clientes de a uno por segundo (límite de Nominatim).
+ *  Devuelve { coords: { [clienteId]: {lat,lng} }, fallidos: [clienteId] }. */
+async function geocodificarClientes(lista, onProgreso) {
+  const coords = {};
+  const fallidos = [];
+  for (let i = 0; i < lista.length; i++) {
+    const c = lista[i];
+    try {
+      const r = await geocodificarDireccion(c.domicilio, c.localidad);
+      if (r) coords[c.id] = r; else fallidos.push(c.id);
+    } catch (e) {
+      fallidos.push(c.id);
+    }
+    if (onProgreso) onProgreso(i + 1, coords);
+    if (i < lista.length - 1) await new Promise((r) => setTimeout(r, 1100));
+  }
+  return { coords, fallidos };
+}
+
+/** Largo total (km, línea recta) de recorrer los puntos en orden, saliendo y volviendo al origen. */
+function largoRecorrido(origen, puntos, volver = true) {
+  let total = 0;
+  let prev = origen;
+  puntos.forEach((p) => { if (prev) total += distanciaKm(prev, p); prev = p; });
+  if (volver && origen && puntos.length) total += distanciaKm(puntos[puntos.length - 1], origen);
+  return total;
+}
+
+/** Propuesta de orden local: vecino más cercano + mejora 2-opt. Funciona sin internet. */
+function ordenarParadasLocal(origen, paradas, volver = true) {
+  if (paradas.length <= 1) return [...paradas];
+  const restantes = [...paradas];
+  const orden = [];
+  let actual = origen || restantes[0];
+  while (restantes.length) {
+    let mejor = 0;
+    for (let i = 1; i < restantes.length; i++) {
+      if (distanciaKm(actual, restantes[i]) < distanciaKm(actual, restantes[mejor])) mejor = i;
+    }
+    actual = restantes.splice(mejor, 1)[0];
+    orden.push(actual);
+  }
+  // 2-opt: dar vuelta tramos mientras eso acorte el recorrido
+  let mejoro = true;
+  let vueltas = 0;
+  let mejorLargo = largoRecorrido(origen, orden, volver);
+  while (mejoro && vueltas < 50) {
+    mejoro = false;
+    vueltas++;
+    for (let i = 0; i < orden.length - 1; i++) {
+      for (let k = i + 1; k < orden.length; k++) {
+        const candidato = [...orden.slice(0, i), ...orden.slice(i, k + 1).reverse(), ...orden.slice(k + 1)];
+        const largo = largoRecorrido(origen, candidato, volver);
+        if (largo + 1e-9 < mejorLargo) {
+          orden.splice(0, orden.length, ...candidato);
+          mejorLargo = largo;
+          mejoro = true;
+        }
+      }
+    }
+  }
+  return orden;
+}
+
+/** Propuesta de orden por calles reales (servicio OSRM), saliendo del depósito y volviendo a él.
+ *  Si falla, usa el cálculo local en línea recta.
+ *  paradas: [{ id, lat, lng }]. Devuelve { orden: [ids], km, metodo: "calles" | "linea_recta" }. */
+async function proponerRuta(origen, paradas) {
+  const volver = !!origen;
+  if (!paradas.length) return { orden: [], km: 0, metodo: "linea_recta" };
+  if (origen && paradas.length <= 90) {
+    try {
+      const puntos = [origen, ...paradas].map((p) => `${p.lng},${p.lat}`).join(";");
+      const url = `https://router.project-osrm.org/trip/v1/driving/${puntos}?source=first&roundtrip=true&overview=false`;
+      const resp = await fetch(url);
+      const datos = await resp.json();
+      if (datos.code === "Ok" && datos.waypoints && datos.trips && datos.trips[0]) {
+        // waypoint_index = posición de cada punto dentro del recorrido (el 0 es el depósito)
+        const conPosicion = datos.waypoints.slice(1).map((w, i) => ({ id: paradas[i].id, pos: w.waypoint_index }));
+        conPosicion.sort((a, b) => a.pos - b.pos);
+        return { orden: conPosicion.map((x) => x.id), km: datos.trips[0].distance / 1000, metodo: "calles" };
+      }
+    } catch (e) {}
+  }
+  const orden = ordenarParadasLocal(origen, paradas, volver);
+  return { orden: orden.map((p) => p.id), km: largoRecorrido(origen, orden, volver), metodo: "linea_recta" };
+}
+
+/** Fecha de hoy en hora local (AAAA-MM-DD), para que el día no cambie a las 21 h por el horario UTC. */
+function fechaLocalHoy() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Suma los km de un historial de puntos GPS con el mismo criterio que usa el celular del chofer
+ *  (ignora movimientos de menos de 40 m y saltos de más de 150 km/h). */
+function kmDeHistorial(historial) {
+  let total = 0;
+  let ancla = null;
+  (historial || []).forEach((p) => {
+    if (!p || !p.lat) return;
+    if (!ancla) { ancla = p; return; }
+    const d = distanciaKm(ancla, p);
+    const horas = Math.max((new Date(p.ts) - new Date(ancla.ts)) / 3600000, 1 / 3600);
+    if (d / horas > 150) ancla = p;
+    else if (d >= 0.04) { total += d; ancla = p; }
+  });
+  return total;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1309,6 +1447,9 @@ function ClientesTab({ clientes, setClientes, zonas, setZonas }) {
         if (localidadRaw) cambios.localidad = localidadRaw;
         if (telefonoRaw) cambios.telefono = telefonoRaw;
         if (codigoRaw && !match.codigo) cambios.codigo = codigoRaw;
+        if ((cambios.domicilio && cambios.domicilio !== match.domicilio) || (cambios.localidad && cambios.localidad !== match.localidad)) {
+          Object.assign(cambios, { lat: null, lng: null, geoFallo: false });
+        }
         if (Object.keys(cambios).length) {
           clientesActualizados = clientesActualizados.map((c) => c.id === match.id ? { ...c, ...cambios } : c);
           actualizados++;
@@ -1339,7 +1480,8 @@ function ClientesTab({ clientes, setClientes, zonas, setZonas }) {
   };
 
   const guardarDomicilio = (id) => {
-    setClientes(clientes.map((c) => c.id === id ? { ...c, domicilio: domTemp.trim() } : c));
+    // Si cambia el domicilio, se borra la ubicación vieja para que se vuelva a geolocalizar.
+    setClientes(clientes.map((c) => c.id === id ? { ...c, domicilio: domTemp.trim(), ...(c.domicilio !== domTemp.trim() ? { lat: null, lng: null, geoFallo: false } : {}) } : c));
     setEditandoDom(null);
     setDomTemp("");
   };
@@ -1508,7 +1650,7 @@ function ClientesTab({ clientes, setClientes, zonas, setZonas }) {
   );
 }
 
-function LogisticaPanel({ db, zonas, setZonas, facturas, setFacturas, clientes, setClientes, onExit }) {
+function LogisticaPanel({ db, choferes, deposito, setDeposito, zonas, setZonas, facturas, setFacturas, clientes, setClientes, onExit }) {
   const [tab, setTab] = useState("facturas");
 
   return (
@@ -1540,16 +1682,31 @@ function LogisticaPanel({ db, zonas, setZonas, facturas, setFacturas, clientes, 
       </div>
 
       {tab === "facturas" && <FacturasTab facturas={facturas} setFacturas={setFacturas} zonas={zonas} setZonas={setZonas} clientes={clientes} setClientes={setClientes} />}
-      {tab === "ruta" && <RutaTab zonas={zonas} setZonas={setZonas} facturas={facturas} clientes={clientes} setClientes={setClientes} />}
-      {tab === "resumen" && <ResumenDiaTab db={db} zonas={zonas} setZonas={setZonas} facturas={facturas} setFacturas={setFacturas} />}
+      {tab === "ruta" && <RutaTab zonas={zonas} setZonas={setZonas} facturas={facturas} clientes={clientes} setClientes={setClientes} deposito={deposito} setDeposito={setDeposito} />}
+      {tab === "resumen" && <ResumenDiaTab db={db} choferes={choferes} zonas={zonas} setZonas={setZonas} facturas={facturas} setFacturas={setFacturas} />}
     </div>
   );
 }
 
-function ResumenDiaTab({ db, zonas, setZonas, facturas, setFacturas }) {
+function ResumenDiaTab({ db, choferes, zonas, setZonas, facturas, setFacturas }) {
   const [confirmandoCierre, setConfirmandoCierre] = useState(false);
   const [cerrando, setCerrando] = useState(false);
   const [cerrado, setCerrado] = useState(null);
+  const [ubicaciones, setUbicaciones] = useState({});
+
+  // Recorrido GPS de los choferes (se actualiza en vivo mientras están en la calle)
+  useEffect(() => {
+    if (!db) return;
+    const unsub = db.collection("ubicaciones").onSnapshot(
+      (snap) => {
+        const nuevo = {};
+        snap.docs.forEach((d) => { nuevo[d.id] = d.data(); });
+        setUbicaciones(nuevo);
+      },
+      () => {}
+    );
+    return () => unsub();
+  }, [db]);
 
   const zona = zonas[0];
   const facturasZona = zona ? facturas.filter((f) => f.zonaId === zona.id) : [];
@@ -1558,9 +1715,22 @@ function ResumenDiaTab({ db, zonas, setZonas, facturas, setFacturas }) {
   const importeTotal = facturasZona.reduce((s, f) => s + parseImporte(f.importe), 0);
   const importeEntregado = entregadas.reduce((s, f) => s + parseImporte(f.importe), 0);
 
+  // Km de hoy por chofer: si la zona tiene chofer asignado, solo ese; si no, todos los que salieron hoy.
+  const hoy = fechaLocalHoy();
+  const kmPorChofer = Object.entries(ubicaciones)
+    .filter(([choferId, u]) => u && u.fecha === hoy && (!zona?.choferId || zona.choferId === choferId))
+    .map(([choferId, u]) => {
+      const kmTotalesHoy = u.kmRecorridos != null ? u.kmRecorridos : kmDeHistorial(u.historial);
+      const km = Math.max(0, kmTotalesHoy - (u.kmYaCerrados || 0));
+      const chofer = choferes.find((c) => c.id === choferId);
+      return { choferId, nombre: chofer ? chofer.nombre : "Chofer", km: Math.round(km * 10) / 10, kmTotalesHoy };
+    })
+    .sort((a, b) => b.km - a.km);
+  const kmTotal = Math.round(kmPorChofer.reduce((s, x) => s + x.km, 0) * 10) / 10;
+
   const cerrarDia = async () => {
     setCerrando(true);
-    const fechaCierre = new Date().toISOString().slice(0, 10);
+    const fechaCierre = fechaLocalHoy();
     const resumen = {
       fecha: fechaCierre,
       zonaId: zona.id,
@@ -1570,19 +1740,26 @@ function ResumenDiaTab({ db, zonas, setZonas, facturas, setFacturas }) {
       pendientes: pendientes.length,
       importeTotal,
       importeEntregado,
+      kmRecorridos: kmTotal,
+      kmEstimados: zona.kmEstimados || null,
+      kmPorChofer: kmPorChofer.map(({ choferId, nombre, km }) => ({ choferId, nombre, km })),
       facturas: facturasZona,
     };
 
     try {
       if (db) {
         await db.collection("historial_dias").doc(`${zona.id}_${fechaCierre}_${genId()}`).set(resumen);
+        // Marcamos los km como ya informados, para que si se cierra otra vez hoy no se cuenten dos veces.
+        await Promise.all(kmPorChofer.map((x) =>
+          db.doc(`ubicaciones/${x.choferId}`).set({ kmYaCerrados: x.kmTotalesHoy }, { merge: true }).catch(() => {})
+        ));
       }
     } catch (e) {}
 
     // Solo sacamos de la lista activa las que YA se entregaron (quedan archivadas en el historial).
     // Las pendientes se quedan activas para que se puedan seguir entregando y replanificando.
     setFacturas(facturas.filter((f) => !(f.zonaId === zona.id && f.estado === "entregado")));
-    setZonas(zonas.map((z) => z.id === zona.id ? { ...z, rutaConfirmada: false, rutaFecha: null } : z));
+    setZonas(zonas.map((z) => z.id === zona.id ? { ...z, rutaConfirmada: false, rutaFecha: null, kmEstimados: null } : z));
 
     setCerrando(false);
     setConfirmandoCierre(false);
@@ -1598,6 +1775,21 @@ function ResumenDiaTab({ db, zonas, setZonas, facturas, setFacturas }) {
           <p className="text-sm mb-4" style={{ color: "var(--slate)" }}>
             {cerrado.entregadas} entregadas de {cerrado.total} · {formatMoney(cerrado.importeEntregado)} cobrado
           </p>
+          <div className="rounded-xl p-4 mb-4" style={{ background: "var(--paper)" }}>
+            <p className="text-xs font-semibold uppercase" style={{ color: "var(--slate)" }}>Kilómetros recorridos</p>
+            <p className="de-display text-3xl font-bold" style={{ color: "var(--route)" }}>{formatKm(cerrado.kmRecorridos)}</p>
+            {cerrado.kmPorChofer.length > 1 && (
+              <div className="mt-2 space-y-0.5 text-xs" style={{ color: "var(--slate)" }}>
+                {cerrado.kmPorChofer.map((x) => <p key={x.choferId}>{x.nombre}: <b>{formatKm(x.km)}</b></p>)}
+              </div>
+            )}
+            {cerrado.kmEstimados ? (
+              <p className="text-xs mt-1" style={{ color: "var(--slate)" }}>La ruta propuesta estimaba ~{formatKm(cerrado.kmEstimados)}</p>
+            ) : null}
+            {cerrado.kmPorChofer.length === 0 && (
+              <p className="text-xs mt-1" style={{ color: "var(--amber)" }}>No hubo datos de GPS de los choferes hoy.</p>
+            )}
+          </div>
           <p className="text-xs" style={{ color: "var(--slate)" }}>
             Ya podés cargar el Excel del próximo día en la pestaña Facturas. Este resumen quedó guardado en Administración → Historial.
           </p>
@@ -1624,6 +1816,21 @@ function ResumenDiaTab({ db, zonas, setZonas, facturas, setFacturas }) {
           <p className="text-xs font-semibold uppercase" style={{ color: "var(--slate)" }}>Cobrado / total</p>
           <p className="de-mono font-semibold">{formatMoney(importeEntregado)} <span style={{ color: "var(--slate)" }}>de {formatMoney(importeTotal)}</span></p>
         </div>
+        <div className="rounded-xl p-3 mt-3" style={{ background: "var(--paper)" }}>
+          <p className="text-xs font-semibold uppercase" style={{ color: "var(--slate)" }}>Km recorridos hoy (GPS, en vivo)</p>
+          <p className="de-display text-2xl font-bold" style={{ color: "var(--route)" }}>
+            {formatKm(kmTotal)}
+            {zona?.kmEstimados ? <span className="text-sm font-normal" style={{ color: "var(--slate)" }}> · estimado ~{formatKm(zona.kmEstimados)}</span> : null}
+          </p>
+          {kmPorChofer.length > 1 && (
+            <div className="mt-1 space-y-0.5 text-xs" style={{ color: "var(--slate)" }}>
+              {kmPorChofer.map((x) => <p key={x.choferId}>{x.nombre}: <b>{formatKm(x.km)}</b></p>)}
+            </div>
+          )}
+          {kmPorChofer.length === 0 && (
+            <p className="text-xs mt-0.5" style={{ color: "var(--slate)" }}>Todavía no hay recorrido de GPS de hoy. Se mide solo mientras el chofer tiene la app abierta.</p>
+          )}
+        </div>
       </Card>
 
       <Card>
@@ -1648,7 +1855,7 @@ function ResumenDiaTab({ db, zonas, setZonas, facturas, setFacturas }) {
 
       {confirmandoCierre && (
         <ConfirmModal
-          mensaje={`¿Cerrar el día con ${entregadas.length} entregadas y ${pendientes.length} pendientes? Se guarda el resumen y se archivan las entregadas. Las ${pendientes.length} pendientes se mantienen activas para seguir trabajándolas.`}
+          mensaje={`¿Cerrar el día con ${entregadas.length} entregadas, ${pendientes.length} pendientes y ${formatKm(kmTotal)} recorridos? Se guarda el resumen y se archivan las entregadas. Las ${pendientes.length} pendientes se mantienen activas para seguir trabajándolas.`}
           textoConfirmar={cerrando ? "Cerrando..." : "Sí, cerrar el día"}
           onCancelar={() => setConfirmandoCierre(false)}
           onConfirmar={cerrarDia}
@@ -1658,11 +1865,51 @@ function ResumenDiaTab({ db, zonas, setZonas, facturas, setFacturas }) {
   );
 }
 
-function RutaTab({ zonas, setZonas, facturas, clientes, setClientes }) {
+function RutaTab({ zonas, setZonas, facturas, clientes, setClientes, deposito, setDeposito }) {
   const [zonaId, setZonaId] = useState(zonas[0]?.id || "");
   const [geocodificando, setGeocodificando] = useState(false);
   const [progresoGeo, setProgresoGeo] = useState(0);
   const [avisoGeo, setAvisoGeo] = useState(null);
+  const [editandoDeposito, setEditandoDeposito] = useState(false);
+  const [direccionDeposito, setDireccionDeposito] = useState(deposito?.direccion || "");
+  const [guardandoDeposito, setGuardandoDeposito] = useState(false);
+  const [errorDeposito, setErrorDeposito] = useState(null);
+  const [proponiendo, setProponiendo] = useState(null); // texto de estado mientras arma la propuesta
+  const [propuesta, setPropuesta] = useState(null); // { km, metodo, sinUbicacion }
+
+  const clientesRef = useRef(clientes);
+  useEffect(() => { clientesRef.current = clientes; }, [clientes]);
+
+  const guardarDepositoDireccion = async () => {
+    if (!direccionDeposito.trim()) return;
+    setGuardandoDeposito(true);
+    setErrorDeposito(null);
+    try {
+      const r = await geocodificarDireccion(direccionDeposito.trim(), "");
+      if (r) {
+        await setDeposito({ direccion: direccionDeposito.trim(), lat: r.lat, lng: r.lng });
+        setEditandoDeposito(false);
+      } else {
+        setErrorDeposito("No encontré esa dirección. Probá escribiéndola con calle, número y localidad (ej: Av. San Martín 1234, Rosario).");
+      }
+    } catch (e) {
+      setErrorDeposito("No se pudo buscar la dirección. Revisá la conexión.");
+    }
+    setGuardandoDeposito(false);
+  };
+
+  const usarUbicacionActualComoDeposito = async () => {
+    setGuardandoDeposito(true);
+    setErrorDeposito(null);
+    const u = await obtenerUbicacion();
+    if (u && u.lat) {
+      await setDeposito({ direccion: direccionDeposito.trim() || "Ubicación tomada con el GPS", lat: u.lat, lng: u.lng });
+      setEditandoDeposito(false);
+    } else {
+      setErrorDeposito(`No se pudo obtener la ubicación (${u?.error || "error"}).`);
+    }
+    setGuardandoDeposito(false);
+  };
 
   useEffect(() => {
     if (!zonaId && zonas.length) setZonaId(zonas[0].id);
@@ -1681,8 +1928,10 @@ function RutaTab({ zonas, setZonas, facturas, clientes, setClientes }) {
   const aplicarNuevoOrden = (nuevoArreglo) => {
     const actualizados = nuevoArreglo.map((c, i) => ({ ...c, orden: i }));
     const idsActualizados = new Set(actualizados.map((c) => c.id));
-    const resto = clientes.filter((c) => !idsActualizados.has(c.id));
-    setClientes([...resto, ...actualizados]);
+    const resto = clientesRef.current.filter((c) => !idsActualizados.has(c.id));
+    const nuevos = [...resto, ...actualizados];
+    clientesRef.current = nuevos;
+    setClientes(nuevos);
   };
 
   const mover = (index, dir) => {
@@ -1702,43 +1951,66 @@ function RutaTab({ zonas, setZonas, facturas, clientes, setClientes }) {
     aplicarNuevoOrden(nuevo);
   };
 
+  /** Geolocaliza los clientes de la lista que no tienen coordenadas y devuelve la lista con lat/lng. */
+  const completarUbicaciones = async (lista, reintentarFallidos) => {
+    const aBuscar = lista.filter((c) => !c.lat && (reintentarFallidos || !c.geoFallo) && (c.domicilio || c.localidad));
+    if (!aBuscar.length) return { lista, fallidos: [] };
+    setProgresoGeo(0);
+    const { coords, fallidos } = await geocodificarClientes(aBuscar, (hechos) => {
+      setProgresoGeo(hechos);
+      setProponiendo(`Ubicando clientes en el mapa ${hechos}/${aBuscar.length}...`);
+    });
+    const fallidosSet = new Set(fallidos);
+    if (Object.keys(coords).length || fallidos.length) {
+      const nuevos = clientesRef.current.map((c) => coords[c.id] ? { ...c, ...coords[c.id], geoFallo: false } : fallidosSet.has(c.id) ? { ...c, geoFallo: true } : c);
+      clientesRef.current = nuevos;
+      await setClientes(nuevos);
+    }
+    return { lista: lista.map((c) => coords[c.id] ? { ...c, ...coords[c.id] } : c), fallidos };
+  };
+
+  const proponerRutaAutomatica = async () => {
+    setPropuesta(null);
+    setAvisoGeo(null);
+    setProponiendo("Preparando...");
+    const { lista } = await completarUbicaciones(ordenados, true);
+    const conUbicacion = lista.filter((c) => c.lat && c.lng);
+    const sinUbicacion = lista.filter((c) => !(c.lat && c.lng));
+    if (!conUbicacion.length) {
+      setProponiendo(null);
+      setAvisoGeo("No pude ubicar a ningún cliente en el mapa, así que no puedo proponer un orden. Revisá que tengan domicilio y localidad cargados.");
+      return;
+    }
+    setProponiendo("Calculando el mejor recorrido...");
+    const origen = deposito && deposito.lat ? { lat: deposito.lat, lng: deposito.lng } : null;
+    const r = await proponerRuta(origen, conUbicacion.map((c) => ({ id: c.id, lat: c.lat, lng: c.lng })));
+    const porId = Object.fromEntries(lista.map((c) => [c.id, c]));
+    // Los que tienen ubicación van en el orden propuesto; los que no, quedan al final para ubicarlos a mano.
+    aplicarNuevoOrden([...r.orden.map((id) => porId[id]), ...sinUbicacion]);
+    setZonas(zonas.map((z) => z.id === zonaId ? { ...z, kmEstimados: Math.round(r.km * 10) / 10 } : z));
+    setPropuesta({ km: r.km, metodo: r.metodo, sinUbicacion: sinUbicacion.length, sinDeposito: !origen });
+    setProponiendo(null);
+  };
+
   const marcarArmada = async () => {
     setGeocodificando(true);
-    setProgresoGeo(0);
-    let huboExito = false;
-    let huboFallo = false;
-    let clientesActualizados = clientes;
-
-    for (let i = 0; i < ordenados.length; i++) {
-      const c = ordenados[i];
-      if (!c.lat && (c.domicilio || c.localidad)) {
-        try {
-          const query = [c.domicilio, c.localidad].filter(Boolean).join(", ");
-          const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`);
-          const datos = await resp.json();
-          if (datos && datos[0]) {
-            clientesActualizados = clientesActualizados.map((cl) => cl.id === c.id ? { ...cl, lat: parseFloat(datos[0].lat), lng: parseFloat(datos[0].lon) } : cl);
-            huboExito = true;
-          }
-        } catch (e) {
-          huboFallo = true;
-        }
-        await new Promise((r) => setTimeout(r, 1100)); // respetar 1 pedido por segundo
-      }
-      setProgresoGeo(i + 1);
+    const { fallidos } = await completarUbicaciones(ordenados, false);
+    if (fallidos.length) {
+      setAvisoGeo(`${fallidos.length} paradas no se pudieron ubicar en el mapa; quedaron con el link manual a la dirección.`);
     }
-
-    if (huboExito) setClientes(clientesActualizados);
-
-    if (huboFallo && !huboExito) {
-      setAvisoGeo("No se pudo geolocalizar automáticamente (puede estar bloqueado en este entorno). La ruta quedó armada igual, con el link manual al mapa en cada parada.");
-    } else if (huboFallo) {
-      setAvisoGeo("Se geolocalizaron algunas paradas; otras quedaron con el link manual al mapa.");
-    }
-
     setGeocodificando(false);
     setZonas(zonas.map((z) => z.id === zonaId ? { ...z, rutaConfirmada: true, rutaFecha: new Date().toISOString().slice(0, 10) } : z));
   };
+
+  /** Link a Google Maps con todo el recorrido (depósito → paradas → depósito). Google acepta hasta ~25 puntos. */
+  const urlRutaCompleta = (() => {
+    const pts = ordenados.filter((c) => c.lat && c.lng).map((c) => `${c.lat},${c.lng}`);
+    if (!pts.length) return null;
+    const dep = deposito && deposito.lat ? `${deposito.lat},${deposito.lng}` : null;
+    const todos = dep ? [dep, ...pts, dep] : pts;
+    if (todos.length < 2 || todos.length > 25) return null;
+    return `https://www.google.com/maps/dir/${todos.join("/")}`;
+  })();
 
   const volverAEditar = () => {
     setZonas(zonas.map((z) => z.id === zonaId ? { ...z, rutaConfirmada: false } : z));
@@ -1751,17 +2023,69 @@ function RutaTab({ zonas, setZonas, facturas, clientes, setClientes }) {
       <Card>
         <p className="de-display font-semibold mb-1">Armar la ruta del día</p>
         <p className="text-sm mb-3" style={{ color: "var(--slate)" }}>
-          Numerá en qué orden conviene visitar a cada cliente (podés escribir el número o usar las flechas). Este orden es el que va a ver el chofer.
+          Tocá "Proponer ruta automática" para que la app calcule el orden más corto, o numerá vos el orden (escribiendo el número o con las flechas). Este orden es el que va a ver el chofer.
         </p>
         {zonas.length > 1 && (
           <select
             value={zonaId}
-            onChange={(e) => setZonaId(e.target.value)}
+            onChange={(e) => { setZonaId(e.target.value); setPropuesta(null); }}
             className="de-focus w-full text-sm rounded-xl p-3 border mb-1 font-semibold"
             style={{ borderColor: "var(--line)" }}
           >
             {zonas.map((z) => <option key={z.id} value={z.id}>{z.nombre}</option>)}
           </select>
+        )}
+      </Card>
+
+      <Card>
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <p className="de-display font-semibold flex items-center gap-1.5"><Store size={16} /> Punto de salida (depósito)</p>
+          {deposito && !editandoDeposito && (
+            <button onClick={() => { setDireccionDeposito(deposito.direccion || ""); setEditandoDeposito(true); }} className="de-focus text-xs font-semibold" style={{ color: "var(--route)" }}>
+              Cambiar
+            </button>
+          )}
+        </div>
+        {deposito && !editandoDeposito ? (
+          <p className="text-sm" style={{ color: "var(--slate)" }}>
+            {deposito.direccion}{" "}
+            <a href={`https://www.google.com/maps?q=${deposito.lat},${deposito.lng}`} target="_blank" rel="noreferrer" className="de-focus text-xs font-semibold" style={{ color: "var(--teal)" }}>Ver en el mapa</a>
+          </p>
+        ) : (
+          <>
+            <p className="text-xs mb-2" style={{ color: "var(--slate)" }}>
+              Desde acá sale (y vuelve) el camión. Se usa para calcular la ruta más corta. Se carga una sola vez.
+            </p>
+            <input
+              value={direccionDeposito}
+              onChange={(e) => setDireccionDeposito(e.target.value)}
+              placeholder="Calle, número y localidad"
+              className="de-focus w-full text-sm rounded-xl p-3 border mb-2"
+              style={{ borderColor: "var(--line)" }}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={guardarDepositoDireccion}
+                disabled={guardandoDeposito || !direccionDeposito.trim()}
+                className="de-btn-primary de-focus flex-1 py-2.5 rounded-xl text-sm font-semibold"
+                style={{ opacity: guardandoDeposito || !direccionDeposito.trim() ? 0.6 : 1 }}
+              >
+                {guardandoDeposito ? "Buscando..." : "Guardar dirección"}
+              </button>
+              <button
+                onClick={usarUbicacionActualComoDeposito}
+                disabled={guardandoDeposito}
+                className="de-focus flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-1"
+                style={{ background: "var(--paper)", color: "var(--route)", border: "1px solid var(--line)" }}
+              >
+                <MapPin size={14} /> Estoy en el depósito
+              </button>
+            </div>
+            {deposito && (
+              <button onClick={() => setEditandoDeposito(false)} className="de-focus text-xs mt-2" style={{ color: "var(--slate)" }}>Cancelar</button>
+            )}
+            {errorDeposito && <p className="text-xs mt-2" style={{ color: "var(--danger)" }}>{errorDeposito}</p>}
+          </>
         )}
       </Card>
 
@@ -1776,8 +2100,18 @@ function RutaTab({ zonas, setZonas, facturas, clientes, setClientes }) {
             </button>
           </div>
           <p className="text-sm mb-4" style={{ color: "var(--slate)" }}>
-            {ordenados.length} paradas{zona.rutaFecha ? ` · ${new Date(zona.rutaFecha + "T00:00:00").toLocaleDateString("es-AR")}` : ""}, en este orden:
+            {ordenados.length} paradas{zona.rutaFecha ? ` · ${new Date(zona.rutaFecha + "T00:00:00").toLocaleDateString("es-AR")}` : ""}{zona.kmEstimados ? ` · ~${formatKm(zona.kmEstimados)} estimados` : ""}, en este orden:
           </p>
+          {urlRutaCompleta && (
+            <a
+              href={urlRutaCompleta}
+              target="_blank" rel="noreferrer"
+              className="de-focus flex items-center justify-center gap-2 py-2.5 mb-4 rounded-xl text-sm font-semibold"
+              style={{ background: "var(--teal-soft)", color: "var(--teal)" }}
+            >
+              <Route size={15} /> Ver la ruta completa en Google Maps
+            </a>
+          )}
           <div className="relative pl-6">
             <div className="absolute left-[9px] top-2 bottom-2 de-dash-line w-0.5" />
             {ordenados.map((c, i) => (
@@ -1803,6 +2137,36 @@ function RutaTab({ zonas, setZonas, facturas, clientes, setClientes }) {
             <EmptyState icon={Route} title="No hay clientes con facturas pendientes" subtitle="Cargá las facturas del día en la pestaña Facturas." />
           ) : (
             <>
+              <button
+                onClick={proponerRutaAutomatica}
+                disabled={!!proponiendo}
+                className="de-btn-primary de-focus w-full mb-3 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2"
+                style={{ opacity: proponiendo ? 0.75 : 1 }}
+              >
+                {proponiendo ? (
+                  <><Loader2 size={17} className="animate-spin" /> {proponiendo}</>
+                ) : (
+                  <><Route size={17} /> ✨ Proponer ruta automática</>
+                )}
+              </button>
+              {!deposito && !propuesta && (
+                <p className="text-xs mb-3" style={{ color: "var(--amber)" }}>
+                  Tip: cargá el punto de salida (arriba) para que la ruta arranque y termine en el depósito.
+                </p>
+              )}
+              {propuesta && (
+                <div className="mb-3 p-3 rounded-xl text-xs" style={{ background: "var(--teal-soft)", color: "var(--teal)" }}>
+                  <p className="font-semibold">
+                    Propuesta lista: ~{formatKm(propuesta.km)} {propuesta.metodo === "calles" ? "por calle (ida y vuelta al depósito)" : "en línea recta (el recorrido real por calle va a ser algo más largo)"}.
+                  </p>
+                  <p className="mt-0.5">Revisala y, si querés, ajustá el orden a mano antes de finalizar.</p>
+                  {propuesta.sinUbicacion > 0 && (
+                    <p className="mt-1" style={{ color: "var(--amber)" }}>
+                      ⚠️ {propuesta.sinUbicacion} clientes no se pudieron ubicar en el mapa y quedaron al final de la lista. Ubicalos vos a mano.
+                    </p>
+                  )}
+                </div>
+              )}
               <div className="space-y-2">
                 {ordenados.map((c, i) => (
                   <div key={c.id} className="flex items-center gap-3 py-2.5 px-3 rounded-xl" style={{ background: "var(--paper)" }}>
@@ -1818,6 +2182,9 @@ function RutaTab({ zonas, setZonas, facturas, clientes, setClientes }) {
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-sm truncate">{c.nombre}</p>
                       {c.domicilio && <p className="text-xs truncate" style={{ color: "var(--slate)" }}>{c.domicilio}</p>}
+                      {!c.lat && (c.geoFallo || !(c.domicilio || c.localidad)) && (
+                        <p className="text-[11px] font-semibold" style={{ color: "var(--amber)" }}>📍 sin ubicación en el mapa</p>
+                      )}
                     </div>
                     <div className="flex flex-col gap-0.5 shrink-0">
                       <button
@@ -1874,6 +2241,47 @@ function FacturasTab({ facturas, setFacturas, zonas, setZonas, clientes, setClie
   const [procesandoExcel, setProcesandoExcel] = useState(false);
   const [nombreZonaRapida, setNombreZonaRapida] = useState("");
   const [confirmandoVaciar, setConfirmandoVaciar] = useState(false);
+  const [geoProgreso, setGeoProgreso] = useState(null); // { hechos, total } mientras geolocaliza
+  const [geoResultado, setGeoResultado] = useState(null);
+
+  // Siempre la versión más nueva de clientes, para no pisar cambios mientras se geolocaliza.
+  const clientesRef = useRef(clientes);
+  useEffect(() => { clientesRef.current = clientes; }, [clientes]);
+
+  /** Guarda lat/lng (o la marca de fallo) sobre la lista de clientes más reciente. */
+  const guardarCoords = (coords, fallidos = []) => {
+    const ids = Object.keys(coords);
+    if (!ids.length && !fallidos.length) return;
+    const fallidosSet = new Set(fallidos);
+    setClientes(clientesRef.current.map((c) => {
+      if (coords[c.id]) return { ...c, lat: coords[c.id].lat, lng: coords[c.id].lng, geoFallo: false };
+      if (fallidosSet.has(c.id)) return { ...c, geoFallo: true };
+      return c;
+    }));
+  };
+
+  /** Geolocaliza los clientes que todavía no tienen ubicación (y tienen dirección). */
+  const geolocalizarPendientes = async (listaClientes) => {
+    const aBuscar = listaClientes.filter((c) => !c.lat && !c.geoFallo && (c.domicilio || c.localidad));
+    if (!aBuscar.length) return;
+    setGeoResultado(null);
+    setGeoProgreso({ hechos: 0, total: aBuscar.length });
+    let guardados = 0;
+    const { coords, fallidos } = await geocodificarClientes(aBuscar, (hechos, parcial) => {
+      setGeoProgreso({ hechos, total: aBuscar.length });
+      // Guardado parcial cada 10 clientes, por si se cierra la pantalla a mitad de camino
+      const n = Object.keys(parcial).length;
+      if (n - guardados >= 10) { guardados = n; guardarCoords({ ...parcial }); }
+    });
+    guardarCoords(coords, fallidos);
+    setGeoProgreso(null);
+    const ok = Object.keys(coords).length;
+    setGeoResultado(
+      fallidos.length
+        ? `📍 Se ubicaron ${ok} de ${aBuscar.length} clientes en el mapa. ${fallidos.length} no se encontraron (revisá su domicilio en Administración → Clientes).`
+        : `📍 Listo: se ubicaron los ${ok} clientes en el mapa. Ya podés ir a "Armar ruta" y pedir la propuesta automática.`
+    );
+  };
 
   const crearZonaRapida = () => {
     if (!nombreZonaRapida.trim()) return;
@@ -2008,10 +2416,16 @@ function FacturasTab({ facturas, setFacturas, zonas, setZonas, clientes, setClie
 
     setFacturas([...facturas, ...nuevasFacturas]);
     setClientes(clientesActualizados);
+    clientesRef.current = clientesActualizados;
 
     setFilasExcel(null);
     setMapeoExcel(null);
     setArchivoNombre("");
+
+    // Geolocalizar automáticamente a los clientes de estas facturas que todavía no tienen ubicación
+    const nombresYCodigos = new Set(nuevasFacturas.map((f) => (f.clienteCodigo || f.cliente).toLowerCase()));
+    const clientesDelDia = clientesActualizados.filter((c) => c.zonaId === zonaId && (nombresYCodigos.has((c.codigo || "").toLowerCase()) || nombresYCodigos.has(c.nombre.toLowerCase())));
+    geolocalizarPendientes(clientesDelDia);
   };
 
   const cancelarImportExcel = () => {
@@ -2045,6 +2459,18 @@ function FacturasTab({ facturas, setFacturas, zonas, setZonas, clientes, setClie
         {errorExcel && (
           <div className="mt-3 p-3 rounded-xl text-xs" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>
             {errorExcel}
+          </div>
+        )}
+
+        {geoProgreso && (
+          <div className="mt-3 p-3 rounded-xl text-xs flex items-center gap-2" style={{ background: "var(--teal-soft)", color: "var(--teal)" }}>
+            <Loader2 size={14} className="animate-spin shrink-0" />
+            <span>Ubicando clientes en el mapa {geoProgreso.hechos}/{geoProgreso.total}... (tarda ~1 segundo por cliente, no cierres esta pantalla)</span>
+          </div>
+        )}
+        {!geoProgreso && geoResultado && (
+          <div className="mt-3 p-3 rounded-xl text-xs" style={{ background: "var(--teal-soft)", color: "var(--teal)" }}>
+            {geoResultado}
           </div>
         )}
 
@@ -2276,7 +2702,10 @@ function HistorialTab({ historialDias }) {
           <ArrowLeft size={16} /> Volver al historial
         </button>
         <p className="de-display font-semibold">{new Date(dia.fecha + "T00:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}</p>
-        <p className="text-sm mb-4" style={{ color: "var(--slate)" }}>{dia.zonaNombre} · {dia.entregadas}/{dia.total} entregadas · {formatMoney(dia.importeEntregado)} cobrado</p>
+        <p className="text-sm mb-4" style={{ color: "var(--slate)" }}>{dia.zonaNombre} · {dia.entregadas}/{dia.total} entregadas · {formatMoney(dia.importeEntregado)} cobrado{dia.kmRecorridos != null ? ` · ${formatKm(dia.kmRecorridos)}` : ""}</p>
+        {(dia.kmPorChofer || []).length > 1 && (
+          <p className="text-xs -mt-3 mb-4" style={{ color: "var(--slate)" }}>{dia.kmPorChofer.map((x) => `${x.nombre}: ${formatKm(x.km)}`).join(" · ")}</p>
+        )}
         <div className="space-y-2 max-h-[480px] overflow-y-auto de-scrollbar pr-1">
           {facturasOrdenadas.map((f) => (
             <div key={f.id} className="flex items-center justify-between py-2.5 px-3 rounded-xl" style={{ background: "var(--paper)" }}>
@@ -2316,7 +2745,7 @@ function HistorialTab({ historialDias }) {
             >
               <div>
                 <p className="font-semibold text-sm">{new Date(dia.fecha + "T00:00:00").toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}</p>
-                <p className="text-xs" style={{ color: "var(--slate)" }}>{dia.entregadas}/{dia.total} entregadas · {formatMoney(dia.importeEntregado)}</p>
+                <p className="text-xs" style={{ color: "var(--slate)" }}>{dia.entregadas}/{dia.total} entregadas · {formatMoney(dia.importeEntregado)}{dia.kmRecorridos != null ? ` · ${formatKm(dia.kmRecorridos)}` : ""}</p>
               </div>
               <ArrowLeft size={16} style={{ transform: "rotate(180deg)", color: "var(--slate)" }} />
             </button>
@@ -2432,6 +2861,7 @@ function MapaVivoTab({ db, choferes, zonas, facturas }) {
         </div>
         <p className="text-xs mb-4 ml-7" style={{ color: "var(--slate)" }}>
           {zonasChofer.map((z) => z.nombre).join(", ") || "sin zona"} · {datos?.ultima ? haceTiempo(datos.ultima.ts) : "sin datos"}
+          {datos && datos.fecha === fechaLocalHoy() && ` · ${formatKm(datos.kmRecorridos != null ? datos.kmRecorridos : kmDeHistorial(datos.historial))} hoy`}
         </p>
 
         <div className="flex flex-col gap-2 mb-5">
@@ -2591,10 +3021,37 @@ function ChoferFlow({ db, assetsApi, choferes, zonas, facturas, setFacturas, cli
         const ref = db.doc(`ubicaciones/${choferId}`);
         const snap = await ref.get();
         const previo = snap.exists ? snap.data() : null;
-        const hoy = new Date().toISOString().slice(0, 10);
-        const historialPrevio = (previo && previo.fecha === hoy) ? (previo.historial || []) : [];
+        const hoy = fechaLocalHoy();
+        const mismoDia = previo && previo.fecha === hoy;
+        const historialPrevio = mismoDia ? (previo.historial || []) : [];
         const punto = { lat: ubic.lat, lng: ubic.lng, ts: new Date().toISOString() };
-        await ref.set({ fecha: hoy, ultima: punto, historial: [...historialPrevio, punto].slice(-300), vehiculoId: vehiculoId || null });
+
+        // Kilómetros: se miden desde el último punto "ancla". El ancla solo avanza cuando el
+        // camión se movió más de 40 m (así el temblor del GPS estando parado no suma), y las
+        // lecturas imprecisas (>100 m) o los saltos imposibles (>150 km/h) se ignoran.
+        let km = mismoDia ? (previo.kmRecorridos || 0) : 0;
+        let ancla = mismoDia ? (previo.anclaKm || null) : null;
+        if ((ubic.precision || 0) <= 100) {
+          if (!ancla) {
+            ancla = punto;
+          } else {
+            const d = distanciaKm(ancla, punto);
+            const horas = Math.max((new Date(punto.ts) - new Date(ancla.ts)) / 3600000, 1 / 3600);
+            if (d / horas > 150) ancla = punto; // salto raro: se reinicia el ancla sin sumar
+            else if (d >= 0.04) { km += d; ancla = punto; }
+          }
+        }
+
+        await ref.set({
+          fecha: hoy,
+          ultima: punto,
+          historial: [...historialPrevio, punto].slice(-1500), // ~18 h de recorrido a 1 punto cada 45 s
+          kmRecorridos: Math.round(km * 1000) / 1000,
+          // km que ya se informaron en un cierre anterior del mismo día (para no contarlos dos veces)
+          kmYaCerrados: mismoDia ? (previo.kmYaCerrados || 0) : 0,
+          anclaKm: ancla,
+          vehiculoId: vehiculoId || null,
+        });
       } catch (e) {}
     };
 
@@ -3132,13 +3589,15 @@ function App() {
   const [vehiculos, setVehiculos, loadingV] = useDbListDoc(db, "meta/vehiculos");
   const [combustible, loadingCo] = useDbCollectionLive(db, "combustible");
   const [historialDias, loadingHist] = useDbCollectionLive(db, "historial_dias");
+  // Punto de salida de los camiones (se guarda como lista de un solo elemento: [{ direccion, lat, lng }])
+  const [depositoList, setDepositoList, loadingDep] = useDbListDoc(db, "meta/deposito");
   const [role, setRole] = useState(null);
   const [testGeo, setTestGeo] = useState(null);
   const [testGeoLoading, setTestGeoLoading] = useState(false);
   const [testGeoApi, setTestGeoApi] = useState(null);
   const [testGeoApiLoading, setTestGeoApiLoading] = useState(false);
 
-  const loading = db === undefined || loadingC || loadingZ || loadingCl || loadingF || loadingV || loadingCo || loadingHist;
+  const loading = db === undefined || loadingC || loadingZ || loadingCl || loadingF || loadingV || loadingCo || loadingHist || loadingDep;
   const dbNoDisponible = db === null;
 
   useEffect(() => {
@@ -3191,6 +3650,9 @@ function App() {
       {role === "logistica" && (
         <LogisticaPanel
           db={db}
+          choferes={choferes}
+          deposito={depositoList[0] || null}
+          setDeposito={(d) => setDepositoList(d ? [d] : [])}
           zonas={zonas} setZonas={setZonas}
           facturas={facturas} setFacturas={setFacturas}
           clientes={clientes} setClientes={setClientes}
