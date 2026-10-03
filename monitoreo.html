@@ -423,11 +423,12 @@ tr.dayrow td span+span{margin-left:12px}
       <h2>Planilla de control vehicular</h2>
       <div class="grid g4">
         <div><label for="vFecha" class="req">Fecha</label><input type="date" id="vFecha"></div>
-        <div><label for="vHora" class="req">Hora</label><input type="time" id="vHora"></div>
+        <div><label for="vHora" class="req">Hora de inicio</label><input type="time" id="vHora"></div>
+        <div><label for="vHoraFin">Hora de finalización</label><input type="time" id="vHoraFin"></div>
         <div><label for="vVehiculo" class="req">Vehículo / patente</label><input id="vVehiculo" list="dlVehiculo" placeholder="Ej.: AB123CD"><datalist id="dlVehiculo"></datalist></div>
-        <div><label for="vLugar" class="req">Lugar</label><input id="vLugar" list="dlSector" placeholder="Ej.: Portón 3"></div>
       </div>
-      <div class="grid g3">
+      <div class="grid g4">
+        <div><label for="vLugar" class="req">Lugar</label><input id="vLugar" list="dlSector" placeholder="Ej.: Portón 3"></div>
         <div>
           <label class="req">Movimiento</label>
           <div class="sev" id="vMov">
@@ -439,7 +440,8 @@ tr.dayrow td span+span{margin-left:12px}
         <div><label for="vQuien" class="req">Quién carga</label><input id="vQuien" list="dlPersona" placeholder="Nombre o legajo"></div>
         <div><label for="vObs">Observaciones</label><input id="vObs" placeholder="Opcional"></div>
       </div>
-      <div class="savebar"><button class="btn primary" id="btnSaveVeh" type="button">Agregar a la planilla</button></div>
+      <div class="hint" id="vEditInfo" hidden>✎ Estás editando un movimiento ya cargado. Corregí lo que haga falta y tocá «Guardar cambios».</div>
+      <div class="savebar row" style="gap:8px"><button class="btn" id="btnCancelVeh" type="button" hidden>Cancelar edición</button><button class="btn primary" id="btnSaveVeh" type="button">Agregar a la planilla</button></div>
     </div>
 
     <div class="row spread" style="margin-bottom:10px">
@@ -450,7 +452,7 @@ tr.dayrow td span+span{margin-left:12px}
     <div class="hint" id="countVeh" style="margin-bottom:8px"></div>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Hora</th><th>Vehículo</th><th>Lugar</th><th>CAR / DES / DEV</th><th>Quién carga</th><th>Observaciones</th><th></th></tr></thead>
+        <thead><tr><th>Inicio</th><th>Fin</th><th>Vehículo</th><th>Lugar</th><th>CAR / DES / DEV</th><th>Quién carga</th><th>Observaciones</th><th></th></tr></thead>
         <tbody id="tbVeh"></tbody>
       </table>
     </div>
@@ -699,16 +701,30 @@ $("#btnSaveInc").onclick=async()=>{
 };
 
 /* Guardar vehículo */
+let vEdit=null; // id del movimiento que se está editando
+function resetVehForm(){ vEdit=null; $("#vVehiculo").value="";$("#vQuien").value="";$("#vObs").value="";$("#vHora").value=ahora();$("#vHoraFin").value="";
+  $("#btnSaveVeh").textContent="Agregar a la planilla"; $("#btnCancelVeh").hidden=true; $("#vEditInfo").hidden=true; }
+function editVeh(id){ const v=vehiculos.find(x=>x._id===id); if(!v)return; vEdit=id;
+  $("#vFecha").value=v.fecha||""; $("#vHora").value=v.hora||""; $("#vHoraFin").value=v.horaFin||""; $("#vVehiculo").value=v.vehiculo||"";
+  $("#vLugar").value=v.lugar||""; $("#vQuien").value=v.quien||""; $("#vObs").value=v.obs||"";
+  const m=document.querySelector(`input[name="mov"][value="${v.movimiento}"]`); if(m)m.checked=true;
+  $("#btnSaveVeh").textContent="Guardar cambios"; $("#btnCancelVeh").hidden=false; $("#vEditInfo").hidden=false;
+  const hdr=document.querySelector("header"); window.scrollTo({top:$("#tab-vehicular").getBoundingClientRect().top+scrollY-(hdr?hdr.offsetHeight:0)-12,behavior:"smooth"}); }
+$("#btnCancelVeh").onclick=resetVehForm;
 $("#btnSaveVeh").onclick=async()=>{
   if(!db){toast("Sin conexión a la base de datos",true);return}
-  const data={fecha:$("#vFecha").value,hora:$("#vHora").value,vehiculo:$("#vVehiculo").value.trim().toUpperCase(),lugar:$("#vLugar").value.trim(),
+  const data={fecha:$("#vFecha").value,hora:$("#vHora").value,horaFin:$("#vHoraFin").value,vehiculo:$("#vVehiculo").value.trim().toUpperCase(),lugar:$("#vLugar").value.trim(),
     movimiento:document.querySelector('input[name="mov"]:checked').value,quien:$("#vQuien").value.trim(),obs:$("#vObs").value.trim(),
     operador:$("#iOperador").value.trim()||ls("mon_operador")||""};
-  const falta=[]; ["fecha","hora","vehiculo","lugar","quien"].forEach(k=>{if(!data[k])falta.push(k==="quien"?"quién carga":k==="vehiculo"?"vehículo":k)});
+  const falta=[]; ["fecha","hora","vehiculo","lugar","quien"].forEach(k=>{if(!data[k])falta.push(k==="quien"?"quién carga":k==="vehiculo"?"vehículo":k==="hora"?"hora de inicio":k)});
   if(falta.length){toast("Completá: "+falta.join(", "),true);return}
-  data.ts=new Date(data.fecha+"T"+data.hora).getTime(); data.creado=Date.now();
+  data.ts=new Date(data.fecha+"T"+data.hora).getTime();
   const btn=$("#btnSaveVeh"); btn.disabled=true;
-  try{ await db.collection("vehiculos").doc().set(data); toast("Movimiento agregado"); $("#vVehiculo").value="";$("#vQuien").value="";$("#vObs").value="";$("#vHora").value=ahora(); setNavDay("veh",data.fecha); }
+  try{
+    if(vEdit){ const v0=vehiculos.find(x=>x._id===vEdit); if(v0&&v0.operador)data.operador=v0.operador; data.editado=Date.now();
+      await db.doc("vehiculos/"+vEdit).update(data); toast("Cambios guardados"); }
+    else{ data.creado=Date.now(); await db.collection("vehiculos").doc().set(data); toast("Movimiento agregado"); }
+    resetVehForm(); setNavDay("veh",data.fecha); }
   catch(e){ toast("No se pudo guardar el movimiento",true) }
   finally{ btn.disabled=false }
 };
@@ -811,14 +827,17 @@ function renderVeh(){
   const n=navs.veh;
   const arr=vehFiltered().sort((a,b)=>b.fecha.localeCompare(a.fecha)||a.hora.localeCompare(b.hora));
   $("#countVeh").textContent=`Mostrando ${arr.length} ${arr.length===1?"movimiento":"movimientos"} · ${vehiculos.length} en total cargados`;
-  const row=v=>`<tr><td data-l="Hora">${esc(v.hora)}</td><td data-l="Vehículo"><strong>${esc(v.vehiculo)}</strong></td><td data-l="Lugar">${esc(v.lugar)}</td>
+  const row=v=>`<tr><td data-l="Inicio">${esc(v.hora)}</td><td data-l="Fin">${v.horaFin?`${esc(v.horaFin)} <span class="hint">(${dur(v.hora,v.horaFin)})</span>`:"—"}</td><td data-l="Vehículo"><strong>${esc(v.vehiculo)}</strong></td><td data-l="Lugar">${esc(v.lugar)}</td>
     <td data-l="Movimiento"><span class="mv mv-${esc(v.movimiento)}">${esc(v.movimiento)}</span> ${esc(MOV[v.movimiento]||"")}</td><td data-l="Quién carga">${esc(v.quien)}</td><td data-l="Obs.">${esc(v.obs)||"—"}</td>
-    <td class="del"><button class="btn small" type="button" data-vdel="${v._id}" aria-label="Borrar fila">✕</button></td></tr>`;
-  $("#tbVeh").innerHTML = arr.length ? groupByDay(arr).map(g=>`<tr class="dayrow"><td colspan="7"><span>${diaLargo(g.f)}</span><span class="cnt">${g.items.length} ${g.items.length===1?"movimiento":"movimientos"}</span></td></tr>${g.items.map(row).join("")}`).join("")
-    : `<tr class="dayrow"><td colspan="7" style="text-align:center;color:var(--muted);padding:28px;font-family:inherit;font-weight:400">${n.m==="dia"?`Sin movimientos cargados el ${diaLargo(n.dia).toLowerCase()}. Usá ◀ ▶ para ver otros días.`:"Sin movimientos en estas fechas."}</td></tr>`;
+    <td class="del" style="white-space:nowrap"><button class="btn small" type="button" data-vedit="${v._id}" aria-label="Editar fila">✎ Editar</button> <button class="btn small" type="button" data-vdel="${v._id}" aria-label="Borrar fila">✕</button></td></tr>`;
+  $("#tbVeh").innerHTML = arr.length ? groupByDay(arr).map(g=>`<tr class="dayrow"><td colspan="8"><span>${diaLargo(g.f)}</span><span class="cnt">${g.items.length} ${g.items.length===1?"movimiento":"movimientos"}</span></td></tr>${g.items.map(row).join("")}`).join("")
+    : `<tr class="dayrow"><td colspan="8" style="text-align:center;color:var(--muted);padding:28px;font-family:inherit;font-weight:400">${n.m==="dia"?`Sin movimientos cargados el ${diaLargo(n.dia).toLowerCase()}. Usá ◀ ▶ para ver otros días.`:"Sin movimientos en estas fechas."}</td></tr>`;
+  $("#tbVeh").querySelectorAll("[data-vedit]").forEach(b=>b.onclick=()=>editVeh(b.dataset.vedit));
   $("#tbVeh").querySelectorAll("[data-vdel]").forEach(b=>b.onclick=async()=>{ const v0=vehiculos.find(x=>x._id===b.dataset.vdel); if(!await confirmar("¿Borrar este movimiento?",v0?`${v0.vehiculo} a las ${v0.hora} del ${fmtF(v0.fecha)}.`:""))return;
-    try{await db.doc("vehiculos/"+b.dataset.vdel).delete()}catch(e){toast("No se pudo borrar",true)} });
+    try{await db.doc("vehiculos/"+b.dataset.vdel).delete(); if(vEdit===b.dataset.vdel)resetVehForm();}catch(e){toast("No se pudo borrar",true)} });
 }
+function dur(a,b){ if(!a||!b)return""; const [h1,m1]=a.split(":").map(Number),[h2,m2]=b.split(":").map(Number); let m=(h2*60+m2)-(h1*60+m1); if(m<0)m+=1440;
+  return m<60?`${m} min`:`${Math.floor(m/60)} h ${String(m%60).padStart(2,"0")} min`; }
 
 /* Descarga de camiones */
 $("#dFecha").value=hoy(); $("#dHora").value=ahora();
@@ -1072,8 +1091,8 @@ async function saveCsv(name,rows){
 }
 $("#btnCsvInc").onclick=()=>saveCsv(`incidentes_${hoy()}.csv`,[["Fecha","Hora","Tipo","Gravedad","Cámara/Sector","Persona","Área","Descripción","Estado","Avisado","Operador","Fotos","EPP faltante"],
   ...filtered().map(i=>[fmtF(i.fecha),i.hora,i.tipo,i.gravedad,i.sector,i.persona,i.area,i.descripcion,i.estado,i.avisado?"Sí":"No",i.operador,(i.fotos||[]).length,(i.epp||[]).join(", ")])]);
-$("#btnCsvVeh").onclick=()=>saveCsv(`control_vehicular_${hoy()}.csv`,[["Fecha","Hora","Vehículo","Lugar","CAR/DES/DEV","Quién carga","Observaciones","Operador"],
-  ...vehFiltered().sort((a,b)=>a.ts-b.ts).map(v=>[fmtF(v.fecha),v.hora,v.vehiculo,v.lugar,v.movimiento,v.quien,v.obs,v.operador])]);
+$("#btnCsvVeh").onclick=()=>saveCsv(`control_vehicular_${hoy()}.csv`,[["Fecha","Hora inicio","Hora fin","Duración","Vehículo","Lugar","CAR/DES/DEV","Quién carga","Observaciones","Operador"],
+  ...vehFiltered().sort((a,b)=>a.ts-b.ts).map(v=>[fmtF(v.fecha),v.hora,v.horaFin||"",dur(v.hora,v.horaFin),v.vehiculo,v.lugar,v.movimiento,v.quien,v.obs,v.operador])]);
 
 /* Firebase */
 const firebaseConfig = {
