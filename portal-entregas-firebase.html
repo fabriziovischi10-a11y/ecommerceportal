@@ -3592,6 +3592,18 @@ function App() {
   // Punto de salida de los camiones (se guarda como lista de un solo elemento: [{ direccion, lat, lng }])
   const [depositoList, setDepositoList, loadingDep] = useDbListDoc(db, "meta/deposito");
   const [role, setRole] = useState(null);
+  // En celular solo se ofrece "Soy chofer"; Logística y Administración quedan para la PC.
+  const detectarMovil = () => {
+    const ua = navigator.userAgent || "";
+    if (/Android|iPhone|iPod|Mobile|Windows Phone/i.test(ua)) return true;
+    return !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches && window.matchMedia("(max-width: 900px)").matches);
+  };
+  const [esMovil, setEsMovil] = useState(detectarMovil);
+  useEffect(() => {
+    const onResize = () => setEsMovil(detectarMovil());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
   const [testGeo, setTestGeo] = useState(null);
   const [testGeoLoading, setTestGeoLoading] = useState(false);
   const [testGeoApi, setTestGeoApi] = useState(null);
@@ -3717,6 +3729,7 @@ function App() {
                 <p className="text-xs opacity-90">Ver mis entregas de hoy</p>
               </div>
             </button>
+            {!esMovil && (<>
             <button
               onClick={() => setRole("logistica")}
               className="de-focus w-full flex items-center gap-3 p-5 rounded-2xl text-left border-2"
@@ -3739,6 +3752,7 @@ function App() {
                 <p className="text-xs" style={{ color: "var(--slate)" }}>Choferes, vehículos y reportes</p>
               </div>
             </button>
+            </>)}
           </div>
 
           <p className="text-xs mt-8" style={{ color: "var(--slate)" }}>
