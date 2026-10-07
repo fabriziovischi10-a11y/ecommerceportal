@@ -93,6 +93,10 @@ textarea{min-height:92px;resize:vertical}
 .thumbs{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
 .thumb{position:relative;width:120px;height:80px;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:#000}
 .thumb img{width:100%;height:100%;object-fit:cover}
+.thumb.vid::after{content:"▶";position:absolute;left:6px;bottom:4px;color:#fff;font-size:1rem;text-shadow:0 1px 3px #000}
+.vidstatus{margin-top:8px;font-weight:600}
+dialog video{display:block;max-height:80vh;max-width:100%;margin:0 auto;background:#000}
+dialog img[hidden],dialog video[hidden]{display:none}
 .thumb button{position:absolute;top:4px;right:4px;border:0;background:rgba(0,0,0,.7);color:#fff;border-radius:4px;width:24px;height:24px;cursor:pointer}
 
 .formgrid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px}
@@ -162,6 +166,7 @@ dialog .dbar{display:flex;justify-content:space-between;align-items:center;paddi
 .brand .txt{border-left:2px solid rgba(32,67,130,.35);padding-left:14px}
 nav .ic,nav .sm{display:none}
 .photobtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.photobtns>:last-child:nth-child(odd){grid-column:1/-1}
 .btn.big{padding:14px 10px;font-size:1rem}
 .filtoggle{display:none;margin-bottom:10px;width:100%}
 @media (max-width:640px){
@@ -346,16 +351,19 @@ tr.dayrow td span+span{margin-left:12px}
           <textarea id="iDesc" placeholder="Ej.: operario transitando sin calzado de seguridad en zona de armado."></textarea>
         </div>
         <div>
-          <label>Fotos de la cámara</label>
+          <label>Fotos y videos de la cámara</label>
           <div class="photobtns">
             <button type="button" class="btn big" id="btnCam">📷 Sacar foto</button>
+            <button type="button" class="btn big" id="btnVidCam">🎥 Grabar video</button>
             <button type="button" class="btn big" id="btnGal">🖼️ Elegir de la galería</button>
           </div>
           <div class="drop" id="drop" tabindex="0" role="button">
-            O arrastrá las fotos acá / pegá una captura con Ctrl+V
+            O arrastrá fotos o videos acá / pegá una captura con Ctrl+V
           </div>
-          <input type="file" id="iFile" accept="image/*" multiple hidden>
+          <input type="file" id="iFile" accept="image/*,video/*" multiple hidden>
           <input type="file" id="iCam" accept="image/*" capture="environment" hidden>
+          <input type="file" id="iVidCam" accept="video/*" capture="environment" hidden>
+          <p class="hint vidstatus" id="vidStatus" hidden></p>
           <div class="thumbs" id="thumbs"></div>
         </div>
       </div>
@@ -463,12 +471,13 @@ tr.dayrow td span+span{margin-left:12px}
     <div class="panel stack" style="margin-bottom:18px">
       <h2>Descarga de camiones</h2>
       <div>
-        <label class="req">Foto del camión</label>
-        <button type="button" class="btn big" id="dGalBtn" style="width:100%">🖼️ Elegir foto de la galería</button>
+        <label class="req">Foto o video del camión</label>
+        <button type="button" class="btn big" id="dGalBtn" style="width:100%">🖼️ Elegir foto o video de la galería</button>
         <div class="drop ddrop" id="dDrop" tabindex="0" role="button" style="margin-top:8px">
-          <strong>Arrastrá las fotos acá</strong> desde cualquier carpeta de la computadora<br><span class="hint">o pegá una captura con Ctrl+V</span>
+          <strong>Arrastrá las fotos o videos acá</strong> desde cualquier carpeta de la computadora<br><span class="hint">o pegá una captura con Ctrl+V</span>
         </div>
-        <input type="file" id="dGal" accept="image/*" multiple hidden>
+        <input type="file" id="dGal" accept="image/*,video/*" multiple hidden>
+        <p class="hint vidstatus" id="dVidStatus" hidden></p>
         <div class="thumbs" id="dThumbs"></div>
       </div>
       <div class="grid g2 dfh">
@@ -524,6 +533,8 @@ tr.dayrow td span+span{margin-left:12px}
 <dialog id="dlg">
   <div class="dbar"><strong id="dlgTitle"></strong><button class="btn small" id="dlgClose" type="button">Cerrar</button></div>
   <img id="dlgImg" alt="">
+  <video id="dlgVid" controls playsinline preload="auto" hidden></video>
+  <p id="dlgCarga" class="dlgobs" hidden>Cargando video…</p>
   <p id="dlgObs" class="dlgobs" hidden></p>
   <div class="dbar" id="dlgNav"></div>
 </dialog>
@@ -621,8 +632,69 @@ async function compress(file,maxSide,quality){
   URL.revokeObjectURL(img.src);
   return {canvas:c, blob: await new Promise(res=>c.toBlob(res,"image/jpeg",quality))};
 }
+/* Videos: se comprimen en el navegador (~480p) y se guardan partidos en la colección "videos_partes",
+   porque Firestore no acepta documentos de más de 1 MB y Storage no está disponible en este proyecto. */
+const VIDEO_MAX_SEG=185, VIDEO_MAX_BYTES=20e6, VIDEO_DIRECTO=8e6, VIDEO_PARTE=750000;
+let videosProcesando=0;
+const esVideo=f=>f.type.startsWith("video/")||/\.(mp4|mov|m4v|webm|3gp|mkv)$/i.test(f.name);
+function esperar(el,ev){return new Promise((res,rej)=>{el.addEventListener(ev,res,{once:true});el.addEventListener("error",()=>rej(new Error("formato")),{once:true})})}
+async function videoPoster(v,t){
+  v.currentTime=t; await esperar(v,"seeked");
+  const r=Math.min(1,1100/Math.max(v.videoWidth,v.videoHeight)), c=document.createElement("canvas");
+  c.width=Math.round(v.videoWidth*r); c.height=Math.round(v.videoHeight*r); c.getContext("2d").drawImage(v,0,0,c.width,c.height);
+  const blob=await new Promise(res=>c.toBlob(res,"image/jpeg",0.8));
+  return {blob,canvas:c,url:URL.createObjectURL(blob)};
+}
+async function transcode(v,dur,onPct){
+  const tipos=["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4","video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"];
+  const mime=window.MediaRecorder&&tipos.find(t=>MediaRecorder.isTypeSupported(t)); if(!mime) throw new Error("formato");
+  const r=Math.min(1,854/Math.max(v.videoWidth,v.videoHeight)), c=document.createElement("canvas"), g=c.getContext("2d");
+  c.width=Math.round(v.videoWidth*r/2)*2; c.height=Math.round(v.videoHeight*r/2)*2;
+  const stream=c.captureStream(25); let ac=null;
+  try{ // el audio pasa por WebAudio hacia la grabación sin sonar por los parlantes
+    ac=new (window.AudioContext||window.webkitAudioContext)(); const src=ac.createMediaElementSource(v), dst=ac.createMediaStreamDestination();
+    src.connect(dst); dst.stream.getAudioTracks().forEach(t=>stream.addTrack(t)); v.muted=false; await ac.resume();
+  }catch(e){ ac=null; v.muted=true }
+  const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:600000,audioBitsPerSecond:64000});
+  const partes=[]; rec.ondataavailable=e=>{if(e.data.size)partes.push(e.data)}; const fin=new Promise(res=>rec.onstop=res);
+  v.currentTime=0; await esperar(v,"seeked");
+  let corriendo=true; const dibujar=()=>{ if(!corriendo)return; g.drawImage(v,0,0,c.width,c.height);
+    v.requestVideoFrameCallback?v.requestVideoFrameCallback(dibujar):requestAnimationFrame(dibujar) };
+  rec.start(1000);
+  try{ await v.play() }catch(e){ v.muted=true; await v.play() }
+  dibujar();
+  await new Promise(res=>{ v.onended=res; v.ontimeupdate=()=>{ if(dur) onPct(Math.min(99,Math.round(v.currentTime/dur*100))); if(v.currentTime>=VIDEO_MAX_SEG) res() } });
+  corriendo=false; v.pause(); rec.stop(); await fin; stream.getTracks().forEach(t=>t.stop()); if(ac) ac.close();
+  return new Blob(partes,{type:mime.split(";")[0]});
+}
+async function prepVideo(f,onPct){
+  const url=URL.createObjectURL(f), v=document.createElement("video");
+  v.preload="auto"; v.playsInline=true; v.muted=true; v.src=url;
+  try{
+    await esperar(v,"loadeddata");
+    const dur=isFinite(v.duration)?v.duration:0;
+    if(dur>VIDEO_MAX_SEG) throw new Error("largo");
+    const poster=await videoPoster(v,Math.min(1,dur/3));
+    let blob=f, mime=f.type||"video/mp4";
+    if(f.size>VIDEO_DIRECTO){ blob=await transcode(v,dur,onPct); mime=blob.type; }
+    if(blob.size>VIDEO_MAX_BYTES) throw new Error("pesado");
+    return {video:true,blob,mime,dur:Math.round(dur),poster,url:poster.url};
+  }finally{ v.removeAttribute("src"); v.load(); URL.revokeObjectURL(url) }
+}
+async function addVideo(f,lista,render,status){
+  if(lista.filter(p=>p.video).length>=2){toast("Máximo 2 videos por registro",true);return}
+  if(lista.length>=6){toast("Máximo 6 archivos por registro",true);return}
+  videosProcesando++; status.hidden=false; status.textContent="Preparando video…";
+  try{
+    const p=await prepVideo(f,pct=>status.textContent=`Comprimiendo video… ${pct}%. No cierres ni cambies de pestaña.`);
+    lista.push(p); render(); toast("Video agregado");
+  }catch(e){ toast(e.message==="largo"?"El video dura más de 3 minutos. Recortalo y probá de nuevo.":e.message==="pesado"?"El video quedó muy pesado. Probá con uno más corto.":"No se pudo abrir ese video en este navegador. Probá con Chrome o con otro video.",true) }
+  finally{ videosProcesando--; if(!videosProcesando) status.hidden=true }
+}
+function thumbHtml(p,i){return `<div class="thumb${p.video?" vid":""}"><img src="${p.url}" alt="${p.video?"Video":"Foto"} ${i+1}"><button type="button" data-i="${i}" aria-label="Quitar">✕</button></div>`}
 async function addFiles(files){
   for(const f of files){
+    if(esVideo(f)){ await addVideo(f,pendientes,renderThumbs,$("#vidStatus")); continue }
     if(!f.type.startsWith("image/")) continue;
     if(pendientes.length>=6){toast("Máximo 6 fotos por incidente",true);break}
     try{ const {blob,canvas}=await compress(f,1600,0.8); pendientes.push({blob,canvas,url:URL.createObjectURL(blob)}); }
@@ -631,7 +703,7 @@ async function addFiles(files){
   renderThumbs();
 }
 function renderThumbs(){
-  $("#thumbs").innerHTML = pendientes.map((p,i)=>`<div class="thumb"><img src="${p.url}" alt="Foto ${i+1}"><button type="button" data-i="${i}" aria-label="Quitar foto">✕</button></div>`).join("");
+  $("#thumbs").innerHTML = pendientes.map(thumbHtml).join("");
   $("#thumbs").querySelectorAll("button").forEach(b=>b.onclick=()=>{const p=pendientes.splice(+b.dataset.i,1)[0];URL.revokeObjectURL(p.url);renderThumbs()});
 }
 const drop=$("#drop");
@@ -639,7 +711,9 @@ drop.onclick=()=>$("#iFile").click();
 drop.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();$("#iFile").click()}};
 $("#iFile").onchange=e=>{addFiles([...e.target.files]);e.target.value=""};
 $("#iCam").onchange=e=>{addFiles([...e.target.files]);e.target.value=""};
+$("#iVidCam").onchange=e=>{addFiles([...e.target.files]);e.target.value=""};
 $("#btnCam").onclick=()=>$("#iCam").click();
+$("#btnVidCam").onclick=()=>$("#iVidCam").click();
 $("#btnGal").onclick=()=>$("#iFile").click();
 drop.ondragover=e=>{e.preventDefault();drop.classList.add("over")};
 drop.ondragleave=()=>drop.classList.remove("over");
@@ -668,7 +742,36 @@ async function savePhoto(p){
   await ref.set({img:dataUrl,ts:Date.now()});
   return {inline:ref.id};
 }
+async function saveVideo(p,btn){
+  const poster=await savePhoto(p.poster);
+  const vid=db.collection("videos").doc().id, buf=new Uint8Array(await p.blob.arrayBuffer()), n=Math.ceil(buf.length/VIDEO_PARTE);
+  try{
+    for(let i=0;i<n;i++){
+      if(btn) btn.textContent=`Subiendo video… ${Math.round(i/n*100)}%`;
+      await db.doc(`videos_partes/${vid}_${i}`).set({vid,i,b:firebase.firestore.Blob.fromUint8Array(buf.subarray(i*VIDEO_PARTE,(i+1)*VIDEO_PARTE)),ts:Date.now()});
+    }
+    await db.doc("videos/"+vid).set({mime:p.mime,partes:n,size:buf.length,dur:p.dur,ts:Date.now()});
+  }catch(e){ for(let i=0;i<n;i++){try{await db.doc(`videos_partes/${vid}_${i}`).delete()}catch(_){}} try{await db.doc("fotos/"+poster.inline).delete()}catch(_){} throw e }
+  return {video:vid,poster,dur:p.dur};
+}
+const saveMedia=(p,btn)=>p.video?saveVideo(p,btn):savePhoto(p);
+async function delMedia(f){
+  if(f.video){
+    const m=(await db.doc("videos/"+f.video).get()).data();
+    for(let i=0;i<(m?.partes||0);i++) await db.doc(`videos_partes/${f.video}_${i}`).delete();
+    await db.doc("videos/"+f.video).delete(); if(f.poster) await delMedia(f.poster); return;
+  }
+  if(f.inline) await db.doc("fotos/"+f.inline).delete(); else if(f.asset&&assets){try{await assets.delete(f.asset)}catch(e){}}
+}
+const videoCache={};
+async function videoUrl(id){
+  if(videoCache[id]) return videoCache[id];
+  const m=(await db.doc("videos/"+id).get()).data(); if(!m) return "";
+  const partes=await Promise.all([...Array(m.partes).keys()].map(i=>db.doc(`videos_partes/${id}_${i}`).get()));
+  return videoCache[id]=URL.createObjectURL(new Blob(partes.map(s=>s.data().b.toUint8Array()),{type:m.mime}));
+}
 async function photoSrc(ph){
+  if(ph.video) return ph.poster?photoSrc(ph.poster):"";
   if(ph.asset) return ph.asset;
   if(photoCache[ph.inline]) return photoCache[ph.inline];
   try{const s=await db.doc("fotos/"+ph.inline).get(); if(s.exists){photoCache[ph.inline]=s.data().img; return photoCache[ph.inline]}}catch(e){}
@@ -689,9 +792,10 @@ $("#btnSaveInc").onclick=async()=>{
   const falta=[]; if(!tipo)falta.push("tipo"); if(!data.descripcion)falta.push("descripción"); if(!data.fecha)falta.push("fecha"); if(!data.hora)falta.push("hora");
   if(!data.sector)falta.push("cámara o sector"); if(!selPersonas.length)falta.push("persona (buscala o tocá “No se pudo identificar”)"); if(!data.operador)falta.push("operador");
   if(falta.length){toast("Completá: "+falta.join(", "),true);return}
+  if(videosProcesando){toast("Esperá a que termine de prepararse el video",true);return}
   const btn=$("#btnSaveInc"); btn.disabled=true; btn.textContent="Guardando…";
   try{
-    const fotos=[]; for(const p of pendientes) fotos.push(await savePhoto(p));
+    const fotos=[]; for(const p of pendientes) fotos.push(await saveMedia(p,btn));
     data.fotos=fotos; data.ts=new Date(data.fecha+"T"+data.hora).getTime(); data.creado=Date.now(); data.creadoPor=myId||"";
     await db.collection("incidentes").doc().set(data);
     ls("mon_operador",data.operador);
@@ -787,7 +891,7 @@ function renderInc(){
         <div class="meta"><span>📅 ${fmtF(i.fecha)} ${esc(i.hora)}</span><span>📍 ${esc(i.sector)}</span><span>👤 ${esc(i.persona)}${i.area?" ("+esc(i.area)+")":""}</span></div>
         ${i.epp?.length?`<div>${i.epp.map(e=>`<span class="eppt">Sin ${esc(e.toLowerCase())}</span>`).join("")}</div>`:""}
         <p class="desc">${esc(i.descripcion)}</p>
-        <div class="meta" style="margin-top:6px"><span>Registró: ${esc(i.operador)}</span>${i.avisado?"<span>Avisado al grupo</span>":""}${i.fotos?.length>1?`<span>${i.fotos.length} fotos</span>`:""}</div>
+        <div class="meta" style="margin-top:6px"><span>Registró: ${esc(i.operador)}</span>${i.avisado?"<span>Avisado al grupo</span>":""}${i.fotos?.length>1?`<span>${i.fotos.length} archivos</span>`:""}${i.fotos?.some(f=>f.video)?"<span>🎥 Con video</span>":""}</div>
       </div>
       <div class="actions">
         <button class="btn small" type="button" data-toggle="${i._id}">${i.estado==="Cerrado"?"Reabrir":"Cerrar"}</button>
@@ -804,20 +908,27 @@ function renderInc(){
   $("#listInc").querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
     const i=incidentes.find(x=>x._id===b.dataset.del);
     if(!await confirmar("¿Borrar este incidente?",`Incidente de ${i.persona} del ${fmtF(i.fecha)} a las ${i.hora}. No se puede deshacer.`))return;
-    try{ for(const f of i.fotos||[]){ if(f.inline) await db.doc("fotos/"+f.inline).delete(); else if(f.asset&&assets){try{await assets.delete(f.asset)}catch(e){}} }
+    try{ for(const f of i.fotos||[]) await delMedia(f);
       await db.doc("incidentes/"+i._id).delete(); toast("Incidente borrado") }catch(e){toast("No se pudo borrar",true)}
   });
 }
 async function openPhotos(id,lista,titulo){
   const i=(lista||incidentes).find(x=>x._id===id); if(!i?.fotos?.length)return;
-  let k=0; const dlg=$("#dlg");
-  const show=async()=>{ $("#dlgTitle").textContent=titulo?titulo(i):`${i.tipo} · ${fmtF(i.fecha)} ${i.hora} · ${i.sector}`; $("#dlgImg").src=await photoSrc(i.fotos[k]);
+  let k=0; const dlg=$("#dlg"), vEl=$("#dlgVid"), img=$("#dlgImg");
+  const show=async()=>{ $("#dlgTitle").textContent=titulo?titulo(i):`${i.tipo} · ${fmtF(i.fecha)} ${i.hora} · ${i.sector}`;
+    const f=i.fotos[k], tok=++verTok; vEl.pause(); vEl.hidden=true; vEl.removeAttribute("src"); img.hidden=false; $("#dlgCarga").hidden=!f.video;
+    img.src=await photoSrc(f);
+    // El video se arma en segundo plano para que el diálogo abra enseguida con la imagen de portada
+    if(f.video) videoUrl(f.video).then(u=>{ if(tok!==verTok) return; $("#dlgCarga").hidden=true;
+      if(u){vEl.src=u; vEl.hidden=false; img.hidden=true} else toast("No se pudo cargar el video",true) },()=>{ if(tok===verTok){$("#dlgCarga").hidden=true; toast("No se pudo cargar el video",true)} });
     $("#dlgNav").innerHTML=i.fotos.length>1?`<button class="btn small" id="pv" type="button">Anterior</button><span>${k+1} de ${i.fotos.length}</span><button class="btn small" id="nx" type="button">Siguiente</button>`:"";
     if(i.fotos.length>1){$("#pv").onclick=()=>{k=(k-1+i.fotos.length)%i.fotos.length;show()};$("#nx").onclick=()=>{k=(k+1)%i.fotos.length;show()}} };
   const ob=i.obs||""; $("#dlgObs").textContent=ob?"Observación: "+ob:""; $("#dlgObs").hidden=!ob || !lista;
   await show(); dlg.showModal();
 }
+let verTok=0;
 $("#dlgClose").onclick=()=>$("#dlg").close();
+$("#dlg").addEventListener("close",()=>{verTok++; $("#dlgVid").pause()});
 
 $("#filToggle").onclick=()=>{const o=$("#filters").classList.toggle("open");$("#filToggle").setAttribute("aria-expanded",o)};
 /* Vehicular */
@@ -843,6 +954,7 @@ function dur(a,b){ if(!a||!b)return""; const [h1,m1]=a.split(":").map(Number),[h
 $("#dFecha").value=hoy(); $("#dHora").value=ahora();
 async function addDescFiles(files){
   for(const f of files){
+    if(esVideo(f)){ await addVideo(f,pendD,renderDThumbs,$("#dVidStatus")); continue }
     if(!f.type.startsWith("image/")&&!/\.(jpe?g|png|webp|gif)$/i.test(f.name)) continue;
     if(pendD.length>=6){toast("Máximo 6 fotos por descarga",true);break}
     try{const {blob,canvas}=await compress(f,1600,0.8); pendD.push({blob,canvas,url:URL.createObjectURL(blob)})}catch(e){toast("No se pudo leer una de las imágenes",true)}
@@ -851,7 +963,7 @@ async function addDescFiles(files){
   renderDThumbs();
 }
 function renderDThumbs(){
-  $("#dThumbs").innerHTML=pendD.map((p,i)=>`<div class="thumb"><img src="${p.url}" alt="Foto ${i+1}"><button type="button" data-i="${i}" aria-label="Quitar foto">✕</button></div>`).join("");
+  $("#dThumbs").innerHTML=pendD.map(thumbHtml).join("");
   $("#dThumbs").querySelectorAll("button").forEach(b=>b.onclick=()=>{const p=pendD.splice(+b.dataset.i,1)[0];URL.revokeObjectURL(p.url);renderDThumbs()});
 }
 $("#dHora").addEventListener("input",()=>$("#dHora").dataset.touched="1");
@@ -865,20 +977,21 @@ $("#dGalBtn").onclick=()=>$("#dGal").click();
  sec.addEventListener("dragover",e=>{if([...(e.dataTransfer?.types||[])].includes("Files")){e.preventDefault();e.dataTransfer.dropEffect="copy"}});
  sec.addEventListener("dragleave",()=>{n=Math.max(0,n-1);if(!n)dz.classList.remove("over")});
  sec.addEventListener("drop",e=>{e.preventDefault();n=0;dz.classList.remove("over");
-   const fs=[...(e.dataTransfer?.files||[])].filter(f=>f.type.startsWith("image/")||/\.(jpe?g|png|webp|heic|gif)$/i.test(f.name));
-   if(fs.length){addDescFiles(fs);toast(fs.length===1?"Foto agregada":`${fs.length} fotos agregadas`)} else toast("Eso no es una imagen",true)});
+   const fs=[...(e.dataTransfer?.files||[])].filter(f=>f.type.startsWith("image/")||esVideo(f)||/\.(jpe?g|png|webp|heic|gif)$/i.test(f.name));
+   if(fs.length){addDescFiles(fs); if(!fs.some(esVideo)) toast(fs.length===1?"Foto agregada":`${fs.length} fotos agregadas`)} else toast("Eso no es una foto ni un video",true)});
 }
 // Evita que el navegador abra la foto si se suelta fuera de las zonas
 window.addEventListener("dragover",e=>e.preventDefault()); window.addEventListener("drop",e=>e.preventDefault());
 $("#dGal").onchange=e=>{addDescFiles([...e.target.files]);e.target.value=""};
 $("#btnSaveDesc").onclick=async()=>{
   if(!db){toast("Sin conexión a la base de datos",true);return}
-  if(!pendD.length){toast("Sacá o elegí al menos una foto del camión",true);return}
+  if(videosProcesando){toast("Esperá a que termine de prepararse el video",true);return}
+  if(!pendD.length){toast("Sacá o elegí al menos una foto o video del camión",true);return}
   const data={fecha:$("#dFecha").value,hora:$("#dHora").value,obs:$("#dObs").value.trim(),operador:$("#iOperador").value.trim()||ls("mon_operador")||""};
   if(!data.fecha||!data.hora){toast("Completá fecha y hora",true);return}
   const btn=$("#btnSaveDesc"); btn.disabled=true; btn.textContent="Guardando fotos…";
   try{
-    const fotos=[]; for(const p of pendD) fotos.push(await savePhoto(p));
+    const fotos=[]; for(const p of pendD) fotos.push(await saveMedia(p,btn));
     data.fotos=fotos; data.ts=new Date(data.fecha+"T"+data.hora).getTime(); data.creado=Date.now(); data.creadoPor=myId||"";
     await db.collection("descargas").doc().set(data);
     toast("Descarga guardada");
@@ -898,7 +1011,7 @@ function renderDesc(){
   if(!arr.length){$("#listDesc").innerHTML=`<div class="empty">${n.m==="dia"?`No hay camiones guardados el ${diaLargo(n.dia).toLowerCase()}.<br>Usá ◀ ▶ o tocá la fecha para buscar otro día.`:"No hay descargas en estas fechas."}</div>`;return}
   $("#listDesc").innerHTML=groupByDay(arr).map(g=>`<div class="daytitle"><span>${diaLargo(g.f)}</span><span class="cnt">${g.items.length} ${g.items.length===1?"camión":"camiones"}</span></div>
     <div class="gal">${g.items.map(x=>`<div class="tcard">
-      <button class="ph" type="button" data-dopen="${x._id}" aria-label="Ver fotos de la descarga de las ${esc(x.hora)}"><img alt="" data-dph="${x._id}">${x.fotos?.length>1?`<span class="n">${x.fotos.length} fotos</span>`:""}</button>
+      <button class="ph" type="button" data-dopen="${x._id}" aria-label="Ver fotos de la descarga de las ${esc(x.hora)}"><img alt="" data-dph="${x._id}">${x.fotos?.length>1||x.fotos?.some(f=>f.video)?`<span class="n">${x.fotos.some(f=>f.video)?"🎥 ":""}${x.fotos.length>1?x.fotos.length+" archivos":"video"}</span>`:""}</button>
       <div class="info"><div style="min-width:0"><div class="hr">${esc(x.hora)}</div>${x.obs?`<div class="dobs">${esc(x.obs)}</div>`:""}<button type="button" class="linkbtn" data-dobs="${x._id}">${x.obs?"✏️ Editar observación":"＋ Agregar observación"}</button></div>
       <button class="btn small del2" type="button" data-ddel="${x._id}" aria-label="Borrar descarga">✕</button></div></div>`).join("")}</div>`).join("");
   $("#listDesc").querySelectorAll("img[data-dph]").forEach(async img=>{const x=descargas.find(y=>y._id===img.dataset.dph); if(x?.fotos?.[0]) img.src=await photoSrc(x.fotos[0])});
@@ -909,7 +1022,7 @@ function renderDesc(){
   });
   $("#listDesc").querySelectorAll("[data-ddel]").forEach(b=>b.onclick=async()=>{
     const x=descargas.find(y=>y._id===b.dataset.ddel); if(!await confirmar("¿Borrar esta descarga?",`Descarga del ${fmtF(x.fecha)} a las ${x.hora}, con sus fotos. No se puede deshacer.`))return;
-    try{for(const f of x.fotos||[]){if(f.inline) await db.doc("fotos/"+f.inline).delete(); else if(f.asset&&assets){try{await assets.delete(f.asset)}catch(e){}}}
+    try{for(const f of x.fotos||[]) await delMedia(f);
       await db.doc("descargas/"+x._id).delete(); toast("Descarga borrada")}catch(e){toast("No se pudo borrar",true)}
   });
 }
