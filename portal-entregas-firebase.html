@@ -2958,9 +2958,16 @@ function CostosTab({ db, facturas, combustible, historialDias }) {
     fecha, zonas: [], cantFacturas: 0, cantEntregadas: 0, importeTotal: 0, importeEntregado: 0, km: 0, litros: 0, litrosSinImporte: 0, combustible: 0,
   };
 
+  // Confirmación antes de guardar: { porDefecto, fechaDestino }.
+  const [confirmando, setConfirmando] = useState(null);
+  // Si se guardó en otro día, se pasa a ese día sin pisar lo que se acaba de cargar.
+  const mantenerForm = useRef(false);
+
   // Al cambiar de día (o cuando terminan de cargar los costos guardados) se rellena el formulario.
   useEffect(() => {
     if (loadingCostos) return;
+    if (mantenerForm.current) { mantenerForm.current = false; return; }
+    setConfirmando(null);
     setForm(valoresDe(fecha));
     setMensaje(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2969,10 +2976,10 @@ function CostosTab({ db, facturas, combustible, historialDias }) {
   const v = form || valoresDe(fecha);
   const r = calcular(diaSel, v);
 
-  const guardar = async (tambienPorDefecto) => {
+  const guardar = async (tambienPorDefecto, fechaDestino) => {
     setGuardando(true);
-    const registro = { id: fecha, fecha, ...v, actualizado: new Date().toISOString() };
-    let siguiente = registros.filter((x) => x.id !== fecha);
+    const registro = { id: fechaDestino, fecha: fechaDestino, ...v, actualizado: new Date().toISOString() };
+    let siguiente = registros.filter((x) => x.id !== fechaDestino);
     siguiente.push(registro);
     if (tambienPorDefecto) {
       const nuevaConfig = { ...config, id: "config", markup: v.markup, precioLitro: v.precioLitro };
@@ -2982,10 +2989,24 @@ function CostosTab({ db, facturas, combustible, historialDias }) {
     }
     const ok = await setRegistros(siguiente);
     setGuardando(false);
+    if (ok) {
+      setConfirmando(null);
+      if (fechaDestino !== fecha) { mantenerForm.current = true; setFecha(fechaDestino); }
+    }
+    const diaTexto = fechaLarga(fechaDestino);
     setMensaje(ok
-      ? (tambienPorDefecto ? "Guardado. Los costos fijos y el markup quedan como valores por defecto para los próximos días." : "Costos del día guardados.")
+      ? (tambienPorDefecto ? `Guardado en el ${diaTexto}. Los costos fijos y el markup quedan como valores por defecto para los próximos días.` : `Costos guardados en el ${diaTexto}.`)
       : "No se pudo guardar. Revisá la conexión y probá de nuevo.");
   };
+
+  // Suma o resta días a una fecha AAAA-MM-DD sin pasar de hoy.
+  const moverDia = (f, delta) => {
+    const d = new Date(f + "T00:00:00");
+    d.setDate(d.getDate() + delta);
+    const n = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return n > hoy ? hoy : n;
+  };
+  const ayer = moverDia(hoy, -1);
 
   const cambiarBase = async (nueva) => {
     const nuevaConfig = { ...config, id: "config", base: nueva };
@@ -3017,19 +3038,49 @@ function CostosTab({ db, facturas, combustible, historialDias }) {
   return (
     <div className="space-y-5">
       <Card>
-        <div className="flex flex-wrap items-end justify-between gap-3 mb-1">
-          <div>
-            <p className="de-display font-semibold">Costos del viaje por día</p>
-            <p className="text-sm" style={{ color: "var(--slate)" }}>{fechaLarga(fecha).replace(/^./, (x) => x.toUpperCase())}{fecha === hoy ? " · hoy (en curso)" : ""}</p>
+        <p className="de-display font-semibold mb-3">Costos del viaje por día</p>
+
+        <div className="rounded-xl p-3 mb-2" style={{ background: "var(--paper)" }}>
+          <label htmlFor="costos-dia" className="text-xs font-bold uppercase tracking-wide" style={{ color: "var(--slate)" }}>Día que estás cargando</label>
+          <div className="flex flex-wrap items-center gap-2 mt-1.5">
+            <button
+              type="button"
+              onClick={() => setFecha(moverDia(fecha, -1))}
+              aria-label="Día anterior"
+              className="de-focus w-10 h-10 rounded-xl border font-bold"
+              style={{ borderColor: "var(--line)", background: "var(--card)", color: "var(--route)" }}
+            >‹</button>
+            <input
+              id="costos-dia"
+              type="date"
+              value={fecha}
+              max={hoy}
+              onChange={(e) => e.target.value && setFecha(e.target.value)}
+              className="de-focus de-mono text-sm rounded-xl p-2.5 border"
+              style={{ borderColor: "var(--line)", background: "var(--card)" }}
+            />
+            <button
+              type="button"
+              onClick={() => setFecha(moverDia(fecha, 1))}
+              disabled={fecha >= hoy}
+              aria-label="Día siguiente"
+              className="de-focus w-10 h-10 rounded-xl border font-bold"
+              style={{ borderColor: "var(--line)", background: "var(--card)", color: "var(--route)", opacity: fecha >= hoy ? 0.4 : 1 }}
+            >›</button>
+            {[{ f: hoy, l: "Hoy" }, { f: ayer, l: "Ayer" }].map((o) => (
+              <button
+                key={o.l}
+                type="button"
+                onClick={() => setFecha(o.f)}
+                className="de-focus px-3 py-2 rounded-full text-xs font-semibold"
+                style={fecha === o.f ? { background: "var(--route)", color: "white" } : { background: "var(--card)", color: "var(--route)", border: "1px solid var(--line)" }}
+              >{o.l}</button>
+            ))}
           </div>
-          <input
-            type="date"
-            value={fecha}
-            max={hoy}
-            onChange={(e) => e.target.value && setFecha(e.target.value)}
-            className="de-focus de-mono text-sm rounded-xl p-2.5 border"
-            style={{ borderColor: "var(--line)" }}
-          />
+          <p className="text-sm font-semibold mt-2">
+            {fechaLarga(fecha).replace(/^./, (x) => x.toUpperCase())}{fecha === hoy ? " · hoy (en curso)" : ""}
+            {costosGuardados[fecha] && <span className="ml-2 text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "var(--teal-soft)", color: "var(--teal)" }}>con costos guardados</span>}
+          </p>
         </div>
         <p className="text-xs mb-4" style={{ color: "var(--slate)" }}>
           {diaSel.zonas.length ? diaSel.zonas.join(", ") + " · " : ""}
@@ -3096,24 +3147,91 @@ function CostosTab({ db, facturas, combustible, historialDias }) {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 mt-4">
-          <button
-            disabled={guardando}
-            onClick={() => guardar(false)}
-            className="de-focus px-4 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2"
-            style={{ background: "var(--route)", color: "white", opacity: guardando ? 0.7 : 1 }}
-          >
-            {guardando && <Loader2 size={14} className="animate-spin" />} Guardar costos del día
-          </button>
-          <button
-            disabled={guardando}
-            onClick={() => guardar(true)}
-            className="de-focus px-4 py-2.5 rounded-xl font-semibold text-sm border"
-            style={{ borderColor: "var(--route)", color: "var(--route)" }}
-          >
-            Guardar y usar como valores por defecto
-          </button>
-        </div>
+        {!confirmando ? (
+          <div className="flex flex-wrap gap-2 mt-4">
+            <button
+              disabled={guardando}
+              onClick={() => { setMensaje(null); setConfirmando({ porDefecto: false, fechaDestino: fecha }); }}
+              className="de-focus px-4 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2"
+              style={{ background: "var(--route)", color: "white", opacity: guardando ? 0.7 : 1 }}
+            >
+              Guardar costos del día
+            </button>
+            <button
+              disabled={guardando}
+              onClick={() => { setMensaje(null); setConfirmando({ porDefecto: true, fechaDestino: fecha }); }}
+              className="de-focus px-4 py-2.5 rounded-xl font-semibold text-sm border"
+              style={{ borderColor: "var(--route)", color: "var(--route)" }}
+            >
+              Guardar y usar como valores por defecto
+            </button>
+          </div>
+        ) : (
+          <div className="mt-4 rounded-xl p-4 border-2" style={{ borderColor: "var(--route)", background: "var(--card)" }}>
+            <p className="de-display font-semibold">¿A qué día corresponden estos costos?</p>
+            <p className="text-xs mt-0.5 mb-3" style={{ color: "var(--slate)" }}>
+              Elegí el día y confirmá. Se guarda un costo total de <b className="de-mono">{formatMoney(r.costoTotal)}</b>
+              {confirmando.porDefecto ? " y estos valores quedan por defecto para los próximos días." : "."}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmando({ ...confirmando, fechaDestino: moverDia(confirmando.fechaDestino, -1) })}
+                aria-label="Día anterior"
+                className="de-focus w-10 h-10 rounded-xl border font-bold"
+                style={{ borderColor: "var(--line)", color: "var(--route)" }}
+              >‹</button>
+              <input
+                type="date"
+                aria-label="Día en que se guardan los costos"
+                value={confirmando.fechaDestino}
+                max={hoy}
+                onChange={(e) => e.target.value && setConfirmando({ ...confirmando, fechaDestino: e.target.value })}
+                className="de-focus de-mono text-sm rounded-xl p-2.5 border"
+                style={{ borderColor: "var(--line)" }}
+              />
+              <button
+                type="button"
+                onClick={() => setConfirmando({ ...confirmando, fechaDestino: moverDia(confirmando.fechaDestino, 1) })}
+                disabled={confirmando.fechaDestino >= hoy}
+                aria-label="Día siguiente"
+                className="de-focus w-10 h-10 rounded-xl border font-bold"
+                style={{ borderColor: "var(--line)", color: "var(--route)", opacity: confirmando.fechaDestino >= hoy ? 0.4 : 1 }}
+              >›</button>
+              {[{ f: hoy, l: "Hoy" }, { f: ayer, l: "Ayer" }].map((o) => (
+                <button
+                  key={o.l}
+                  type="button"
+                  onClick={() => setConfirmando({ ...confirmando, fechaDestino: o.f })}
+                  className="de-focus px-3 py-2 rounded-full text-xs font-semibold"
+                  style={confirmando.fechaDestino === o.f ? { background: "var(--route)", color: "white" } : { color: "var(--route)", border: "1px solid var(--line)" }}
+                >{o.l}</button>
+              ))}
+            </div>
+            <p className="text-sm font-semibold mt-2">{fechaLarga(confirmando.fechaDestino).replace(/^./, (x) => x.toUpperCase())}</p>
+            {confirmando.fechaDestino !== fecha && costosGuardados[confirmando.fechaDestino] && (
+              <p className="text-xs mt-1 font-semibold" style={{ color: "#9A6B00" }}>Ese día ya tiene costos guardados: se van a reemplazar por los de este formulario.</p>
+            )}
+            <div className="flex flex-wrap gap-2 mt-3">
+              <button
+                disabled={guardando}
+                onClick={() => guardar(confirmando.porDefecto, confirmando.fechaDestino)}
+                className="de-focus px-4 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2"
+                style={{ background: "var(--teal)", color: "white", opacity: guardando ? 0.7 : 1 }}
+              >
+                {guardando && <Loader2 size={14} className="animate-spin" />} Confirmar y guardar
+              </button>
+              <button
+                disabled={guardando}
+                onClick={() => setConfirmando(null)}
+                className="de-focus px-4 py-2.5 rounded-xl font-semibold text-sm border"
+                style={{ borderColor: "var(--line)", color: "var(--slate)" }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
         {mensaje && <p className="text-xs mt-2" style={{ color: mensaje.startsWith("No se") ? "var(--danger)" : "var(--teal)" }}>{mensaje}</p>}
         {!costosGuardados[fecha] && (
           <p className="text-xs mt-2" style={{ color: "var(--slate)" }}>Este día todavía no tiene costos guardados: se muestran los valores por defecto.</p>
