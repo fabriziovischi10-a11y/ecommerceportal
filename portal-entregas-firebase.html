@@ -196,6 +196,14 @@ const Fuel = (p) => (
   </IconBase>
 );
 
+const Calculator = (p) => (
+  <IconBase {...p}>
+    <rect x="4" y="2" width="16" height="20" rx="2" />
+    <path d="M8 6h8" />
+    <path d="M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h4" />
+  </IconBase>
+);
+
 /* ------------------------------------------------------------------ */
 /*  Constantes                                                         */
 /* ------------------------------------------------------------------ */
@@ -913,13 +921,14 @@ function AdminPanel({ db, choferes, setChoferes, zonas, setZonas, facturas, setF
     { id: "seguimiento", label: "Seguimiento", icon: ListChecks, desc: "Qué se entregó y qué falta" },
     { id: "mapa", label: "Mapa en vivo", icon: MapPin, desc: "Ubicación de los choferes" },
     { id: "combustible", label: "Combustible", icon: Fuel, desc: "Cargas registradas" },
+    { id: "costos", label: "Costos y rendimiento", icon: Calculator, desc: "Costo del viaje por día y tipo de rendimiento" },
     { id: "historial", label: "Historial", icon: Clock, desc: "Días cerrados" },
   ];
 
   const seccionActual = secciones.find((s) => s.id === tab);
 
   return (
-    <div className="max-w-md mx-auto px-4 pb-16">
+    <div className={`${tab === "costos" ? "max-w-4xl" : "max-w-md"} mx-auto px-4 pb-16`}>
       <div className="flex items-center justify-between pt-6 pb-4">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl flex items-center justify-center p-1.5 shrink-0" style={{ background: "var(--brand-yellow)" }}>
@@ -980,6 +989,7 @@ function AdminPanel({ db, choferes, setChoferes, zonas, setZonas, facturas, setF
           {tab === "mapa" && <MapaVivoTab db={db} choferes={choferes} zonas={zonas} facturas={facturas} />}
           {tab === "combustible" && <CombustibleTab combustible={combustible} choferes={choferes} vehiculos={vehiculos} />}
           {tab === "historial" && <HistorialTab historialDias={historialDias} />}
+          {tab === "costos" && <CostosTab db={db} facturas={facturas} combustible={combustible} historialDias={historialDias} />}
         </>
       )}
 
@@ -2753,6 +2763,470 @@ function HistorialTab({ historialDias }) {
         </div>
       )}
     </Card>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  COSTOS DE VIAJE POR DÍA Y RENDIMIENTO                               */
+/* ------------------------------------------------------------------ */
+
+/** Número escrito a mano: acepta "7500", "7.500,50", "7500,5" o "7500.5". */
+function parseNum(raw) {
+  if (raw == null) return 0;
+  const s = String(raw).trim();
+  if (!s) return 0;
+  const limpio = s.includes(",") ? s.replace(/\./g, "").replace(",", ".") : s;
+  const n = parseFloat(limpio.replace(/[^\d.-]/g, ""));
+  return isNaN(n) ? 0 : n;
+}
+
+function fechaLocalDe(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return null;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// Campos de costo que se cargan por día. Los "fijos" se pueden guardar como valores por defecto.
+const CAMPOS_COSTO = [
+  { id: "otros", label: "Otros costos / caja chica", fijo: false },
+  { id: "amortizacion", label: "Amortización", fijo: true },
+  { id: "gps", label: "GPS", fijo: true },
+  { id: "sueldoChofer", label: "Sueldo chofer", fijo: true },
+  { id: "sueldoCobrador", label: "Sueldo cobrador/a", fijo: true },
+];
+
+// Tipo de rendimiento según el costo del viaje sobre la facturación del día.
+const NIVELES_RENDIMIENTO = [
+  { max: 3, label: "Excelente", color: "var(--teal)", bg: "var(--teal-soft)" },
+  { max: 5, label: "Bueno", color: "var(--teal)", bg: "var(--teal-soft)" },
+  { max: 8, label: "Regular", color: "#9A6B00", bg: "var(--amber-soft)" },
+  { max: Infinity, label: "Bajo", color: "var(--danger)", bg: "var(--danger-soft)" },
+];
+
+function tipoRendimiento(r) {
+  if (!r.base) return { label: "Sin facturación", color: "var(--slate)", bg: "var(--paper)" };
+  if (!r.costoTotal) return { label: "Sin costos cargados", color: "var(--slate)", bg: "var(--paper)" };
+  if (r.utilidad < 0) return { label: "Pérdida", color: "white", bg: "var(--danger)" };
+  return NIVELES_RENDIMIENTO.find((n) => r.costoSobreFact * 100 <= n.max);
+}
+
+function formatPct(n) {
+  return (n * 100).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
+}
+
+function BadgeRendimiento({ r }) {
+  const t = tipoRendimiento(r);
+  return (
+    <span className="text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap" style={{ color: t.color, background: t.bg }}>
+      {t.label}
+    </span>
+  );
+}
+
+function CostosTab({ db, facturas, combustible, historialDias }) {
+  const [registros, setRegistros, loadingCostos] = useDbListDoc(db, "meta/costos");
+  const [ubicaciones, setUbicaciones] = useState({});
+  const hoy = fechaLocalHoy();
+  const [fecha, setFecha] = useState(hoy);
+  const [form, setForm] = useState(null);
+  const [guardando, setGuardando] = useState(false);
+  const [mensaje, setMensaje] = useState(null);
+
+  // Km de hoy en vivo (los días cerrados ya traen sus km en el historial).
+  useEffect(() => {
+    if (!db) return;
+    const unsub = db.collection("ubicaciones").onSnapshot(
+      (snap) => {
+        const nuevo = {};
+        snap.docs.forEach((d) => { nuevo[d.id] = d.data(); });
+        setUbicaciones(nuevo);
+      },
+      () => {}
+    );
+    return () => unsub();
+  }, [db]);
+
+  const config = registros.find((r) => r.id === "config") || {};
+  const base = config.base || "entregado"; // "entregado" | "total"
+  const costosGuardados = useMemo(() => {
+    const m = {};
+    registros.forEach((r) => { if (r.id !== "config" && r.fecha) m[r.fecha] = r; });
+    return m;
+  }, [registros]);
+
+  // Datos operativos de cada día: facturación, entregas, km y combustible.
+  const datosPorDia = useMemo(() => {
+    const dias = {};
+    const dia = (f) => (dias[f] = dias[f] || { fecha: f, facturas: {}, km: 0, litros: 0, litrosSinImporte: 0, combustible: 0, zonas: new Set() });
+
+    historialDias.forEach((h) => {
+      if (!h.fecha) return;
+      const d = dia(h.fecha);
+      d.km += h.kmRecorridos || 0;
+      if (h.zonaNombre) d.zonas.add(h.zonaNombre);
+      // Si el día se cerró más de una vez, una factura pendiente aparece repetida: se cuenta una sola vez.
+      (h.facturas || []).forEach((f) => {
+        const prev = d.facturas[f.id];
+        if (!prev || f.estado === "entregado") d.facturas[f.id] = f;
+      });
+    });
+
+    // Hoy: sumamos lo que sigue activo y los km que todavía no se cerraron.
+    const dHoy = dia(hoy);
+    facturas.forEach((f) => {
+      const prev = dHoy.facturas[f.id];
+      if (!prev || f.estado === "entregado") dHoy.facturas[f.id] = f;
+    });
+    Object.values(ubicaciones).forEach((u) => {
+      if (!u || u.fecha !== hoy) return;
+      const kmTotalesHoy = u.kmRecorridos != null ? u.kmRecorridos : kmDeHistorial(u.historial);
+      dHoy.km += Math.max(0, kmTotalesHoy - (u.kmYaCerrados || 0));
+    });
+
+    combustible.forEach((c) => {
+      const f = fechaLocalDe(c.fecha);
+      if (!f) return;
+      const d = dia(f);
+      const litros = parseFloat(String(c.litros).replace(",", ".")) || 0;
+      const importe = parseImporte(c.importe);
+      d.litros += litros;
+      // Las cargas sin importe se valorizan después con el precio por litro.
+      if (importe > 0) d.combustible += importe;
+      else d.litrosSinImporte += litros;
+    });
+
+    Object.keys(costosGuardados).forEach((f) => dia(f));
+
+    return Object.values(dias).map((d) => {
+      const lista = Object.values(d.facturas);
+      const entregadas = lista.filter((f) => f.estado === "entregado");
+      return {
+        fecha: d.fecha,
+        zonas: [...d.zonas],
+        cantFacturas: lista.length,
+        cantEntregadas: entregadas.length,
+        importeTotal: lista.reduce((s, f) => s + parseImporte(f.importe), 0),
+        importeEntregado: entregadas.reduce((s, f) => s + parseImporte(f.importe), 0),
+        km: Math.round(d.km * 10) / 10,
+        litros: d.litros,
+        litrosSinImporte: d.litrosSinImporte,
+        combustible: d.combustible,
+      };
+    }).sort((a, b) => b.fecha.localeCompare(a.fecha));
+  }, [historialDias, facturas, combustible, ubicaciones, costosGuardados, hoy]);
+
+  const valoresDe = (f) => {
+    const g = costosGuardados[f];
+    const v = {};
+    CAMPOS_COSTO.forEach((c) => {
+      v[c.id] = g && g[c.id] != null ? g[c.id] : (c.fijo && config[c.id] != null ? config[c.id] : "");
+    });
+    v.markup = g && g.markup != null ? g.markup : (config.markup != null ? config.markup : "");
+    v.precioLitro = g && g.precioLitro != null ? g.precioLitro : (config.precioLitro != null ? config.precioLitro : "");
+    v.km = g && g.km != null ? g.km : ""; // vacío = se usan los km del GPS
+    return v;
+  };
+
+  const calcular = (d, v) => {
+    const costos = {};
+    CAMPOS_COSTO.forEach((c) => { costos[c.id] = parseNum(v[c.id]); });
+    const combustibleCosto = d.combustible + (d.litrosSinImporte || 0) * parseNum(v.precioLitro);
+    const costoTotal = combustibleCosto + Object.values(costos).reduce((s, x) => s + x, 0);
+    const baseImporte = base === "total" ? d.importeTotal : d.importeEntregado;
+    const km = parseNum(v.km) > 0 ? parseNum(v.km) : d.km;
+    const markup = parseNum(v.markup) / 100;
+    const gananciaBruta = baseImporte * markup;
+    const utilidad = gananciaBruta - costoTotal;
+    return {
+      ...costos,
+      combustible: combustibleCosto,
+      costoTotal,
+      base: baseImporte,
+      markup,
+      gananciaBruta,
+      utilidad,
+      margenNeto: baseImporte ? utilidad / baseImporte : 0,
+      costoSobreFact: baseImporte ? costoTotal / baseImporte : 0,
+      costoPorKm: km ? costoTotal / km : null,
+      costoPorEntrega: d.cantEntregadas ? costoTotal / d.cantEntregadas : null,
+      kmPorLitro: km && d.litros ? km / d.litros : null,
+      km,
+    };
+  };
+
+  const diaSel = datosPorDia.find((d) => d.fecha === fecha) || {
+    fecha, zonas: [], cantFacturas: 0, cantEntregadas: 0, importeTotal: 0, importeEntregado: 0, km: 0, litros: 0, litrosSinImporte: 0, combustible: 0,
+  };
+
+  // Al cambiar de día (o cuando terminan de cargar los costos guardados) se rellena el formulario.
+  useEffect(() => {
+    if (loadingCostos) return;
+    setForm(valoresDe(fecha));
+    setMensaje(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fecha, loadingCostos]);
+
+  const v = form || valoresDe(fecha);
+  const r = calcular(diaSel, v);
+
+  const guardar = async (tambienPorDefecto) => {
+    setGuardando(true);
+    const registro = { id: fecha, fecha, ...v, actualizado: new Date().toISOString() };
+    let siguiente = registros.filter((x) => x.id !== fecha);
+    siguiente.push(registro);
+    if (tambienPorDefecto) {
+      const nuevaConfig = { ...config, id: "config", markup: v.markup, precioLitro: v.precioLitro };
+      CAMPOS_COSTO.filter((c) => c.fijo).forEach((c) => { nuevaConfig[c.id] = v[c.id]; });
+      siguiente = siguiente.filter((x) => x.id !== "config");
+      siguiente.push(nuevaConfig);
+    }
+    const ok = await setRegistros(siguiente);
+    setGuardando(false);
+    setMensaje(ok
+      ? (tambienPorDefecto ? "Guardado. Los costos fijos y el markup quedan como valores por defecto para los próximos días." : "Costos del día guardados.")
+      : "No se pudo guardar. Revisá la conexión y probá de nuevo.");
+  };
+
+  const cambiarBase = async (nueva) => {
+    const nuevaConfig = { ...config, id: "config", base: nueva };
+    await setRegistros([...registros.filter((x) => x.id !== "config"), nuevaConfig]);
+  };
+
+  const fechaLarga = (f) => new Date(f + "T00:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const fechaCorta = (f) => new Date(f + "T00:00:00").toLocaleDateString("es-AR", { weekday: "short", day: "numeric", month: "short" });
+
+  // Tabla de días: los que no tienen costos guardados usan los valores por defecto (se marcan como estimados).
+  const filas = datosPorDia.slice(0, 31).map((d) => ({ d, r: calcular(d, valoresDe(d.fecha)), guardado: !!costosGuardados[d.fecha] }));
+  const totales = filas.reduce((t, { d, r }) => ({
+    base: t.base + r.base, costo: t.costo + r.costoTotal, utilidad: t.utilidad + r.utilidad, km: t.km + r.km, entregas: t.entregas + d.cantEntregadas,
+  }), { base: 0, costo: 0, utilidad: 0, km: 0, entregas: 0 });
+  const rTotales = { base: totales.base, costoTotal: totales.costo, utilidad: totales.utilidad, costoSobreFact: totales.base ? totales.costo / totales.base : 0 };
+
+  const Kpi = ({ label, value, color, sub }) => (
+    <div className="rounded-xl p-3" style={{ background: "var(--paper)" }}>
+      <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--slate)" }}>{label}</p>
+      <p className="de-mono text-base font-semibold mt-1" style={{ color: color || "var(--ink)" }}>{value}</p>
+      {sub && <p className="text-[11px] mt-0.5" style={{ color: "var(--slate)" }}>{sub}</p>}
+    </div>
+  );
+
+  if (loadingCostos) {
+    return <Card><p className="text-sm flex items-center gap-2" style={{ color: "var(--slate)" }}><Loader2 size={16} className="animate-spin" /> Cargando costos...</p></Card>;
+  }
+
+  return (
+    <div className="space-y-5">
+      <Card>
+        <div className="flex flex-wrap items-end justify-between gap-3 mb-1">
+          <div>
+            <p className="de-display font-semibold">Costos del viaje por día</p>
+            <p className="text-sm" style={{ color: "var(--slate)" }}>{fechaLarga(fecha).replace(/^./, (x) => x.toUpperCase())}{fecha === hoy ? " · hoy (en curso)" : ""}</p>
+          </div>
+          <input
+            type="date"
+            value={fecha}
+            max={hoy}
+            onChange={(e) => e.target.value && setFecha(e.target.value)}
+            className="de-focus de-mono text-sm rounded-xl p-2.5 border"
+            style={{ borderColor: "var(--line)" }}
+          />
+        </div>
+        <p className="text-xs mb-4" style={{ color: "var(--slate)" }}>
+          {diaSel.zonas.length ? diaSel.zonas.join(", ") + " · " : ""}
+          {diaSel.cantEntregadas}/{diaSel.cantFacturas} entregadas · {formatKm(diaSel.km)} · {diaSel.litros.toLocaleString("es-AR")} L de combustible
+        </p>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {CAMPOS_COSTO.map((c) => (
+            <div key={c.id}>
+              <label className="text-xs font-semibold" style={{ color: "var(--slate)" }}>{c.label}</label>
+              <input
+                value={v[c.id]}
+                onChange={(e) => setForm({ ...v, [c.id]: e.target.value })}
+                placeholder="0"
+                inputMode="decimal"
+                className="de-focus de-mono w-full text-sm rounded-xl p-3 border mt-1"
+                style={{ borderColor: "var(--line)" }}
+              />
+            </div>
+          ))}
+          <div>
+            <label className="text-xs font-semibold" style={{ color: "var(--slate)" }}>Combustible (cargas del día)</label>
+            <div className="de-mono w-full text-sm rounded-xl p-3 border mt-1" style={{ borderColor: "var(--line)", background: "var(--paper)" }}>
+              {formatMoney(r.combustible)}
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-semibold" style={{ color: "var(--slate)" }}>Precio combustible ($/L)</label>
+            <input
+              value={v.precioLitro}
+              onChange={(e) => setForm({ ...v, precioLitro: e.target.value })}
+              placeholder="0"
+              inputMode="decimal"
+              className="de-focus de-mono w-full text-sm rounded-xl p-3 border mt-1"
+              style={{ borderColor: "var(--line)" }}
+            />
+            {diaSel.litrosSinImporte > 0 && (
+              <p className="text-[11px] mt-1" style={{ color: "var(--slate)" }}>
+                Se usa para {diaSel.litrosSinImporte.toLocaleString("es-AR")} L cargados sin importe.
+              </p>
+            )}
+          </div>
+          <div>
+            <label className="text-xs font-semibold" style={{ color: "var(--slate)" }}>Km del día (opcional)</label>
+            <input
+              value={v.km}
+              onChange={(e) => setForm({ ...v, km: e.target.value })}
+              placeholder={`GPS: ${diaSel.km.toLocaleString("es-AR")}`}
+              inputMode="decimal"
+              className="de-focus de-mono w-full text-sm rounded-xl p-3 border mt-1"
+              style={{ borderColor: "var(--line)" }}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold" style={{ color: "var(--slate)" }}>Markup sobre facturación (%)</label>
+            <input
+              value={v.markup}
+              onChange={(e) => setForm({ ...v, markup: e.target.value })}
+              placeholder="30"
+              inputMode="decimal"
+              className="de-focus de-mono w-full text-sm rounded-xl p-3 border mt-1"
+              style={{ borderColor: "var(--line)" }}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 mt-4">
+          <button
+            disabled={guardando}
+            onClick={() => guardar(false)}
+            className="de-focus px-4 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2"
+            style={{ background: "var(--route)", color: "white", opacity: guardando ? 0.7 : 1 }}
+          >
+            {guardando && <Loader2 size={14} className="animate-spin" />} Guardar costos del día
+          </button>
+          <button
+            disabled={guardando}
+            onClick={() => guardar(true)}
+            className="de-focus px-4 py-2.5 rounded-xl font-semibold text-sm border"
+            style={{ borderColor: "var(--route)", color: "var(--route)" }}
+          >
+            Guardar y usar como valores por defecto
+          </button>
+        </div>
+        {mensaje && <p className="text-xs mt-2" style={{ color: mensaje.startsWith("No se") ? "var(--danger)" : "var(--teal)" }}>{mensaje}</p>}
+        {!costosGuardados[fecha] && (
+          <p className="text-xs mt-2" style={{ color: "var(--slate)" }}>Este día todavía no tiene costos guardados: se muestran los valores por defecto.</p>
+        )}
+      </Card>
+
+      <Card>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <p className="de-display font-semibold">Rentabilidad del día</p>
+          <div className="flex items-center gap-2 text-xs">
+            <span style={{ color: "var(--slate)" }}>Calcular sobre:</span>
+            {[{ id: "entregado", label: "Lo entregado" }, { id: "total", label: "Todo lo cargado" }].map((o) => (
+              <button
+                key={o.id}
+                onClick={() => cambiarBase(o.id)}
+                className="de-focus px-2.5 py-1 rounded-full font-semibold"
+                style={base === o.id ? { background: "var(--route)", color: "white" } : { background: "var(--paper)", color: "var(--route)" }}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 rounded-xl p-4 mb-4" style={{ background: tipoRendimiento(r).bg }}>
+          <div className="flex-1 min-w-[180px]">
+            <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: tipoRendimiento(r).color }}>Tipo de rendimiento</p>
+            <p className="de-display text-2xl font-bold" style={{ color: tipoRendimiento(r).color }}>{tipoRendimiento(r).label}</p>
+          </div>
+          <p className="text-sm" style={{ color: tipoRendimiento(r).color }}>
+            {r.base ? <>El viaje costó el <b>{formatPct(r.costoSobreFact)}</b> de lo facturado.</> : "No hay facturación para este día."}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Kpi label={base === "total" ? "Facturación cargada" : "Facturación entregada"} value={formatMoney(r.base)} />
+          <Kpi label="Costo total del viaje" value={formatMoney(r.costoTotal)} color="var(--danger)" />
+          <Kpi label="Ganancia bruta (markup)" value={formatMoney(r.gananciaBruta)} sub={`${(r.markup * 100).toLocaleString("es-AR")}% de la facturación`} />
+          <Kpi label="Utilidad neta del día" value={formatMoney(r.utilidad)} color={r.utilidad < 0 ? "var(--danger)" : "var(--teal)"} sub={r.base ? `${formatPct(r.margenNeto)} de la facturación` : null} />
+          <Kpi label="Costo por km" value={r.costoPorKm != null ? formatMoney(r.costoPorKm) : "—"} sub={formatKm(r.km) + (parseNum(v.km) > 0 ? " (cargados a mano)" : " (GPS)")} />
+          <Kpi label="Costo por entrega" value={r.costoPorEntrega != null ? formatMoney(r.costoPorEntrega) : "—"} sub={`${diaSel.cantEntregadas} entregas`} />
+          <Kpi label="Rendimiento combustible" value={r.kmPorLitro != null ? r.kmPorLitro.toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + " km/L" : "—"} sub={r.kmPorLitro == null ? "faltan km o cargas" : null} />
+          <Kpi label="Costo sobre facturación" value={r.base ? formatPct(r.costoSobreFact) : "—"} />
+        </div>
+
+        <div className="mt-4 rounded-xl p-3 text-xs" style={{ background: "var(--paper)", color: "var(--slate)" }}>
+          <p className="font-semibold mb-1">Detalle del costo</p>
+          <p className="de-mono">
+            {[["Combustible", r.combustible], ...CAMPOS_COSTO.map((c) => [c.label, r[c.id]])]
+              .filter(([, x]) => x > 0)
+              .map(([l, x]) => `${l}: ${formatMoney(x)}`)
+              .join(" · ") || "Sin costos cargados"}
+          </p>
+          <p className="mt-2">
+            Tipo de rendimiento según costo del viaje sobre la facturación: hasta 3% Excelente · hasta 5% Bueno · hasta 8% Regular · más de 8% Bajo · si la utilidad neta da negativa, Pérdida.
+          </p>
+        </div>
+      </Card>
+
+      <Card>
+        <p className="de-display font-semibold mb-1">Últimos días</p>
+        <p className="text-sm mb-4" style={{ color: "var(--slate)" }}>Tocá un día para ver o cargar sus costos. Los marcados con * usan los valores por defecto.</p>
+        {filas.length === 0 ? (
+          <EmptyState icon={Clock} title="Sin días para mostrar" subtitle="Aparecen cuando hay facturas, km o cargas de combustible." />
+        ) : (
+          <div className="overflow-x-auto de-scrollbar">
+            <table className="w-full text-sm" style={{ minWidth: 720 }}>
+              <thead>
+                <tr className="text-left text-[10px] uppercase tracking-wide" style={{ color: "var(--slate)" }}>
+                  <th className="py-2 pr-2">Día</th>
+                  <th className="py-2 pr-2 text-right">Facturación</th>
+                  <th className="py-2 pr-2 text-right">Km</th>
+                  <th className="py-2 pr-2 text-right">Costo viaje</th>
+                  <th className="py-2 pr-2 text-right">$/km</th>
+                  <th className="py-2 pr-2 text-right">% costo</th>
+                  <th className="py-2 pr-2 text-right">Utilidad neta</th>
+                  <th className="py-2">Rendimiento</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filas.map(({ d, r: rf, guardado }) => (
+                  <tr
+                    key={d.fecha}
+                    onClick={() => { setFecha(d.fecha); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    className="cursor-pointer"
+                    style={{ borderTop: "1px solid var(--line)", background: d.fecha === fecha ? "var(--paper)" : "transparent" }}
+                  >
+                    <td className="py-2 pr-2 font-semibold capitalize whitespace-nowrap">{fechaCorta(d.fecha)}{guardado ? "" : " *"}</td>
+                    <td className="py-2 pr-2 text-right de-mono">{formatMoney(rf.base)}</td>
+                    <td className="py-2 pr-2 text-right de-mono">{rf.km.toLocaleString("es-AR")}</td>
+                    <td className="py-2 pr-2 text-right de-mono">{formatMoney(rf.costoTotal)}</td>
+                    <td className="py-2 pr-2 text-right de-mono">{rf.costoPorKm != null ? formatMoney(rf.costoPorKm) : "—"}</td>
+                    <td className="py-2 pr-2 text-right de-mono">{rf.base ? formatPct(rf.costoSobreFact) : "—"}</td>
+                    <td className="py-2 pr-2 text-right de-mono" style={{ color: rf.utilidad < 0 ? "var(--danger)" : "var(--teal)" }}>{formatMoney(rf.utilidad)}</td>
+                    <td className="py-2"><BadgeRendimiento r={rf} /></td>
+                  </tr>
+                ))}
+                <tr style={{ borderTop: "2px solid var(--ink)" }} className="font-bold">
+                  <td className="py-2 pr-2">Total</td>
+                  <td className="py-2 pr-2 text-right de-mono">{formatMoney(totales.base)}</td>
+                  <td className="py-2 pr-2 text-right de-mono">{(Math.round(totales.km * 10) / 10).toLocaleString("es-AR")}</td>
+                  <td className="py-2 pr-2 text-right de-mono">{formatMoney(totales.costo)}</td>
+                  <td className="py-2 pr-2 text-right de-mono">{totales.km ? formatMoney(totales.costo / totales.km) : "—"}</td>
+                  <td className="py-2 pr-2 text-right de-mono">{totales.base ? formatPct(totales.costo / totales.base) : "—"}</td>
+                  <td className="py-2 pr-2 text-right de-mono" style={{ color: totales.utilidad < 0 ? "var(--danger)" : "var(--teal)" }}>{formatMoney(totales.utilidad)}</td>
+                  <td className="py-2"><BadgeRendimiento r={rTotales} /></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
   );
 }
 
