@@ -505,6 +505,7 @@ details.det[open]>summary{border-bottom:1px solid var(--line)}
 .cbig span{color:var(--muted);font-weight:600}
 .cbar{flex:1 1 260px;display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--mute-soft);gap:2px}
 .cbar i,.cleg i{display:block}
+button.st.novlink{border:0;cursor:pointer;font:inherit;font-size:12px;font-weight:700}button.st.novlink:hover{filter:brightness(.93);text-decoration:underline}tr.ck.sel td{background:color-mix(in srgb,var(--c-nov) 10%,transparent)}
 .cbar i.ok,.cleg i.ok{background:var(--ok)} .cbar i.curso,.cleg i.curso{background:var(--info)} .cbar i.no,.cleg i.no{background:var(--bad)} .cbar i.pend,.cleg i.pend{background:var(--warn)}
 .cleg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
 .cleg span{display:inline-flex;align-items:center;gap:6px}
@@ -538,6 +539,7 @@ details.det[open]>summary{border-bottom:1px solid var(--line)}
   .flt{gap:6px}.flt>*{flex:1 1 140px}.flt .q{flex:1 1 100%}
   .seg2{width:100%;overflow-x:auto}.seg2 button{flex:1 0 auto}
   .pnh,.li{padding-inline:12px}
+  .li{grid-template-columns:minmax(0,1fr)}.li .r{justify-content:flex-start}
   /* tablas → tarjetas */
   .tw{overflow-x:visible}
   table.wide{min-width:0!important;border-collapse:separate}
@@ -648,7 +650,7 @@ const S={portones:[],personal:[],progzon:[],camiones:[],choferes:[],zonas:[],suc
 const loaded={};
 const UI={route:"inicio",fecha:today(),semana:monday(today()),progTab:"pv",cargaId:null,hojaId:null,
   sal:{desde:addD(today(),-15),hasta:addD(today(),7),canal:"",estado:"",q:""},
-  nov:{desde:addD(today(),-30),hasta:"",canal:"Preventa",tipo:"",estado:"",q:""},
+  nov:{desde:addD(today(),-30),hasta:"",canal:"Preventa",tipo:"",estado:"",ctrl:"",sal:"",q:""},
   cli:{zona:"",sin:""},q:{portones:"",personal:"",flota:"",choferes:"",zonas:"",sucursales:"",clientes:"",loc:""}};
 let db=null,user=null,uid=null,downloads=null,canWrite=true,ready=false;
 const get=(k,id)=>id?S[k].find(x=>x.id===id):undefined;
@@ -888,7 +890,7 @@ VIEWS.inicio=function(){
   +tile({href:"#logistica",cls:"m-log wide",ill:"truck",t:"Logística",p:"Órdenes de carga, hojas de ruta y viajes",meta:[pl(sal.length,"orden hoy","órdenes hoy"),enV+" en viaje",pc.n+" por cargar"]})
   +tile({href:"#programa",cls:"m-prog",ill:"cal",t:"Programación",p:"Zonas de preventa por día y programa semanal de sucursales",meta:[pc.n+" pendientes hoy"]})
   +tile({href:"#rutas",cls:"m-rut",ill:"route",t:"Rutas",p:"Excel de cada zona, clientes y localidades",meta:[pl(S.cargas.filter(c=>c.fecha>=addD(f,-1)).length,"zona cargada","zonas cargadas")]})
-  +tile({href:"#novedades",cls:"m-nov",ill:"alert",t:"Novedades",p:"Rechazos, roturas, faltantes y devoluciones",meta:[novA+" sin resolver"]})
+  +tile({act:"ver-nov",v:"todas",cls:"m-nov",ill:"alert",t:"Novedades",p:"Rechazos, roturas, faltantes y devoluciones",meta:[novA+" sin resolver"]})
   +tile({href:"#base",cls:"m-base",ill:"db",t:"Base de datos",p:"Flota, choferes, zonas, clientes y localidades",meta:[S.camiones.length+" unidades",S.choferes.length+" personas",S.clientes.length+" clientes"]})
   +'</div>';
 };
@@ -903,7 +905,7 @@ VIEWS.logistica=function(){
   +tile({href:"#hojas",cls:"m-hoja",ill:"sheet",t:"Hojas de ruta",p:"Orden de entrega de los clientes y km de cada tramo",meta:[pl(sal.length,"hoja hoy","hojas hoy")]})
   +tile({href:"#viajes",cls:"m-viaje",ill:"trip",t:"Viajes",p:"Salidas, regresos y km previstos contra reales",meta:[c("En ruta")+" en viaje",c("Finalizada")+" volvieron"]})
   
-  +tile({href:"#novedades",cls:"m-nov",ill:"alert",t:"Novedades de viaje",p:"Rechazos, roturas y faltantes de los repartos",meta:[S.novedades.filter(n=>n.estado!=="Resuelta").length+" sin resolver"]})
+  +tile({act:"ver-nov",v:"todas",cls:"m-nov",ill:"alert",t:"Novedades de viaje",p:"Rechazos, roturas y faltantes de los repartos",meta:[S.novedades.filter(n=>n.estado!=="Resuelta").length+" sin resolver"]})
   +tile({href:"#salidas",cls:"m-hist",ill:"hist",t:"Historial",p:"Todas las órdenes y viajes anteriores"})
   +'</div>';
 };
@@ -916,6 +918,8 @@ function nextBtn(s,big){
   if(s.estado==="En ruta")return'<button class="'+c+'" data-act="volvio" data-id="'+s.id+'">'+IC.check+'Marcar regreso</button>';
   return"";
 }
+/** chip tocable: lleva a Novedades filtrado por esa orden */
+const novBtn=(s,n,lbl)=>'<button class="st bad novlink" data-act="ver-nov" data-id="'+s.id+'" data-v="'+esc(s.canal)+'" title="Ver las novedades de esta orden">'+esc(lbl||pl(n,"novedad","novedades"))+' ›</button>';
 function ordenCard(s){
   const pv=s.canal==="Preventa",anul=s.estado==="Anulada",p=plan(s);
   const nn=S.novedades.filter(n=>n.salidaId===s.id).length;
@@ -930,7 +934,7 @@ function ordenCard(s){
     +'<div class="m">'+camP(s.camionId)+(s.acopladoId?'<span class="tag ac">+ acoplado '+esc((get("camiones",s.acopladoId)||{}).patente||"")+'</span>':"")+'<span><b>'+chofN(s.choferId)+'</b>'+(s.cobradorId?' · cobra '+chofN(s.cobradorId):"")+'</span>'
     +(s.portonId?'<span class="tag">'+esc(portT(s.portonId))+'</span>':"")+'<span>'+esc(rutaT(p))+'</span><span>'+pl(p.stops.length,"parada","paradas")+'</span>'
     +(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b> previstos</span>':"")+(kmR!=null?'<span>'+fKm(kmR)+' reales</span>':"")
-    +(pv&&!anul&&!cargasDe(s).length?chip("Falta cargar el Excel en la hoja","warn"):"")+(nn?chip(pl(nn,"novedad","novedades"),"bad"):"")+'</div></article>';
+    +(pv&&!anul&&!cargasDe(s).length?chip("Falta cargar el Excel en la hoja","warn"):"")+(nn?novBtn(s,nn):"")+'</div></article>';
 }
 VIEWS.ordenes=function(){
   const f=UI.fecha,isToday=f===today(),sal=salDia(f),act=sal.filter(actSal),pc=porCargar(f);
@@ -1111,7 +1115,7 @@ VIEWS.hoja=function(){
   const cam=get("camiones",s.camionId)||{},acop=get("camiones",s.acopladoId);
   let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Hojas de ruta","hojas"],["N° "+nro(s)]),"Hoja de ruta N° "+nro(s),
     estChip(s)+'<button class="btn '+(dz?"save on":"save")+' w" data-act="grabar" data-id="'+s.id+'"'+(dz?"":" disabled")+'>'+(dz?IC.save+"Grabar":IC.check+"Grabado")+'</button>'
-    +'<button class="btn" data-act="open-orden" data-id="'+s.id+'">'+IC.edit+'Ver orden de carga</button>'+nextBtn(s,1)+'<button class="btn" data-act="dl-hoja" data-id="'+s.id+'">'+IC.dl+'Imprimir</button>'
+    +'<button class="btn" data-act="open-orden" data-id="'+s.id+'">'+IC.edit+'Ver orden de carga</button>'+(S.novedades.some(n=>n.salidaId===s.id)?'<button class="btn" data-act="ver-nov" data-id="'+s.id+'" data-v="'+esc(s.canal)+'">'+IC.alert+'Novedades <b class="cnt">'+S.novedades.filter(n=>n.salidaId===s.id).length+'</b></button>':"")+nextBtn(s,1)+'<button class="btn" data-act="dl-hoja" data-id="'+s.id+'">'+IC.dl+'Imprimir</button>'
     +dots([{a:"prev-hoja",id:s.id,i:"file",t:"Ver formato de impresión"},{a:"csv-hoja",id:s.id,i:"list",t:"Exportar paradas (CSV)"},{a:"edit-sal",id:s.id,i:"edit",t:"Editar orden de carga"},{a:"nov-sal",id:s.id,i:"alert",t:"Registrar novedad",w:1},"-",{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar hoja de ruta",dng:1,w:1}]),"sheet");
   if(dz)h+='<div class="savebar"><span>'+IC.alert+' Tenés cambios sin grabar en esta hoja de ruta.</span><span class="pa"><button class="btn ghost" data-act="descartar" data-id="'+s.id+'">Descartar</button><button class="btn save on" data-act="grabar" data-id="'+s.id+'">'+IC.save+'Grabar cambios</button></span></div>';
   h+='<section class="pn"><div class="doc-grid">'
@@ -1125,7 +1129,7 @@ VIEWS.hoja=function(){
     +'<div class="kpi"><span class="k">'+(pv?"Clientes":"Envíos")+'</span><span class="v">'+p.stops.length+'</span><span class="s">'+(pv?fM(p.stops.reduce((t,r)=>t+(Number(r.total)||0),0))+" facturado":esc(s.remitos||""))+'</span></div>'
     +'<div class="kpi"><span class="k">Portón de carga</span><span class="v" style="font-size:19px">'+esc(portT(s.portonId))+'</span><span class="s">'+(s.controladorId?"Controló "+esc(persT(s.controladorId)):"Sin controlador")+'</span></div></div>';
   if(!pv){const nn=S.novedades.filter(n=>n.salidaId===s.id).sort((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||""));
-    h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-nov)"></span>Observaciones de las sucursales</h2><button class="btn wa w" data-act="wa" data-id="'+s.id+'">'+IC.chat+'Cargar mensaje de WhatsApp</button></div>'
+    h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-nov)"></span>Observaciones de las sucursales</h2><span class="pa">'+(nn.length?'<button class="btn" data-act="ver-nov" data-id="'+s.id+'" data-v="Sucursales">Ver en Novedades ›</button>':"")+'<button class="btn wa w" data-act="wa" data-id="'+s.id+'">'+IC.chat+'Cargar mensaje de WhatsApp</button></span></div>'
       +(nn.length?'<div class="list">'+nn.map(n=>'<div class="li" data-act="edit-nov" data-id="'+n.id+'" style="cursor:pointer"><div><div class="t">'+esc(n.sucursalId?sucT(n.sucursalId):"Sin sucursal")+' · '+esc(n.tipo)+(n.producto?' · '+esc(n.producto)+(n.cantidad?' ('+fN(n.cantidad)+')':""):"")+'</div><div class="d">'+esc(n.descripcion)+(n.origen==="WhatsApp"?'<span class="tag wa">WhatsApp</span>':"")+'</div></div><div class="r">'+chip(n.estado,novEstCls[n.estado]||"mute")+'</div></div>').join("")+'</div>'
         :'<div class="none">Sin observaciones todavía. Cuando los encargados manden su mensaje, pegalo acá.</div>')+'</section>'}
   if(pv){
@@ -1264,8 +1268,8 @@ function locOpts(v,blank,first){const L=LOC();const ids=Object.keys(L).sort((a,b
   return(blank?'<option value="">'+(typeof blank==="string"?blank:"Elegí la localidad")+'</option>':"")+heads+Object.keys(grp).sort().map(p=>'<optgroup label="'+esc(p)+'">'+grp[p].map(([id,n])=>'<option value="'+esc(id)+'"'+(id===v?" selected":"")+'>'+esc(n)+'</option>').join("")+'</optgroup>').join("")+(v&&!L[v]?'<option value="'+esc(v)+'" selected>'+esc(locName(v))+' (sin ubicar)</option>':"")}
 
 /* ---- novedades ---- */
-function novFiltered(){const F=UI.nov,q=F.q.trim().toLowerCase();
-  return S.novedades.filter(n=>(!F.desde||n.fecha>=F.desde)&&(!F.hasta||n.fecha<=F.hasta)&&(!F.canal||n.canal===F.canal)&&(!F.tipo||n.tipo===F.tipo)&&(!F.estado||n.estado===F.estado)&&(!q||[n.cliente,n.pedido,n.producto,n.descripcion,n.resolucion,n.responsable,chofT(n.choferId)].join(" ").toLowerCase().includes(q))).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||"")||(b.createdAt||"").localeCompare(a.createdAt||""))}
+function novFiltered(noCtrl){const F=UI.nov,q=F.q.trim().toLowerCase();
+  return S.novedades.filter(n=>(!F.desde||n.fecha>=F.desde)&&(!F.hasta||n.fecha<=F.hasta)&&(!F.canal||n.canal===F.canal)&&(!F.tipo||n.tipo===F.tipo)&&(!F.estado||n.estado===F.estado)&&(noCtrl||!F.ctrl||(F.ctrl==="-"?!n.controladorId:n.controladorId===F.ctrl))&&(!F.sal||n.salidaId===F.sal)&&(!q||[n.cliente,n.pedido,n.producto,n.descripcion,n.resolucion,n.responsable,chofT(n.choferId),persT(n.controladorId)].join(" ").toLowerCase().includes(q))).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||"")||(b.createdAt||"").localeCompare(a.createdAt||""))}
 VIEWS.novedades=function(){
   if(!UI.nov.canal)UI.nov.canal="Preventa";
   const F=UI.nov,suc=F.canal==="Sucursales",list=novFiltered(),by={};list.forEach(n=>by[n.tipo]=(by[n.tipo]||0)+1);
@@ -1276,18 +1280,33 @@ VIEWS.novedades=function(){
   if(suc){
     const viajes=S.salidas.filter(s=>s.canal==="Sucursales"&&actSal(s)&&s.fecha>=addD(today(),-7)).sort((a,b)=>b.fecha.localeCompare(a.fecha)).slice(0,8);
     if(viajes.length)h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-nov)"></span>Viajes a sucursales de los últimos días</h2><span class="s">Cargá lo que te mandan por WhatsApp en el viaje que corresponde</span></div><div class="list">'
-      +viajes.map(s=>{const nn=S.novedades.filter(n=>n.salidaId===s.id);return'<div class="li"><div><div class="t"><span class="nro">N° '+nro(s)+'</span> '+esc(destT(s))+'</div><div class="d"><span>'+fDL(s.fecha)+'</span>'+camP(s.camionId)+'<span>'+chofN(s.choferId)+'</span>'+estChip(s)+(nn.length?chip(pl(nn.length,"observación","observaciones"),"warn"):chip("Sin observaciones","ok"))+'</div></div><div class="r"><button class="btn sm wa w" data-act="wa" data-id="'+s.id+'">'+IC.chat+'WhatsApp</button><button class="btn sm" data-act="open-hoja" data-id="'+s.id+'">Ver viaje</button></div></div>'}).join("")+'</div></section>';
+      +viajes.map(s=>{const nn=S.novedades.filter(n=>n.salidaId===s.id);return'<div class="li"><div><div class="t"><span class="nro">N° '+nro(s)+'</span> '+esc(destT(s))+'</div><div class="d"><span>'+fDL(s.fecha)+'</span>'+camP(s.camionId)+'<span>'+chofN(s.choferId)+'</span>'+estChip(s)+(nn.length?'<button class="st warn novlink" data-act="ver-nov" data-id="'+s.id+'" data-v="Sucursales">'+pl(nn.length,"observación","observaciones")+' ›</button>':chip("Sin observaciones","ok"))+'</div></div><div class="r"><button class="btn sm wa w" data-act="wa" data-id="'+s.id+'">'+IC.chat+'WhatsApp</button><button class="btn sm" data-act="open-hoja" data-id="'+s.id+'">Ver viaje</button></div></div>'}).join("")+'</div></section>';
   }
-  h+='<div class="flt"><input class="q" id="n_q" type="search" data-ui="nov.q" value="'+esc(F.q)+'" placeholder="Buscar '+(suc?"sucursal, producto, mensaje…":"cliente, remito, producto, chofer…")+'" aria-label="Buscar"><select id="n_tipo" data-ui="nov.tipo" aria-label="Tipo">'+opts([["","Todos los tipos"]].concat(TIPOS),F.tipo)+'</select><select id="n_estado" data-ui="nov.estado" aria-label="Estado">'+opts([["","Todos los estados"],"Abierta","En gestión","Resuelta"],F.estado)+'</select><label>Desde <input type="date" id="n_desde" data-ui="nov.desde" value="'+F.desde+'"></label><label>Hasta <input type="date" id="n_hasta" data-ui="nov.hasta" value="'+F.hasta+'"></label></div>';
+  h+='<div class="flt"><input class="q" id="n_q" type="search" data-ui="nov.q" value="'+esc(F.q)+'" placeholder="Buscar '+(suc?"sucursal, producto, mensaje…":"cliente, remito, producto, chofer…")+'" aria-label="Buscar"><select id="n_tipo" data-ui="nov.tipo" aria-label="Tipo">'+opts([["","Todos los tipos"]].concat(TIPOS),F.tipo)+'</select><select id="n_estado" data-ui="nov.estado" aria-label="Estado">'+opts([["","Todos los estados"],"Abierta","En gestión","Resuelta"],F.estado)+'</select><select id="n_ctrl" data-ui="nov.ctrl" aria-label="Controlador">'+opts([["","Todos los controladores"],["-","Sin controlador"]].concat(S.personal.filter(x=>x.rol==="Controlador"||S.novedades.some(n=>n.controladorId===x.id)).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre))).map(x=>[x.id,x.nombre])),F.ctrl)+'</select><label>Desde <input type="date" id="n_desde" data-ui="nov.desde" value="'+F.desde+'"></label><label>Hasta <input type="date" id="n_hasta" data-ui="nov.hasta" value="'+F.hasta+'"></label></div>';
+  if(F.sal){const so=get("salidas",F.sal);h+='<div class="banner">'+IC.alert+' Mostrando solo las novedades de la orden <b>N° '+esc(so?nro(so):"?")+'</b>'+(so?' · '+esc(destT(so))+' · '+fDL(so.fecha):"")+' <button class="btn sm" data-act="nov-allsal">Ver todas</button>'+(so?' <button class="btn sm ghost" data-act="open-hoja" data-id="'+so.id+'">Ir a la hoja de ruta</button>':"")+'</div>'}
+  if(!F.sal)h+=ctrlStats(F);
   h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-nov)"></span>'+pl(list.length,suc?"observación de sucursales":"novedad de preventa",suc?"observaciones de sucursales":"novedades de preventa")+'</h2><span class="s">'+list.filter(n=>n.estado!=="Resuelta").length+' sin resolver</span></div>'
   +(Object.keys(by).length?'<div class="pnb flt">'+Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([t,n])=>'<button class="btn sm'+(F.tipo===t?" pri":"")+'" data-act="nov-tipo" data-v="'+esc(t)+'">'+esc(t)+' <b>'+n+'</b></button>').join("")+'</div>':"");
   if(!list.length)return h+'<div class="none">'+(suc?"No hay observaciones de sucursales en estas fechas. Tocá «Cargar mensaje de WhatsApp» para cargar lo que mandan los encargados.":"No hay novedades de preventa en estas fechas.")+'</div></section>';
-  if(suc)h+='<div class="tw"><table class="wide"><thead><tr><th>Fecha</th><th>Viaje</th><th>Sucursal</th><th>Tipo</th><th>Producto</th><th>Observación</th><th>Origen</th><th>Estado</th></tr></thead><tbody>'
-    +list.map(n=>{const s=get("salidas",n.salidaId);return'<tr class="ck" data-act="edit-nov" data-id="'+n.id+'"><td class="mono">'+fDL(n.fecha)+'</td><td>'+(s?'<span class="nro">'+nro(s)+'</span>':'<span class="mu">—</span>')+'</td><td><b>'+esc(n.sucursalId?sucT(n.sucursalId):"—")+'</b></td><td><b>'+esc(n.tipo)+'</b></td><td>'+esc(n.producto||"—")+(n.cantidad!=null&&n.cantidad!==""?'<div class="sub">'+fN(n.cantidad)+' u.</div>':"")+'</td><td class="wrap">'+esc(n.descripcion)+(n.resolucion?'<div class="sub">↳ '+esc(n.resolucion)+'</div>':"")+'</td><td>'+(n.origen==="WhatsApp"?'<span class="tag wa">WhatsApp</span>':'<span class="tag">Manual</span>')+'</td><td>'+chip(n.estado,novEstCls[n.estado]||"mute")+'</td></tr>'}).join("")+'</tbody></table></div>';
-  else h+='<div class="tw"><table class="wide"><thead><tr><th>Fecha</th><th>Orden</th><th>Cliente · remito</th><th>Tipo</th><th>Qué pasó</th><th>Chofer</th><th class="num">Importe</th><th>Estado</th></tr></thead><tbody>'
-    +list.map(n=>{const s=get("salidas",n.salidaId);return'<tr class="ck" data-act="edit-nov" data-id="'+n.id+'"><td class="mono">'+fDL(n.fecha)+'</td><td>'+(s?'<span class="nro">'+nro(s)+'</span>':'<span class="mu">—</span>')+'<div class="sub">'+esc(n.zonaId?zonaT(n.zonaId):"")+'</div></td><td>'+esc(n.cliente||"—")+(n.pedido?'<div class="sub mono">'+esc(n.pedido)+'</div>':"")+'</td><td><b>'+esc(n.tipo)+'</b>'+(n.producto?'<div class="sub">'+esc(n.producto)+'</div>':"")+'</td><td class="wrap">'+esc(n.descripcion)+(n.resolucion?'<div class="sub">↳ '+esc(n.resolucion)+'</div>':"")+'</td><td>'+chofN(n.choferId)+'</td><td class="num mono">'+fM(n.importe)+'</td><td>'+chip(n.estado,novEstCls[n.estado]||"mute")+'</td></tr>'}).join("")+'</tbody></table></div>';
+  if(suc)h+='<div class="tw"><table class="wide"><thead><tr><th>Fecha</th><th>Viaje</th><th>Sucursal</th><th>Tipo</th><th>Producto</th><th>Observación</th><th>Controlador</th><th>Origen</th><th>Estado</th></tr></thead><tbody>'
+    +list.map(n=>{const s=get("salidas",n.salidaId);return'<tr class="ck" data-act="edit-nov" data-id="'+n.id+'"><td class="mono">'+fDL(n.fecha)+'</td><td>'+(s?'<span class="nro">'+nro(s)+'</span>':'<span class="mu">—</span>')+'</td><td><b>'+esc(n.sucursalId?sucT(n.sucursalId):"—")+'</b></td><td><b>'+esc(n.tipo)+'</b></td><td>'+esc(n.producto||"—")+(n.cantidad!=null&&n.cantidad!==""?'<div class="sub">'+fN(n.cantidad)+' u.</div>':"")+'</td><td class="wrap">'+esc(n.descripcion)+(n.resolucion?'<div class="sub">↳ '+esc(n.resolucion)+'</div>':"")+'</td><td>'+(n.controladorId?esc(persT(n.controladorId)):'<span class="mu">—</span>')+'</td><td>'+(n.origen==="WhatsApp"?'<span class="tag wa">WhatsApp</span>':'<span class="tag">Manual</span>')+'</td><td>'+chip(n.estado,novEstCls[n.estado]||"mute")+'</td></tr>'}).join("")+'</tbody></table></div>';
+  else h+='<div class="tw"><table class="wide"><thead><tr><th>Fecha</th><th>Orden</th><th>Cliente · remito</th><th>Tipo</th><th>Qué pasó</th><th>Chofer · controlador</th><th class="num">Importe</th><th>Estado</th></tr></thead><tbody>'
+    +list.map(n=>{const s=get("salidas",n.salidaId);return'<tr class="ck" data-act="edit-nov" data-id="'+n.id+'"><td class="mono">'+fDL(n.fecha)+'</td><td>'+(s?'<span class="nro">'+nro(s)+'</span>':'<span class="mu">—</span>')+'<div class="sub">'+esc(n.zonaId?zonaT(n.zonaId):"")+'</div></td><td>'+esc(n.cliente||"—")+(n.pedido?'<div class="sub mono">'+esc(n.pedido)+'</div>':"")+'</td><td><b>'+esc(n.tipo)+'</b>'+(n.producto?'<div class="sub">'+esc(n.producto)+'</div>':"")+'</td><td class="wrap">'+esc(n.descripcion)+(n.resolucion?'<div class="sub">↳ '+esc(n.resolucion)+'</div>':"")+'</td><td>'+chofN(n.choferId)+(n.controladorId?'<div class="sub">Ctrl: '+esc(persT(n.controladorId))+'</div>':"")+'</td><td class="num mono">'+fM(n.importe)+'</td><td>'+chip(n.estado,novEstCls[n.estado]||"mute")+'</td></tr>'}).join("")+'</tbody></table></div>';
   return h+'</section>';
 };
+
+/** estadística: observaciones por controlador en el período (y por cada orden que controló) */
+function ctrlStats(F){
+  const list=novFiltered(true),by={};list.forEach(n=>{const k=n.controladorId||"-";(by[k]=by[k]||[]).push(n)});
+  const ords=S.salidas.filter(s=>actSal(s)&&s.controladorId&&(!F.canal||s.canal===F.canal)&&(!F.desde||s.fecha>=F.desde)&&(!F.hasta||s.fecha<=F.hasta));
+  const ctrls=new Set(Object.keys(by).concat(ords.map(s=>s.controladorId)));if(!ctrls.size)return"";
+  const top=["Faltante","Rotura","Sobrante"];const tot=list.length||1;
+  const rows=[...ctrls].map(k=>{const a=by[k]||[],o=ords.filter(s=>s.controladorId===k).length;return{k,n:a.length,o,t:top.map(t=>a.filter(x=>x.tipo===t).length),otros:a.filter(x=>!top.includes(x.tipo)).length,ab:a.filter(x=>x.estado!=="Resuelta").length}}).sort((a,b)=>b.n-a.n||(a.k==="-")-(b.k==="-"));
+  const mx=Math.max(1,...rows.map(r=>r.n));
+  return'<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-prog)"></span>Observaciones por controlador</h2><span class="s">Período y canal del filtro · tocá una fila para ver sus observaciones</span></div><div class="tw"><table class="wide"><thead><tr><th>Controlador</th><th class="num">Órdenes controladas</th><th class="num">Observaciones</th><th style="width:22%"></th><th class="num">Por orden</th>'+top.map(t=>'<th class="num">'+t+'s</th>').join("")+'<th class="num">Otras</th><th class="num">Sin resolver</th></tr></thead><tbody>'
+   +rows.map(r=>'<tr class="ck'+(F.ctrl===r.k?" sel":"")+'" data-act="nov-ctrl" data-v="'+esc(F.ctrl===r.k?"":r.k)+'"><td><b>'+(r.k==="-"?'<span class="mu">Sin controlador</span>':esc(persT(r.k)||"(eliminado)"))+'</b></td><td class="num mono">'+(r.k==="-"?"—":r.o)+'</td><td class="num mono"><b>'+r.n+'</b> <span class="sub">'+Math.round(r.n*100/tot)+'%</span></td><td><div style="height:10px;border-radius:6px;background:var(--line,#e6e8ef);overflow:hidden"><div style="height:100%;width:'+Math.round(r.n*100/mx)+'%;background:var(--c-nov)"></div></div></td><td class="num mono">'+(r.k!=="-"&&r.o?(r.n/r.o).toLocaleString("es-AR",{maximumFractionDigits:1}):"—")+'</td>'+r.t.map(v=>'<td class="num mono">'+(v||"·")+'</td>').join("")+'<td class="num mono">'+(r.otros||"·")+'</td><td class="num mono">'+(r.ab?'<span class="st bad">'+r.ab+'</span>':"·")+'</td></tr>').join("")
+   +'</tbody></table></div></section>';
+}
 
 /* ---- depósito: portones y personal ---- */
 VIEWS.portones=function(){
@@ -1552,6 +1571,8 @@ function formCfg(){
 
 /* ================= depósito: formularios ================= */
 const portOpts=()=>S.portones.filter(x=>isActive(x)).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),undefined,{numeric:true})).map(x=>[x.id,x.nombre]);
+/** controladores para observaciones: activos + el ya elegido; si no hay ninguno cargado, todo el personal */
+const ctrlOptsNov=cur=>{let l=S.personal.filter(x=>(isActive(x)&&x.rol==="Controlador")||x.id===cur);if(!l.some(x=>x.rol==="Controlador"))l=S.personal.filter(x=>isActive(x)||x.id===cur);return l.sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre))).map(x=>[x.id,x.nombre+(x.legajo?" · "+x.legajo:"")])};
 const ctrlOpts=()=>S.personal.filter(x=>isActive(x)&&x.rol==="Controlador").sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre))).map(x=>[x.id,x.nombre+(x.legajo?" · "+x.legajo:"")]);
 function formPorton(x){
   openForm({title:x?x.nombre:"Nuevo portón",color:"c-base",values:x||{estado:"Activo"},ok:"Portón guardado",
@@ -1683,19 +1704,20 @@ function formCaja(s){
 /* ================= novedades ================= */
 function formNov(n,pre){
   const v=n?Object.assign({},n):Object.assign({fecha:today(),canal:"Preventa",estado:"Abierta",prioridad:"Media"},pre||{});
-  if(!n&&v.salidaId){const s=get("salidas",v.salidaId);if(s){Object.assign(v,{fecha:s.fecha,canal:s.canal,camionId:s.camionId,choferId:s.choferId});if(!v.destino)v.destino=s.canal==="Preventa"?(s.zonaIds||[]).map(z=>"z:"+z)[0]:(s.sucursalIds||[]).map(x=>"s:"+x)[0]}}
+  if(!n&&v.salidaId){const s=get("salidas",v.salidaId);if(s){Object.assign(v,{fecha:s.fecha,canal:s.canal,camionId:s.camionId,choferId:s.choferId,controladorId:s.controladorId||""});if(!v.destino)v.destino=s.canal==="Preventa"?(s.zonaIds||[]).map(z=>"z:"+z)[0]:(s.sucursalIds||[]).map(x=>"s:"+x)[0]}}
   if(n)v.destino=n.zonaId?"z:"+n.zonaId:n.sucursalId?"s:"+n.sucursalId:"";
   const salOpts=()=>S.salidas.filter(s=>actSal(s)&&s.fecha>=addD(today(),-60)||s.id===v.salidaId).sort((a,b)=>b.fecha.localeCompare(a.fecha)).map(s=>[s.id,"N° "+nro(s)+" · "+fD(s.fecha)+" · "+((get("camiones",s.camionId)||{}).patente||"")+" · "+chofT(s.choferId)]);
   const destOpts=()=>[{group:"Zonas",items:S.zonas.map(z=>["z:"+z.id,zonaT(z.id)])},{group:"Sucursales",items:S.sucursales.map(s=>["s:"+s.id,s.nombre])}];
   openForm({title:n?"Novedad · "+n.tipo:"Registrar novedad",color:"c-nov",values:v,meta:metaOf(n),ok:n?"Novedad actualizada":"Novedad registrada",advOpen:!!n,advLabel:"Camión, producto, importe y seguimiento",
     fields:[{k:"tipo",label:"Tipo",type:"select",req:true,blank:"Elegí el tipo",options:TIPOS},{k:"fecha",label:"Fecha",type:"date",req:true},{k:"estado",label:"Estado",type:"select",blank:false,options:["Abierta","En gestión","Resuelta"]},
       {k:"salidaId",label:"Orden de carga",type:"select",blank:"Sin vincular",options:salOpts,two:true},{k:"destino",label:"Zona / sucursal",type:"select",options:destOpts},
+      {k:"controladorId",label:"Controlador de la carga",type:"select",blank:"Sin controlador",options:()=>ctrlOptsNov(v.controladorId),help:"Quién controló la carga · sale de la orden de carga"},
       {k:"cliente",label:"Cliente",two:true},{k:"pedido",label:"Factura / remito"},
       {k:"descripcion",label:"Qué pasó",type:"textarea",full:true,req:true},
       {k:"canal",label:"Canal",type:"seg",options:["Preventa","Sucursales"],adv:1},{k:"camionId",label:"Camión",type:"select",options:()=>camOpts(false),adv:1},{k:"choferId",label:"Chofer",type:"select",options:()=>perOpts(),adv:1},
       {k:"producto",label:"Producto",two:true,adv:1},{k:"cantidad",label:"Cantidad",type:"number",adv:1},{k:"importe",label:"Importe ($)",type:"number",adv:1},{k:"prioridad",label:"Prioridad",type:"select",blank:false,options:["Baja","Media","Alta"],adv:1},{k:"responsable",label:"Responsable",adv:1},
       {k:"resolucion",label:"Resolución",type:"textarea",full:true,adv:1}],
-    after:F=>{if(n&&n.mensaje){const x=document.createElement("div");x.className="wamsg";x.innerHTML='<small>Mensaje original de WhatsApp</small>'+esc(n.mensaje).replace(/\n/g,"<br>");F.querySelector('[data-f="descripcion"]').after(x)}F.elements.salidaId.addEventListener("change",()=>{const s=get("salidas",F.elements.salidaId.value);if(!s)return;F.elements.fecha.value=s.fecha;F.elements.camionId.value=s.camionId||"";F.elements.choferId.value=s.choferId||"";F.querySelectorAll('input[name="canal"]').forEach(r=>r.checked=r.value===s.canal);const d=s.canal==="Preventa"?(s.zonaIds||[])[0]&&"z:"+s.zonaIds[0]:(s.sucursalIds||[])[0]&&"s:"+s.sucursalIds[0];if(d)F.elements.destino.value=d})},
+    after:F=>{if(n&&n.mensaje){const x=document.createElement("div");x.className="wamsg";x.innerHTML='<small>Mensaje original de WhatsApp</small>'+esc(n.mensaje).replace(/\n/g,"<br>");F.querySelector('[data-f="descripcion"]').after(x)}F.elements.salidaId.addEventListener("change",()=>{const s=get("salidas",F.elements.salidaId.value);if(!s)return;F.elements.fecha.value=s.fecha;F.elements.camionId.value=s.camionId||"";F.elements.choferId.value=s.choferId||"";if(s.controladorId)F.elements.controladorId.value=s.controladorId;F.querySelectorAll('input[name="canal"]').forEach(r=>r.checked=r.value===s.canal);const d=s.canal==="Preventa"?(s.zonaIds||[])[0]&&"z:"+s.zonaIds[0]:(s.sucursalIds||[])[0]&&"s:"+s.sucursalIds[0];if(d)F.elements.destino.value=d})},
     save:async d=>{const dest=d.destino||"";delete d.destino;d.zonaId=dest.startsWith("z:")?dest.slice(2):null;d.sucursalId=dest.startsWith("s:")?dest.slice(2):null;if(d.estado==="Resuelta"&&!(n&&n.estado==="Resuelta"))d.resueltaAt=new Date().toISOString();await write("novedades",n&&n.id,d)},
     del:n&&(()=>del("novedades",n.id))});
 }
@@ -1964,12 +1986,14 @@ function formWhats(salidaId){let items=[],raw="";
   const s0=get("salidas",salidaId);
   const salOpts=()=>S.salidas.filter(s=>s.canal==="Sucursales"&&actSal(s)&&s.fecha>=addD(today(),-30)||s.id===salidaId).sort((a,b)=>b.fecha.localeCompare(a.fecha)).map(s=>[s.id,"N° "+nro(s)+" · "+fD(s.fecha)+" · "+destT(s).slice(0,60)]);
   const sucOpts=v=>'<option value="">Sucursal…</option>'+S.sucursales.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(x=>'<option value="'+x.id+'"'+(x.id===v?" selected":"")+'>'+esc(x.nombre)+'</option>').join("");
-  openForm({title:"Cargar mensaje de WhatsApp",color:"c-nov",values:{salidaId:salidaId||"",fecha:s0?s0.fecha:today()},ok:"Observaciones grabadas",saveLabel:"Grabar observaciones",
+  openForm({title:"Cargar mensaje de WhatsApp",color:"c-nov",values:{salidaId:salidaId||"",fecha:s0?s0.fecha:today(),controladorId:s0&&s0.controladorId||""},ok:"Observaciones grabadas",saveLabel:"Grabar observaciones",
     fields:[{k:"salidaId",label:"Viaje a sucursales",type:"select",blank:"Sin vincular a un viaje",options:salOpts,two:true},{k:"fecha",label:"Fecha",type:"date",req:true},
+      {k:"controladorId",label:"Controlador de la carga",type:"select",blank:"Sin controlador",options:()=>ctrlOptsNov(s0&&s0.controladorId),two:true,help:"Se toma de la orden de carga · queda en cada observación"},
       {k:"texto",label:"Mensaje de WhatsApp",type:"textarea",full:true,ph:"Pegá el mensaje tal como llegó. Podés copiar varios mensajes juntos (por ejemplo: «Roca 118: faltaron 2 cajas de lavandina, llegó roto 1 pack de agua»)."},
       {k:"foto",label:"O una captura del chat",type:"file",accept:"image/*",full:true},
       {k:"res",type:"html",cls:"warea"}],
     after:async F=>{const box=$("f_res"),cap=await getSampleAny();
+      F.elements.salidaId.addEventListener("change",()=>{const s=get("salidas",F.elements.salidaId.value);if(s){F.elements.fecha.value=s.fecha;F.elements.controladorId.value=s.controladorId||""}});
       const draw=()=>{box.innerHTML='<div class="pa"><button type="button" class="btn wa" id="wLeer"'+(cap?"":" disabled")+'>'+IC.wand+'Leer mensaje</button><span class="mu">'+(cap?"El sistema separa cada observación: sucursal, qué pasó, producto y cantidad. Revisalas antes de grabar.":"La lectura automática no está disponible en esta vista: se graba el mensaje completo como una observación.")+'</span></div>'
         +(items.length?'<div class="tw"><table class="wide pzt" style="min-width:680px"><thead><tr><th>Sucursal</th><th>Tipo</th><th>Producto</th><th style="width:80px">Cant.</th><th>Observación</th><th></th></tr></thead><tbody>'
           +items.map((it,i)=>'<tr><td><select data-wi="'+i+'" data-wf="sucursalId">'+sucOpts(it.sucursalId)+'</select>'+(it.sucNombre&&!it.sucursalId?'<div class="sub" style="color:var(--warn)">Dice «'+esc(it.sucNombre)+'»</div>':"")+'</td><td><select data-wi="'+i+'" data-wf="tipo">'+opts(TIPOS,it.tipo)+'</select></td><td><input data-wi="'+i+'" data-wf="producto" value="'+esc(it.producto)+'"></td><td><input data-wi="'+i+'" data-wf="cantidad" type="number" min="0" step="any" value="'+esc(it.cantidad??"")+'"></td><td><input data-wi="'+i+'" data-wf="descripcion" value="'+esc(it.descripcion)+'"></td><td><button type="button" class="btn sm ghost" data-wdel="'+i+'" aria-label="Quitar">'+IC.x+'</button></td></tr>').join("")+'</tbody></table></div>':"")
@@ -1997,7 +2021,7 @@ function formWhats(salidaId){let items=[],raw="";
     save:async d=>{raw=F_raw();const s=get("salidas",d.salidaId),now=new Date().toISOString();
       let list=items.filter(it=>it.descripcion||it.producto);
       if(!list.length){if(!raw){ferr("Pegá el mensaje o agregá al menos una observación.");return false}list=[{sucursalId:s&&(s.sucursalIds||[]).length===1?s.sucursalIds[0]:"",tipo:"Observación",producto:"",cantidad:null,descripcion:raw.slice(0,300)}]}
-      for(const it of list)await write("novedades",null,{fecha:d.fecha,canal:"Sucursales",salidaId:d.salidaId||null,sucursalId:it.sucursalId||null,camionId:s?s.camionId:null,choferId:s?s.choferId:null,tipo:it.tipo,producto:it.producto,cantidad:it.cantidad,descripcion:it.descripcion||it.tipo,estado:"Abierta",origen:"WhatsApp",mensaje:raw.slice(0,4000)});
+      for(const it of list)await write("novedades",null,{fecha:d.fecha,canal:"Sucursales",salidaId:d.salidaId||null,sucursalId:it.sucursalId||null,camionId:s?s.camionId:null,choferId:s?s.choferId:null,controladorId:d.controladorId||null,tipo:it.tipo,producto:it.producto,cantidad:it.cantidad,descripcion:it.descripcion||it.tipo,estado:"Abierta",origen:"WhatsApp",mensaje:raw.slice(0,4000)});
       UI.nov.canal="Sucursales";MF.ok=pl(list.length,"observación grabada","observaciones grabadas")}});
   function F_raw(){const t=$("f_texto");return t?t.value.trim():raw}
 }
@@ -2073,6 +2097,12 @@ async function act(a,el){
     case"nov-tab":UI.nov.canal=el.dataset.v;UI.nov.tipo="";render();break;
     case"wa":formWhats(id||"");break; case"edit-nov":formNov(get("novedades",id));break;
     case"nov-tipo":UI.nov.tipo=UI.nov.tipo===el.dataset.v?"":el.dataset.v;render();break;
+    case"nov-ctrl":UI.nov.ctrl=el.dataset.v||"";render();break;
+    case"nov-allsal":UI.nov.sal="";render();break;
+    case"ver-nov":{const N=UI.nov;N.tipo="";N.estado="";N.ctrl="";N.q="";
+      if(id){const so=get("salidas",id);N.sal=id;N.canal=(so&&so.canal)||el.dataset.v||N.canal;N.desde="";N.hasta=""}
+      else{N.sal="";if(el.dataset.v==="Preventa"||el.dataset.v==="Sucursales")N.canal=el.dataset.v}
+      closeMenus();if(location.hash==="#novedades")render();else location.hash="#novedades";scrollTo(0,0);break}
     case"new-cam":formCam(null);break; case"edit-cam":formCam(get("camiones",id));break;
     case"new-cho":formCho(null);break; case"edit-cho":formCho(get("choferes",id));break;
     case"new-zon":formZon(null);break; case"edit-zon":formZon(get("zonas",id));break;
@@ -2094,7 +2124,7 @@ async function act(a,el){
     case"prog-gen":{if(!need())break;const wk=UI.semana;let n=0;for(const s of S.sucursales.filter(isActive))for(const dn of s.dias||[]){const d=addD(wk,dn===0?6:dn-1);if(!S.progsuc.some(p=>p.sucursalId===s.id&&p.fecha===d)){await write("progsuc",null,{semana:wk,fecha:d,sucursalId:s.id,estado:"Pendiente"});n++}}toast(n?n+" envíos agregados":"No había envíos nuevos para agregar");break}
     case"prog-copy":{if(!need())break;const wk=UI.semana,pw=addD(wk,-7);let n=0;for(const p of S.progsuc.filter(p=>p.semana===pw&&!p.extra)){const d=addD(p.fecha,7);if(!S.progsuc.some(x=>x.sucursalId===p.sucursalId&&x.fecha===d)){await write("progsuc",null,{semana:wk,fecha:d,sucursalId:p.sucursalId,estado:"Pendiente"});n++}}toast(n?n+" envíos copiados":"No había envíos para copiar");break}
     case"export-sal":exportCSV("ordenes",[["N°",s=>nro(s)],["Fecha",s=>s.fecha],["Canal",s=>s.canal],["Destinos",destT],["Patente",s=>(get("camiones",s.camionId)||{}).patente],["Acoplado",s=>(get("camiones",s.acopladoId)||{}).patente],["Chofer",s=>chofT(s.choferId)],["Cobrador",s=>chofT(s.cobradorId)],["Origen",s=>locName(origenOf(s))],["Destino",s=>locName(destinoOf(s))],["Km previstos",s=>plan(s).total],["Km reales",s=>s.kmRegreso&&s.kmSalida?s.kmRegreso-s.kmSalida:""],["Estado",s=>(EST[s.estado]||[s.estado])[0]]],S.salidas.slice().sort((a,b)=>a.fecha.localeCompare(b.fecha)));break;
-    case"export-nov":exportCSV("novedades",[["Fecha",n=>n.fecha],["Tipo",n=>n.tipo],["Cliente",n=>n.cliente],["Factura / remito",n=>n.pedido],["Importe",n=>n.importe],["Chofer",n=>chofT(n.choferId)],["Estado",n=>n.estado],["Qué pasó",n=>n.descripcion],["Resolución",n=>n.resolucion]],novFiltered());break;
+    case"export-nov":exportCSV("novedades",[["Fecha",n=>n.fecha],["Tipo",n=>n.tipo],["Cliente",n=>n.cliente],["Factura / remito",n=>n.pedido],["Importe",n=>n.importe],["Chofer",n=>chofT(n.choferId)],["Controlador",n=>persT(n.controladorId)],["Sucursal",n=>n.sucursalId?sucT(n.sucursalId):""],["Estado",n=>n.estado],["Qué pasó",n=>n.descripcion],["Resolución",n=>n.resolucion]],novFiltered());break;
   }}catch(e){console.error(e);toast(errMsg(e))}
 }
 document.addEventListener("click",e=>{
@@ -2133,7 +2163,7 @@ $("main").addEventListener("change",e=>{const t=e.target;
 $("main").addEventListener("toggle",e=>{if(e.target.classList&&e.target.classList.contains("det"))UI.detOpen=e.target.open},true);
 $("main").addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.target.dataset.posloc||e.target.dataset.poscli||e.target.dataset.hfld))e.target.blur()});
 $("main").addEventListener("focusout",e=>{if(e.target.dataset&&(e.target.dataset.cli||e.target.dataset.posloc||e.target.dataset.poscli||e.target.dataset.hfld)&&pendingRender){pendingRender=false;setTimeout(render,0)}});
-function route(){closeMenus();if(UI.route==="hoja"&&UI.draft){const s=get("salidas",UI.draft.sid);if(s&&dirty(s))toast("Quedaron cambios sin grabar en la hoja N° "+nro(s)+". Volvé a la hoja y tocá Grabar.")}const r=(location.hash||"").slice(1);UI.route=VIEWS[r]?r:"inicio";const m=$("main");m.classList.add("enter");clearTimeout(render.et);render.et=null;render();window.scrollTo(0,0)}
+function route(){closeMenus();if(UI.route==="hoja"&&UI.draft){const s=get("salidas",UI.draft.sid);if(s&&dirty(s))toast("Quedaron cambios sin grabar en la hoja N° "+nro(s)+". Volvé a la hoja y tocá Grabar.")}const r=(location.hash||"").slice(1);if(UI.route==="novedades"&&r!=="novedades")UI.nov.sal="";UI.route=VIEWS[r]?r:"inicio";const m=$("main");m.classList.add("enter");clearTimeout(render.et);render.et=null;render();window.scrollTo(0,0)}
 window.addEventListener("hashchange",route);
 UI.route=VIEWS[(location.hash||"").slice(1)]?(location.hash||"").slice(1):"inicio";
 $("main").classList.add("enter");
