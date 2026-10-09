@@ -601,7 +601,7 @@ const get=(k,id)=>id?S[k].find(x=>x.id===id):undefined;
 const cfg=()=>S.config.find(x=>x.id==="general")||{};
 let _locCache=null,_locSrc=null,_dist=null,_distSrc=null;
 function LOC(){const d=S.config.find(x=>x.id==="localidades");if(d!==_locSrc){_locSrc=d;_locCache=(d&&d.items)||{}}return _locCache}
-function DIST(){const d=S.config.find(x=>x.id==="distancias");if(d!==_distSrc){_distSrc=d;_dist=null;if(d&&d.ids){const ix={};d.ids.forEach((id,i)=>ix[id]=i);_dist={ix,m:d.m}}}return _dist}
+function DIST(){const d=S.config.find(x=>x.id==="distancias");if(d!==_distSrc){_distSrc=d;_dist=null;if(d&&d.ids){const ix={};d.ids.forEach((id,i)=>ix[id]=i);_dist={ix,m:(d.m||[]).map(r=>typeof r==="string"?r.split(",").map(Number):r)}}}return _dist}
 const locName=id=>{const l=LOC()[id];return l?title(l.n):id?title(String(id).split("_")[0].replace(/-/g," ")):"—"};
 const locFull=id=>{const l=LOC()[id];return l?title(l.n)+", "+title(l.p):locName(id)};
 const depId=()=>cfg().locId||"";
