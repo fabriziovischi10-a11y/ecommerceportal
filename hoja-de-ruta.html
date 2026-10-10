@@ -506,6 +506,8 @@ details.det[open]>summary{border-bottom:1px solid var(--line)}
 .cbar{flex:1 1 260px;display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--mute-soft);gap:2px}
 .cbar i,.cleg i{display:block}
 button.st.novlink{border:0;cursor:pointer;font:inherit;font-size:12px;font-weight:700}button.st.novlink:hover{filter:brightness(.93);text-decoration:underline}tr.ck.sel td{background:color-mix(in srgb,var(--c-nov) 10%,transparent)}
+.guiabox{grid-column:1/-1}.guiabox[hidden]{display:none}.gsuc{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:6px 0;background:var(--panel)}.gsh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px}.gck{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 4px;border-top:1px dashed var(--line);font-size:13.5px;cursor:pointer}.gck:first-of-type{border-top:0}.gck input{width:18px;height:18px}.gdet .doc-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.gdet{grid-column:1/-1;min-width:0}.gdet .doc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.gdet table td{vertical-align:top}
 .cbar i.ok,.cleg i.ok{background:var(--ok)} .cbar i.curso,.cleg i.curso{background:var(--info)} .cbar i.no,.cleg i.no{background:var(--bad)} .cbar i.pend,.cleg i.pend{background:var(--warn)}
 .cleg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
 .cleg span{display:inline-flex;align-items:center;gap:6px}
@@ -617,7 +619,7 @@ const TIPOS=["Observación","Rechazo total","Rechazo parcial","Rotura","Faltante
 const CAM_TIPOS=["Camión","Chasis c/cabina","Camión c/plataforma","Camión térmico","Furgón","Acoplado","Semirremolque","Utilitario","Otro"];
 const PUESTOS=["Chofer","Cobrador","Chofer y cobrador"];
 const ENTREGAS=["Pendiente","Entregado","Rechazo parcial","Rechazo total","Cerrado / ausente","Reprogramado"];
-const COLS={portones:"portones",personal:"personal",progzon:"prog_zonas",camiones:"camiones",choferes:"choferes",zonas:"zonas",sucursales:"sucursales",salidas:"salidas",progsuc:"prog_sucursales",zonadia:"zona_dia",novedades:"novedades",cz:"clientes_zona",cargas:"cargas",config:"config"};
+const COLS={guias:"guias",portones:"portones",personal:"personal",progzon:"prog_zonas",camiones:"camiones",choferes:"choferes",zonas:"zonas",sucursales:"sucursales",salidas:"salidas",progsuc:"prog_sucursales",zonadia:"zona_dia",novedades:"novedades",cz:"clientes_zona",cargas:"cargas",config:"config"};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pad=n=>String(n).padStart(2,"0");
@@ -646,7 +648,7 @@ const title=s=>String(s||"").toLowerCase().replace(/(^|[\s(\-/.])([a-záéíóú
 const pl=(n,s,p)=>n+" "+(n===1?s:p);
 
 /* ================= estado ================= */
-const S={portones:[],personal:[],progzon:[],camiones:[],choferes:[],zonas:[],sucursales:[],salidas:[],progsuc:[],zonadia:[],novedades:[],cz:[],clientes:[],cargas:[],config:[]};
+const S={guias:[],portones:[],personal:[],progzon:[],camiones:[],choferes:[],zonas:[],sucursales:[],salidas:[],progsuc:[],zonadia:[],novedades:[],cz:[],clientes:[],cargas:[],config:[]};
 const loaded={};
 const UI={route:"inicio",fecha:today(),semana:monday(today()),progTab:"pv",cargaId:null,hojaId:null,
   sal:{desde:addD(today(),-15),hasta:addD(today(),7),canal:"",estado:"",q:""},
@@ -682,7 +684,9 @@ const camP=id=>{const c=get("camiones",id);return c?plate(c.patente):'<span clas
 const chofN=id=>{const c=get("choferes",id);return c?esc(c.nombre):'<span class="mu">—</span>'};
 const chofT=id=>{const c=get("choferes",id);return c?c.nombre:""};
 const zonaT=id=>{const z=get("zonas",id);return z?((z.codigo?"Zona "+z.codigo:"")+(z.nombre&&z.nombre!=="Zona "+z.codigo?" · "+z.nombre.replace(/^Zona \d+\s*·\s*/,""):"")):"(zona eliminada)"};
-const sucT=id=>{const s=get("sucursales",id);return s?s.nombre:"(sucursal eliminada)"};
+const sucN=s=>s?(s.codigo?"Suc. "+s.codigo+" · ":"")+s.nombre:"(sucursal eliminada)";
+const sucT=id=>sucN(get("sucursales",id));
+const sucCmp=(a,b)=>String(a.codigo||"zz").localeCompare(String(b.codigo||"zz"),undefined,{numeric:true})||String(a.nombre).localeCompare(String(b.nombre));
 const actSal=x=>x.estado!=="Anulada";
 const isActive=x=>!["Inactiva","Baja","Inactivo"].includes(x.estado);
 const isAcop=c=>c.tipo==="Acoplado"||c.tipo==="Semirremolque";
@@ -904,6 +908,7 @@ VIEWS.logistica=function(){
   +tile({href:"#ordenes",cls:"m-log wide",ill:"orden",t:"Órdenes de carga",p:"Camión, acoplado, chofer, cobrador, origen y destino",meta:[pc.n+" por cargar",c("Programada")+" emitidas"]})
   +tile({href:"#hojas",cls:"m-hoja",ill:"sheet",t:"Hojas de ruta",p:"Orden de entrega de los clientes y km de cada tramo",meta:[pl(sal.length,"hoja hoy","hojas hoy")]})
   +tile({href:"#viajes",cls:"m-viaje",ill:"trip",t:"Viajes",p:"Salidas, regresos y km previstos contra reales",meta:[c("En ruta")+" en viaje",c("Finalizada")+" volvieron"]})
+  +(()=>{const gp=S.guias.filter(g=>guiaSt(g).k==="pend");return tile({href:"#guias",cls:"m-prog",ill:"sheet",t:"Guías de sucursales",p:"Mercadería que sale para cada sucursal y lo que quedó pendiente",meta:[gp.length+" pendientes",gp.filter(g=>guiaSt(g).volvio).length+" volvieron"]})})()
   
   +tile({act:"ver-nov",v:"todas",cls:"m-nov",ill:"alert",t:"Novedades de viaje",p:"Rechazos, roturas y faltantes de los repartos",meta:[S.novedades.filter(n=>n.estado!=="Resuelta").length+" sin resolver"]})
   +tile({href:"#salidas",cls:"m-hist",ill:"hist",t:"Historial",p:"Todas las órdenes y viajes anteriores"})
@@ -1070,7 +1075,7 @@ function hojaInner(s){
    +'<h3>Orden de entrega</h3><table class="p-t"><thead><tr><th style="width:34px">#</th><th>Cliente</th><th>Dirección</th><th>Facturas</th><th style="text-align:right">Importe</th><th>Recibió / firma</th></tr></thead><tbody>'
    +(rows||'<tr class="r"><td colspan="6">Sin paradas cargadas.</td></tr>')+'</tbody></table>'
    +'<div class="p-tot">'+pK("Paradas",p.stops.length,"#1f4a9b")+pK("Localidades",p.locs.length,"#6f42d6")+pK("Facturas",nf,"#e0261c")+pK("Total facturado",fM(tot),"#c2255c")+pK("Km previstos",p.total?(p.exact?"":"≈")+fN(p.total):"—","#0b8f7c")+'</div>'
-   
+   +(pv?"":guiasPrint(s))
    +'<h3>Observaciones</h3><div class="p-lines">'+esc(s.obs||"")+'</div>'
    +'<div class="p-sign"><div>Firma chofer</div><div>'+(pv?"Firma cobrador":"Firma sucursal")+'</div><div>Responsable de depósito</div></div>'+pFoot("Hoja de ruta",s);
 }
@@ -1091,6 +1096,7 @@ function ordenInner(s){
    +'<h3>'+(pv?"Zonas":"Envíos a sucursales")+'</h3><table class="p-t"><thead><tr>'+(pv?'<th>Zona</th><th>Excel</th><th style="text-align:right">Clientes</th><th style="text-align:right">Facturas</th><th style="text-align:right">Total</th>':'<th>Sucursal</th><th>Rubro</th><th>Programado</th><th colspan="2">Localidad</th>')+'</tr></thead><tbody>'+dest+'</tbody></table>'
    +'<h3>Carga en depósito</h3><div class="p-grid">'+pBox("Portón de carga",esc(portT(s.portonId)),"","#6f42d6")+pBox("Controlador",esc(persT(s.controladorId)||"Sin asignar"),(get("personal",s.controladorId)||{}).legajo?"Legajo "+esc(get("personal",s.controladorId).legajo):"","#6f42d6")
    +'<div class="p-box" style="--c:#f08c00;grid-column:span 2"><small>Equipo de carga</small><b>'+esc(equipoT(s)||"Sin asignar")+'</b><span>'+pl((s.equipoIds||[]).length,"persona","personas")+'</span></div></div>'
+   +(pv?"":guiasPrint(s))
    +'<h3>Observaciones</h3><div class="p-lines">'+esc(s.obs||"")+'</div>'
    +'<div class="p-sign"><div>Controlador de carga</div><div>Firma chofer</div><div>Responsable de depósito</div></div>'+pFoot("Orden de carga",s);
 }
@@ -1132,6 +1138,7 @@ VIEWS.hoja=function(){
     h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-nov)"></span>Observaciones de las sucursales</h2><span class="pa">'+(nn.length?'<button class="btn" data-act="ver-nov" data-id="'+s.id+'" data-v="Sucursales">Ver en Novedades ›</button>':"")+'<button class="btn wa w" data-act="wa" data-id="'+s.id+'">'+IC.chat+'Cargar mensaje de WhatsApp</button></span></div>'
       +(nn.length?'<div class="list">'+nn.map(n=>'<div class="li" data-act="edit-nov" data-id="'+n.id+'" style="cursor:pointer"><div><div class="t">'+esc(n.sucursalId?sucT(n.sucursalId):"Sin sucursal")+' · '+esc(n.tipo)+(n.producto?' · '+esc(n.producto)+(n.cantidad?' ('+fN(n.cantidad)+')':""):"")+'</div><div class="d">'+esc(n.descripcion)+(n.origen==="WhatsApp"?'<span class="tag wa">WhatsApp</span>':"")+'</div></div><div class="r">'+chip(n.estado,novEstCls[n.estado]||"mute")+'</div></div>').join("")+'</div>'
         :'<div class="none">Sin observaciones todavía. Cuando los encargados manden su mensaje, pegalo acá.</div>')+'</section>'}
+  if(!pv)h+=guiasHojaSec(s);
   if(pv){
     h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-rut)"></span>Zonas de esta hoja</h2><button class="btn pri w" data-act="imp-hoja" data-id="'+s.id+'">'+IC.up+(cs.length?"Agregar Excel":"Cargar Excel de zonas")+'</button></div>';
     if(!cs.length&&!(s.zonaIds||[]).length)h+='<div class="pnb">'+emptyCard("excel","m-rut","Cargá el Excel de la zona","Subí uno o varios archivos de facturas por cliente (como «SANTIAGO ZONA 25»). La zona se detecta por el nombre del archivo y el sistema arma las paradas, las localidades y los km.",'<button class="btn pri" data-act="imp-hoja" data-id="'+s.id+'">'+IC.up+'Cargar Excel de zonas</button>')+'</div>';
@@ -1376,11 +1383,11 @@ VIEWS.zonas=function(){
     :'<div class="none">Ninguna zona coincide.</div>')+'</section>';
 };
 VIEWS.sucursales=function(){
-  const list=S.sucursales.filter(s=>match("sucursales",[s.codigo,s.nombre,s.direccion,s.localidad])).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre)));
+  const list=S.sucursales.filter(s=>match("sucursales",[s.codigo,"suc "+(s.codigo||""),s.nombre,s.direccion,s.localidad])).sort(sucCmp);
   return ph(crumb(["Inicio","inicio"],["Base de datos","base"],["Sucursales"]),"Sucursales",'<button class="btn pri w" data-act="new-suc">'+IC.plus+'Agregar sucursal</button>',"store")+qbox("sucursales","Buscar sucursal o localidad…")
   +'<section class="pn"><div class="pnh"><h2>'+pl(S.sucursales.length,"sucursal","sucursales")+'</h2><span class="s">Km por ruta desde '+esc(depId()?locName(depId()):"el depósito")+' hasta la puerta de cada sucursal</span></div>'
-  +(list.length?'<div class="tw"><table class="wide"><thead><tr><th>Sucursal</th><th>Dirección</th><th>Horario</th><th>Encargado</th><th class="num">Km ida</th><th class="num">Km vuelta</th><th>Ubicación</th><th>Estado</th></tr></thead><tbody>'
-    +list.map(s=>{const k=km(depId(),s.locId),b=km(s.locId,depId()),L=LOC()[s.locId],ex=L&&L.t==="suc",f=r=>r.km!=null?(r.exact?"":"≈")+fKm1(r.km):"—";return'<tr class="ck" data-act="edit-suc" data-id="'+s.id+'"><td><b>'+esc(s.nombre)+'</b></td><td>'+esc(s.direccion||(L&&L.dir)||"—")+'<div class="sub">'+esc(s.localidad||"")+'</div></td><td class="wrap">'+esc(s.horario||"—")+'</td><td>'+esc(s.contacto||"—")+'</td><td class="num mono">'+f(k)+'</td><td class="num mono">'+f(b)+'</td><td>'+(ex?'<span class="gps">GPS</span> <a class="btn sm ghost" href="https://www.google.com/maps/search/?api=1&query='+L.lat+","+L.lng+'" target="_blank" rel="noopener">Mapa</a>':chip("Solo localidad","warn"))+'</td><td>'+chip(s.estado||"Activa",isActive(s)?"ok":"mute")+'</td></tr>'}).join("")+'</tbody></table></div>'
+  +(list.length?'<div class="tw"><table class="wide"><thead><tr><th>N°</th><th>Sucursal</th><th>Dirección</th><th>Horario</th><th>Encargado</th><th class="num">Km ida</th><th class="num">Km vuelta</th><th>Ubicación</th><th>Estado</th></tr></thead><tbody>'
+    +list.map(s=>{const k=km(depId(),s.locId),b=km(s.locId,depId()),L=LOC()[s.locId],ex=L&&L.t==="suc",f=r=>r.km!=null?(r.exact?"":"≈")+fKm1(r.km):"—";return'<tr class="ck" data-act="edit-suc" data-id="'+s.id+'"><td class="mono"><b>'+(s.codigo?"Suc. "+esc(s.codigo):"—")+'</b></td><td><b>'+esc(s.nombre)+'</b></td><td>'+esc(s.direccion||(L&&L.dir)||"—")+'<div class="sub">'+esc(s.localidad||"")+'</div></td><td class="wrap">'+esc(s.horario||"—")+'</td><td>'+esc(s.contacto||"—")+'</td><td class="num mono">'+f(k)+'</td><td class="num mono">'+f(b)+'</td><td>'+(ex?'<span class="gps">GPS</span> <a class="btn sm ghost" href="https://www.google.com/maps/search/?api=1&query='+L.lat+","+L.lng+'" target="_blank" rel="noopener">Mapa</a>':chip("Solo localidad","warn"))+'</td><td>'+chip(s.estado||"Activa",isActive(s)?"ok":"mute")+'</td></tr>'}).join("")+'</tbody></table></div>'
     :'<div class="none">Todavía no hay sucursales. Agregalas con su localidad y días de envío.</div>')+'</section>';
 };
 VIEWS.clientes=function(){
@@ -1403,6 +1410,183 @@ VIEWS.localidades=function(){
   +'<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-rut)"></span>'+pl(list.length,"localidad","localidades")+'</h2></div><div class="tw"><table class="wide"><thead><tr><th>Localidad</th><th>Provincia</th><th class="num">Clientes</th><th class="num">Km desde el depósito</th><th>Ubicación</th></tr></thead><tbody>'
   +list.map(x=>'<tr data-delk="loc" data-delid="'+esc(x.id)+'"><td><b>'+esc(title(x.l.n))+'</b></td><td>'+esc(title(x.l.p))+'</td><td class="num mono">'+x.n+'</td><td class="num mono">'+(x.k.km!=null?(x.k.exact?"":"≈")+fN(Math.round(x.k.km)):"—")+'</td><td>'+(x.l.aprox?chip("Aproximada","warn"):'<span class="gps">GPS</span>')+' <a class="btn sm ghost" href="https://www.google.com/maps/search/?api=1&query='+x.l.lat+","+x.l.lng+'" target="_blank" rel="noopener">Mapa</a></td></tr>').join("")
   +'</tbody></table></div></section>';
+};
+
+/* ================= guías de sucursales (Excel «remitosdet» del sistema) ================= */
+GRP.guias="logistica";MOD.guias="m-nov";PARENT.guias="logistica";
+UI.gui={estado:"pend",suc:"",q:""};
+const gid=n=>"g-"+slug(n);
+const gDias=g=>g.fecha?Math.max(0,-daysTo(g.fecha)):0;
+const gRubros=g=>g.rubros&&g.rubros.length?g.rubros:[...new Set((g.items||[]).map(i=>i.r).filter(Boolean))];
+const gUnid=g=>g.unidades!=null?g.unidades:(g.items||[]).reduce((t,i)=>t+(Number(i.q)||0),0);
+const sucByCode=c=>S.sucursales.find(s=>s.codigo&&String(c).trim()!==""&&+s.codigo===+c);
+/** estado de una guía: sale de la orden de carga en la que va */
+function guiaSt(g){
+  if(g.estado==="Entregada")return{t:"Entregada",c:"ok",k:"ent"};
+  const s=g.salidaId&&get("salidas",g.salidaId);
+  if(s&&actSal(s))return s.estado==="Finalizada"?{t:"Entregada",c:"ok",k:"ent",sal:s}:{t:(EST[s.estado]||[s.estado])[0]+" · N° "+nro(s),c:"info",k:"curso",sal:s};
+  const d=gDias(g),volvio=(g.hist||[]).length>0;
+  return{t:volvio?"Quedó pendiente":"Pendiente",c:d>=7||volvio?"bad":"warn",k:"pend",d,volvio};
+}
+const agingChip=d=>chip(d===0?"de hoy":d===1?"1 día":d+" días",d>=7?"bad":d>=3?"warn":"ok");
+const guiasDe=s=>S.guias.filter(g=>g.salidaId===s.id||(s.guiaIds||[]).includes(g.id)).sort((a,b)=>sucCmp(get("sucursales",a.sucursalId)||{},get("sucursales",b.sucursalId)||{})||String(a.nro).localeCompare(String(b.nro)));
+const gShort=n=>String(n||"").replace(/^(\w+)\s+0*(\d+)$/,"$1 $2");
+
+/* ---- lectura del Excel ---- */
+function gDate(v){
+  if(v instanceof Date&&!isNaN(v)){const t=new Date(v.getTime()+6*36e5);return t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0")}
+  if(typeof v==="number"&&v>20000)return new Date(Math.round((v-25569)*864e5)+12*36e5).toISOString().slice(0,10);
+  const m=String(v||"").match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if(m){let y=+m[3];if(y<100)y+=2000;return y+"-"+String(m[1]).padStart(2,"0")+"-"+String(m[2]).padStart(2,"0")}
+  return today();
+}
+async function parseGuias(file){
+  const wb=await readBook(file),out={};let lines=0;
+  for(const sn of wb.SheetNames){
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:""});
+    const hi=rows.slice(0,15).findIndex(r=>{const h=r.map(normH);return h.includes("id")&&h.includes("depa")});if(hi<0)continue;
+    const H=rows[hi].map(normH),ix=(...ks)=>{for(const k of ks){const i=H.indexOf(k);if(i>=0)return i}return-1};
+    const I={id:ix("id"),depa:ix("depa"),depde:ix("depde"),fe:ix("fechadoc","fecha"),cod:ix("codigo"),des:ix("descripcio","descripcion"),q:ix("cant","cantidad"),r:ix("nombre_rubro"),sr:ix("nombre_srubro"),con:ix("concepto"),us:ix("usuario")};
+    const val=(r,i)=>i>=0?String(r[i]??"").trim():"";
+    rows.slice(hi+1).forEach(r=>{const n=val(r,I.id);if(!n)return;lines++;
+      const g=out[n]||(out[n]={nro:n,depa:val(r,I.depa),depde:val(r,I.depde),fecha:gDate(r[I.fe]),concepto:val(r,I.con),usuario:val(r,I.us),items:[]});
+      g.items.push({c:val(r,I.cod),d:val(r,I.des),q:Number(r[I.q])||0,r:val(r,I.r),sr:val(r,I.sr)})});
+  }
+  if(!lines)throw new Error("columnas");
+  Object.values(out).forEach(g=>{const s=sucByCode(g.depa);g.sucursalId=s?s.id:""});
+  return{archivo:file.name,guias:Object.values(out),lines};
+}
+function formImpGuias(sal){let files=[];const inSal=g=>sal&&(sal.sucursalIds||[]).includes(g.sucursalId);
+  const busy=g=>{const ex=get("guias",gid(g.nro));if(!ex||!ex.salidaId||(sal&&ex.salidaId===sal.id))return null;const x=get("salidas",ex.salidaId);return x&&actSal(x)&&x.estado!=="Finalizada"?x:null};
+  const all=()=>{const m={};files.forEach(f=>(f.P?f.P.guias:[]).forEach(g=>m[g.nro]=g));return Object.values(m)};
+  const sucOpt=v=>'<option value="">¿A qué sucursal va?</option>'+S.sucursales.slice().sort(sucCmp).map(x=>'<option value="'+x.id+'"'+(x.id===v?" selected":"")+'>'+esc(sucN(x))+'</option>').join("");
+  const draw=()=>{const box=$("f_sum"),G=all().sort((a,b)=>(sal?(inSal(b)-inSal(a)):0)||sucCmp(get("sucursales",a.sucursalId)||{},get("sucursales",b.sucursalId)||{})||a.nro.localeCompare(b.nro));
+    if(!files.length){box.innerHTML='<span class="mu">Elegí el Excel de guías que sacás del sistema (hoja «remitosdet»). Cada número de guía se arma con sus productos; la sucursal se toma de la columna «depa» (02, 04, 09…).</span>';return}
+    const err=files.filter(f=>f.err).map(f=>'<div style="color:var(--bad)">'+esc(f.name)+': '+esc(f.err)+'</div>').join("");
+    const mine=sal?G.filter(g=>inSal(g)&&!busy(g)):[];
+    box.innerHTML=err+(sal&&G.length?'<div class="banner">'+IC.truck+' Van en esta hoja <b>'+pl(mine.length,"guía","guías")+'</b> ('+fN(mine.reduce((t,g)=>t+gUnid(g),0))+' u.) de '+esc((sal.sucursalIds||[]).map(sucT).join(", ")||"ninguna sucursal")+'. '+(G.length-mine.length?'Las otras '+(G.length-mine.length)+' son de otras sucursales: quedan <b>pendientes</b> en Guías para su camión.':"")+'</div>':"")+(G.length?'<div class="sumrow"><span><b>'+G.length+'</b> guías en el archivo</span><span><b>'+fN(G.reduce((t,g)=>t+g.items.length,0))+'</b> renglones</span><span><b>'+fN(G.reduce((t,g)=>t+gUnid(g),0))+'</b> unidades</span><span><b>'+new Set(G.map(g=>g.sucursalId).filter(Boolean)).size+'</b> sucursales</span>'+(G.some(g=>get("guias",gid(g.nro)))?'<span><b>'+G.filter(g=>get("guias",gid(g.nro))).length+'</b> ya estaban (se actualizan)</span>':"")+'</div>'
+      +'<div class="tw"><table class="wide" style="min-width:660px"><thead><tr><th>Guía</th><th>Fecha</th><th>Sucursal</th><th>Rubros</th><th class="num">Renglones</th><th class="num">Unidades</th><th></th></tr></thead><tbody>'
+      +G.map(g=>{const ex=get("guias",gid(g.nro));return'<tr><td class="mono">'+esc(g.nro)+'</td><td>'+fDL(g.fecha)+'</td><td>'+(sucByCode(g.depa)?'<b>'+esc(sucT(g.sucursalId))+'</b>':'<select data-gn="'+esc(g.nro)+'" aria-label="Sucursal de la guía">'+sucOpt(g.sucursalId)+'</select><div class="sub" style="color:var(--warn)">Depósito destino «'+esc(g.depa)+'» sin sucursal</div>')+'</td><td class="wrap">'+esc(gRubros(g).join(", "))+'</td><td class="num mono">'+g.items.length+'</td><td class="num mono">'+fN(gUnid(g))+'</td><td>'+(sal?(busy(g)?chip("Ya va en N° "+nro(busy(g)),"warn"):inSal(g)?chip("Va en esta hoja","ok"):chip("Otra sucursal · pendiente","mute")):ex?chip("Actualiza · "+guiaSt(ex).t,"info"):chip("Nueva","ok"))+'</td></tr>'}).join("")+'</tbody></table></div>':"")};
+  openForm({title:sal?"Cargar planilla de guías · Hoja N° "+nro(sal):"Importar guías de sucursales",color:"c-nov",ok:"Guías cargadas",saveLabel:sal?"Cargar en la hoja de ruta":"Cargar guías",
+    fields:[{k:"archivo",label:"Excel de guías",type:"file",multiple:true,accept:".xls,.xlsx,.csv",full:true},{k:"sum",type:"html",html:""}],
+    after:F=>{draw();
+      $("f_sum").addEventListener("change",e=>{const n=e.target.dataset.gn;if(n==null)return;all().filter(g=>g.nro===n).forEach(g=>g.sucursalId=e.target.value)});
+      F.elements.archivo.addEventListener("change",async()=>{files=[];$("f_sum").innerHTML='<span class="mu">Leyendo…</span>';
+        for(const f of F.elements.archivo.files){try{files.push({P:await parseGuias(f)})}catch(e){files.push({name:f.name,err:e.message==="columnas"?"No encuentro las columnas de la guía (id, depa, descripcio, cant)":"No se pudo leer el archivo"})}}
+        draw()})},
+    save:async()=>{const G=all();if(!G.length){ferr("Elegí el Excel de guías.");return false}
+      if(G.some(g=>!g.sucursalId)){ferr("Elegí la sucursal de las guías marcadas en amarillo.");return false}
+      const now=new Date().toISOString(),arch=files.filter(f=>f.P).map(f=>f.P.archivo).join(", ");
+      for(const g of G){const id=gid(g.nro),ex=get("guias",id);
+        const d={nro:g.nro,fecha:g.fecha,depde:g.depde,depa:g.depa,sucursalId:g.sucursalId,concepto:g.concepto,usuario:g.usuario,items:g.items,rubros:[...new Set(g.items.map(i=>i.r).filter(Boolean))],unidades:g.items.reduce((t,i)=>t+(Number(i.q)||0),0),lineas:g.items.length,archivo:arch,updatedAt:now,updatedBy:uid};
+        const toSal=sal&&inSal(g)&&!busy(g);if(toSal){d.salidaId=sal.id;d.estado="Asignada"}
+        if(ex)await C("guias").doc(id).update(d);
+        else await C("guias").doc(id).set(Object.assign({estado:"Pendiente",salidaId:null,hist:[],createdAt:now,createdBy:uid},d))}
+      if(sal){const mine=G.filter(g=>inSal(g)&&!busy(g)).map(g=>gid(g.nro));await C("salidas").doc(sal.id).update({guiaIds:[...new Set((sal.guiaIds||[]).concat(mine))],updatedAt:now,updatedBy:uid});MF.ok=pl(mine.length,"guía cargada en la hoja","guías cargadas en la hoja");return}
+      UI.gui.estado="pend";MF.ok=pl(G.length,"guía cargada","guías cargadas");if(UI.route!=="guias")location.hash="#guias"}});
+}
+
+/* ---- detalle de una guía ---- */
+function gTable(items,cols){const by={};(items||[]).forEach(i=>(by[i.r||"Sin rubro"]=by[i.r||"Sin rubro"]||[]).push(i));
+  return Object.keys(by).sort().map(r=>'<tr class="locrow"><td colspan="4" style="--rt:var(--c-nov)">'+esc(r)+' <span class="mu">· '+pl(by[r].length,"renglón","renglones")+' · '+fN(by[r].reduce((t,i)=>t+(Number(i.q)||0),0))+' u.</span></td></tr>'
+    +by[r].sort((a,b)=>String(a.sr).localeCompare(String(b.sr))||String(a.d).localeCompare(String(b.d))).map(i=>'<tr><td class="num mono"><b>'+fN(i.q)+'</b></td><td>'+esc(i.d)+'<div class="sub mono">'+esc(i.c)+'</div></td><td>'+esc(i.r||"")+'</td><td class="mu">'+esc(i.sr||"")+'</td></tr>').join("")).join("")}
+function formGuia(g){const st=guiaSt(g),s=st.sal;
+  const hist=(g.hist||[]).map(h=>{const x=get("salidas",h.salidaId);return'<span class="tag">Volvió de la orden '+(x?"N° "+nro(x):"(eliminada)")+' · '+fDL(h.fecha)+'</span>'}).join(" ");
+  const btns=[];
+  if(canWrite&&st.k==="curso"&&s)btns.push('<button type="button" class="btn" id="gVolvio">Quedó pendiente</button>');
+  if(canWrite&&st.k==="pend")btns.push('<button type="button" class="btn pri" id="gOrden">Armar orden de carga</button>','<button type="button" class="btn" id="gEnt">Marcar entregada</button>');
+  if(canWrite&&g.estado==="Entregada"&&!s)btns.push('<button type="button" class="btn" id="gReab">Volver a pendiente</button>');
+  openForm({title:"Guía "+g.nro,color:"c-nov",noSave:true,meta:metaOf(g),fields:[{k:"gd",type:"html",cls:"gdet"}],extra:btns.join(""),
+    del:canWrite&&st.k!=="curso"?(()=>del("guias",g.id)):null,
+    after:()=>{$("f_gd").innerHTML='<div class="doc-grid" style="margin-bottom:10px"><div><small>Sucursal</small><b>'+esc(sucT(g.sucursalId))+'</b><div class="sub">depósito '+esc(g.depde||"—")+' → '+esc(g.depa||"—")+'</div></div><div><small>Fecha</small><b>'+fDL(g.fecha)+'</b><div class="sub">'+agingChip(gDias(g))+'</div></div><div><small>Estado</small><b>'+chip(st.t,st.c)+'</b>'+(s?'<div class="sub"><a href="#" data-act="open-hoja" data-id="'+s.id+'">ver hoja de ruta</a></div>':"")+'</div><div><small>Cargó</small><b>'+esc(g.usuario||"—")+'</b><div class="sub">'+esc(g.concepto||"")+'</div></div></div>'
+      +(hist?'<p>'+hist+'</p>':"")
+      +'<div class="tw"><table class="wide" style="min-width:520px"><thead><tr><th class="num" style="width:70px">Cant.</th><th>Descripción del producto</th><th>Rubro</th><th>Subrubro</th></tr></thead><tbody>'+gTable(g.items)+'</tbody><tfoot><tr><td class="num mono"><b>'+fN(gUnid(g))+'</b></td><td colspan="3"><b>'+pl((g.items||[]).length,"renglón","renglones")+'</b></td></tr></tfoot></table></div>';
+      const b=id=>$(id);
+      if(b("gVolvio"))b("gVolvio").onclick=async()=>{await guiaVolvio(g);closeForm();toast("La guía volvió a pendientes")};
+      if(b("gOrden"))b("gOrden").onclick=()=>{closeForm();formSal(null,{fecha:today(),canal:"Sucursales",origenLoc:depId(),sucPick:[g.sucursalId],guiaPick:[g.id]})};
+      if(b("gEnt"))b("gEnt").onclick=async()=>{await C("guias").doc(g.id).update({estado:"Entregada",entregadaAt:new Date().toISOString(),updatedBy:uid});closeForm();toast("Guía marcada como entregada")};
+      if(b("gReab"))b("gReab").onclick=async()=>{await C("guias").doc(g.id).update({estado:"Pendiente",entregadaAt:null,updatedBy:uid});closeForm();toast("Guía otra vez pendiente")}}});
+}
+async function guiaVolvio(g){const now=new Date().toISOString();
+  await C("guias").doc(g.id).update({salidaId:null,estado:"Pendiente",hist:(g.hist||[]).concat([{salidaId:g.salidaId,fecha:today(),at:now}]),updatedAt:now,updatedBy:uid})}
+/** al grabar / anular / borrar una orden: asigna o libera sus guías */
+async function syncGuias(salId,ids,anul){
+  for(const g of S.guias){const want=!anul&&ids.includes(g.id);
+    if(want&&g.salidaId!==salId)await C("guias").doc(g.id).update({salidaId:salId,estado:"Asignada"});
+    else if(!want&&g.salidaId===salId)await C("guias").doc(g.id).update({salidaId:null,estado:"Pendiente"})}
+}
+
+/* ---- selector de guías en la orden de carga ---- */
+function guiaPicker(sucs,sid,ck){
+  if(!sucs.length)return'<div class="fsec">Guías de mercadería</div><span class="mu">Elegí las sucursales y acá aparecen sus guías pendientes para cargar.</span>';
+  let h='<div class="fsec">Guías de mercadería <span class="mu" style="font-weight:500">· tildá las que van en este camión</span></div>';
+  sucs.slice().sort((a,b)=>sucCmp(get("sucursales",a)||{},get("sucursales",b)||{})).forEach(sc=>{
+    const G=S.guias.filter(g=>g.sucursalId===sc&&(g.salidaId===sid&&sid||guiaSt(g).k==="pend")).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))||String(a.nro).localeCompare(String(b.nro)));
+    G.forEach(g=>{if(ck[g.id]===undefined)ck[g.id]=sid?g.salidaId===sid:true});
+    const sel=G.filter(g=>ck[g.id]);
+    h+='<div class="gsuc"><div class="gsh"><b>'+esc(sucT(sc))+'</b><span class="mu">'+(G.length?pl(sel.length,"guía","guías")+" · "+fN(sel.reduce((t,g)=>t+gUnid(g),0))+" u.":"sin guías pendientes")+'</span></div>'
+      +G.map(g=>{const st=guiaSt(g);return'<label class="gck"><input type="checkbox" name="guia" value="'+g.id+'"'+(ck[g.id]?" checked":"")+'><span class="mono">'+esc(gShort(g.nro))+'</span><span>'+esc(gRubros(g).join(", "))+'</span><span class="mu">'+pl((g.items||[]).length,"renglón","renglones")+' · '+fN(gUnid(g))+' u.</span>'+(st.k==="pend"?agingChip(gDias(g))+(st.volvio?chip("volvió","bad"):""):"")+'</label>'}).join("")+'</div>'});
+  return h;
+}
+
+/* ---- sección en la hoja de ruta ---- */
+function guiasHojaSec(s){const G=guiasDe(s),anul=s.estado==="Anulada";
+  let h='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-nov)"></span>Guías de mercadería</h2><span class="pa">'+(G.length?'<span class="s">'+pl(G.filter(g=>g.salidaId===s.id).length,"guía","guías")+' · '+fN(G.filter(g=>g.salidaId===s.id).reduce((t,g)=>t+gUnid(g),0))+' unidades</span>':"")+(anul?"":'<button class="btn pri w" data-act="g-imp" data-id="'+s.id+'">'+IC.up+'Cargar planilla de guías</button>'+(G.length?'<button class="btn w" data-act="edit-sal" data-id="'+s.id+'">'+IC.edit+'Quitar o sumar guías</button>':""))+'</span></div>';
+  if(!G.length)return h+'<div class="pnb">'+emptyCard("excel","m-nov","Cargá la planilla de guías","Subí el Excel de guías que sacás del sistema. Se cargan solo las guías de las sucursales de esta hoja ("+esc((s.sucursalIds||[]).map(sucT).join(", ")||"elegí las sucursales en la orden")+"), con cantidad, producto y rubro. Las de otras sucursales quedan pendientes para su camión.",anul?"":'<button class="btn pri" data-act="g-imp" data-id="'+s.id+'">'+IC.up+'Cargar planilla de guías</button>')+'</div></section>';
+  const by={};G.forEach(g=>(by[g.sucursalId]=by[g.sucursalId]||[]).push(g));
+  h+='<div class="tw"><table class="wide"><thead><tr><th>Guía</th><th>Rubros</th><th class="num">Renglones</th><th class="num">Unidades</th><th>Estado</th><th></th></tr></thead><tbody>';
+  Object.keys(by).forEach(sc=>{const arr=by[sc];h+='<tr class="locrow"><td colspan="6" style="--rt:var(--c-nov)">'+IC.store+' '+esc(sucT(sc))+' <span class="mu">· '+pl(arr.length,"guía","guías")+'</span></td></tr>';
+    arr.forEach(g=>{const aqui=g.salidaId===s.id,st=guiaSt(g);
+      h+='<tr><td class="mono"><a href="#" data-act="g-ver" data-id="'+g.id+'">'+esc(g.nro)+'</a></td><td class="wrap">'+esc(gRubros(g).join(", "))+'</td><td class="num mono">'+(g.items||[]).length+'</td><td class="num mono">'+fN(gUnid(g))+'</td><td>'+(aqui?chip(s.estado==="Finalizada"?"Entregada":"Va en este camión",s.estado==="Finalizada"?"ok":"info"):chip(st.k==="pend"?"Quedó pendiente":st.t,st.k==="pend"?"bad":st.c))+'</td><td class="r"><button class="btn sm" data-act="g-ver" data-id="'+g.id+'">Ver productos</button>'
+        +(canWrite&&!anul&&aqui?'<button class="btn sm ghost" data-act="g-volvio" data-id="'+g.id+'">Quedó pendiente</button>':"")
+        +(canWrite&&!anul&&!aqui&&st.k==="pend"?'<button class="btn sm ghost" data-act="g-reinc" data-id="'+g.id+'" data-sal="'+s.id+'">Volver a incluir</button>':"")+'</td></tr>'})});
+  return h+'</tbody></table></div></section>';
+}
+/* ---- impresión: detalle de mercadería por sucursal ---- */
+function guiasPrint(s){const G=guiasDe(s).filter(g=>g.salidaId===s.id);if(!G.length)return"";
+  const by={};G.forEach(g=>(by[g.sucursalId]=by[g.sucursalId]||[]).push(g));
+  return'<h3>Mercadería por sucursal · '+pl(G.length,"guía","guías")+' · '+fN(G.reduce((t,g)=>t+gUnid(g),0))+' unidades</h3>'
+    +Object.keys(by).map(sc=>{const arr=by[sc],items=arr.flatMap(g=>g.items||[]);
+      return'<table class="p-t" style="margin-bottom:8px"><thead><tr><th colspan="4">'+esc(sucT(sc))+' — guías '+arr.map(g=>esc(gShort(g.nro))).join(", ")+' · '+fN(items.reduce((t,i)=>t+(Number(i.q)||0),0))+' u.</th></tr><tr><th style="width:60px;text-align:right">Cant.</th><th>Descripción</th><th>Rubro</th><th style="width:70px">Control</th></tr></thead><tbody>'
+        +items.slice().sort((a,b)=>String(a.r).localeCompare(String(b.r))||String(a.d).localeCompare(String(b.d))).map(i=>'<tr class="r"><td style="text-align:right"><b>'+fN(i.q)+'</b></td><td>'+esc(i.d)+'</td><td>'+esc(i.r||"")+'</td><td>☐</td></tr>').join("")+'</tbody></table>'}).join("");
+}
+
+/* ---- vista: Guías ---- */
+VIEWS.guias=function(){
+  const F=UI.gui,q=F.q.trim().toLowerCase();
+  const all=S.guias.map(g=>({g,st:guiaSt(g)})),pend=all.filter(x=>x.st.k==="pend");
+  const list=all.filter(x=>(F.estado==="todas"||x.st.k===F.estado)&&(!F.suc||x.g.sucursalId===F.suc)&&(!q||[x.g.nro,sucT(x.g.sucursalId),gRubros(x.g).join(" "),(x.g.items||[]).map(i=>i.d).join(" ")].join(" ").toLowerCase().includes(q)))
+    .sort((a,b)=>F.estado==="pend"?String(a.g.fecha).localeCompare(String(b.g.fecha)):String(b.g.fecha).localeCompare(String(a.g.fecha))||String(b.g.nro).localeCompare(String(a.g.nro)));
+  const old=pend.reduce((m,x)=>Math.max(m,x.st.d||0),0),volv=pend.filter(x=>x.st.volvio).length;
+  let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Guías"]),"Guías de sucursales",'<button class="btn pri w" data-act="g-imp">'+IC.up+'Importar guías (Excel)</button>'+dots([{a:"g-delfilt",i:"trash",t:"Eliminar las guías filtradas",d:"Las que estén en un camión no se borran",dng:1,w:1}]),"sheet");
+  h+='<div class="kpis"><div class="kpi"><span class="k">Guías pendientes</span><span class="v" style="color:var(--warn)">'+pend.length+'</span><span class="s">'+fN(pend.reduce((t,x)=>t+gUnid(x.g),0))+' unidades sin salir</span></div>'
+    +'<div class="kpi"><span class="k">Quedaron pendientes</span><span class="v" style="color:var(--bad)">'+volv+'</span><span class="s">volvieron de un viaje</span></div>'
+    +'<div class="kpi"><span class="k">La más vieja</span><span class="v">'+(pend.length?old+(old===1?" día":" días"):"—")+'</span><span class="s">esperando salir</span></div>'
+    +'<div class="kpi"><span class="k">En camino</span><span class="v" style="color:var(--c-log)">'+all.filter(x=>x.st.k==="curso").length+'</span><span class="s">en órdenes de carga abiertas</span></div></div>';
+  if(!S.guias.length)return h+emptyCard("excel","m-nov","Todavía no hay guías cargadas","Importá el Excel de guías que sacás del sistema: cada guía queda pendiente para su sucursal hasta que la cargás en una orden de carga.",'<button class="btn pri" data-act="g-imp">'+IC.up+'Importar guías</button>');
+  if(pend.length){const by={};pend.forEach(x=>(by[x.g.sucursalId]=by[x.g.sucursalId]||[]).push(x));
+    h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--warn)"></span>Pendientes por sucursal</h2><span class="s">Tocá una sucursal para ver sus guías · «Armar orden» carga todas sus pendientes</span></div><div class="tw"><table class="wide"><thead><tr><th>Sucursal</th><th class="num">Guías</th><th class="num">Unidades</th><th>Rubros</th><th>La más vieja</th><th></th></tr></thead><tbody>'
+      +Object.keys(by).sort((a,b)=>sucCmp(get("sucursales",a)||{},get("sucursales",b)||{})).map(sc=>{const arr=by[sc],d=Math.max(...arr.map(x=>x.st.d||0)),v=arr.filter(x=>x.st.volvio).length;
+        return'<tr class="ck'+(F.suc===sc?" sel":"")+'" data-act="g-suc" data-v="'+(F.suc===sc?"":sc)+'"><td><b>'+esc(sucT(sc))+'</b>'+(v?' '+chip(v+" volvió","bad"):"")+'</td><td class="num mono"><b>'+arr.length+'</b></td><td class="num mono">'+fN(arr.reduce((t,x)=>t+gUnid(x.g),0))+'</td><td class="wrap">'+esc([...new Set(arr.flatMap(x=>gRubros(x.g)))].join(", "))+'</td><td>'+agingChip(d)+'</td><td class="r">'+(canWrite?'<button class="btn sm pri w" data-act="g-orden" data-id="'+sc+'">'+IC.truck+'Armar orden</button>':"")+'</td></tr>'}).join("")+'</tbody></table></div></section>'}
+  h+='<div class="flt"><input class="q" id="g_q" type="search" data-ui="gui.q" value="'+esc(F.q)+'" placeholder="Buscar guía, sucursal, producto…" aria-label="Buscar"><select id="g_est" data-ui="gui.estado" aria-label="Estado">'+opts([["pend","Pendientes"],["curso","En camino"],["ent","Entregadas"],["todas","Todas"]],F.estado)+'</select><select id="g_suc" data-ui="gui.suc" aria-label="Sucursal">'+opts([["","Todas las sucursales"]].concat(S.sucursales.slice().sort(sucCmp).map(x=>[x.id,sucN(x)])),F.suc)+'</select></div>';
+  h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-nov)"></span>'+pl(list.length,"guía","guías")+'</h2><span class="s">'+fN(list.reduce((t,x)=>t+gUnid(x.g),0))+' unidades</span></div>'
+    +(list.length?'<div class="tw"><table class="wide"><thead><tr><th>Guía</th><th>Fecha</th><th>Sucursal</th><th>Rubros</th><th class="num">Renglones</th><th class="num">Unidades</th><th>Estado</th><th>Antigüedad</th></tr></thead><tbody>'
+      +list.map(({g,st})=>'<tr class="ck" data-act="g-ver" data-id="'+g.id+'"><td class="mono"><b>'+esc(g.nro)+'</b></td><td>'+fDL(g.fecha)+'</td><td><b>'+esc(sucT(g.sucursalId))+'</b></td><td class="wrap">'+esc(gRubros(g).join(", "))+'</td><td class="num mono">'+(g.items||[]).length+'</td><td class="num mono">'+fN(gUnid(g))+'</td><td>'+(st.sal?'<button class="st '+st.c+' novlink" data-act="open-hoja" data-id="'+st.sal.id+'">'+esc(st.t)+' ›</button>':chip(st.t,st.c))+'</td><td>'+(st.k==="pend"?agingChip(st.d):'<span class="mu">—</span>')+'</td></tr>').join("")+'</tbody></table></div>'
+      :'<div class="none">No hay guías con este filtro.</div>')+'</section>';
+  return h;
+};
+
+/* ---- acciones ---- */
+const GACT={
+  "g-imp":(el,id)=>formImpGuias(id?get("salidas",id):null),
+  "g-ver":(el,id)=>{const g=get("guias",id);if(g)formGuia(g)},
+  "g-suc":el=>{UI.gui.suc=el.dataset.v||"";render()},
+  "g-orden":(el,id)=>formSal(null,{fecha:today(),canal:"Sucursales",origenLoc:depId(),sucPick:[id]}),
+  "g-volvio":(el,id)=>{const g=get("guias",id);if(!g)return;confirmBox("Guía "+g.nro+" quedó pendiente","La guía vuelve a <b>pendientes</b> de "+esc(sucT(g.sucursalId))+" para que salga en otro camión. Queda registrado que volvió de esta orden.","Quedó pendiente",()=>guiaVolvio(g),"La guía volvió a pendientes")},
+  "g-reinc":async(el,id)=>{const g=get("guias",id),s=get("salidas",el.dataset.sal);if(!g||!s)return;await C("guias").doc(g.id).update({salidaId:s.id,estado:"Asignada",hist:(g.hist||[]).filter(h=>h.salidaId!==s.id)});toast("La guía vuelve a ir en este camión")},
+  "g-delfilt":()=>{const F=UI.gui,q=F.q.trim().toLowerCase();const L=S.guias.filter(g=>{const st=guiaSt(g);return st.k!=="curso"&&(F.estado==="todas"||st.k===F.estado)&&(!F.suc||g.sucursalId===F.suc)&&(!q||[g.nro,sucT(g.sucursalId),gRubros(g).join(" "),(g.items||[]).map(i=>i.d).join(" ")].join(" ").toLowerCase().includes(q))});
+    if(!L.length){toast("No hay guías para eliminar con este filtro");return}
+    confirmBox("Eliminar "+pl(L.length,"guía","guías"),"Se borran "+pl(L.length,"guía","guías")+" del sistema (no las que van en un camión). No se puede deshacer.","Eliminar",async()=>{for(const g of L)await del("guias",g.id)},"Guías eliminadas")}
 };
 
 /* ================= render ================= */
@@ -1610,19 +1794,19 @@ function destGroups(canal,f,sid){
   ps.forEach(p=>{const t=(p.fecha<=f||(sid&&p.salidaId===sid))?due:later;(t[p.sucursalId]=t[p.sucursalId]||[]).push(p)});
   const item=(g,tag)=>id=>{const arr=g[id],key="ps:"+id+":"+tag;PSMAP[key]=arr.map(p=>p.id);const atr=arr.some(p=>p.estado==="Pendiente"&&p.fecha<f);const d1=arr[0].fecha;
     return[key,sucT(id),(tag==="d"?(atr?"atrasada desde "+fDL(d1):"programada "+(d1===f?"para hoy":fDL(d1))):"programada "+fDL(d1))+" · "+sdir(id),atr?"al":""]};
-  const byName=(a,b)=>sucT(a).localeCompare(sucT(b));
+  const byName=(a,b)=>sucCmp(get("sucursales",a)||{},get("sucursales",b)||{});
   const dk=Object.keys(due).sort(byName),lk=Object.keys(later).filter(id=>!due[id]).sort(byName),used=new Set(dk.concat(lk));
   return[{group:"Pendientes del programa semanal",items:dk.map(item(due,"d")),empty:"No hay sucursales pendientes del programa para este día."},
     {group:"Más adelante en la semana",items:lk.map(item(later,"l"))},
-    {group:"Fuera de programa · todas las sucursales",items:S.sucursales.filter(s=>isActive(s)).sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(s=>["s:"+s.id,s.nombre,sdir(s.id),""])}];
+    {group:"Fuera de programa · todas las sucursales",items:S.sucursales.filter(s=>isActive(s)).sort(sucCmp).map(s=>["s:"+s.id,sucN(s),sdir(s.id),""])}];
 }
 let PSMAP={};
 /** p:ID → casilla de su sucursal; ps:… → renglones del programa */
-const normDest=vals=>[...new Set((vals||[]).map(v=>{if(!v.startsWith("p:"))return v;const pid=v.slice(2);const k=Object.keys(PSMAP).find(k=>(PSMAP[k]||[]).includes(pid));return k||v}))];
+const normDest=vals=>[...new Set((vals||[]).map(v=>{if(v.startsWith("pick:")){const sc=v.slice(5);return Object.keys(PSMAP).find(k=>k.startsWith("ps:"+sc+":d"))||Object.keys(PSMAP).find(k=>k.startsWith("ps:"+sc+":"))||"s:"+sc}if(!v.startsWith("p:"))return v;const pid=v.slice(2);const k=Object.keys(PSMAP).find(k=>(PSMAP[k]||[]).includes(pid));return k||v}))];
 const expandDest=vals=>(vals||[]).filter(v=>!(v.startsWith("s:")&&vals.some(x=>x.startsWith("ps:"+v.slice(2)+":")))).flatMap(v=>v.startsWith("ps:")?(PSMAP[v]||[]).map(p=>"p:"+p):[v]);
 function formSal(s,pre){
   const v=s?Object.assign({},s,pre||{}):Object.assign({fecha:today(),canal:"Preventa",estado:"Programada",origenLoc:depId()},pre||{});
-  const initDest=v.destinos||(v.canal==="Preventa"?(v.zonaIds||[]):(v.progIds||[]).map(p=>"p:"+p));
+  const initDest=v.destinos||(v.sucPick?v.sucPick.map(x=>"pick:"+x):v.canal==="Preventa"?(v.zonaIds||[]):(v.progIds||[]).map(p=>"p:"+p));
   const sid=s&&s.id,fin=pre&&pre.estado==="Finalizada";
   if(!s&&!v.choferId&&v.camionId===undefined){}
   openForm({title:fin?"Marcar regreso · N° "+nro(s):s?"Orden de carga N° "+nro(s):"Nueva orden de carga",color:"c-log",values:v,meta:metaOf(s),focus:pre&&pre.focus,ok:fin?"Regreso registrado":s?"Orden actualizada":"Orden de carga emitida",
@@ -1632,6 +1816,7 @@ function formSal(s,pre){
       {k:"cobradorId",label:"Cobrador",type:"select",blank:"Sin cobrador",options:()=>perOpts(["Cobrador","Chofer y cobrador"])},
       {k:"origenLoc",label:"Origen",type:"rawselect",req:true,html:x=>locOpts(x||depId(),"Elegí el origen"),help:"Sale siempre del depósito del Parque Industrial"},{k:"destinoLoc",label:"Destino",type:"rawselect",html:x=>locOpts(x,"Sin destino fijo (solo las paradas)","suc"),help:"Adónde va el camión: última parada antes de volver"},{k:"regresoLoc",label:"Regreso (3er destino)",type:"rawselect",html:x=>locOpts(x||depId(),"Vuelve al origen"),help:"Dónde termina el viaje · por defecto el Parque Industrial"},
       {k:"destinos",label:"Sucursales",type:"checks",full:true,req:true,when:d=>d.canal==="Sucursales"},
+      {k:"guiasBox",type:"html",cls:"guiabox"},
       {k:"rec",type:"html",cls:"recbox"},
       {k:"sd",type:"sec",label:"Carga en depósito"},
       {k:"portonId",label:"Portón de carga",type:"select",blank:"Elegí el portón",options:portOpts},{k:"controladorId",label:"Controlador",type:"select",blank:"Elegí el controlador",options:ctrlOpts,two:true},
@@ -1639,7 +1824,9 @@ function formSal(s,pre){
       {k:"estado",label:"Estado",type:"select",blank:false,adv:1,options:Object.keys(EST).map(k=>[k,EST[k][0]])},{k:"obs",label:"Observaciones",type:"textarea",two:true,adv:1}],
     extra:s?'<button type="button" class="btn" id="fnov">'+IC.alert+'Novedad</button>':"",
     after:F=>{
-      const box=$("f_destinos"),rec=$("f_rec"),eq=$("f_equipoIds");
+      const box=$("f_destinos"),rec=$("f_rec"),eq=$("f_equipoIds"),gb=$("f_guiasBox"),gck={};
+      const drawG=()=>{const c=canalV();gb.hidden=c==="Preventa";if(c==="Preventa")return;const sucs=[...new Set(cur().map(x=>x.startsWith("ps:")?x.split(":")[1]:x.startsWith("p:")?(get("progsuc",x.slice(2))||{}).sucursalId:x.slice(2)).filter(Boolean))];gb.innerHTML=guiaPicker(sucs,sid,gck)};
+      gb.addEventListener("change",e=>{if(e.target.name==="guia"){gck[e.target.value]=e.target.checked;drawG()}});
       const act=S.personal.filter(x=>isActive(x)||(v.equipoIds||[]).includes(x.id)).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre)));
       eq.innerHTML=act.length?checksHtml("equipoIds",[{group:"Cargadores",items:act.filter(x=>x.rol!=="Controlador").map(x=>[x.id,x.nombre,x.legajo||""])},{group:"Controladores",items:act.filter(x=>x.rol==="Controlador").map(x=>[x.id,x.nombre,x.legajo||""])}],v.equipoIds||[]):'<div class="empty">Todavía no hay personal de depósito. Cargalo en Base de datos › Personal de depósito.</div>';
       const canalV=()=>F.querySelector('input[name="canal"]:checked').value;
@@ -1651,9 +1838,9 @@ function formSal(s,pre){
         const p=plan(tmp);rec.innerHTML='<span>Recorrido estimado · '+pl(p.stops.length,"parada","paradas")+'</span><b>'+[p.origen].concat(p.seq.slice(1,-1)).concat([p.destino]).map(locName).join(" → ")+'</b><span>'+(p.total?(p.exact?"":"≈ ")+fKm(p.total)+" por ruta":"Sin km: falta el origen o la localidad de los clientes")+(p.sinExcel.length?" · sin Excel del día en "+p.sinExcel.length+" zona(s): se usan todos sus clientes":"")+'</span>'};
       const rebuild=keep=>{const c=canalV();F.querySelector('[data-f="destinos"]').hidden=c==="Preventa";
         const gr=destGroups(c,F.elements.fecha.value||today(),sid);box.innerHTML=checksHtml("destinos",gr,c==="Preventa"?(keep||cur()):normDest(keep||cur()));
-        F.querySelector('[data-f="cobradorId"]').hidden=c!=="Preventa";preview()};
+        F.querySelector('[data-f="cobradorId"]').hidden=c!=="Preventa";preview();drawG()};
       rebuild(initDest);
-      box.addEventListener("change",preview);
+      box.addEventListener("change",()=>{preview();drawG()});
       ["origenLoc","destinoLoc","regresoLoc"].forEach(n=>F.elements[n].addEventListener("change",preview));
       F.elements.fecha.addEventListener("change",()=>rebuild());
       F.querySelectorAll('input[name="canal"]').forEach(r=>r.addEventListener("change",()=>rebuild([])));
@@ -1661,6 +1848,7 @@ function formSal(s,pre){
       const n=$("fnov");if(n)n.onclick=()=>{closeForm();formNov(null,{salidaId:s.id})};
     },
     save:async d=>{delete d.sd;if(d.canal!=="Preventa")d.destinos=expandDest(d.destinos);
+      d.guiaIds=d.canal==="Preventa"?[]:[...document.querySelectorAll('#f_guiasBox input[name="guia"]:checked')].map(i=>i.value);
       if(d.canal!=="Preventa")d.cobradorId="";d._zonas=s?(s.zonaIds||[]):((pre&&pre.zonaIds)||[]);if(!s&&pre&&pre.progZonId)d.progZonId=pre.progZonId;
       const nid=await saveSal(s,d);if(!s&&d.canal==="Preventa"){UI.hojaId=nid;location.hash="#hoja"}},
     del:s&&(()=>deleteSal(s))});
@@ -1682,13 +1870,14 @@ async function saveSal(prev,d){
   const now=new Date().toISOString();
   if(prev)await ref.update(Object.assign(d,{updatedAt:now,updatedBy:uid}));
   else await ref.set(Object.assign(d,{nro:nextNro(),createdAt:now,createdBy:uid,updatedAt:now}));
+  try{if(anul)await syncGuias(id,[],true);else if(Array.isArray(d.guiaIds))await syncGuias(id,d.guiaIds)}catch(e){console.warn(e)}
   for(const pid of progIds){if(created.includes(pid))continue;const p=get("progsuc",pid);if(!p)continue;
     try{if(anul&&p.extra)await del("progsuc",pid);else await C("progsuc").doc(pid).update(anul?{estado:"Pendiente",salidaId:null}:{estado:"Despachada",salidaId:id})}catch(e){console.warn(e)}}
   for(const pid of (prev&&prev.progIds)||[]){if(progIds.includes(pid))continue;const p=get("progsuc",pid);if(!p)continue;
     try{if(p.extra)await del("progsuc",pid);else await C("progsuc").doc(pid).update({estado:"Pendiente",salidaId:null})}catch(e){console.warn(e)}}
   return id;
 }
-async function deleteSal(s){for(const pid of s.progIds||[]){const p=get("progsuc",pid);if(!p)continue;try{if(p.extra)await del("progsuc",pid);else await C("progsuc").doc(pid).update({estado:"Pendiente",salidaId:null})}catch(e){}}await del("salidas",s.id)}
+async function deleteSal(s){try{await syncGuias(s.id,[],true)}catch(e){}for(const pid of s.progIds||[]){const p=get("progsuc",pid);if(!p)continue;try{if(p.extra)await del("progsuc",pid);else await C("progsuc").doc(pid).update({estado:"Pendiente",salidaId:null})}catch(e){}}await del("salidas",s.id)}
 function formCaja(s){
   openForm({title:"Caja chica · N° "+nro(s),color:"c-caja",values:Object.assign({cajaA:s.cobradorId||s.choferId},s),ok:"Caja chica guardada",saveCls:"green",
     fields:[{k:"cajaChica",label:"Monto asignado ($)",type:"number",req:true},{k:"cajaA",label:"Se entrega a",type:"select",two:true,options:()=>perOpts()},
@@ -1707,7 +1896,7 @@ function formNov(n,pre){
   if(!n&&v.salidaId){const s=get("salidas",v.salidaId);if(s){Object.assign(v,{fecha:s.fecha,canal:s.canal,camionId:s.camionId,choferId:s.choferId,controladorId:s.controladorId||""});if(!v.destino)v.destino=s.canal==="Preventa"?(s.zonaIds||[]).map(z=>"z:"+z)[0]:(s.sucursalIds||[]).map(x=>"s:"+x)[0]}}
   if(n)v.destino=n.zonaId?"z:"+n.zonaId:n.sucursalId?"s:"+n.sucursalId:"";
   const salOpts=()=>S.salidas.filter(s=>actSal(s)&&s.fecha>=addD(today(),-60)||s.id===v.salidaId).sort((a,b)=>b.fecha.localeCompare(a.fecha)).map(s=>[s.id,"N° "+nro(s)+" · "+fD(s.fecha)+" · "+((get("camiones",s.camionId)||{}).patente||"")+" · "+chofT(s.choferId)]);
-  const destOpts=()=>[{group:"Zonas",items:S.zonas.map(z=>["z:"+z.id,zonaT(z.id)])},{group:"Sucursales",items:S.sucursales.map(s=>["s:"+s.id,s.nombre])}];
+  const destOpts=()=>[{group:"Zonas",items:S.zonas.map(z=>["z:"+z.id,zonaT(z.id)])},{group:"Sucursales",items:S.sucursales.slice().sort(sucCmp).map(s=>["s:"+s.id,sucN(s)])}];
   openForm({title:n?"Novedad · "+n.tipo:"Registrar novedad",color:"c-nov",values:v,meta:metaOf(n),ok:n?"Novedad actualizada":"Novedad registrada",advOpen:!!n,advLabel:"Camión, producto, importe y seguimiento",
     fields:[{k:"tipo",label:"Tipo",type:"select",req:true,blank:"Elegí el tipo",options:TIPOS},{k:"fecha",label:"Fecha",type:"date",req:true},{k:"estado",label:"Estado",type:"select",blank:false,options:["Abierta","En gestión","Resuelta"]},
       {k:"salidaId",label:"Orden de carga",type:"select",blank:"Sin vincular",options:salOpts,two:true},{k:"destino",label:"Zona / sucursal",type:"select",options:destOpts},
@@ -1917,6 +2106,7 @@ async function parsePlan(file){
 const sucNorm=x=>normH(x).replace(/sucursal/g,"").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
 const sucSim=(a,b)=>!!a&&!!b&&(a===b||a.startsWith(b+" ")||b.startsWith(a+" ")||(" "+a+" ").includes(" "+b+" ")||(" "+b+" ").includes(" "+a+" "));
 function findSuc(name,list){const n=sucNorm(name),L=list||S.sucursales;
+  const num=String(name||"").match(/^\s*(?:suc(?:ursal)?\.?\s*)?(?:n[°º]?\s*)?0*(\d{1,3})\b/i);if(num){const x=L.find(s=>s.codigo&&+s.codigo===+num[1]);if(x)return x}
   return L.find(s=>sucNorm(s.nombre)===n||(s.alias||[]).some(a=>sucNorm(a)===n))||L.find(s=>sucSim(sucNorm(s.nombre),n)||(s.alias||[]).some(a=>sucSim(sucNorm(a),n)))}
 function guessLoc(name){const n=normH(name);if(/banda/.test(n)&&LOC()["BANDA-DEL-RIO-SALI_TUCUMAN"])return"BANDA-DEL-RIO-SALI_TUCUMAN";return depId()||(LOC()["SAN-MIGUEL-DE-TUCUMAN_TUCUMAN"]?"SAN-MIGUEL-DE-TUCUMAN_TUCUMAN":"")}
 function formImpPlan(){let R=null;
@@ -1985,7 +2175,7 @@ async function getSampleAny(){try{const s=await window.claude.use("sample");if(!
 function formWhats(salidaId){let items=[],raw="";
   const s0=get("salidas",salidaId);
   const salOpts=()=>S.salidas.filter(s=>s.canal==="Sucursales"&&actSal(s)&&s.fecha>=addD(today(),-30)||s.id===salidaId).sort((a,b)=>b.fecha.localeCompare(a.fecha)).map(s=>[s.id,"N° "+nro(s)+" · "+fD(s.fecha)+" · "+destT(s).slice(0,60)]);
-  const sucOpts=v=>'<option value="">Sucursal…</option>'+S.sucursales.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(x=>'<option value="'+x.id+'"'+(x.id===v?" selected":"")+'>'+esc(x.nombre)+'</option>').join("");
+  const sucOpts=v=>'<option value="">Sucursal…</option>'+S.sucursales.slice().sort(sucCmp).map(x=>'<option value="'+x.id+'"'+(x.id===v?" selected":"")+'>'+esc(sucN(x))+'</option>').join("");
   openForm({title:"Cargar mensaje de WhatsApp",color:"c-nov",values:{salidaId:salidaId||"",fecha:s0?s0.fecha:today(),controladorId:s0&&s0.controladorId||""},ok:"Observaciones grabadas",saveLabel:"Grabar observaciones",
     fields:[{k:"salidaId",label:"Viaje a sucursales",type:"select",blank:"Sin vincular a un viaje",options:salOpts,two:true},{k:"fecha",label:"Fecha",type:"date",req:true},
       {k:"controladorId",label:"Controlador de la carga",type:"select",blank:"Sin controlador",options:()=>ctrlOptsNov(s0&&s0.controladorId),two:true,help:"Se toma de la orden de carga · queda en cada observación"},
@@ -2009,7 +2199,7 @@ function formWhats(salidaId){let items=[],raw="";
         box.querySelector(".mu").textContent="Leyendo el mensaje…";
         const s=get("salidas",F.elements.salidaId.value),sucs=s?(s.sucursalIds||[]).map(sucT):[];
         const prompt="Sos asistente de logística de una distribuidora. Te paso "+(foto?"la captura de un chat de WhatsApp":"mensajes de WhatsApp")+" que mandan los encargados de las sucursales sobre la mercadería que les llegó en un viaje."
-          +(sucs.length?" Ese viaje fue a: "+sucs.join(", ")+".":"")+" Sucursales existentes: "+S.sucursales.map(x=>x.nombre).join(", ")+"."
+          +(sucs.length?" Ese viaje fue a: "+sucs.join(", ")+".":"")+" Sucursales existentes (número y nombre): "+S.sucursales.slice().sort(sucCmp).map(sucN).join(", ")+"."
           +" Separá cada observación en un renglón. Para cada una indicá: sucursal (como la nombran), tipo (uno de: "+TIPOS.join(", ")+"; usá «Observación» si es un comentario general y «Faltante», «Rotura», «Sobrante», «Producto vencido», «Rechazo parcial» o «Rechazo total» cuando corresponda), producto (si lo mencionan), cantidad (número, si la dicen) y descripcion (frase corta en español con lo que pasó). Si dicen que llegó todo bien, devolvé un renglón tipo «Observación» con esa descripción."
           +" Respondé SOLO JSON: {\"items\":[{\"sucursal\":\"\",\"tipo\":\"\",\"producto\":\"\",\"cantidad\":null,\"descripcion\":\"\"}]}"
           +(raw?"\n\nMensaje:\n"+raw.slice(0,6000):"");
@@ -2053,6 +2243,7 @@ async function saveEnt(cargaId,k,val){try{await C("cargas").doc(cargaId).update(
   if(/Rechazo|Cerrado/.test(val)){const c=get("cargas",cargaId),it=(c.items||[]).find(i=>cliId(i.codcli)===k)||{};const sal=S.salidas.find(x=>actSal(x)&&(x.zonaIds||[]).includes(c.zonaId)&&x.fecha>=c.fecha&&x.fecha<=addD(c.fecha,3));
     toast("Registrá el detalle de la novedad");formNov(null,Object.assign(sal?{salidaId:sal.id}:{fecha:c.fecha,destino:"z:"+c.zonaId},{cliente:it.nombre,pedido:(it.facturas||[]).map(f=>f.id).join(" / ").slice(0,180),importe:val==="Rechazo total"?it.total:null,tipo:val==="Cerrado / ausente"?"Cliente cerrado / ausente":val}))}}
 async function act(a,el){
+  if(GACT[a]){if(/^g-(imp|volvio|reinc|delfilt|orden)$/.test(a)&&!canWrite){toast("Acceso de solo lectura");return}try{await GACT[a](el,el.dataset.id)}catch(e){console.error(e);toast(errMsg(e))}return}
   const id=el.dataset.id,f=el.dataset.f,need=()=>{if(!canWrite){toast("Acceso de solo lectura");return false}return true};
   try{switch(a){
     case"back":location.hash="#"+(UI.route==="hoja"&&UI.hojaFrom?UI.hojaFrom:(PARENT[UI.route]||"inicio"));break;
@@ -2217,7 +2408,7 @@ function crearDownloads(){return{save:async({filename,data})=>{
   if(!db){ready=true;render();return}
   const keys=Object.keys(COLS);
   keys.forEach(k=>{let q=db.collection(COLS[k]);
-    q=["salidas","novedades","progsuc","zonadia","cargas","progzon"].includes(k)?q.orderBy("fecha","desc").limit(k==="cargas"?300:1000):q.limit(1000);
+    q=["salidas","novedades","progsuc","zonadia","cargas","progzon","guias"].includes(k)?q.orderBy("fecha","desc").limit(k==="cargas"?300:1000):q.limit(1000);
     q.onSnapshot(snap=>{S[k]=snap.docs.map(d=>Object.assign({id:d.id},d.data()));if(k==="cz")flattenCz();loaded[k]=true;if(!ready&&keys.every(x=>loaded[x]))ready=true;if(ready)schedule()},
       err=>{console.error(k,err);toast("Se perdió la conexión. Recargá la página.")})});
   setTimeout(()=>{if(!ready){ready=true;render()}},6000);
