@@ -116,7 +116,7 @@ function pintar(){
   const q=norm(document.getElementById("q").value.trim());
   const lista=APPS.filter(a=>!q||norm(a.n+" "+a.d).includes(q));
   document.getElementById("apps").innerHTML=lista.length?lista.map((a,k)=>
-    `<a class="app" href="${esc(a.url)}" target="_blank" rel="noopener" style="--i:${k}" title="${esc(a.d)}">
+    `<a class="app" href="${esc(a.url)}" style="--i:${k}" title="${esc(a.d)}">
       <span class="ico" style="--c1:${a.c1};--c2:${a.c2}"><svg viewBox="0 0 24 24">${a.i}</svg>${a.chip?`<span class="chip">${esc(a.chip)}</span>`:""}</span>
       <span class="nom">${esc(a.n)}</span><span class="desc">${esc(a.d)}</span></a>`).join("")
     :`<div class="vacio">No hay ninguna aplicación con ese nombre.</div>`;
