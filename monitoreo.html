@@ -1276,5 +1276,25 @@ const lastTab=ls("mon_tab"); if(lastTab){const b=document.querySelector(`nav but
 renderAll(); init();
 })();
 </script>
+<!-- Botón para volver al Escritorio Portal -->
+<a id="btn-escritorio" href="https://fabriziovischi10-a11y.github.io/ecommerceportal/escritorio.html" title="Volver al Escritorio" aria-label="Volver al Escritorio">
+<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg><span>Escritorio</span></a>
+<style>
+#btn-escritorio{position:fixed;left:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:2147483000;display:flex;align-items:center;gap:0;height:46px;padding:0 13px;border-radius:999px;
+  background:linear-gradient(145deg,#2f6bd1,#1f4a9b);color:#fff;text-decoration:none;font:700 14px/1 "Figtree","Montserrat","Segoe UI",system-ui,sans-serif;
+  box-shadow:0 10px 24px -8px rgba(14,39,86,.65),0 0 0 2px #ffd100;opacity:.92;transition:opacity .2s,transform .2s,gap .25s}
+#btn-escritorio svg{width:20px;height:20px;flex:none;stroke:#ffd100;fill:none;stroke-width:2.2}
+#btn-escritorio span{max-width:0;overflow:hidden;white-space:nowrap;transition:max-width .25s}
+#btn-escritorio:hover,#btn-escritorio:focus-visible{opacity:1;transform:translateY(-2px);gap:8px;outline:none}
+#btn-escritorio:hover span,#btn-escritorio:focus-visible span{max-width:100px}
+@media print{#btn-escritorio{display:none!important}}
+</style>
+<script>
+/* Si debajo del botón hay una barra fija (por ej. la barra de pestañas del celular), lo sube por encima. */
+(function(){var b=document.getElementById("btn-escritorio");if(!b)return;
+function ubicar(){b.style.bottom="";var r=b.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;b.style.visibility="hidden";var e=document.elementFromPoint(x,y);b.style.visibility="";
+for(var p=e;p&&p!==document.body&&p!==document.documentElement;p=p.parentElement){var cs=getComputedStyle(p);if(cs.position==="fixed"||cs.position==="sticky"){var top=p.getBoundingClientRect().top;if(top>innerHeight/2)b.style.bottom=(innerHeight-top+12)+"px";break;}}}
+addEventListener("load",function(){setTimeout(ubicar,600)});addEventListener("resize",function(){clearTimeout(ubicar.t);ubicar.t=setTimeout(ubicar,250)});})();
+</script>
 </body>
 </html>
