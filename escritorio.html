@@ -87,7 +87,7 @@ main{max-width:1100px;margin:0 auto;padding:40px 22px 120px}
 </header>
 
 <main>
-  <h1 class="saludo" id="saludo">Hola</h1>
+  <h1 class="saludo" id="saludo">Torre de <em>control</em></h1>
   <p class="sub">Elegí una aplicación para abrirla.</p>
   <label class="buscar"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
     <input id="q" type="search" placeholder="Buscar aplicación" autocomplete="off" aria-label="Buscar aplicación"></label>
@@ -97,11 +97,11 @@ main{max-width:1100px;margin:0 auto;padding:40px 22px 120px}
 
 <script>
 const APPS = [
-  {n:"Portal Logística", d:"Recepción, preventa, sucursales y bajas", url:"https://fabriziovischi10-a11y.github.io/portal-logistica/", c1:"#c0392b", c2:"#ff6b5b",
+  {n:"Parte Diario", d:"Recepción, preventa, sucursales y bajas", url:"https://fabriziovischi10-a11y.github.io/portal-logistica/", c1:"#c0392b", c2:"#ff6b5b",
    i:'<path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>'},
   {n:"TMS Portal", d:"Hoja de ruta, órdenes de carga, rutas y novedades", url:"https://fabriziovischi10-a11y.github.io/ecommerceportal/hoja-de-ruta.html", c1:"#6f42d6", c2:"#a17cf5",
    i:'<path d="M5 19c3-1 4-4 4-7s2-6 6-6"/><circle cx="5" cy="19" r="2"/><circle cx="17" cy="6" r="2"/><path d="M14 15l3 3 4-5"/>'},
-  {n:"Portal Entregas", d:"Planilla de entregas semanal", url:"https://fabriziovischi10-a11y.github.io/ecommerceportal/portal-entregas-firebase.html", c1:"#2b8a3e", c2:"#51cf66",
+  {n:"Ecommerce", d:"Planilla de entregas semanal", url:"https://fabriziovischi10-a11y.github.io/ecommerceportal/portal-entregas-firebase.html", c1:"#2b8a3e", c2:"#51cf66",
    i:'<path d="M21 8l-9-5-9 5 9 5z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/>'},
   {n:"GestiEntrega", d:"Gestión de entregas", url:"https://gestientrega-d3trnwix.manus.space/", c1:"#d9480f", c2:"#f59f00",
    i:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v3h6V3M8.5 12l2.5 2.5 4.5-5"/>'},
@@ -124,10 +124,9 @@ function pintar(){
 document.getElementById("q").addEventListener("input",pintar);
 document.getElementById("q").addEventListener("keydown",e=>{ if(e.key==="Enter"){ const a=document.querySelector(".app"); if(a) a.click(); } });
 function reloj(){
-  const d=new Date(), h=d.getHours();
+  const d=new Date();
   document.getElementById("hora").textContent=d.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
   document.getElementById("fecha").textContent=d.toLocaleDateString("es-AR",{weekday:"long",day:"numeric",month:"long"});
-  document.getElementById("saludo").innerHTML=(h<6?"Buenas noches":h<13?"Buen día":h<20?"Buenas tardes":"Buenas noches")+", <em>Portal</em>";
 }
 pintar(); reloj(); setInterval(reloj,15000);
 </script>

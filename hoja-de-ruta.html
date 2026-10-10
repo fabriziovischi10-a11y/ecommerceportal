@@ -508,6 +508,8 @@ details.det[open]>summary{border-bottom:1px solid var(--line)}
 button.st.novlink{border:0;cursor:pointer;font:inherit;font-size:12px;font-weight:700}button.st.novlink:hover{filter:brightness(.93);text-decoration:underline}tr.ck.sel td{background:color-mix(in srgb,var(--c-nov) 10%,transparent)}
 .guiabox{grid-column:1/-1}.guiabox[hidden]{display:none}.gsuc{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:6px 0;background:var(--panel)}.gsh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px}.gck{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 4px;border-top:1px dashed var(--line);font-size:13.5px;cursor:pointer}.gck:first-of-type{border-top:0}.gck input{width:18px;height:18px}.gdet .doc-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 .gdet{grid-column:1/-1;min-width:0}.gdet .doc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.gdet table td{vertical-align:top}
+.recfotos{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}.recfotos img{max-width:100%;max-height:420px;border-radius:10px;border:1px solid var(--line);display:block}.kpi.sel{outline:2px solid var(--c-caja)}
+.scans{display:flex;gap:10px;flex-wrap:wrap}.scans figure{margin:0;border:1px solid var(--line);border-radius:10px;padding:6px;background:#ffffff}.scans img{display:block;max-height:260px;max-width:100%}.scans figcaption{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;margin-top:6px;color:#334155}.recfotos img{background:#ffffff}
 .cbar i.ok,.cleg i.ok{background:var(--ok)} .cbar i.curso,.cleg i.curso{background:var(--info)} .cbar i.no,.cleg i.no{background:var(--bad)} .cbar i.pend,.cleg i.pend{background:var(--warn)}
 .cleg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
 .cleg span{display:inline-flex;align-items:center;gap:6px}
@@ -591,6 +593,7 @@ button.st.novlink{border:0;cursor:pointer;font:inherit;font-size:12px;font-weigh
     <nav class="tabs" id="nav" aria-label="Secciones">
       <a href="#inicio" data-r="inicio" style="--tc:var(--brand-y)"><span class="dot"></span>Inicio</a>
       <a href="#logistica" data-r="logistica" style="--tc:var(--c-log)"><span class="dot"></span>Logística</a>
+      <a href="#recepcion" data-r="recepcion" style="--tc:var(--c-caja)"><span class="dot"></span>Recepción</a>
       <a href="#programa" data-r="programa" style="--tc:var(--c-prog)"><span class="dot"></span>Programación<span class="bd" id="bdProg" hidden></span></a>
       <a href="#rutas" data-r="rutas" style="--tc:var(--c-rut)"><span class="dot"></span>Rutas</a>
       <a href="#novedades" data-r="novedades" style="--tc:var(--c-nov)"><span class="dot"></span>Novedades<span class="bd" id="bdNov" hidden></span></a>
@@ -619,7 +622,7 @@ const TIPOS=["Observación","Rechazo total","Rechazo parcial","Rotura","Faltante
 const CAM_TIPOS=["Camión","Chasis c/cabina","Camión c/plataforma","Camión térmico","Furgón","Acoplado","Semirremolque","Utilitario","Otro"];
 const PUESTOS=["Chofer","Cobrador","Chofer y cobrador"];
 const ENTREGAS=["Pendiente","Entregado","Rechazo parcial","Rechazo total","Cerrado / ausente","Reprogramado"];
-const COLS={guias:"guias",portones:"portones",personal:"personal",progzon:"prog_zonas",camiones:"camiones",choferes:"choferes",zonas:"zonas",sucursales:"sucursales",salidas:"salidas",progsuc:"prog_sucursales",zonadia:"zona_dia",novedades:"novedades",cz:"clientes_zona",cargas:"cargas",config:"config"};
+const COLS={recepciones:"recepciones",guias:"guias",portones:"portones",personal:"personal",progzon:"prog_zonas",camiones:"camiones",choferes:"choferes",zonas:"zonas",sucursales:"sucursales",salidas:"salidas",progsuc:"prog_sucursales",zonadia:"zona_dia",novedades:"novedades",cz:"clientes_zona",cargas:"cargas",config:"config"};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pad=n=>String(n).padStart(2,"0");
@@ -648,7 +651,7 @@ const title=s=>String(s||"").toLowerCase().replace(/(^|[\s(\-/.])([a-záéíóú
 const pl=(n,s,p)=>n+" "+(n===1?s:p);
 
 /* ================= estado ================= */
-const S={guias:[],portones:[],personal:[],progzon:[],camiones:[],choferes:[],zonas:[],sucursales:[],salidas:[],progsuc:[],zonadia:[],novedades:[],cz:[],clientes:[],cargas:[],config:[]};
+const S={recepciones:[],guias:[],portones:[],personal:[],progzon:[],camiones:[],choferes:[],zonas:[],sucursales:[],salidas:[],progsuc:[],zonadia:[],novedades:[],cz:[],clientes:[],cargas:[],config:[]};
 const loaded={};
 const UI={route:"inicio",fecha:today(),semana:monday(today()),progTab:"pv",cargaId:null,hojaId:null,
   sal:{desde:addD(today(),-15),hasta:addD(today(),7),canal:"",estado:"",q:""},
@@ -892,6 +895,7 @@ VIEWS.inicio=function(){
     +'<svg class="htruck" viewBox="0 0 118 58"><g class="tk"><rect x="2" y="6" width="68" height="36" rx="4" style="fill:#1f4a9b"/><text x="36" y="30" text-anchor="middle" style="fill:#ffd100;font:800 12px Montserrat,Arial,sans-serif">PORTAL</text><path d="M70 16h22l20 18v8H70z" style="fill:#e0261c"/><path d="M76 20h14l15 14H76z" style="fill:#ffffff;opacity:.9"/></g>'+WHEEL(20,46,9).replace(/fill="([^"]+)"/g,'style="fill:$1"')+WHEEL(92,46,9).replace(/fill="([^"]+)"/g,'style="fill:$1"')+'</svg></div></section>'
   +'<div class="tiles">'
   +tile({href:"#logistica",cls:"m-log wide",ill:"truck",t:"Logística",p:"Órdenes de carga, hojas de ruta y viajes",meta:[pl(sal.length,"orden hoy","órdenes hoy"),enV+" en viaje",pc.n+" por cargar"]})
+  +(()=>{const rh=S.recepciones.filter(r=>r.fecha===f);return tile({href:"#recepcion",cls:"m-caja",ill:"box",t:"Recepción de mercadería",p:"Foto del remito del proveedor · depósito 1, 15 o Parque Logístico",meta:[pl(rh.length,"recepción hoy","recepciones hoy"),rh.reduce((t,r)=>t+(Number(r.pallets)||0),0)+" pallets"]})})()
   +tile({href:"#programa",cls:"m-prog",ill:"cal",t:"Programación",p:"Zonas de preventa por día y programa semanal de sucursales",meta:[pc.n+" pendientes hoy"]})
   +tile({href:"#rutas",cls:"m-rut",ill:"route",t:"Rutas",p:"Excel de cada zona, clientes y localidades",meta:[pl(S.cargas.filter(c=>c.fecha>=addD(f,-1)).length,"zona cargada","zonas cargadas")]})
   +tile({act:"ver-nov",v:"todas",cls:"m-nov",ill:"alert",t:"Novedades",p:"Rechazos, roturas, faltantes y devoluciones",meta:[novA+" sin resolver"]})
@@ -1588,6 +1592,216 @@ const GACT={
     if(!L.length){toast("No hay guías para eliminar con este filtro");return}
     confirmBox("Eliminar "+pl(L.length,"guía","guías"),"Se borran "+pl(L.length,"guía","guías")+" del sistema (no las que van en un camión). No se puede deshacer.","Eliminar",async()=>{for(const g of L)await del("guias",g.id)},"Guías eliminadas")}
 };
+
+/* ================= «escáner»: foto del remito → página escaneada → PDF ================= */
+const loadImg=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src});
+/** recorta a la hoja (zona clara), empareja la luz y deja fondo blanco con texto oscuro, en grises */
+async function scanify(file){
+  const url=typeof file==="string"?file:URL.createObjectURL(file);
+  try{const img=await loadImg(url);
+    const MAX=1800,sc0=Math.min(1,MAX/Math.max(img.naturalWidth,img.naturalHeight));
+    const W=Math.round(img.naturalWidth*sc0),H=Math.round(img.naturalHeight*sc0);
+    const c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d",{willReadFrequently:true});x.drawImage(img,0,0,W,H);
+    let id=x.getImageData(0,0,W,H),p=id.data;
+    const lum=new Float32Array(W*H);for(let i=0,j=0;i<p.length;i+=4,j++)lum[j]=.299*p[i]+.587*p[i+1]+.114*p[i+2];
+    /* 1) recorte: filas/columnas donde predomina el papel (umbral de Otsu) */
+    const hist=new Array(256).fill(0);for(let j=0;j<lum.length;j+=3)hist[lum[j]|0]++;
+    let tot=0,sum=0;hist.forEach((v,i)=>{tot+=v;sum+=i*v});let wB=0,sB=0,best=0,thr=128;
+    for(let t=0;t<256;t++){wB+=hist[t];if(!wB)continue;const wF=tot-wB;if(!wF)break;sB+=t*hist[t];const mB=sB/wB,mF=(sum-sB)/wF,v=wB*wF*(mB-mF)*(mB-mF);if(v>best){best=v;thr=t}}
+    const rowF=new Float32Array(H),colF=new Float32Array(W);
+    for(let yy=0;yy<H;yy++)for(let xx=0;xx<W;xx++)if(lum[yy*W+xx]>thr){rowF[yy]++;colF[xx]++}
+    const run=(arr,n,len)=>{let bs=0,be=n-1,bl=0,s=-1;for(let i=0;i<=n;i++){const ok=i<n&&arr[i]/len>.5;if(ok&&s<0)s=i;if(!ok&&s>=0){if(i-s>bl){bl=i-s;bs=s;be=i-1}s=-1}}return[bs,be,bl]};
+    let [y0,y1,hl]=run(rowF,H,W),[x0,x1,wl]=run(colF,W,H);
+    if(hl*wl<W*H*.3){x0=0;y0=0;x1=W-1;y1=H-1}
+    else{const mx=Math.round(W*.01),my=Math.round(H*.01);x0=Math.max(0,x0-mx);y0=Math.max(0,y0-my);x1=Math.min(W-1,x1+mx);y1=Math.min(H-1,y1+my)}
+    const cw=x1-x0+1,ch=y1-y0+1;
+    /* 2) fondo (luz) estimado con una versión chiquita y difuminada */
+    const s=document.createElement("canvas"),sw=Math.max(8,Math.round(cw/28)),sh=Math.max(8,Math.round(ch/28));s.width=sw;s.height=sh;const sx=s.getContext("2d",{willReadFrequently:true});
+    sx.imageSmoothingQuality="high";sx.drawImage(c,x0,y0,cw,ch,0,0,sw,sh);
+    const b=document.createElement("canvas");b.width=cw;b.height=ch;const bx=b.getContext("2d",{willReadFrequently:true});bx.filter="blur(6px)";bx.imageSmoothingQuality="high";bx.drawImage(s,0,0,cw,ch);
+    const bg=bx.getImageData(0,0,cw,ch).data;
+    /* 3) normalizo: valor / fondo → papel blanco; niveles y contraste */
+    const o=document.createElement("canvas");o.width=cw;o.height=ch;const ox=o.getContext("2d");const od=ox.createImageData(cw,ch),q=od.data;
+    const norm=new Float32Array(cw*ch),h2=new Array(256).fill(0);
+    for(let yy=0;yy<ch;yy++)for(let xx=0;xx<cw;xx++){const k=yy*cw+xx,L=lum[(yy+y0)*W+(xx+x0)],bi=k*4,B=Math.max(30,.299*bg[bi]+.587*bg[bi+1]+.114*bg[bi+2]);const v=Math.min(255,L/B*240);norm[k]=v;h2[v|0]++}
+    let acc=0,lo=0,hi=255;const n=cw*ch;for(let i=0;i<256;i++){acc+=h2[i];if(acc<n*.01)lo=i;if(acc<n*.55){hi=i}}
+    hi=Math.max(hi,lo+40);
+    for(let k=0;k<n;k++){let v=(norm[k]-lo)/(hi-lo);v=v<0?0:v>1?1:v;v=Math.pow(v,1.6);const g=Math.round(v*255);const i=k*4;q[i]=q[i+1]=q[i+2]=g;q[i+3]=255}
+    ox.putImageData(od,0,0);
+    return o;
+  }finally{if(typeof file!=="string")URL.revokeObjectURL(url)}
+}
+const rotCanvas=c=>{const r=document.createElement("canvas");r.width=c.height;r.height=c.width;const x=r.getContext("2d");x.translate(r.width,0);x.rotate(Math.PI/2);x.drawImage(c,0,0);return r};
+/** canvas → JPEG que entre en un documento de la base (≤ ~200 KB) */
+function canvasJpeg(c,limit){let side=Math.max(c.width,c.height),q=.72,out="";
+  for(let k=0;k<9;k++){const sc=Math.min(1,Math.min(1700,side)/Math.max(c.width,c.height));const t=document.createElement("canvas");t.width=Math.round(c.width*sc);t.height=Math.round(c.height*sc);
+    const x=t.getContext("2d");x.fillStyle="#ffffff";x.fillRect(0,0,t.width,t.height);x.imageSmoothingQuality="high";x.drawImage(c,0,0,t.width,t.height);out=t.toDataURL("image/jpeg",q);
+    if(out.length<=(limit||200000))return{data:out,w:t.width,h:t.height};if(q>.5)q-=.08;else side=Math.round(Math.min(side,1700)*.85)}
+  return{data:out,w:c.width,h:c.height}}
+const b64bytes=d=>{const s=atob(d.slice(d.indexOf(",")+1)),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u};
+/** PDF A4 con una página por imagen JPEG (sin librerías) */
+function pdfFromJpegs(pages,title){
+  const enc=new TextEncoder(),parts=[],offs=[];let len=0;
+  const push=x=>{const u=typeof x==="string"?enc.encode(x):x;parts.push(u);len+=u.length};
+  const obj=(n,body)=>{offs[n]=len;push(n+" 0 obj\n");body.forEach(push);push("\nendobj\n")};
+  push("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
+  const N=pages.length,pageIds=pages.map((_,i)=>3+i*3);
+  obj(1,["<< /Type /Catalog /Pages 2 0 R >>"]);
+  obj(2,["<< /Type /Pages /Kids ["+pageIds.map(i=>i+" 0 R").join(" ")+"] /Count "+N+" >>"]);
+  pages.forEach((pg,i)=>{const pid=3+i*3,cid=pid+1,iid=pid+2,PW=595.28,PH=841.89,M=20;
+    const s=Math.min((PW-2*M)/pg.w,(PH-2*M)/pg.h),w=pg.w*s,h=pg.h*s,x=(PW-w)/2,y=(PH-h)/2;
+    obj(pid,["<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+PW+" "+PH+"] /Resources << /XObject << /Im"+i+" "+iid+" 0 R >> >> /Contents "+cid+" 0 R >>"]);
+    const cs="q "+w.toFixed(2)+" 0 0 "+h.toFixed(2)+" "+x.toFixed(2)+" "+y.toFixed(2)+" cm /Im"+i+" Do Q";
+    obj(cid,["<< /Length "+cs.length+" >>\nstream\n"+cs+"\nendstream"]);
+    const jb=b64bytes(pg.data);obj(iid,["<< /Type /XObject /Subtype /Image /Width "+pg.w+" /Height "+pg.h+" /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length "+jb.length+" >>\nstream\n",jb,"\nendstream"])});
+  const total=3+N*3,xref=len;
+  push("xref\n0 "+total+"\n0000000000 65535 f \n");for(let i=1;i<total;i++)push(String(offs[i]).padStart(10,"0")+" 00000 n \n");
+  push("trailer\n<< /Size "+total+" /Root 1 0 R /Info << /Title ("+String(title||"Remito").replace(/[()\\]/g,"")+") /Producer (TMS Portal) >> >>\nstartxref\n"+xref+"\n%%EOF");
+  return new Blob(parts,{type:"application/pdf"});
+}
+
+/* ================= recepción de mercadería (foto del remito del proveedor) ================= */
+GRP.recepcion="recepcion";MOD.recepcion="m-caja";PARENT.recepcion="inicio";
+const DEPOS=["Depósito 1","Depósito 15","Parque Logístico"];
+const DEPC={"Depósito 1":"#1f4a9b","Depósito 15":"#e0261c","Parque Logístico":"#2b8a3e"};
+UI.rec={dep:"",desde:addD(today(),-7),hasta:"",q:""};
+ILL.box='<svg viewBox="0 0 64 64"><rect x="6" y="50" width="52" height="6" rx="2" fill="#8a5a2b"/><rect x="10" y="56" width="6" height="4" fill="#6b4420"/><rect x="29" y="56" width="6" height="4" fill="#6b4420"/><rect x="48" y="56" width="6" height="4" fill="#6b4420"/><rect x="9" y="30" width="22" height="20" rx="2" fill="#f2b45a"/><rect x="33" y="30" width="22" height="20" rx="2" fill="#e8a23c"/><rect x="20" y="10" width="24" height="20" rx="2" fill="#f2b45a"/><path d="M20 20h24M9 40h22M33 40h22" stroke="#b9772a" stroke-width="2"/><path class="flowline" d="M44 6l6 6-6 6" fill="none" stroke="#2b8a3e" stroke-width="3" stroke-linecap="round"/></svg>';
+const recPal=r=>Number(r.pallets)||0;
+const recUnid=r=>(r.items||[]).reduce((t,i)=>t+(Number(i.q)||0),0);
+const depTag=d=>'<span class="tag" style="background:'+(DEPC[d]||"#64748b")+';color:#ffffff;border-color:transparent">'+esc(d||"Sin depósito")+'</span>';
+const firmaChip=r=>r.firmado?chip("Firmado"+(r.firmaNombre?" · "+r.firmaNombre:""),"ok"):chip("Sin firma","warn");
+/** número argentino: «525,00» → 525 · «1.253,5» → 1253.5 */
+const arNum=v=>{if(v==null||v==="")return null;if(typeof v==="number")return v;let s=String(v).replace(/[^0-9,.\-]/g,"");if(/,\d{1,3}$/.test(s)||s.includes(","))s=s.replace(/\./g,"").replace(",",".");else if(/^\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,"");const n=Number(s);return isNaN(n)?null:n};
+const pDate=s=>{const m=String(s||"").match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);if(!m)return"";let y=+m[3];if(y<100)y+=2000;const d=y+"-"+String(m[2]).padStart(2,"0")+"-"+String(m[1]).padStart(2,"0");return isNaN(P(d))?"":d};
+const FOTOS=()=>db.collection("recepcion_fotos");
+
+/* foto → JPEG liviano (un documento de la base admite 256 KB) */
+async function shrinkImg(file,maxSide,limit){
+  const url=URL.createObjectURL(file);try{
+    const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});
+    let side=maxSide||1500,q=.7,out="";
+    for(let k=0;k<8;k++){const sc=Math.min(1,side/Math.max(img.naturalWidth,img.naturalHeight));const c=document.createElement("canvas");c.width=Math.round(img.naturalWidth*sc);c.height=Math.round(img.naturalHeight*sc);
+      c.getContext("2d").drawImage(img,0,0,c.width,c.height);out=c.toDataURL("image/jpeg",q);if(out.length<=(limit||200000))return out;if(q>.45)q-=.1;else side=Math.round(side*.8)}
+    return out}finally{URL.revokeObjectURL(url)}
+}
+
+function recItemsHtml(items){
+  return'<div class="tw"><table class="wide pzt" style="min-width:560px"><thead><tr><th style="width:90px">Cantidad</th><th style="width:70px">Unidad</th><th>Producto</th><th style="width:110px">Código</th><th style="width:90px">Nota a mano</th><th style="width:40px"></th></tr></thead><tbody>'
+    +items.map((it,i)=>'<tr><td><input type="number" min="0" step="any" data-ri="'+i+'" data-rf="q" value="'+esc(it.q??"")+'"></td><td><input data-ri="'+i+'" data-rf="u" value="'+esc(it.u||"")+'" placeholder="UN"></td><td><input data-ri="'+i+'" data-rf="d" value="'+esc(it.d||"")+'"></td><td><input data-ri="'+i+'" data-rf="c" value="'+esc(it.c||"")+'"></td><td><input data-ri="'+i+'" data-rf="n" value="'+esc(it.n||"")+'"></td><td><button type="button" class="btn sm ghost" data-rdel="'+i+'" aria-label="Quitar">'+IC.x+'</button></td></tr>').join("")
+    +'</tbody></table></div><button type="button" class="btn sm" id="rAdd">'+IC.plus+'Agregar producto</button>'
+    +(items.length?' <span class="mu">'+pl(items.length,"producto","productos")+' · '+fN(items.reduce((t,i)=>t+(Number(i.q)||0),0))+' unidades</span>':"");
+}
+
+function formRec(r){
+  let items=r?JSON.parse(JSON.stringify(r.items||[])):[],fotos=[],leido=!!r,scans=[];
+  const persOpts=()=>S.personal.filter(x=>isActive(x)||(r&&x.id===r.recibioId)).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre))).map(x=>[x.id,x.nombre]);
+  openForm({title:r?"Recepción · "+(r.proveedor||"remito"):"Recepción de mercadería",color:"c-caja",saveCls:"green",values:r||{fecha:today(),deposito:"__",firmado:"",pallets:null},meta:metaOf(r),ok:r?"Recepción actualizada":"Recepción grabada",saveLabel:r?"Guardar":"Grabar recepción",
+    fields:[
+      ...(r?[]:[{k:"fotos",label:"Foto del remito",type:"file",accept:"image/*",multiple:true,full:true,help:"Sacá la foto con el remito completo y derecho. Si tiene varias hojas, elegí todas las fotos juntas."},{k:"lee",type:"html",cls:"recbox"},{k:"scan",type:"html",cls:"gdet"}]),
+      {k:"deposito",label:"¿Dónde se deja la mercadería?",type:"seg",options:DEPOS,full:true},
+      {k:"proveedor",label:"Proveedor",req:true,two:true},{k:"remitoNro",label:"N° de remito"},
+      {k:"fecha",label:"Fecha de recepción",type:"date",req:true},{k:"pallets",label:"Pallets",type:"number"},{k:"bultos",label:"Bultos",type:"number"},
+      {k:"firmado",label:"Firma de recibido",type:"select",blank:false,options:[["si","Firmado"],["no","Sin firma"]]},{k:"firmaNombre",label:"Aclaración de la firma",two:true},
+      {k:"recibioId",label:"Recibió (depósito)",type:"select",blank:"—",options:persOpts},{k:"transportista",label:"Transportista",two:true},
+      {k:"its",type:"html",cls:"gdet"},
+      {k:"obs",label:"Observaciones",type:"textarea",full:true,ph:"Faltantes, roturas, diferencias con el remito…"},
+      {k:"cuit",label:"CUIT del proveedor",adv:1},{k:"fechaRemito",label:"Fecha del remito",type:"date",adv:1},{k:"pedido",label:"N° de pedido / OC",adv:1},{k:"cantTotal",label:"Cantidad total impresa",type:"number",adv:1,help:"La «Cantidad total» del pie del remito, para controlar contra los productos"}],
+    advLabel:"Más datos del remito",
+    after:async F=>{
+      if(r)F.elements.firmado.value=r.firmado?"si":"no";
+      const box=$("f_its");const draw=()=>{box.innerHTML='<div class="fsec">Productos recibidos</div>'+recItemsHtml(items);$("rAdd").onclick=()=>{items.push({q:null,u:"",d:"",c:""});draw()}};draw();
+      box.addEventListener("input",e=>{const i=e.target.dataset.ri;if(i==null)return;const f=e.target.dataset.rf;items[i][f]=f==="q"?(e.target.value===""?null:Number(e.target.value)):e.target.value});
+      box.addEventListener("click",e=>{const b=e.target.closest("[data-rdel]");if(b){items.splice(Number(b.dataset.rdel),1);draw()}});
+      if(r)return;
+      const lee=$("f_lee"),cap=await getSample();
+      lee.innerHTML='<span class="mu">'+(cap?IC.wand+" Elegí la foto y el sistema completa proveedor, remito, fecha, firma, pallets y productos. Revisá antes de grabar.":"La lectura automática de fotos no está disponible en esta vista: completá los datos a mano (la foto se guarda igual).")+'</span>';
+      const sb=$("f_scan");const drawScans=()=>{sb.innerHTML=scans.length?'<div class="fsec">Remito escaneado <span class="mu" style="font-weight:500">· se guarda así y se descarga en PDF</span></div><div class="scans">'+scans.map((c,i)=>'<figure><img src="'+c.toDataURL("image/jpeg",.5)+'" alt="Página '+(i+1)+'"><figcaption>Página '+(i+1)+' <button type="button" class="btn sm" data-rot="'+i+'">↻ Rotar</button></figcaption></figure>').join("")+'</div>':""};
+      sb.addEventListener("click",e=>{const b=e.target.closest("[data-rot]");if(b){const i=+b.dataset.rot;scans[i]=rotCanvas(scans[i]);drawScans()}});
+      F.elements.fotos.addEventListener("change",async()=>{fotos=[...F.elements.fotos.files].slice(0,4);if(!fotos.length)return;
+        scans=[];sb.innerHTML='<span class="mu">Escaneando la foto…</span>';(async()=>{for(const f of fotos){try{scans.push(await scanify(f))}catch(e){console.warn(e)}}drawScans()})();
+        if(!cap){lee.innerHTML='<span class="mu">'+pl(fotos.length,"foto lista","fotos listas")+' para guardar. Completá los datos a mano.</span>';return}
+        lee.innerHTML='<span class="mu">'+IC.wand+' Leyendo el remito… puede tardar unos segundos.</span>';
+        const prompt="Sos asistente de recepción de mercadería de una distribuidora mayorista en Tucumán, Argentina. Te paso "+(fotos.length>1?fotos.length+" fotos (hojas) de UN remito":"la foto de un remito")+" de un proveedor que acabamos de recibir en el depósito."
+          +" Reglas: (1) PROVEEDOR = la empresa del membrete/logo que EMITE el remito, con su CUIT del encabezado. NUNCA es «Distribuidora Portal» (S.H. o S.R.L.): ese es el cliente que figura en «Señores» y es quien recibe; ignorá su CUIT y su dirección."
+          +" (2) Números en formato argentino: «525,00» = 525; «1.253,50» = 1253.5. Devolvé números sin separadores."
+          +" (3) Fechas: la del encabezado impresa («Fecha: 06-10-26») es fechaRemito. La escrita A MANO junto a la firma (ej. «8-10-26») es fechaRecepcion. Formato dd-mm-aa o dd/mm/aaaa, devolvé dd/mm/aaaa."
+          +" (4) firmado = true si hay una firma manuscrita de recibido/conforme en el cuerpo o al pie. firmaNombre = la aclaración legible si la hay, si no \"\"."
+          +" (5) PALLETS: suelen estar ESCRITOS A MANO (ej. «15 PALLETS», «15 P», «15 pall.») en cualquier parte del remito. Devolvé el número. null si no figura."
+          +" (6) ITEMS: cada renglón de la tabla de artículos: codigo (columna Artículo; si hay dos códigos, unilos con espacio), descripcion (columna Descripción, sin renglones de leyendas como «Descuentos x objetivos alcanzado», «bonificación», notas de FSC), cantidad (columna Cantidad, número), unidad (si figura: UN, CJ, BU, PACK, KG; si no, \"\") y nota (lo escrito a mano junto al renglón: tildes, números, «15P», etc.)."
+          +" (7) Además: cantidadTotal (la «Cantidad total» impresa al pie, número o null), transportista (nombre del transportista), pedido (N° de pedido u orden de compra), bultos (si figuran, si no null)."
+          +" (8) observaciones = SOLO anotaciones manuscritas que indiquen faltantes, roturas, rechazos o diferencias. Ignorá leyendas impresas (FSC, CAI, AFIP, comprobantes referenciados). \"\" si no hay."
+          +" No inventes datos que no se ven. Respondé SOLO JSON con estas claves: proveedor, cuit, remito, fechaRemito, fechaRecepcion, firmado, firmaNombre, pallets, bultos, cantidadTotal, transportista, pedido, items (lista de {codigo, descripcion, cantidad, unidad, nota}), observaciones.";
+        try{const o=await cap.s.json(prompt,{images:fotos,modelTier:"complex"});leido=true;
+          const set=(k,v)=>{if(v!=null&&v!==""&&F.elements[k])F.elements[k].value=v};
+          set("proveedor",String(o.proveedor||"").trim());set("remitoNro",String(o.remito||"").trim());set("cuit",String(o.cuit||"").trim());
+          const fr=pDate(o.fechaRecepcion);if(fr)F.elements.fecha.value=fr;const fm=pDate(o.fechaRemito);if(fm)F.elements.fechaRemito.value=fm;
+          const np=arNum(o.pallets),nb=arNum(o.bultos),nt=arNum(o.cantidadTotal);if(np!=null)F.elements.pallets.value=np;if(nb!=null)F.elements.bultos.value=nb;if(nt!=null)F.elements.cantTotal.value=nt;
+          set("transportista",String(o.transportista||"").trim());set("pedido",String(o.pedido||"").trim());
+          F.elements.firmado.value=o.firmado?"si":"no";set("firmaNombre",String(o.firmaNombre||"").trim());
+          if(o.observaciones)F.elements.obs.value=String(o.observaciones);
+          items=(o.items||[]).map(i=>({q:arNum(i.cantidad),u:String(i.unidad||"").trim(),d:String(i.descripcion||"").trim(),c:String(i.codigo||"").trim(),n:String(i.nota||"").trim()})).filter(i=>(i.d||i.c)&&!/^descuento|bonificaci/i.test(i.d));draw();
+          const suma=items.reduce((t,i)=>t+(Number(i.q)||0),0),dif=nt!=null&&Math.abs(nt-suma)>.001;
+          lee.innerHTML='<span>'+IC.check+' Remito leído: <b>'+esc(o.proveedor||"proveedor sin leer")+'</b>'+(o.remito?" · N° "+esc(o.remito):"")+' · '+pl(items.length,"producto","productos")+' · '+(np!=null?pl(np,"pallet","pallets"):'<b style="color:var(--warn)">pallets sin indicar</b>')+' · '+(o.firmado?"con firma de recibido":'<b style="color:var(--warn)">sin firma de recibido</b>')+'</span>'
+            +(dif?'<span style="color:var(--warn)"><b>Ojo:</b> el remito dice cantidad total '+fN(nt)+' y los productos suman '+fN(suma)+'. Revisá si falta un renglón.</span>':"")+'<span class="mu">Revisá los datos, elegí el depósito y grabá.</span>'}
+        catch(e){lee.innerHTML='<span style="color:var(--bad)">'+(e&&e.code==="not_granted"?"No se dio permiso para leer la imagen.":e&&e.code==="rate_limited"?"Demasiados pedidos seguidos. Probá en un rato.":"No pude leer el remito. Probá con una foto más nítida o completá los datos a mano.")+'</span>'}})},
+    save:async d=>{
+      if(!d.deposito){ferr("Elegí en qué depósito se deja la mercadería.");return false}
+      const it=items.filter(i=>i.d||i.c);
+      const data={fecha:d.fecha,deposito:d.deposito,proveedor:d.proveedor,remitoNro:d.remitoNro,cuit:d.cuit,fechaRemito:d.fechaRemito||"",transportista:d.transportista||"",pedido:d.pedido||"",cantTotal:d.cantTotal,pallets:d.pallets,bultos:d.bultos,firmado:d.firmado==="si",firmaNombre:d.firmaNombre,recibioId:d.recibioId||"",obs:d.obs,items:it,unidades:it.reduce((t,i)=>t+(Number(i.q)||0),0)};
+      if(r){await write("recepciones",r.id,data);return}
+      if(fotos.length&&scans.length<fotos.length){scans=[];for(const f of fotos){try{scans.push(await scanify(f))}catch(e){}}}
+      const fs=scans.map(c=>canvasJpeg(c,200000));
+      const id=await write("recepciones",null,Object.assign(data,{leidoIA:leido&&fotos.length>0,nFotos:fs.length,fotoIds:fs.map((_,i)=>"f"+i)}));
+      for(let i=0;i<fs.length;i++){try{await FOTOS().doc(id+"_f"+i).set({recId:id,n:i,data:fs[i].data,w:fs[i].w,h:fs[i].h,scan:true,createdAt:new Date().toISOString(),createdBy:uid})}catch(e){console.warn(e);toast("Una foto no se pudo guardar (muy pesada)")}}
+      MF.ok="Recepción grabada en "+d.deposito}});
+}
+
+function verRec(r){
+  openForm({title:(r.proveedor||"Recepción")+(r.remitoNro?" · "+r.remitoNro:""),color:"c-caja",noSave:true,meta:metaOf(r),fields:[{k:"rv",type:"html",cls:"gdet"}],
+    extra:(r.nFotos?'<button type="button" class="btn pri" id="rPdf" disabled>'+IC.dl+'Descargar PDF</button>':"")+(canWrite?'<button type="button" class="btn" id="rEdit">'+IC.edit+'Editar</button>':""),del:canWrite?(()=>delRec(r)):null,
+    after:async()=>{const v=$("f_rv");
+      v.innerHTML='<div class="doc-grid" style="margin-bottom:10px"><div><small>Depósito</small><b>'+depTag(r.deposito)+'</b></div><div><small>Recepción</small><b>'+fDL(r.fecha)+'</b>'+(r.fechaRemito?'<div class="sub">remito del '+fDY(r.fechaRemito)+'</div>':"")+'</div><div><small>Pallets · bultos</small><b>'+(r.pallets!=null?fN(r.pallets):"—")+' · '+(r.bultos!=null?fN(r.bultos):"—")+'</b>'+(r.transportista?'<div class="sub">'+esc(r.transportista)+'</div>':"")+'</div><div><small>Firma de recibido</small><b>'+firmaChip(r)+'</b>'+(r.recibioId?'<div class="sub">recibió '+esc(persT(r.recibioId))+'</div>':"")+'</div></div>'
+        +(r.pedido||r.cuit?'<p class="mu">'+[r.cuit?"CUIT "+esc(r.cuit):"",r.pedido?"Pedido "+esc(r.pedido):""].filter(Boolean).join(" · ")+'</p>':"")
+        +(r.cantTotal!=null&&Math.abs(r.cantTotal-recUnid(r))>.001?'<div class="banner">'+IC.alert+' El remito dice cantidad total <b>'+fN(r.cantTotal)+'</b> y los productos suman <b>'+fN(recUnid(r))+'</b>.</div>':"")
+        +(r.obs?'<div class="wamsg"><small>Observaciones</small>'+esc(r.obs).replace(/\n/g,"<br>")+'</div>':"")
+        +'<div class="recfotos" id="rFotos">'+(r.nFotos?'<span class="mu">Cargando foto del remito…</span>':'<span class="mu">Sin foto</span>')+'</div>'
+        +'<div class="tw"><table class="wide" style="min-width:480px"><thead><tr><th class="num" style="width:80px">Cant.</th><th>Producto</th><th>Código</th></tr></thead><tbody>'
+        +((r.items||[]).map(i=>'<tr><td class="num mono"><b>'+fN(i.q)+'</b> <span class="mu">'+esc(i.u||"")+'</span></td><td>'+esc(i.d)+(i.n?'<div class="sub">✍ '+esc(i.n)+'</div>':"")+'</td><td class="mono">'+esc(i.c||"")+'</td></tr>').join("")||'<tr><td colspan="3" class="mu">Sin productos cargados</td></tr>')
+        +'</tbody><tfoot><tr><td class="num mono"><b>'+fN(recUnid(r))+'</b></td><td colspan="2"><b>'+pl((r.items||[]).length,"producto","productos")+'</b></td></tr></tfoot></table></div>';
+      const e=$("rEdit");if(e)e.onclick=()=>{closeForm();formRec(r)};
+      if(r.nFotos){const fb=$("rFotos");let h="";const pages=[];for(let i=0;i<r.nFotos;i++){try{const sn=await FOTOS().doc(r.id+"_f"+i).get();const dd=sn.exists&&sn.data();if(dd&&dd.data){let w=dd.w,hh=dd.h;if(!w){const im=await loadImg(dd.data);w=im.naturalWidth;hh=im.naturalHeight}pages.push({data:dd.data,w,h:hh});h+='<a href="'+dd.data+'" target="_blank" rel="noopener" title="Abrir la página"><img src="'+dd.data+'" alt="Remito página '+(i+1)+'"></a>'}}catch(x){}}
+        if(fb)fb.innerHTML=h||'<span class="mu">No se pudo cargar la foto.</span>';
+        const pb=$("rPdf");if(pb&&pages.length){pb.disabled=false;pb.onclick=async()=>{if(!downloads){toast("La descarga no está disponible en esta vista");return}
+          const name=("Remito "+(r.proveedor||"")+" "+(r.remitoNro||"")+" "+(r.fecha||"")).replace(/[\\/:*?"<>|]+/g,"-").replace(/\s+/g," ").trim()+".pdf";
+          try{await downloads.save({filename:name,data:pdfFromJpegs(pages,name)});toast("PDF descargado")}catch(e){if(e&&e.code!=="declined")toast("No se pudo descargar el PDF")}}}}}});
+}
+async function delRec(r){for(let i=0;i<(r.nFotos||0);i++){try{await FOTOS().doc(r.id+"_f"+i).delete()}catch(e){}}await del("recepciones",r.id)}
+
+/* ---- vista ---- */
+function recFiltered(){const F=UI.rec,q=F.q.trim().toLowerCase();
+  return S.recepciones.filter(r=>(!F.dep||r.deposito===F.dep)&&(!F.desde||r.fecha>=F.desde)&&(!F.hasta||r.fecha<=F.hasta)&&(!q||[r.proveedor,r.remitoNro,r.firmaNombre,r.obs,(r.items||[]).map(i=>i.d+" "+i.c).join(" ")].join(" ").toLowerCase().includes(q))).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||"")||(b.createdAt||"").localeCompare(a.createdAt||""))}
+VIEWS.recepcion=function(){
+  const F=UI.rec,list=recFiltered(),hoy=S.recepciones.filter(r=>r.fecha===today());
+  let h=ph(crumb(["Inicio","inicio"],["Recepción"]),"Recepción de mercadería",'<button class="btn green w" data-act="r-new">'+IC.up+'Cargar remito (foto)</button>'+dots([{a:"r-csv",i:"dl",t:"Exportar a Excel (CSV)"},"-",{a:"r-delfilt",i:"trash",t:"Eliminar las recepciones filtradas",dng:1,w:1}]),"box");
+  h+='<div class="kpis"><div class="kpi"><span class="k">Recepciones hoy</span><span class="v" style="color:var(--c-caja)">'+hoy.length+'</span><span class="s">'+fN(hoy.reduce((t,r)=>t+recPal(r),0))+' pallets</span></div>'
+    +DEPOS.map(d=>{const a=list.filter(r=>r.deposito===d);return'<div class="kpi ck'+(F.dep===d?" sel":"")+'" data-act="r-dep" data-v="'+esc(F.dep===d?"":d)+'" style="cursor:pointer"><span class="k">'+esc(d)+'</span><span class="v" style="color:'+DEPC[d]+'">'+fN(a.reduce((t,r)=>t+recPal(r),0))+' <small style="font-size:14px">pallets</small></span><span class="s">'+pl(a.length,"recepción","recepciones")+' en el período</span></div>'}).join("")+'</div>';
+  if(!S.recepciones.length)return h+emptyCard("box","m-caja","Todavía no hay recepciones","Sacale una foto al remito del proveedor: el sistema lee proveedor, remito, fecha, firma de recibido, pallets y productos. Vos elegís en qué depósito se deja.",'<button class="btn green" data-act="r-new">'+IC.up+'Cargar remito (foto)</button>');
+  h+='<div class="flt"><input class="q" id="r_q" type="search" data-ui="rec.q" value="'+esc(F.q)+'" placeholder="Buscar proveedor, remito, producto…" aria-label="Buscar"><select id="r_dep" data-ui="rec.dep" aria-label="Depósito">'+opts([["","Todos los depósitos"]].concat(DEPOS),F.dep)+'</select><label>Desde <input type="date" id="r_desde" data-ui="rec.desde" value="'+F.desde+'"></label><label>Hasta <input type="date" id="r_hasta" data-ui="rec.hasta" value="'+F.hasta+'"></label></div>';
+  h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-caja)"></span>'+pl(list.length,"recepción","recepciones")+'</h2><span class="s">'+fN(list.reduce((t,r)=>t+recPal(r),0))+' pallets · '+list.filter(r=>!r.firmado).length+' sin firma</span></div>'
+    +(list.length?'<div class="tw"><table class="wide"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Remito</th><th>Depósito</th><th class="num">Pallets</th><th>Productos</th><th>Firma</th><th></th><th></th></tr></thead><tbody>'
+      +list.map(r=>'<tr class="ck" data-act="r-ver" data-id="'+r.id+'"><td class="mono">'+fDL(r.fecha)+'</td><td><b>'+esc(r.proveedor||"—")+'</b>'+(r.recibioId?'<div class="sub">recibió '+esc(persT(r.recibioId))+'</div>':"")+'</td><td class="mono">'+esc(r.remitoNro||"—")+'</td><td>'+depTag(r.deposito)+'</td><td class="num mono"><b>'+(r.pallets!=null?fN(r.pallets):"—")+'</b></td><td>'+pl((r.items||[]).length,"producto","productos")+'<div class="sub">'+fN(recUnid(r))+' u.'+((r.items||[])[0]?" · "+esc(String(r.items[0].d).slice(0,40))+((r.items||[]).length>1?"…":""):"")+'</div></td><td>'+firmaChip(r)+'</td><td>'+(r.nFotos?'<span class="tag">📷 '+r.nFotos+'</span>':"")+(r.obs?' '+chip("Obs.","warn"):"")+'</td><td class="r">'+(canWrite?'<button class="btn sm ghost" data-act="r-edit" data-id="'+r.id+'" title="Editar" aria-label="Editar">'+IC.edit+'</button><button class="btn sm ghost dng" data-act="r-del" data-id="'+r.id+'" title="Eliminar" aria-label="Eliminar">'+IC.trash+'</button>':"")+'</td></tr>').join("")+'</tbody></table></div>'
+      :'<div class="none">No hay recepciones con este filtro.</div>')+'</section>';
+  return h;
+};
+Object.assign(GACT,{
+  "r-new":()=>{if(!canWrite){toast("Acceso de solo lectura");return}formRec(null)},
+  "r-ver":(el,id)=>{const r=get("recepciones",id);if(r)verRec(r)},
+  "r-dep":el=>{UI.rec.dep=el.dataset.v||"";render()},
+  "r-edit":(el,id)=>{const r=get("recepciones",id);if(r&&canWrite)formRec(r)},
+  "r-del":(el,id)=>{const r=get("recepciones",id);if(!r||!canWrite)return;confirmBox("Eliminar recepción","Se borra la recepción de <b>"+esc(r.proveedor||"proveedor")+"</b>"+(r.remitoNro?" (remito "+esc(r.remitoNro)+")":"")+" del "+fDL(r.fecha)+", con su remito escaneado. No se puede deshacer.","Eliminar",()=>delRec(r),"Recepción eliminada")},
+  "r-delfilt":()=>{const L=recFiltered();if(!L.length||!canWrite){toast("No hay recepciones para eliminar con este filtro");return}confirmBox("Eliminar "+pl(L.length,"recepción","recepciones"),"Se borran "+pl(L.length,"recepción","recepciones")+" de la lista filtrada, con sus remitos escaneados. No se puede deshacer.","Eliminar",async()=>{for(const r of L)await delRec(r)},"Recepciones eliminadas")},
+  "r-csv":()=>exportCSV("recepciones",[["Fecha recepción",r=>r.fecha],["Depósito",r=>r.deposito],["Proveedor",r=>r.proveedor],["CUIT",r=>r.cuit],["Remito",r=>r.remitoNro],["Fecha remito",r=>r.fechaRemito],["Transportista",r=>r.transportista],["Pedido",r=>r.pedido],["Pallets",r=>r.pallets],["Bultos",r=>r.bultos],["Firmado",r=>r.firmado?"Sí":"No"],["Aclaración firma",r=>r.firmaNombre],["Recibió",r=>persT(r.recibioId)],["Productos",r=>(r.items||[]).map(i=>(i.q??"")+" "+(i.u||"")+" "+i.d).join(" | ")],["Unidades",r=>recUnid(r)],["Observaciones",r=>r.obs]],recFiltered())
+});
 
 /* ================= render ================= */
 let rT=null,pendingRender=false;
@@ -2408,7 +2622,7 @@ function crearDownloads(){return{save:async({filename,data})=>{
   if(!db){ready=true;render();return}
   const keys=Object.keys(COLS);
   keys.forEach(k=>{let q=db.collection(COLS[k]);
-    q=["salidas","novedades","progsuc","zonadia","cargas","progzon","guias"].includes(k)?q.orderBy("fecha","desc").limit(k==="cargas"?300:1000):q.limit(1000);
+    q=["salidas","novedades","progsuc","zonadia","cargas","progzon","guias","recepciones"].includes(k)?q.orderBy("fecha","desc").limit(k==="cargas"?300:1000):q.limit(1000);
     q.onSnapshot(snap=>{S[k]=snap.docs.map(d=>Object.assign({id:d.id},d.data()));if(k==="cz")flattenCz();loaded[k]=true;if(!ready&&keys.every(x=>loaded[x]))ready=true;if(ready)schedule()},
       err=>{console.error(k,err);toast("Se perdió la conexión. Recargá la página.")})});
   setTimeout(()=>{if(!ready){ready=true;render()}},6000);
