@@ -2851,6 +2851,10 @@ function fechaLocalDe(iso) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+// Consumo estimado de los vehículos de reparto: el combustible del día se calcula como
+// km del día ÷ KM_POR_LITRO = litros consumidos, y litros × precio por litro = costo.
+const KM_POR_LITRO = 11;
+
 // Campos de costo que se cargan por día. Los "fijos" se pueden guardar como valores por defecto.
 const CAMPOS_COSTO = [
   { id: "otros", label: "Otros costos / caja chica", fijo: false },
@@ -2995,10 +2999,11 @@ function CostosTab({ db, facturas, combustible, historialDias }) {
   const calcular = (d, v) => {
     const costos = {};
     CAMPOS_COSTO.forEach((c) => { costos[c.id] = parseNum(v[c.id]); });
-    const combustibleCosto = d.combustible + (d.litrosSinImporte || 0) * parseNum(v.precioLitro);
+    const km = parseNum(v.km) > 0 ? parseNum(v.km) : d.km;
+    const litrosConsumidos = km / KM_POR_LITRO;
+    const combustibleCosto = litrosConsumidos * parseNum(v.precioLitro);
     const costoTotal = combustibleCosto + Object.values(costos).reduce((s, x) => s + x, 0);
     const baseImporte = base === "total" ? d.importeTotal : d.importeEntregado;
-    const km = parseNum(v.km) > 0 ? parseNum(v.km) : d.km;
     const markup = parseNum(v.markup) / 100;
     const gananciaBruta = baseImporte * markup;
     const utilidad = gananciaBruta - costoTotal;
@@ -3014,7 +3019,7 @@ function CostosTab({ db, facturas, combustible, historialDias }) {
       costoSobreFact: baseImporte ? costoTotal / baseImporte : 0,
       costoPorKm: km ? costoTotal / km : null,
       costoPorEntrega: d.cantEntregadas ? costoTotal / d.cantEntregadas : null,
-      kmPorLitro: km && d.litros ? km / d.litros : null,
+      litrosConsumidos,
       km,
     };
   };
@@ -3167,10 +3172,13 @@ function CostosTab({ db, facturas, combustible, historialDias }) {
             </div>
           ))}
           <div>
-            <label className="text-xs font-semibold" style={{ color: "var(--slate)" }}>Combustible (cargas del día)</label>
+            <label className="text-xs font-semibold" style={{ color: "var(--slate)" }}>Combustible (km ÷ {KM_POR_LITRO} × $/L)</label>
             <div className="de-mono w-full text-sm rounded-xl p-3 border mt-1" style={{ borderColor: "var(--line)", background: "var(--paper)" }}>
               {formatMoney(r.combustible)}
             </div>
+            <p className="text-[11px] mt-1 de-mono" style={{ color: "var(--slate)" }}>
+              {r.km.toLocaleString("es-AR", { maximumFractionDigits: 1 })} km ÷ {KM_POR_LITRO} = {r.litrosConsumidos.toLocaleString("es-AR", { maximumFractionDigits: 2 })} L
+            </p>
           </div>
           <div>
             <label className="text-xs font-semibold" style={{ color: "var(--slate)" }}>Precio combustible ($/L)</label>
@@ -3182,11 +3190,9 @@ function CostosTab({ db, facturas, combustible, historialDias }) {
               className="de-focus de-mono w-full text-sm rounded-xl p-3 border mt-1"
               style={{ borderColor: "var(--line)" }}
             />
-            {diaSel.litrosSinImporte > 0 && (
-              <p className="text-[11px] mt-1" style={{ color: "var(--slate)" }}>
-                Se usa para {diaSel.litrosSinImporte.toLocaleString("es-AR")} L cargados sin importe.
-              </p>
-            )}
+            <p className="text-[11px] mt-1" style={{ color: "var(--slate)" }}>
+              Se multiplica por los litros consumidos.
+            </p>
           </div>
           <div>
             <label className="text-xs font-semibold" style={{ color: "var(--slate)" }}>Km del día (opcional)</label>
@@ -3338,7 +3344,7 @@ function CostosTab({ db, facturas, combustible, historialDias }) {
           <Kpi label="Utilidad neta del día" value={formatMoney(r.utilidad)} color={r.utilidad < 0 ? "var(--danger)" : "var(--teal)"} sub={r.base ? `${formatPct(r.margenNeto)} de la facturación` : null} />
           <Kpi label="Costo por km" value={r.costoPorKm != null ? formatMoney(r.costoPorKm) : "—"} sub={formatKm(r.km) + (parseNum(v.km) > 0 ? " (cargados a mano)" : " (GPS)")} />
           <Kpi label="Costo por entrega" value={r.costoPorEntrega != null ? formatMoney(r.costoPorEntrega) : "—"} sub={`${diaSel.cantEntregadas} entregas`} />
-          <Kpi label="Rendimiento combustible" value={r.kmPorLitro != null ? r.kmPorLitro.toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + " km/L" : "—"} sub={r.kmPorLitro == null ? "faltan km o cargas" : null} />
+          <Kpi label="Litros consumidos" value={r.km ? r.litrosConsumidos.toLocaleString("es-AR", { maximumFractionDigits: 2 }) + " L" : "—"} sub={`${formatKm(r.km)} ÷ ${KM_POR_LITRO} km/L`} />
           <Kpi label="Costo sobre facturación" value={r.base ? formatPct(r.costoSobreFact) : "—"} />
         </div>
 
