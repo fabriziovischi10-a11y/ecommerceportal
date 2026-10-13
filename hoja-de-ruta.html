@@ -1714,13 +1714,12 @@ function formRec(r){
       box.addEventListener("click",e=>{const b=e.target.closest("[data-rdel]");if(b){items.splice(Number(b.dataset.rdel),1);draw()}});
       if(r)return;
       const lee=$("f_lee"),cap=await getSample();
-      lee.innerHTML='<span class="mu">'+(cap?IC.wand+" Elegí la foto y el sistema completa proveedor, remito, fecha, firma, pallets y productos. Revisá antes de grabar.":"La lectura automática de fotos no está disponible en esta vista: completá los datos a mano (la foto se guarda igual).")+'</span>';
+      lee.innerHTML='<span class="mu">'+(cap?IC.wand+" Elegí la foto y el sistema completa proveedor, remito, fecha, firma, pallets y productos. Revisá antes de grabar.":"Elegí la foto y el sistema lee el texto impreso del remito (proveedor, N° de remito, fecha, CUIT y productos). Lo escrito a mano —pallets, firma, fecha de recepción— completalo vos. Revisá antes de grabar.")+'</span>';
       const sb=$("f_scan");const drawScans=()=>{sb.innerHTML=scans.length?'<div class="fsec">Remito escaneado <span class="mu" style="font-weight:500">· se guarda así y se descarga en PDF</span></div><div class="scans">'+scans.map((c,i)=>'<figure><img src="'+c.toDataURL("image/jpeg",.5)+'" alt="Página '+(i+1)+'"><figcaption>Página '+(i+1)+' <button type="button" class="btn sm" data-rot="'+i+'">↻ Rotar</button></figcaption></figure>').join("")+'</div>':""};
       sb.addEventListener("click",e=>{const b=e.target.closest("[data-rot]");if(b){const i=+b.dataset.rot;scans[i]=rotCanvas(scans[i]);drawScans()}});
       F.elements.fotos.addEventListener("change",async()=>{fotos=[...F.elements.fotos.files].slice(0,4);if(!fotos.length)return;
         scans=[];sb.innerHTML='<span class="mu">Escaneando la foto…</span>';(async()=>{for(const f of fotos){try{scans.push(await scanify(f))}catch(e){console.warn(e)}}drawScans()})();
-        if(!cap){lee.innerHTML='<span class="mu">'+pl(fotos.length,"foto lista","fotos listas")+' para guardar. Completá los datos a mano.</span>';return}
-        lee.innerHTML='<span class="mu">'+IC.wand+' Leyendo el remito… puede tardar unos segundos.</span>';
+        lee.innerHTML='<span class="mu">'+IC.wand+(cap?' Leyendo el remito… puede tardar unos segundos.':' Leyendo el texto del remito… la primera vez tarda un poco más.')+'</span>';
         const prompt="Sos asistente de recepción de mercadería de una distribuidora mayorista en Tucumán, Argentina. Te paso "+(fotos.length>1?fotos.length+" fotos (hojas) de UN remito":"la foto de un remito")+" de un proveedor que acabamos de recibir en el depósito."
           +" Reglas: (1) PROVEEDOR = la empresa del membrete/logo que EMITE el remito, con su CUIT del encabezado. NUNCA es «Distribuidora Portal» (S.H. o S.R.L.): ese es el cliente que figura en «Señores» y es quien recibe; ignorá su CUIT y su dirección."
           +" (2) Números en formato argentino: «525,00» = 525; «1.253,50» = 1253.5. Devolvé números sin separadores."
@@ -1731,18 +1730,18 @@ function formRec(r){
           +" (7) Además: cantidadTotal (la «Cantidad total» impresa al pie, número o null), transportista (nombre del transportista), pedido (N° de pedido u orden de compra), bultos (si figuran, si no null)."
           +" (8) observaciones = SOLO anotaciones manuscritas que indiquen faltantes, roturas, rechazos o diferencias. Ignorá leyendas impresas (FSC, CAI, AFIP, comprobantes referenciados). \"\" si no hay."
           +" No inventes datos que no se ven. Respondé SOLO JSON con estas claves: proveedor, cuit, remito, fechaRemito, fechaRecepcion, firmado, firmaNombre, pallets, bultos, cantidadTotal, transportista, pedido, items (lista de {codigo, descripcion, cantidad, unidad, nota}), observaciones.";
-        try{const o=await cap.s.json(prompt,{images:fotos,modelTier:"complex"});leido=true;
+        try{const o=cap?await cap.s.json(prompt,{images:fotos,modelTier:"complex"}):remitoDesdeTexto(await ocrTexto(fotos,p=>{lee.innerHTML='<span class="mu">'+IC.wand+' Leyendo el texto del remito… '+p+'%</span>'}));leido=true;
           const set=(k,v)=>{if(v!=null&&v!==""&&F.elements[k])F.elements[k].value=v};
           set("proveedor",String(o.proveedor||"").trim());set("remitoNro",String(o.remito||"").trim());set("cuit",String(o.cuit||"").trim());
           const fr=pDate(o.fechaRecepcion);if(fr)F.elements.fecha.value=fr;const fm=pDate(o.fechaRemito);if(fm)F.elements.fechaRemito.value=fm;
           const np=arNum(o.pallets),nb=arNum(o.bultos),nt=arNum(o.cantidadTotal);if(np!=null)F.elements.pallets.value=np;if(nb!=null)F.elements.bultos.value=nb;if(nt!=null)F.elements.cantTotal.value=nt;
           set("transportista",String(o.transportista||"").trim());set("pedido",String(o.pedido||"").trim());
-          F.elements.firmado.value=o.firmado?"si":"no";set("firmaNombre",String(o.firmaNombre||"").trim());
+          if(o.firmado!=null)F.elements.firmado.value=o.firmado?"si":"no";set("firmaNombre",String(o.firmaNombre||"").trim());
           if(o.observaciones)F.elements.obs.value=String(o.observaciones);
           items=(o.items||[]).map(i=>({q:arNum(i.cantidad),u:String(i.unidad||"").trim(),d:String(i.descripcion||"").trim(),c:String(i.codigo||"").trim(),n:String(i.nota||"").trim()})).filter(i=>(i.d||i.c)&&!/^descuento|bonificaci/i.test(i.d));draw();
           const suma=items.reduce((t,i)=>t+(Number(i.q)||0),0),dif=nt!=null&&Math.abs(nt-suma)>.001;
-          lee.innerHTML='<span>'+IC.check+' Remito leído: <b>'+esc(o.proveedor||"proveedor sin leer")+'</b>'+(o.remito?" · N° "+esc(o.remito):"")+' · '+pl(items.length,"producto","productos")+' · '+(np!=null?pl(np,"pallet","pallets"):'<b style="color:var(--warn)">pallets sin indicar</b>')+' · '+(o.firmado?"con firma de recibido":'<b style="color:var(--warn)">sin firma de recibido</b>')+'</span>'
-            +(dif?'<span style="color:var(--warn)"><b>Ojo:</b> el remito dice cantidad total '+fN(nt)+' y los productos suman '+fN(suma)+'. Revisá si falta un renglón.</span>':"")+'<span class="mu">Revisá los datos, elegí el depósito y grabá.</span>'}
+          lee.innerHTML='<span>'+IC.check+' Remito leído: <b>'+esc(o.proveedor||"proveedor sin leer")+'</b>'+(o.remito?" · N° "+esc(o.remito):"")+' · '+pl(items.length,"producto","productos")+' · '+(np!=null?pl(np,"pallet","pallets"):'<b style="color:var(--warn)">pallets sin indicar</b>')+' · '+(o.firmado==null?'<b style="color:var(--warn)">firma: completala a mano</b>':o.firmado?"con firma de recibido":'<b style="color:var(--warn)">sin firma de recibido</b>')+'</span>'
+            +(dif?'<span style="color:var(--warn)"><b>Ojo:</b> el remito dice cantidad total '+fN(nt)+' y los productos suman '+fN(suma)+'. Revisá si falta un renglón.</span>':"")+(o._ocr?'<span class="mu">Leído con lectura de texto (sin IA): revisá cada dato, completá lo que falte, elegí el depósito y grabá.</span>':'<span class="mu">Revisá los datos, elegí el depósito y grabá.</span>')}
         catch(e){lee.innerHTML='<span style="color:var(--bad)">'+(e&&e.code==="not_granted"?"No se dio permiso para leer la imagen.":e&&e.code==="rate_limited"?"Demasiados pedidos seguidos. Probá en un rato.":"No pude leer el remito. Probá con una foto más nítida o completá los datos a mano.")+'</span>'}})},
     save:async d=>{
       if(!d.deposito){ferr("Elegí en qué depósito se deja la mercadería.");return false}
@@ -2342,8 +2341,60 @@ function formImpPlan(){let R=null;
 }
 
 /* ================= programación de preventa: foto de la planilla ================= */
+/* Lectura con IA fuera de Claude: si la página no corre dentro de Claude, las lecturas
+   (remito, planilla, WhatsApp) van al servidor de Cloudflare (ia-worker/worker.js),
+   que guarda la clave de Anthropic. Las fotos se achican a JPEG antes de mandarlas. */
+const IA_URL=""; // servidor de IA (ia-worker/worker.js): vacío = se usa la lectura de texto gratis (OCR)
+function fotoAJpeg(f,max=1800){return new Promise((res,rej)=>{const u=URL.createObjectURL(f),im=new Image();
+  im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+    c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);res({media_type:"image/jpeg",data:c.toDataURL("image/jpeg",.85).split(",")[1]})};
+  im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("No se pudo abrir la foto"))};im.src=u})}
+function iaExterna(){if(!IA_URL)return null;return{limits:async()=>({images:true}),
+  json:async(prompt,opt={})=>{const images=await Promise.all((opt.images||[]).map(f=>fotoAJpeg(f)));
+    const r=await fetch(IA_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,images})});
+    const d=await r.json().catch(()=>({}));if(!r.ok||!d.json)throw new Error(d.error||("Error "+r.status));return d.json}}}
+async function usarIA(){try{if(window.claude&&window.claude.use){const s=await window.claude.use("sample");if(s)return s}}catch(e){}return iaExterna()}
+/* Lectura de texto gratis (Tesseract, en el navegador) para el remito cuando no hay IA.
+   Lee el texto impreso y con reglas arma lo mismo que devolvería la IA. Lo escrito a mano
+   (pallets, firma, fecha de recepción) casi nunca se lee: queda para completar a mano. */
+let tessP=null;
+function loadTesseract(){return tessP||(tessP=new Promise((res,rej)=>{if(window.Tesseract)return res(window.Tesseract);
+  const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+  s.onload=()=>res(window.Tesseract);s.onerror=()=>{tessP=null;rej(new Error("No se pudo cargar el lector de texto"))};document.head.appendChild(s)}))}
+async function ocrTexto(fotos,avance){const T=await loadTesseract();const w=await T.createWorker("spa",1,{logger:m=>{if(m.status==="recognizing text"&&avance)avance(Math.round(m.progress*100))}});
+  try{let t="";for(const f of fotos){const r=await w.recognize(f);t+=r.data.text+"\n"}return t}finally{await w.terminate()}}
+function remitoDesdeTexto(txt){
+  const L=txt.split(/\r?\n/).map(s=>s.replace(/\s+/g," ").trim()).filter(Boolean), todo=L.join("\n"), low=s=>s.toLowerCase();
+  const esPortal=i=>[L[i-1],L[i],L[i+1]].some(s=>s&&/portal|se[ñn]or/i.test(s));
+  const o={proveedor:"",cuit:"",remito:"",fechaRemito:"",fechaRecepcion:"",firmado:null,firmaNombre:"",pallets:null,bultos:null,cantidadTotal:null,transportista:"",pedido:"",items:[],observaciones:"",_ocr:true};
+  // CUIT del proveedor: el primero que no esté junto a «Portal» o «Señores»
+  for(let i=0;i<L.length&&!o.cuit;i++){const m=L[i].match(/\b(20|23|24|27|30|33|34)[-\s.]?(\d{8})[-\s.]?(\d)\b/);if(m&&!esPortal(i))o.cuit=m[1]+"-"+m[2]+"-"+m[3]}
+  // N° de remito: 0001-00012345 (con o sin "N°")
+  const rm=todo.match(/\b(\d{4,5})\s*[-–]\s*(\d{6,8})\b/);if(rm)o.remito=rm[1]+"-"+rm[2];
+  else{const r2=todo.match(/remito[^\n\d]{0,15}(\d[\d-]{4,})/i);if(r2)o.remito=r2[1]}
+  // Fecha del remito: la de la línea que dice «Fecha», si no la primera fecha del texto
+  const fr=/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/;
+  const lf=L.find(s=>/fecha/i.test(s)&&fr.test(s))||L.find(s=>fr.test(s));
+  if(lf){const m=lf.match(fr);o.fechaRemito=m[1].padStart(2,"0")+"/"+m[2].padStart(2,"0")+"/"+(m[3].length===2?"20"+m[3]:m[3])}
+  // Proveedor: arriba del todo, la razón social (S.A., S.R.L., etc.) que no sea Portal
+  const top=L.slice(0,12);
+  o.proveedor=(top.find(s=>/\b(s\.?\s?a\.?|s\.?\s?r\.?\s?l\.?|s\.?\s?a\.?\s?s\.?|s\.?\s?h\.?|sacif|saic)\b/i.test(s)&&!/portal/i.test(s))
+    ||top.find(s=>/[a-záéíóúñ]{4,}/i.test(s)&&!/remito|original|duplicado|documento|factura|portal|fecha|cuit|iva|ingresos|inicio/i.test(s))||"").replace(/[^\wÁÉÍÓÚÑáéíóúñ.,&\- ]/g,"").trim();
+  const tr=L.find(s=>/transport/i.test(s));if(tr)o.transportista=(tr.split(/:\s*/)[1]||"").trim();
+  const pd=todo.match(/(?:pedido|orden de compra|o\.\s?c\.)[^\S\n]*(?:n\W{0,2}|nro\.?)?[^\S\n]*:?[^\S\n]*([A-Z0-9][A-Z0-9-]{2,})/i);if(pd)o.pedido=pd[1];
+  const ct=todo.match(/cantidad\s+total\s*:?\s*([\d.,]+)/i);if(ct)o.cantidadTotal=ct[1];
+  const pl=todo.match(/(\d{1,3})\s*(pallets?|pall?\.?|plt?s?)\b/i);if(pl)o.pallets=pl[1];
+  const bu=todo.match(/(\d{1,4})\s*bultos?\b/i);if(bu)o.bultos=bu[1];
+  // Renglones de productos: código, descripción y cantidad (en cualquiera de los dos órdenes típicos)
+  const UN="(UN|UNI|CJ|CAJ|BU|PACK|KG|LT)?";
+  const r1=new RegExp("^(\\d{3,}(?:\\s\\d{3,})?)\\s+(.{4,}?)\\s+(\\d{1,6}(?:[.,]\\d{1,3})?)\\s*"+UN+"(?:\\s+[\\d.,$]+)*$","i");
+  const r2=new RegExp("^(\\d{1,6}(?:[.,]\\d{1,3})?)\\s*"+UN+"\\s+(\\d{3,})\\s+(.{4,})$","i");
+  L.forEach(s=>{if(/descuento|bonificaci|subtotal|total|cuit|fecha|i\.?v\.?a/i.test(s))return;
+    let m=s.match(r1);if(m){o.items.push({codigo:m[1],descripcion:m[2],cantidad:m[3],unidad:m[4]||"",nota:""});return}
+    m=s.match(r2);if(m)o.items.push({codigo:m[3],descripcion:m[4],cantidad:m[1],unidad:m[2]||"",nota:""})});
+  return o}
 let sampleCap=null;
-async function getSample(){if(sampleCap!==null)return sampleCap;try{const s=await window.claude.use("sample");const lim=s?await s.limits().catch(()=>null):null;sampleCap=s&&lim&&lim.images?{s,lim}:false}catch(e){sampleCap=false}return sampleCap}
+async function getSample(){if(sampleCap!==null)return sampleCap;try{const s=await usarIA();const lim=s?await s.limits().catch(()=>null):null;sampleCap=s&&lim&&lim.images?{s,lim}:false}catch(e){sampleCap=false}return sampleCap}
 function pzRowsHtml(rows){return'<div class="tw"><table class="wide pzt" style="min-width:600px"><thead><tr><th>Día</th><th>Destino / preventista</th><th>Zonas</th><th></th></tr></thead><tbody>'
   +rows.map((r,i)=>{const bad=r.zonas.filter(z=>!zonaByNum(z));return'<tr><td><select data-pz="'+i+'" data-pf="fecha">'+[0,1,2,3,4,5].map(k=>{const d=addD(r.semana,k);return'<option value="'+d+'"'+(d===r.fecha?" selected":"")+'>'+DN[wd(d)]+" "+fD(d)+'</option>'}).join("")+'</select></td><td><input data-pz="'+i+'" data-pf="etiqueta" value="'+esc(r.etiqueta)+'"></td><td><input data-pz="'+i+'" data-pf="zonas" value="'+esc(r.zonas.join(", "))+'">'+(bad.length?'<div class="sub" style="color:var(--bad)">No existe: '+esc(bad.join(", "))+'</div>':"")+'</td><td><button type="button" class="btn sm ghost" data-pzdel="'+i+'" aria-label="Quitar renglón">'+IC.x+'</button></td></tr>'}).join("")+'</tbody></table></div>'}
 function formPzFoto(){let rows=[];const wk=UI.semana;
@@ -2385,7 +2436,7 @@ function formPz(p){const wk=UI.semana;
 }
 
 /* ================= observaciones de sucursales desde WhatsApp ================= */
-async function getSampleAny(){try{const s=await window.claude.use("sample");if(!s)return null;const lim=await s.limits().catch(()=>null);return{s,img:!!(lim&&lim.images)}}catch(e){return null}}
+async function getSampleAny(){try{const s=await usarIA();if(!s)return null;const lim=await s.limits().catch(()=>null);return{s,img:!!(lim&&lim.images)}}catch(e){return null}}
 function formWhats(salidaId){let items=[],raw="";
   const s0=get("salidas",salidaId);
   const salOpts=()=>S.salidas.filter(s=>s.canal==="Sucursales"&&actSal(s)&&s.fecha>=addD(today(),-30)||s.id===salidaId).sort((a,b)=>b.fecha.localeCompare(a.fecha)).map(s=>[s.id,"N° "+nro(s)+" · "+fD(s.fecha)+" · "+destT(s).slice(0,60)]);
