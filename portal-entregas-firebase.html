@@ -988,7 +988,7 @@ function AdminPanel({ db, choferes, setChoferes, zonas, setZonas, facturas, setF
           {tab === "seguimiento" && <SeguimientoTab facturas={facturas} setFacturas={setFacturas} zonas={zonas} choferes={choferes} />}
           {tab === "mapa" && <MapaVivoTab db={db} choferes={choferes} zonas={zonas} facturas={facturas} />}
           {tab === "combustible" && <CombustibleTab combustible={combustible} choferes={choferes} vehiculos={vehiculos} />}
-          {tab === "historial" && <HistorialTab historialDias={historialDias} />}
+          {tab === "historial" && <HistorialTab db={db} historialDias={historialDias} />}
           {tab === "costos" && <CostosTab db={db} facturas={facturas} combustible={combustible} historialDias={historialDias} />}
         </>
       )}
@@ -1703,6 +1703,8 @@ function ResumenDiaTab({ db, choferes, zonas, setZonas, facturas, setFacturas })
   const [cerrando, setCerrando] = useState(false);
   const [cerrado, setCerrado] = useState(null);
   const [ubicaciones, setUbicaciones] = useState({});
+  // Fecha con la que se guarda el cierre: arranca en hoy, pero se puede cambiar antes de cerrar.
+  const [fechaDia, setFechaDia] = useState(fechaLocalHoy());
 
   // Recorrido GPS de los choferes (se actualiza en vivo mientras están en la calle)
   useEffect(() => {
@@ -1740,7 +1742,7 @@ function ResumenDiaTab({ db, choferes, zonas, setZonas, facturas, setFacturas })
 
   const cerrarDia = async () => {
     setCerrando(true);
-    const fechaCierre = fechaLocalHoy();
+    const fechaCierre = fechaDia || fechaLocalHoy();
     const resumen = {
       fecha: fechaCierre,
       zonaId: zona.id,
@@ -1781,7 +1783,7 @@ function ResumenDiaTab({ db, choferes, zonas, setZonas, facturas, setFacturas })
       <Card>
         <div className="text-center py-4">
           <CheckCircle2 size={32} style={{ color: "var(--teal)", margin: "0 auto 10px" }} />
-          <p className="de-display font-bold mb-1">Día cerrado</p>
+          <p className="de-display font-bold mb-1">Día cerrado · {new Date(cerrado.fecha + "T00:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}</p>
           <p className="text-sm mb-4" style={{ color: "var(--slate)" }}>
             {cerrado.entregadas} entregadas de {cerrado.total} · {formatMoney(cerrado.importeEntregado)} cobrado
           </p>
@@ -1853,6 +1855,24 @@ function ResumenDiaTab({ db, choferes, zonas, setZonas, facturas, setFacturas })
             ℹ️ Todavía quedan {pendientes.length} facturas sin entregar. Quedan registradas en el historial de hoy, pero van a seguir activas (no se borran) para que las puedas entregar y reordenar en los próximos días.
           </p>
         )}
+        <label htmlFor="fecha-cierre" className="block text-xs font-semibold uppercase mb-1" style={{ color: "var(--slate)" }}>Fecha del día que cerrás</label>
+        <div className="flex items-center gap-2 mb-3">
+          <input
+            id="fecha-cierre"
+            type="date"
+            value={fechaDia}
+            max={fechaLocalHoy()}
+            onChange={(e) => e.target.value && setFechaDia(e.target.value)}
+            className="de-focus de-mono text-sm rounded-xl p-2.5 border"
+            style={{ borderColor: "var(--line)", background: "var(--card)" }}
+          />
+          {fechaDia !== fechaLocalHoy() && (
+            <button onClick={() => setFechaDia(fechaLocalHoy())} className="de-focus text-xs font-semibold" style={{ color: "var(--route)" }}>Volver a hoy</button>
+          )}
+        </div>
+        {fechaDia !== fechaLocalHoy() && (
+          <p className="text-xs mb-3" style={{ color: "var(--amber)" }}>El cierre se va a guardar con fecha {new Date(fechaDia + "T00:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}, no con la de hoy.</p>
+        )}
         <button
           onClick={() => setConfirmandoCierre(true)}
           disabled={facturasZona.length === 0}
@@ -1865,7 +1885,7 @@ function ResumenDiaTab({ db, choferes, zonas, setZonas, facturas, setFacturas })
 
       {confirmandoCierre && (
         <ConfirmModal
-          mensaje={`¿Cerrar el día con ${entregadas.length} entregadas, ${pendientes.length} pendientes y ${formatKm(kmTotal)} recorridos? Se guarda el resumen y se archivan las entregadas. Las ${pendientes.length} pendientes se mantienen activas para seguir trabajándolas.`}
+          mensaje={`¿Cerrar el día ${new Date(fechaDia + "T00:00:00").toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric" })} con ${entregadas.length} entregadas, ${pendientes.length} pendientes y ${formatKm(kmTotal)} recorridos? Se guarda el resumen y se archivan las entregadas. Las ${pendientes.length} pendientes se mantienen activas para seguir trabajándolas.`}
           textoConfirmar={cerrando ? "Cerrando..." : "Sí, cerrar el día"}
           onCancelar={() => setConfirmandoCierre(false)}
           onConfirmar={cerrarDia}
@@ -2697,8 +2717,27 @@ function SeguimientoTab({ facturas, setFacturas, zonas, choferes }) {
   );
 }
 
-function HistorialTab({ historialDias }) {
+function HistorialTab({ db, historialDias }) {
   const [diaAbierto, setDiaAbierto] = useState(null);
+  const [editFecha, setEditFecha] = useState(null); // fecha nueva mientras se edita
+  const [guardandoFecha, setGuardandoFecha] = useState(false);
+  const [msgFecha, setMsgFecha] = useState("");
+
+  const guardarFecha = async (dia) => {
+    if (!db || !editFecha || editFecha === dia.fecha) { setEditFecha(null); return; }
+    setGuardandoFecha(true); setMsgFecha("");
+    try {
+      await db.collection("historial_dias").doc(dia.id).set(
+        { fecha: editFecha, fechaOriginal: dia.fechaOriginal || dia.fecha, fechaModificada: new Date().toISOString() },
+        { merge: true }
+      );
+      setMsgFecha("Fecha cambiada");
+      setEditFecha(null);
+    } catch (e) {
+      setMsgFecha("No se pudo guardar la fecha. Revisá la conexión y probá de nuevo.");
+    }
+    setGuardandoFecha(false);
+  };
 
   const ordenados = [...historialDias].sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
 
@@ -2708,10 +2747,36 @@ function HistorialTab({ historialDias }) {
     const facturasOrdenadas = [...(dia.facturas || [])].sort((a, b) => (a.estado === b.estado ? 0 : a.estado === "pendiente" ? -1 : 1));
     return (
       <Card>
-        <button onClick={() => setDiaAbierto(null)} className="de-focus flex items-center gap-1 text-sm font-semibold mb-3" style={{ color: "var(--route)" }}>
+        <button onClick={() => { setDiaAbierto(null); setEditFecha(null); setMsgFecha(""); }} className="de-focus flex items-center gap-1 text-sm font-semibold mb-3" style={{ color: "var(--route)" }}>
           <ArrowLeft size={16} /> Volver al historial
         </button>
-        <p className="de-display font-semibold">{new Date(dia.fecha + "T00:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}</p>
+        {editFecha === null ? (
+          <div className="flex items-center gap-3 flex-wrap">
+            <p className="de-display font-semibold">{new Date(dia.fecha + "T00:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
+            {db && (
+              <button onClick={() => { setEditFecha(dia.fecha); setMsgFecha(""); }} className="de-focus text-xs font-semibold px-2.5 py-1 rounded-lg border" style={{ borderColor: "var(--line)", color: "var(--route)" }}>Cambiar fecha</button>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <label htmlFor="hist-fecha" className="text-xs font-semibold uppercase" style={{ color: "var(--slate)" }}>Nueva fecha</label>
+            <input
+              id="hist-fecha"
+              type="date"
+              value={editFecha}
+              max={fechaLocalHoy()}
+              onChange={(e) => e.target.value && setEditFecha(e.target.value)}
+              className="de-focus de-mono text-sm rounded-xl p-2 border"
+              style={{ borderColor: "var(--line)", background: "var(--card)" }}
+            />
+            <button onClick={() => guardarFecha(dia)} disabled={guardandoFecha} className="de-focus text-sm font-semibold px-3 py-1.5 rounded-lg" style={{ background: "var(--route)", color: "white" }}>{guardandoFecha ? "Guardando..." : "Guardar"}</button>
+            <button onClick={() => setEditFecha(null)} className="de-focus text-sm font-semibold px-3 py-1.5" style={{ color: "var(--slate)" }}>Cancelar</button>
+          </div>
+        )}
+        {msgFecha && <p className="text-xs mt-1" style={{ color: msgFecha === "Fecha cambiada" ? "var(--teal)" : "var(--danger)" }}>{msgFecha}</p>}
+        {dia.fechaOriginal && dia.fechaOriginal !== dia.fecha && (
+          <p className="text-xs mt-1" style={{ color: "var(--slate)" }}>Fecha corregida (originalmente se cerró el {new Date(dia.fechaOriginal + "T00:00:00").toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}).</p>
+        )}
         <p className="text-sm mb-4" style={{ color: "var(--slate)" }}>{dia.zonaNombre} · {dia.entregadas}/{dia.total} entregadas · {formatMoney(dia.importeEntregado)} cobrado{dia.kmRecorridos != null ? ` · ${formatKm(dia.kmRecorridos)}` : ""}</p>
         {(dia.kmPorChofer || []).length > 1 && (
           <p className="text-xs -mt-3 mb-4" style={{ color: "var(--slate)" }}>{dia.kmPorChofer.map((x) => `${x.nombre}: ${formatKm(x.km)}`).join(" · ")}</p>
