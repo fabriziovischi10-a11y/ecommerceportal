@@ -1499,6 +1499,9 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
 .acceso-msg.ok { color: #1F9D6B; }
 .btn-salir { position: fixed; top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px; z-index: 5; font: 600 12px var(--f-body); border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 999px; padding: 6px 12px; cursor: pointer; backdrop-filter: blur(6px); }
 .btn-salir[hidden] { display: none; }
+/* La marca de autor (FABRIZIO VISCHI) se ve también por encima de la pantalla de acceso */
+.firma { z-index: 60 !important; }
+body:has(.acceso:not([hidden])) .firma { color: #E6ECE9; text-shadow: none; opacity: 0.7; }
 </style>
 <div class="acceso" id="acceso">
   <form class="acceso-caja" id="acceso-form">
