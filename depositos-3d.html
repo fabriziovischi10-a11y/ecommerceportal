@@ -84,6 +84,10 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 .f-cara select { font: 400 14px var(--f-body); color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
 .f-cara select option, .f-cara select optgroup { color: #18211E; }
 .f-fila { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.btn-exportar { font: 700 12px var(--f-body); border: 0; background: #1F9D6B; color: #fff; border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+.btn-exportar:hover { background: #178257; }
+.btn-exportar[disabled] { opacity: 0.7; cursor: default; }
+.btn-exportar:focus-visible { outline: 2px solid var(--dep15); outline-offset: 2px; }
 #f-limpiar { font: 600 12px var(--f-body); border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 999px; padding: 5px 10px; cursor: pointer; }
 .leyenda-v i { width: 11px; height: 11px; border-radius: 2px; }
 #buscar { font: 400 14px var(--f-body); color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; width: 100%; box-sizing: border-box; }
@@ -183,6 +187,7 @@ body.caminando #escena canvas, #escena canvas { cursor: grab; }
     <div class="lista-doble" id="lista-doble" hidden></div>
     <div class="f-fila">
       <button type="button" id="f-limpiar">Limpiar filtros</button>
+      <button type="button" id="f-exportar" class="btn-exportar">⬇ Exportar Excel</button>
     </div>
     <input id="buscar" type="search" placeholder="Buscar producto, código, paleta o ubicación" aria-label="Buscar por producto, código, paleta o ubicación">
     <p id="pl-busqueda" aria-live="polite"></p>
@@ -722,6 +727,120 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
     mostrarFicha(it);
   };
   document.getElementById("chk-doble").addEventListener("change", (e) => { F.doble = e.target.checked; pintar(); listarDobles(); });
+
+  // ---- Exportar Excel: todas las posiciones de estantería con el stock que muestra la página (mismos criterios y
+  // colores que el panel). Si hay filtros activos, agrega la hoja "Según filtros". ExcelJS se carga recién al exportar.
+  const btnExportar = document.getElementById("f-exportar");
+  const cargarExcelJS = () => window.ExcelJS ? Promise.resolve() : new Promise((ok, mal) => {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js";
+    s.onload = ok; s.onerror = () => mal(new Error("no se pudo cargar ExcelJS (¿sin internet?)"));
+    document.head.appendChild(s);
+  });
+  const depDe = (l) => /^[A-J]$/.test(l) ? "Depósito 15" : (l.length === 1 || l <= "AG") ? "Depósito 3" : "Depósito 1";
+  const ORDEN_DEP = { "Depósito 15": 0, "Depósito 3": 1, "Depósito 1": 2 };
+  const NOMBRE_RANGO = { v6: "Menos de 6 meses", v12: "6 a 12 meses", ok: "Más de 12 meses", sin: "Sin vencimiento" };
+  const filasPosiciones = () => {
+    const filas = [];
+    const letras = Object.keys(DATOS.existe || {}).sort((a, b) => ORDEN_DEP[depDe(a)] - ORDEN_DEP[depDe(b)] || a.length - b.length || a.localeCompare(b));
+    letras.forEach((l) => {
+      const dep = depDe(l);
+      DATOS.existe[l].forEach((mascara, i) => {
+        for (let nv = 1; mascara >> (nv - 1); nv++) {
+          if (!(mascara & (1 << (nv - 1)))) continue;
+          const pos = i + 1, lugar = `D15${l}${String(pos).padStart(2, "0")}N${nv}`;
+          const pals = DATOS.ubic[lugar] || [];
+          const doble = pals.length > 1 && dep !== "Depósito 3";
+          const venc = pals.reduce((m, d) => d[3] && (!m || d[3] < m) ? d[3] : m, 0);
+          const prods = [...new Set(pals.flatMap((d) => d[6] || [d[1]]))].map((p) => `${DATOS.prods[p][0]} - ${DATOS.prods[p][1]}`);
+          const obs = [];
+          if (doble) obs.push("Solo admite una paleta");
+          if (dep === "Depósito 15" && !SIN_PUENTE.has(l) && [17, 18, 31, 32].includes(pos) && nv <= NIV_PUENTE) obs.push("Nivel en puente (no existe físicamente)");
+          filas.push({ dep, l, pos, nv, lugar, pals, doble, venc,
+            estado: !pals.length ? "Vacía" : doble ? "Con 2+ paletas" : "Ocupada",
+            paletas: pals.map((d) => d[0] < 0 ? "Sin paleta" : String(d[0])).join(" | "),
+            productos: prods.join(" | "), cant: pals.reduce((s, d) => s + d[2], 0),
+            rango: pals.length ? NOMBRE_RANGO[rango(venc)] : "", obs: obs.join(" · ") });
+        }
+      });
+    });
+    return filas;
+  };
+  // Mismo criterio que el panel: texto, cara, colores y 2+ paletas. Las vacías entran solo si no se filtra por texto, color ni dobles.
+  const pasaFiltros = (f) => {
+    if (F.cara && f.l !== F.cara) return false;
+    if (!f.pals.length) return !F.texto && F.rangos.size === 4 && !F.doble;
+    return coincide({ tipo: "rack", lugar: f.lugar, letra: f.l, doble: f.doble, pals: f.pals });
+  };
+  const COLORES = { "Con 2+ paletas": ["8E24AA", "FFFFFF"], "Vacía": ["E9ECEA", "5B6762"], "Ocupada": ["DCEBDF", null],
+    "Menos de 6 meses": ["D64545", "FFFFFF"], "6 a 12 meses": ["E8A33D", null], "Más de 12 meses": ["CDB98F", null], "Sin vencimiento": ["B9C0BC", null] };
+  const pintarCelda = (celda, clave) => {
+    const c = COLORES[clave]; if (!c) return;
+    celda.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + c[0] } };
+    if (c[1]) celda.font = { color: { argb: "FF" + c[1] }, bold: clave === "Con 2+ paletas" };
+  };
+  const COLUMNAS = [
+    ["Depósito", 13], ["Cara (pasillo)", 9], ["Posición", 9], ["Nivel", 7], ["Ubicación", 12], ["Estado", 15], ["Paletas en la posición", 10],
+    ["N° de paleta", 18], ["Productos", 60], ["Cantidad (unid.)", 11], ["Vencimiento más corto", 13], ["Rango de vencimiento", 17], ["Observación", 34]];
+  const hojaPosiciones = (wb, nombre, filas) => {
+    const ws = wb.addWorksheet(nombre, { views: [{ state: "frozen", ySplit: 1 }] });
+    ws.columns = COLUMNAS.map(([header, width]) => ({ header, width }));
+    filas.forEach((f) => {
+      const fila = ws.addRow([f.dep, f.l, f.pos, f.nv, f.lugar, f.estado, f.pals.length, f.paletas, f.productos,
+        f.pals.length ? f.cant : null, f.venc ? new Date(Math.floor(f.venc / 10000), Math.floor(f.venc / 100) % 100 - 1, f.venc % 100) : null, f.rango, f.obs]);
+      pintarCelda(fila.getCell(6), f.estado); pintarCelda(fila.getCell(12), f.rango);
+    });
+    ws.getColumn(10).numFmt = "#,##0"; ws.getColumn(11).numFmt = "dd/mm/yyyy";
+    const h = ws.getRow(1); h.height = 30;
+    h.eachCell((c) => { c.font = { bold: true, color: { argb: "FFFFFFFF" } }; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F3A5E" } }; c.alignment = { wrapText: true, vertical: "middle" }; });
+    ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: Math.max(1, filas.length + 1), column: COLUMNAS.length } };
+  };
+  btnExportar.addEventListener("click", async () => {
+    const texto = btnExportar.textContent; btnExportar.disabled = true; btnExportar.textContent = "Armando el Excel…";
+    try {
+      await cargarExcelJS();
+      const filas = filasPosiciones();
+      const wb = new ExcelJS.Workbook(); wb.creator = "Depósitos Portal 3D";
+      // Resumen, igual que la tabla del panel
+      const r = wb.addWorksheet("Resumen");
+      r.columns = [{ width: 22 }, { width: 12 }, { width: 12 }, { width: 12 }, { width: 12 }];
+      r.addRow([`Posiciones de estantería · Stock al ${DATOS.fecha}`]).font = { bold: true, size: 14 };
+      r.addRow([]);
+      const enc = r.addRow(["Posiciones", "Total", "Ocupadas", "Vacías", "2+ paletas"]);
+      enc.eachCell((c) => { c.font = { bold: true, color: { argb: "FFFFFFFF" } }; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F3A5E" } }; });
+      const tot = [0, 0, 0];
+      ["Depósito 15", "Depósito 3", "Depósito 1"].forEach((d) => {
+        const fs = filas.filter((f) => f.dep === d), o = fs.filter((f) => f.pals.length).length, dd = fs.filter((f) => f.doble).length;
+        r.addRow([d, fs.length, o, fs.length - o, d === "Depósito 3" ? "—" : dd]);
+        tot[0] += fs.length; tot[1] += o; tot[2] += dd;
+      });
+      r.addRow(["Total", tot[0], tot[1], tot[0] - tot[1], tot[2]]).font = { bold: true };
+      [2, 3, 4, 5].forEach((c) => { r.getColumn(c).numFmt = "#,##0"; r.getColumn(c).alignment = { horizontal: "right" }; });
+      r.addRow([]);
+      r.addRow(["Referencias (las mismas del panel del 3D)"]).font = { bold: true };
+      [["Con 2+ paletas", "Posición con 2 o más paletas (en los Dep. 15 y 1 va una sola)"], ["Menos de 6 meses", "Vence en menos de 6 meses"], ["6 a 12 meses", "Vence entre 6 y 12 meses"],
+       ["Más de 12 meses", "Vence en más de 12 meses"], ["Sin vencimiento", "Sin fecha de vencimiento"], ["Vacía", "Posición sin stock"]]
+        .forEach(([k, t]) => { const f = r.addRow([k, t]); pintarCelda(f.getCell(1), k); });
+      r.addRow([]);
+      r.addRow(["Cómo filtrar: en la hoja Posiciones, usá las flechas del encabezado (Depósito, Cara, Estado, Rango de vencimiento), igual que los filtros del panel."]);
+      hojaPosiciones(wb, "Posiciones", filas);
+      hojaPosiciones(wb, "2+ paletas", filas.filter((f) => f.doble));
+      if (hayFiltro()) {
+        hojaPosiciones(wb, "Según filtros", filas.filter(pasaFiltros));
+        r.addRow([]);
+        r.addRow([`La hoja "Según filtros" tiene solo las posiciones que coinciden con los filtros que estaban activos en el panel al exportar.`]);
+      }
+      const buf = await wb.xlsx.writeBuffer();
+      window.__ultimoExcel = buf;   // para verificar en pruebas
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+      a.download = `Posiciones depositos ${DATOS.fecha.replace(/\//g, "-").replace(":", ".")}.xlsx`;
+      document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+      btnExportar.textContent = "Listo ✓";
+    } catch (err) {
+      btnExportar.textContent = "No se pudo exportar"; console.error(err); alert("No se pudo armar el Excel: " + (err.message || err));
+    } finally { setTimeout(() => { btnExportar.textContent = texto; btnExportar.disabled = false; }, 2500); }
+  });
   document.getElementById("f-limpiar").addEventListener("click", () => {
     F.texto = null; F.cara = ""; F.rangos = new Set(["v6", "v12", "ok", "sin"]); F.doble = false; document.getElementById("chk-doble").checked = false; listarDobles();
     document.getElementById("buscar").value = ""; selCara.value = "";
