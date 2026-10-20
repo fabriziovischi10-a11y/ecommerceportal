@@ -4215,23 +4215,42 @@ function ChoferFlow({ db, assetsApi, choferes, zonas, facturas, setFacturas, cli
                 {f.estado === "entregado" && (
                   f.fotoId ? (
                     <FotoFactura fotoId={f.fotoId} alt="Foto de la factura" className="w-full max-h-40 object-cover rounded-lg" linkClassName="de-focus block mt-2 w-full" />
-                  ) : (
-                    <label
-                      className="de-focus flex items-center justify-center gap-1.5 w-full mt-2 py-2 rounded-lg text-xs font-semibold cursor-pointer"
+                  ) : subiendoFoto === f.id ? (
+                    <div
+                      className="flex items-center justify-center gap-1.5 w-full mt-2 py-2 rounded-lg text-xs font-semibold"
                       style={{ background: "var(--paper)", border: "1px dashed var(--line)", color: "var(--route)" }}
                     >
-                      {subiendoFoto === f.id ? (
-                        <><Loader2 size={13} className="animate-spin" /> Subiendo foto...</>
-                      ) : (
-                        <>📷 Foto de la factura / firma</>
-                      )}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => subirFoto(f.id, e.target.files && e.target.files[0])}
-                      />
-                    </label>
+                      <Loader2 size={13} className="animate-spin" /> Subiendo foto...
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      {/* capture="environment" abre directo la cámara trasera del celular */}
+                      <label
+                        className="de-focus flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer"
+                        style={{ background: "var(--route)", color: "white" }}
+                      >
+                        📷 Sacar foto
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          className="hidden"
+                          onChange={(e) => subirFoto(f.id, e.target.files && e.target.files[0])}
+                        />
+                      </label>
+                      <label
+                        className="de-focus flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer"
+                        style={{ background: "var(--paper)", border: "1px dashed var(--line)", color: "var(--route)" }}
+                      >
+                        🖼️ Desde galería
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => subirFoto(f.id, e.target.files && e.target.files[0])}
+                        />
+                      </label>
+                    </div>
                   )
                 )}
               </div>
