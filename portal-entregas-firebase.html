@@ -584,6 +584,7 @@ function useDb() {
         } catch (settingsErr) {
           // Si ya se configuró antes (por un remount), ignoramos el error.
         }
+        dbGlobal = firestoreInstance;
         if (alive) setDb(firestoreInstance);
       } catch (e) {
         console.error("Error inicializando Firebase:", e);
@@ -596,17 +597,87 @@ function useDb() {
   return db;
 }
 
-/** Con Firebase, subir archivos está siempre disponible una vez que la app inicializó. */
+/* Fotos de facturas: Firebase Storage no responde en este proyecto (plan gratis), así que
+   la foto se comprime a JPEG y se guarda como texto en Firestore, en la colección FOTOS_COLECCION.
+   La factura guarda fotoId = "fs:<id del documento>". Las fotos viejas (URL de Storage) siguen andando. */
+const FOTOS_COLECCION = "entregas_fotos";
+let dbGlobal = null;
+const fotoCache = {};
+
+async function comprimirFoto(file) {
+  const img = await new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = () => rej(Object.assign(new Error("No se pudo leer la imagen"), { code: "imagen-invalida" }));
+    i.src = URL.createObjectURL(file);
+  });
+  let lado = 1280, calidad = 0.75, dataUrl = "";
+  for (let k = 0; k < 8; k++) {
+    const r = Math.min(1, lado / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.naturalWidth * r);
+    c.height = Math.round(img.naturalHeight * r);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    dataUrl = c.toDataURL("image/jpeg", calidad);
+    if (dataUrl.length < 300000) break; // margen amplio bajo el límite de 1 MB por documento
+    calidad = Math.max(0.4, calidad - 0.1);
+    lado = Math.round(lado * 0.85);
+  }
+  URL.revokeObjectURL(img.src);
+  return dataUrl;
+}
+
 function useAssets() {
   return useMemo(() => ({
     upload: async (file) => {
-      const nombre = `fotos/${genId()}_${file.name}`;
-      const storageRef = firebase.storage().ref(nombre);
-      await storageRef.put(file);
-      const url = await storageRef.getDownloadURL();
-      return { id: url, url };
+      if (!dbGlobal) throw Object.assign(new Error("Sin base de datos"), { code: "sin-conexion" });
+      const dataUrl = await comprimirFoto(file);
+      const ref = dbGlobal.collection(FOTOS_COLECCION).doc();
+      await ref.set({ img: dataUrl, ts: Date.now() });
+      fotoCache[ref.id] = dataUrl;
+      return { id: "fs:" + ref.id };
     },
   }), []);
+}
+
+/** Devuelve la imagen lista para <img src>: lee de Firestore si es "fs:<id>", o usa la URL tal cual. */
+function useFotoSrc(fotoId) {
+  const esFs = typeof fotoId === "string" && fotoId.startsWith("fs:");
+  const id = esFs ? fotoId.slice(3) : null;
+  const [src, setSrc] = useState(esFs ? (fotoCache[id] || null) : fotoId);
+  useEffect(() => {
+    if (!esFs) { setSrc(fotoId); return; }
+    if (fotoCache[id]) { setSrc(fotoCache[id]); return; }
+    let alive = true;
+    (async () => {
+      try {
+        const snap = await dbGlobal.collection(FOTOS_COLECCION).doc(id).get();
+        const img = snap.exists ? snap.data().img : null;
+        if (img) fotoCache[id] = img;
+        if (alive) setSrc(img);
+      } catch (e) {
+        if (alive) setSrc(null);
+      }
+    })();
+    return () => { alive = false; };
+  }, [fotoId]);
+  return src;
+}
+
+/** Abre la foto en una pestaña nueva (las fotos en Firestore son data URLs y no se pueden abrir como link). */
+function abrirFoto(src) {
+  const w = window.open("", "_blank");
+  if (w) w.document.write(`<title>Foto factura</title><body style="margin:0;background:#000"><img src="${src}" style="max-width:100%;display:block;margin:auto"></body>`);
+}
+
+function FotoFactura({ fotoId, className, linkClassName, alt }) {
+  const src = useFotoSrc(fotoId);
+  if (!src) return <span className={linkClassName} style={{ fontSize: 12, color: "var(--slate)" }}>Cargando foto...</span>;
+  return (
+    <button type="button" onClick={() => abrirFoto(src)} className={linkClassName} style={{ padding: 0, border: 0, background: "none", cursor: "zoom-in" }}>
+      <img src={src} alt={alt} className={className} style={{ border: "1px solid var(--line)" }} />
+    </button>
+  );
 }
 
 /** Un documento único que guarda un array bajo la clave "list" (choferes, zonas). */
@@ -2691,9 +2762,7 @@ function SeguimientoTab({ facturas, setFacturas, zonas, choferes }) {
                   </p>
                 )}
                 {f.estado === "entregado" && f.fotoId && (
-                  <a href={f.fotoId} target="_blank" rel="noreferrer" className="de-focus mt-1.5 block">
-                    <img src={f.fotoId} alt="Foto factura" className="h-16 rounded-lg" style={{ border: "1px solid var(--line)" }} />
-                  </a>
+                  <FotoFactura fotoId={f.fotoId} alt="Foto factura" className="h-16 rounded-lg" linkClassName="de-focus mt-1.5 block" />
                 )}
               </div>
             );
@@ -2790,9 +2859,7 @@ function HistorialTab({ db, historialDias }) {
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {f.fotoId && (
-                  <a href={f.fotoId} target="_blank" rel="noreferrer" className="de-focus">
-                    <img src={f.fotoId} alt="Foto factura" className="h-10 w-10 object-cover rounded-lg" style={{ border: "1px solid var(--line)" }} />
-                  </a>
+                  <FotoFactura fotoId={f.fotoId} alt="Foto factura" className="h-10 w-10 object-cover rounded-lg" linkClassName="de-focus" />
                 )}
                 <Badge estado={f.estado} />
               </div>
@@ -4147,9 +4214,7 @@ function ChoferFlow({ db, assetsApi, choferes, zonas, facturas, setFacturas, cli
 
                 {f.estado === "entregado" && (
                   f.fotoId ? (
-                    <a href={f.fotoId} target="_blank" rel="noreferrer" className="de-focus block mt-2">
-                      <img src={f.fotoId} alt="Foto de la factura" className="w-full max-h-40 object-cover rounded-lg" style={{ border: "1px solid var(--line)" }} />
-                    </a>
+                    <FotoFactura fotoId={f.fotoId} alt="Foto de la factura" className="w-full max-h-40 object-cover rounded-lg" linkClassName="de-focus block mt-2 w-full" />
                   ) : (
                     <label
                       className="de-focus flex items-center justify-center gap-1.5 w-full mt-2 py-2 rounded-lg text-xs font-semibold cursor-pointer"
@@ -4163,7 +4228,6 @@ function ChoferFlow({ db, assetsApi, choferes, zonas, facturas, setFacturas, cli
                       <input
                         type="file"
                         accept="image/*"
-                        capture="environment"
                         className="hidden"
                         onChange={(e) => subirFoto(f.id, e.target.files && e.target.files[0])}
                       />
