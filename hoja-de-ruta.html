@@ -523,6 +523,29 @@ button.st.novlink{border:0;cursor:pointer;font:inherit;font-size:12px;font-weigh
 .btn.save{border-color:var(--line-2);color:var(--muted)}.btn.save.on{background:linear-gradient(135deg,var(--c-caja),var(--c-caja2));border-color:transparent;color:#ffffff;box-shadow:0 6px 14px -6px var(--c-caja)}.btn.save.on:hover{filter:brightness(1.06)}.btn.save:disabled{opacity:1;cursor:default}.savebar{position:sticky;top:calc(66px + env(safe-area-inset-top,0px));z-index:20;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--warn-soft);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);border-radius:14px;padding:10px 14px;font-weight:600;box-shadow:var(--shadow-lg)}.savebar>span{display:flex;align-items:center;gap:8px}@media (prefers-reduced-motion:no-preference){.btn.save.on{animation:pulse 1.6s ease-in-out infinite}@keyframes pulse{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--c-caja) 25%,transparent)}}}main>.pdoc,section>.pdoc{margin-top:4px}
 .btn.wa{background:linear-gradient(135deg,#128c4a,#25d366);border-color:transparent;color:#ffffff;box-shadow:0 6px 14px -6px #128c4a}.btn.wa:hover{filter:brightness(1.06)}.btn.wa:disabled{opacity:.5}.tag.wa{background:color-mix(in srgb,#25d366 18%,var(--panel));color:#128c4a}.seg2 .cnt{display:inline-block;min-width:18px;border-radius:9px;padding:0 5px;font-size:11px;background:var(--brand-r);color:#ffffff;margin-left:4px}.warea{grid-column:1/-1;display:flex;flex-direction:column;gap:10px}.wamsg{grid-column:1/-1;background:color-mix(in srgb,#25d366 14%,var(--panel));border:1px solid color-mix(in srgb,#25d366 40%,transparent);border-radius:4px 14px 14px 14px;padding:10px 14px;font-size:13.5px;white-space:normal}.wamsg small{display:block;font-weight:700;color:#128c4a;margin-bottom:4px}
 .posw{display:flex;align-items:center;gap:6px}.grip{cursor:grab;color:var(--muted);font-size:18px;line-height:1;user-select:none;padding:0 2px}.grip:hover{color:var(--c-hoja)}.arr{display:flex;flex-direction:column;gap:2px}.arr button{border:1px solid var(--line-2);background:var(--panel);border-radius:5px;width:26px;height:18px;line-height:1;font-size:9.5px;padding:0;color:var(--muted)}.arr button:hover:not(:disabled){color:#ffffff;background:var(--c-hoja);border-color:var(--c-hoja)}.arr button:disabled{opacity:.35;cursor:default}tr.drow.dragging td{opacity:.45}tr.drow.dropto td{box-shadow:inset 0 3px 0 var(--c-hoja)}tr.drow.moved td{animation:movedflash 1.2s ease-out}@keyframes movedflash{0%{background:color-mix(in srgb,var(--c-hoja) 30%,var(--panel))}100%{background:transparent}}
+.ichart{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin:0 0 16px}.ich-t{font-weight:800;margin-bottom:8px}.ich-r{display:grid;grid-template-columns:minmax(90px,220px) 1fr 90px;gap:10px;align-items:center;padding:3px 0;font-size:13px}.ich-l{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ich-b{height:14px;background:color-mix(in srgb,var(--c-hist) 12%,transparent);border-radius:7px;overflow:hidden}.ich-b i{display:block;height:100%;border-radius:7px;background:linear-gradient(90deg,var(--c-log),var(--c-hist2,#8494ab))}.ich-v{text-align:right;font-family:'JetBrains Mono',monospace;font-size:12.5px}.askrow{display:flex;gap:8px}.askrow .q{flex:1}.ask-ej{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.ask-ans{margin-top:8px;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--c-prog) 8%,transparent);line-height:1.55}.ask-ans ul{margin:6px 0 0 18px;padding:0}@media(max-width:600px){.ich-r{grid-template-columns:100px 1fr 70px}.askrow{flex-direction:column}}
+:root{--vz1:#2a78d6;--vz2:#eb6834;--vz3:#1baf7a;--vz4:#eda100;--vz5:#e87ba4;--vz-oth:#b5b3ab;--vz-grid:#e1e0d9;--vz-base:#c3c2b7;--vz-ink2:#52514e;--k-good:#0ca30c;--k-warn:#fab219;--k-crit:#d03b3b;--k-up:#006300}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--vz1:#3987e5;--vz2:#d95926;--vz3:#199e70;--vz4:#c98500;--vz5:#d55181;--vz-oth:#6b6a64;--vz-grid:#2c2c2a;--vz-base:#383835;--vz-ink2:#c3c2b7;--k-up:#0ca30c}}
+:root[data-theme="dark"]{--vz1:#3987e5;--vz2:#d95926;--vz3:#199e70;--vz4:#c98500;--vz5:#d55181;--vz-oth:#6b6a64;--vz-grid:#2c2c2a;--vz-base:#383835;--vz-ink2:#c3c2b7;--k-up:#0ca30c}
+.vz-card .pnh{flex-wrap:wrap;gap:8px}.vz-ctl{display:flex;gap:6px;flex-wrap:wrap}.vz-ctl select{font-size:13px}.vz-body{padding-top:6px}
+.vz-svg{width:100%;height:auto;display:block;color:var(--vz-ink2)}.vz-grid{stroke:var(--vz-grid);stroke-width:1}.vz-base{stroke:var(--vz-base);stroke-width:1}.vz-ax{font:10.5px Figtree,system-ui,sans-serif;fill:var(--vz-ink2);font-variant-numeric:tabular-nums}.vz-lab{font:700 11.5px Figtree,system-ui,sans-serif;fill:var(--ink)}
+.vz-bar{fill:var(--vz1)}.vz-col:hover .vz-bar{opacity:.8}.vz-hit{fill:transparent}.vz-line{fill:none;stroke:var(--vz1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.vz-dot{fill:var(--vz1);stroke:var(--panel);stroke-width:2}.vz-pt:hover .vz-dot{r:6}
+.vz-bars{display:flex;flex-direction:column;gap:3px;font-size:13px}.vz-br{display:grid;grid-template-columns:minmax(100px,230px) 1fr 96px;gap:10px;align-items:center;padding:2px 0;border-radius:6px}.vz-br:hover{background:color-mix(in srgb,var(--vz1) 7%,transparent)}.vz-bl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.vz-bt{height:14px}.vz-bt i{display:block;height:100%;background:var(--vz1);border-radius:0 4px 4px 0}.vz-bv{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
+.vz-donut{display:flex;gap:24px;align-items:center;flex-wrap:wrap}.vz-donut svg{width:210px;max-width:60vw;flex:none}.vz-seg{stroke:var(--panel);stroke-width:2}.vz-seg:hover{opacity:.85}.vz-tot{font:800 20px Figtree,system-ui,sans-serif;fill:var(--ink)}.vz-sub{font:12px Figtree,system-ui,sans-serif;fill:var(--vz-ink2)}
+.vz-leg{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13.5px;min-width:220px;flex:1}.vz-leg li{display:grid;grid-template-columns:12px 1fr auto 46px;gap:8px;align-items:center}.vz-leg i{width:12px;height:12px;border-radius:4px}.vz-leg b{font-variant-numeric:tabular-nums}.vz-leg em{font-style:normal;color:var(--vz-ink2);text-align:right}
+.vtip{position:fixed;z-index:9999;pointer-events:none;background:var(--ink);color:var(--panel);font:600 12.5px Figtree,system-ui,sans-serif;padding:6px 9px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.18);max-width:320px}
+.inf-areas{margin:6px 0 4px}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-bottom:8px}
+.kcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;border-top:4px solid var(--line)}
+.kcard.k-good{border-top-color:var(--k-good)}.kcard.k-warn{border-top-color:var(--k-warn)}.kcard.k-crit{border-top-color:var(--k-crit)}
+.kh{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;font-weight:700;font-size:13.5px}
+.kst{display:inline-flex;gap:5px;align-items:center;font-size:11.5px;font-weight:700;white-space:nowrap;padding:2px 8px;border-radius:999px;border:1px solid var(--line)}.kst b{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;color:#ffffff;font-size:10px}
+.kst.k-good b{background:var(--k-good)}.kst.k-warn b{background:var(--k-warn);color:#1b1b1b}.kst.k-crit b{background:var(--k-crit)}
+.kv{font-size:28px;font-weight:800;letter-spacing:-.01em}
+.kd{font-size:12.5px;color:var(--vz-ink2)}.kd.up{color:var(--k-up)}.kd.dn{color:var(--k-crit)}
+.kf{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;font-size:12px;margin-top:auto}
+.vz-spark{width:120px;height:30px;flex:none}.vz-spark polyline{fill:none;stroke:var(--vz1);stroke-width:2;stroke-linejoin:round}.vz-spark circle{fill:var(--vz1)}
+@media(max-width:600px){.vz-br{grid-template-columns:96px 1fr 70px}.kv{font-size:24px}}
 </style>
 <style>
 /* ===== celular: tablas como tarjetas, botones cómodos para el dedo, sin zoom al escribir ===== */
@@ -597,6 +620,7 @@ button.st.novlink{border:0;cursor:pointer;font:inherit;font-size:12px;font-weigh
       <a href="#programa" data-r="programa" style="--tc:var(--c-prog)"><span class="dot"></span>Programación<span class="bd" id="bdProg" hidden></span></a>
       <a href="#rutas" data-r="rutas" style="--tc:var(--c-rut)"><span class="dot"></span>Rutas</a>
       <a href="#novedades" data-r="novedades" style="--tc:var(--c-nov)"><span class="dot"></span>Novedades<span class="bd" id="bdNov" hidden></span></a>
+      <a href="#informes" data-r="informes" style="--tc:var(--c-hist)"><span class="dot"></span>Informes</a>
       <a href="#base" data-r="base" style="--tc:var(--c-base)"><span class="dot"></span>Base de datos</a>
     </nav>
     <div class="right" id="topRight"></div>
@@ -622,7 +646,7 @@ const TIPOS=["Observación","Rechazo total","Rechazo parcial","Rotura","Faltante
 const CAM_TIPOS=["Camión","Chasis c/cabina","Camión c/plataforma","Camión térmico","Furgón","Acoplado","Semirremolque","Utilitario","Otro"];
 const PUESTOS=["Chofer","Cobrador","Chofer y cobrador"];
 const ENTREGAS=["Pendiente","Entregado","Rechazo parcial","Rechazo total","Cerrado / ausente","Reprogramado"];
-const COLS={recepciones:"recepciones",guias:"guias",portones:"portones",personal:"personal",progzon:"prog_zonas",camiones:"camiones",choferes:"choferes",zonas:"zonas",sucursales:"sucursales",salidas:"salidas",progsuc:"prog_sucursales",zonadia:"zona_dia",novedades:"novedades",cz:"clientes_zona",cargas:"cargas",config:"config"};
+const COLS={gasoil:"gasoil",gascompras:"gasoil_compras",recepciones:"recepciones",guias:"guias",portones:"portones",personal:"personal",progzon:"prog_zonas",camiones:"camiones",choferes:"choferes",zonas:"zonas",sucursales:"sucursales",salidas:"salidas",progsuc:"prog_sucursales",zonadia:"zona_dia",novedades:"novedades",cz:"clientes_zona",cargas:"cargas",config:"config"};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pad=n=>String(n).padStart(2,"0");
@@ -651,7 +675,7 @@ const title=s=>String(s||"").toLowerCase().replace(/(^|[\s(\-/.])([a-záéíóú
 const pl=(n,s,p)=>n+" "+(n===1?s:p);
 
 /* ================= estado ================= */
-const S={recepciones:[],guias:[],portones:[],personal:[],progzon:[],camiones:[],choferes:[],zonas:[],sucursales:[],salidas:[],progsuc:[],zonadia:[],novedades:[],cz:[],clientes:[],cargas:[],config:[]};
+const S={gasoil:[],gascompras:[],recepciones:[],guias:[],portones:[],personal:[],progzon:[],camiones:[],choferes:[],zonas:[],sucursales:[],salidas:[],progsuc:[],zonadia:[],novedades:[],cz:[],clientes:[],cargas:[],config:[]};
 const loaded={};
 const UI={route:"inicio",fecha:today(),semana:monday(today()),progTab:"pv",cargaId:null,hojaId:null,
   sal:{desde:addD(today(),-15),hasta:addD(today(),7),canal:"",estado:"",q:""},
@@ -899,6 +923,8 @@ VIEWS.inicio=function(){
   +tile({href:"#programa",cls:"m-prog",ill:"cal",t:"Programación",p:"Zonas de preventa por día y programa semanal de sucursales",meta:[pc.n+" pendientes hoy"]})
   +tile({href:"#rutas",cls:"m-rut",ill:"route",t:"Rutas",p:"Excel de cada zona, clientes y localidades",meta:[pl(S.cargas.filter(c=>c.fecha>=addD(f,-1)).length,"zona cargada","zonas cargadas")]})
   +tile({act:"ver-nov",v:"todas",cls:"m-nov",ill:"alert",t:"Novedades",p:"Rechazos, roturas, faltantes y devoluciones",meta:[novA+" sin resolver"]})
+  +(()=>{const gm=S.gasoil.filter(g=>g.fecha>=f.slice(0,8)+"01");return tile({href:"#gasoil",cls:"m-viaje",ill:"fuel",t:"Gasoil",p:"Cargas por camión, tanque propio y consumo",meta:[fL(gm.reduce((t,g)=>t+(Number(g.litros)||0),0))+" este mes",fM(gm.reduce((t,g)=>t+gasImp(g),0))]})})()
+  +tile({href:"#informes",cls:"m-hist",ill:"chart",t:"Informes",p:"Todo el sistema en reportes: Excel, PDF y preguntas libres",meta:[INF.length+" informes"]})
   +tile({href:"#base",cls:"m-base",ill:"db",t:"Base de datos",p:"Flota, choferes, zonas, clientes y localidades",meta:[S.camiones.length+" unidades",S.choferes.length+" personas",S.clientes.length+" clientes"]})
   +'</div>';
 };
@@ -915,6 +941,7 @@ VIEWS.logistica=function(){
   +(()=>{const gp=S.guias.filter(g=>guiaSt(g).k==="pend");return tile({href:"#guias",cls:"m-prog",ill:"sheet",t:"Guías de sucursales",p:"Mercadería que sale para cada sucursal y lo que quedó pendiente",meta:[gp.length+" pendientes",gp.filter(g=>guiaSt(g).volvio).length+" volvieron"]})})()
   
   +tile({act:"ver-nov",v:"todas",cls:"m-nov",ill:"alert",t:"Novedades de viaje",p:"Rechazos, roturas y faltantes de los repartos",meta:[S.novedades.filter(n=>n.estado!=="Resuelta").length+" sin resolver"]})
+  +tile({href:"#gasoil",cls:"m-viaje",ill:"fuel",t:"Gasoil",p:"Cargas, tanque propio y consumo de cada camión",meta:[S.gasoil.filter(g=>g.fecha===f).length+" cargas hoy"]})
   +tile({href:"#salidas",cls:"m-hist",ill:"hist",t:"Historial",p:"Todas las órdenes y viajes anteriores"})
   +'</div>';
 };
@@ -1805,6 +1832,486 @@ Object.assign(GACT,{
   "r-delfilt":()=>{const L=recFiltered();if(!L.length||!canWrite){toast("No hay recepciones para eliminar con este filtro");return}confirmBox("Eliminar "+pl(L.length,"recepción","recepciones"),"Se borran "+pl(L.length,"recepción","recepciones")+" de la lista filtrada, con sus remitos escaneados. No se puede deshacer.","Eliminar",async()=>{for(const r of L)await delRec(r)},"Recepciones eliminadas")},
   "r-csv":()=>exportCSV("recepciones",[["Fecha recepción",r=>r.fecha],["Depósito",r=>r.deposito],["Proveedor",r=>r.proveedor],["CUIT",r=>r.cuit],["Remito",r=>r.remitoNro],["Fecha remito",r=>r.fechaRemito],["Transportista",r=>r.transportista],["Pedido",r=>r.pedido],["Pallets",r=>r.pallets],["Tipo de pallets",r=>r.palletTipo||""],["Cantidad tipo de pallets",r=>r.palletTipo?(r.palletCant??""):""],["Bultos",r=>r.bultos],["Firmado",r=>r.firmado?"Sí":"No"],["Aclaración firma",r=>r.firmaNombre],["Recibió",r=>(persT(r.recibioId)||r.recibioId)],["Productos",r=>(r.items||[]).map(i=>(i.q??"")+" "+(i.u||"")+" "+i.d).join(" | ")],["Unidades",r=>recUnid(r)],["Observaciones",r=>r.obs]],recFiltered())
 });
+
+/* ================= gasoil: cargas por camión, tanque propio y consumo ================= */
+GRP.gasoil="logistica";MOD.gasoil="m-viaje";PARENT.gasoil="logistica";
+UI.gas={desde:today().slice(0,8)+"01",hasta:"",cam:"",q:""};
+ILL.fuel='<svg viewBox="0 0 64 64"><rect x="10" y="10" width="28" height="46" rx="4" fill="#4338ca"/><rect x="15" y="16" width="18" height="12" rx="2" fill="#ffffff"/><path d="M19 22h10" stroke="#7c83f7" stroke-width="3" stroke-linecap="round"/><rect x="6" y="54" width="36" height="5" rx="2" fill="#1b2333"/><path d="M38 20h6l6 6v20a4 4 0 0 1-8 0V36h-4" fill="none" stroke="#1b2333" stroke-width="3" stroke-linejoin="round"/><path class="flowline" d="M24 38c-4 5-4 8 0 10 4-2 4-5 0-10z" fill="#ffd100"/></svg>';
+const GLUGAR=["Surtidor propio","Estación de servicio"],GPAGO=["Cuenta corriente","Tarjeta flota","Efectivo","Otro"];
+const gasImp=g=>g.importe!=null&&g.importe!==""?Number(g.importe)||0:(Number(g.litros)||0)*(Number(g.precio)||0);
+const fL=n=>n==null||isNaN(n)?"—":Number(n).toLocaleString("es-AR",{maximumFractionDigits:1})+" L";
+const fKml=n=>n==null||!isFinite(n)?"—":Number(n).toLocaleString("es-AR",{maximumFractionDigits:2});
+const GFOTOS=()=>db.collection("gasoil_fotos");
+/** consumo de cada carga: km desde la carga anterior del mismo camión ÷ litros de esta carga */
+function gasConsumo(){
+  const by={},res={};S.gasoil.filter(g=>g.camionId&&Number(g.km)>0).forEach(g=>(by[g.camionId]=by[g.camionId]||[]).push(g));
+  Object.values(by).forEach(arr=>{arr.sort((a,b)=>a.km-b.km||String(a.fecha).localeCompare(String(b.fecha)));
+    for(let i=1;i<arr.length;i++){const d=arr[i].km-arr[i-1].km,l=Number(arr[i].litros)||0;if(d>0&&d<6000&&l>0)res[arr[i].id]={km:d,kml:d/l,l100:l*100/d,prev:arr[i-1]}}});
+  return res;
+}
+/** promedio histórico km/L de un camión (todas sus cargas) */
+function camKml(camId,C){let k=0,l=0;S.gasoil.forEach(g=>{const c=C[g.id];if(c&&g.camionId===camId){k+=c.km;l+=Number(g.litros)||0}});return l?k/l:null}
+const gasStock=()=>{const c=S.gascompras.reduce((t,x)=>t+(Number(x.litros)||0),0),u=S.gasoil.filter(g=>g.lugar==="Surtidor propio").reduce((t,g)=>t+(Number(g.litros)||0),0);return{c,u,stock:c-u,hay:S.gascompras.length>0}};
+const kmMaxCam=(camId,exceptId)=>S.gasoil.filter(g=>g.camionId===camId&&g.id!==exceptId&&Number(g.km)>0).reduce((m,g)=>Math.max(m,Number(g.km)),0);
+
+function formGas(g){let foto=null,leido=false;
+  const choOpts=()=>perOpts(["Chofer","Chofer y cobrador"]);
+  openForm({title:g?"Carga de gasoil · "+fDL(g.fecha):"Cargar gasoil",color:"c-viaje",values:g||{fecha:today(),lugar:"Surtidor propio",pago:"Cuenta corriente",combustible:"Gasoil"},meta:metaOf(g),ok:g?"Carga actualizada":"Carga de gasoil grabada",saveLabel:g?"Guardar":"Grabar carga",
+    fields:[...(g?[]:[{k:"foto",label:"Foto del ticket (opcional)",type:"file",accept:"image/*",full:true,help:"Si cargó en una estación, sacale foto al ticket: el sistema completa litros, precio e importe."},{k:"lee",type:"html",cls:"recbox"}]),
+      {k:"camionId",label:"Camión",type:"select",req:true,blank:"Elegí la unidad",options:()=>camOpts(false),two:true},{k:"fecha",label:"Fecha",type:"date",req:true},
+      {k:"choferId",label:"Chofer",type:"select",blank:"—",options:choOpts,two:true},{k:"km",label:"Km del odómetro",type:"number",help:"El del tablero al momento de cargar: con eso se calcula el consumo"},
+      {k:"litros",label:"Litros",type:"number",req:true},{k:"precio",label:"Precio por litro ($)",type:"number"},{k:"importe",label:"Importe total ($)",type:"number"},
+      {k:"lugar",label:"Dónde cargó",type:"seg",options:GLUGAR,full:true},
+      {k:"estacion",label:"Estación de servicio",two:true,ph:"YPF Ruta 9, Shell…"},{k:"pago",label:"Forma de pago",type:"select",blank:false,options:GPAGO},
+      {k:"combustible",label:"Combustible",type:"select",blank:false,options:["Gasoil","Gasoil premium","Nafta","GNC"],adv:1},{k:"ticket",label:"N° de ticket / factura",adv:1},{k:"obs",label:"Observaciones",type:"textarea",full:true,adv:1}],
+    advLabel:"Más datos",
+    after:async F=>{
+      const up=()=>{const l=Number(F.elements.litros.value)||0,p=Number(F.elements.precio.value)||0;if(l&&p&&!F.elements.importe.dataset.man)F.elements.importe.value=Math.round(l*p*100)/100;
+        F.querySelector('[data-f="estacion"]').hidden=F.querySelector('input[name="lugar"]:checked').value!=="Estación de servicio"};
+      F.elements.importe.addEventListener("input",()=>F.elements.importe.dataset.man=F.elements.importe.value?"1":"");
+      ["litros","precio"].forEach(n=>F.elements[n].addEventListener("input",up));F.querySelectorAll('input[name="lugar"]').forEach(r=>r.addEventListener("change",up));up();
+      F.elements.camionId.addEventListener("change",()=>{const c=F.elements.camionId.value;if(!F.elements.choferId.value){const s=S.salidas.find(x=>x.camionId===c&&x.fecha===F.elements.fecha.value&&actSal(x));const ch=s?s.choferId:(S.choferes.find(x=>x.camionId===c&&isActive(x))||{}).id;if(ch)F.elements.choferId.value=ch}
+        const mx=kmMaxCam(c,g&&g.id);const h=F.querySelector('[data-f="km"] small');if(h)h.textContent=mx?"Última carga de esta unidad: "+fN(mx)+" km":"El del tablero al momento de cargar: con eso se calcula el consumo"});
+      if(g)return;
+      const lee=$("f_lee"),cap=await getSample();lee.innerHTML='<span class="mu">'+(cap?IC.wand+" Elegí la foto del ticket y se completan litros, precio, importe y estación.":"Completá los datos a mano.")+'</span>';
+      F.elements.foto.addEventListener("change",async()=>{foto=F.elements.foto.files[0]||null;if(!foto||!cap)return;lee.innerHTML='<span class="mu">'+IC.wand+' Leyendo el ticket…</span>';
+        try{const o=await cap.s.json("Sos asistente de logística de una distribuidora en Argentina. Te paso la foto de un ticket o factura de carga de combustible de un camión. Extraé: estacion (nombre y localidad de la estación), fecha (dd/mm/aaaa), litros (número), precio (precio por litro, número), importe (total pagado, número), combustible (Gasoil, Gasoil premium, Nafta o GNC), ticket (número de ticket o factura), patente (si figura), km (kilometraje si figura, si no null). Números en formato argentino: «1.234,56» = 1234.56; devolvé números sin separadores. No inventes. Respondé SOLO JSON con esas claves.",{images:[foto],modelTier:"default"});leido=true;
+          const set=(k,v)=>{if(v!=null&&v!==""&&F.elements[k])F.elements[k].value=v};
+          const fe=pDate(o.fecha);if(fe)F.elements.fecha.value=fe;set("litros",arNum(o.litros));set("precio",arNum(o.precio));const im=arNum(o.importe);if(im!=null){F.elements.importe.value=im;F.elements.importe.dataset.man="1"}
+          set("estacion",String(o.estacion||"").trim());set("ticket",String(o.ticket||"").trim());if(["Gasoil","Gasoil premium","Nafta","GNC"].includes(o.combustible))F.elements.combustible.value=o.combustible;
+          if(o.estacion){const r=F.querySelector('input[name="lugar"][value="Estación de servicio"]');r.checked=true}
+          if(o.patente){const pt=normPat(o.patente),c=S.camiones.find(x=>normPat(x.patente)===pt);if(c){F.elements.camionId.value=c.id;F.elements.camionId.dispatchEvent(new Event("change"))}}
+          if(arNum(o.km))set("km",arNum(o.km));up();
+          lee.innerHTML='<span>'+IC.check+' Ticket leído: <b>'+fL(arNum(o.litros))+'</b> · '+fM(im)+(o.estacion?" · "+esc(o.estacion):"")+'</span><span class="mu">Elegí el camión, poné el km del odómetro y grabá.</span>'}
+        catch(e){lee.innerHTML='<span style="color:var(--bad)">No pude leer el ticket. Completá los datos a mano.</span>'}})},
+    save:async d=>{
+      if(!d.lugar){ferr("Elegí dónde cargó.");return false}
+      const mx=kmMaxCam(d.camionId,g&&g.id);if(d.km!=null&&mx&&d.km<mx&&!(g&&g.km===d.km)){ferr("El odómetro ("+fN(d.km)+" km) es menor que la última carga de esta unidad ("+fN(mx)+" km). Revisalo.");return false}
+      if(d.importe==null&&d.litros&&d.precio)d.importe=Math.round(d.litros*d.precio*100)/100;
+      if(d.precio==null&&d.litros&&d.importe)d.precio=Math.round(d.importe/d.litros*100)/100;
+      if(d.lugar!=="Estación de servicio")d.estacion="";
+      if(g){await write("gasoil",g.id,d);return}
+      let fs=null;if(foto){try{fs=canvasJpeg(await scanify(foto),200000)}catch(e){}}
+      const id=await write("gasoil",null,Object.assign(d,{leidoIA:leido,foto:!!fs}));
+      if(fs)try{await GFOTOS().doc(id).set({data:fs.data,w:fs.w,h:fs.h,createdAt:new Date().toISOString(),createdBy:uid})}catch(e){}}});
+}
+function formGasCompra(c){
+  openForm({title:c?"Compra para el tanque":"Compra de gasoil para el tanque",color:"c-viaje",values:c||{fecha:today()},meta:metaOf(c),ok:"Compra grabada",saveLabel:"Grabar compra",
+    fields:[{k:"fecha",label:"Fecha",type:"date",req:true},{k:"litros",label:"Litros que entraron al tanque",type:"number",req:true,two:true},{k:"proveedor",label:"Proveedor",two:true},{k:"remito",label:"Remito / factura"},{k:"precio",label:"Precio por litro ($)",type:"number"},{k:"importe",label:"Importe total ($)",type:"number"},{k:"obs",label:"Observaciones",type:"textarea",full:true}],
+    save:async d=>{if(d.importe==null&&d.litros&&d.precio)d.importe=Math.round(d.litros*d.precio*100)/100;await write("gascompras",c&&c.id,d)},del:c&&(()=>del("gascompras",c.id))});
+}
+function verGas(g){const C=gasConsumo(),c=C[g.id];
+  openForm({title:"Gasoil · "+((get("camiones",g.camionId)||{}).patente||"")+" · "+fDL(g.fecha),color:"c-viaje",noSave:true,meta:metaOf(g),fields:[{k:"gv",type:"html",cls:"gdet"}],
+    extra:canWrite?'<button type="button" class="btn" id="gEdit">'+IC.edit+'Editar</button>':"",del:canWrite?(async()=>{if(g.foto)try{await GFOTOS().doc(g.id).delete()}catch(e){}await del("gasoil",g.id)}):null,
+    after:async()=>{$("f_gv").innerHTML='<div class="doc-grid"><div><small>Camión</small><b>'+camP(g.camionId)+'</b><div class="sub">'+chofN(g.choferId)+'</div></div><div><small>Litros · importe</small><b>'+fL(g.litros)+'</b><div class="sub">'+fM(gasImp(g))+(g.precio?' · '+fM(g.precio)+'/L':"")+'</div></div><div><small>Odómetro</small><b>'+(g.km?fN(g.km)+" km":"—")+'</b><div class="sub">'+(c?fN(c.km)+" km desde la carga anterior":"sin carga anterior para comparar")+'</div></div><div><small>Consumo</small><b>'+(c?fKml(c.kml)+" km/L":"—")+'</b><div class="sub">'+(c?fKml(c.l100)+" L cada 100 km":"")+'</div></div></div>'
+      +'<p class="mu">'+esc(g.lugar||"")+(g.estacion?" · "+esc(g.estacion):"")+(g.pago?" · "+esc(g.pago):"")+(g.ticket?" · ticket "+esc(g.ticket):"")+(g.combustible?" · "+esc(g.combustible):"")+'</p>'+(g.obs?'<div class="wamsg">'+esc(g.obs)+'</div>':"")+(g.foto?'<div class="recfotos" id="gFoto"><span class="mu">Cargando ticket…</span></div>':"");
+      const e=$("gEdit");if(e)e.onclick=()=>{closeForm();formGas(g)};
+      if(g.foto){try{const sn=await GFOTOS().doc(g.id).get();const d=sn.exists&&sn.data();const b=$("gFoto");if(b)b.innerHTML=d&&d.data?'<a href="'+d.data+'" target="_blank" rel="noopener"><img src="'+d.data+'" alt="Ticket"></a>':'<span class="mu">Sin foto</span>'}catch(x){}}}});
+}
+function gasFiltered(){const F=UI.gas,q=F.q.trim().toLowerCase();
+  return S.gasoil.filter(g=>(!F.desde||g.fecha>=F.desde)&&(!F.hasta||g.fecha<=F.hasta)&&(!F.cam||g.camionId===F.cam)&&(!q||[(get("camiones",g.camionId)||{}).patente,chofT(g.choferId),g.estacion,g.ticket,g.obs].join(" ").toLowerCase().includes(q))).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))||(Number(b.km)||0)-(Number(a.km)||0))}
+VIEWS.gasoil=function(){
+  const F=UI.gas,list=gasFiltered(),C=gasConsumo(),st=gasStock();
+  const lit=list.reduce((t,g)=>t+(Number(g.litros)||0),0),imp=list.reduce((t,g)=>t+gasImp(g),0);
+  let kmT=0,lT=0;list.forEach(g=>{const c=C[g.id];if(c){kmT+=c.km;lT+=Number(g.litros)||0}});
+  let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Gasoil"]),"Gasoil",'<button class="btn pri w" data-act="gas-new">'+IC.plus+'Cargar gasoil</button>'+dots([{a:"gas-compra",i:"plus",t:"Compra para el tanque",d:"Litros que entran al surtidor propio",w:1},{a:"gas-csv",i:"dl",t:"Exportar a Excel (CSV)"},"-",{a:"gas-delfilt",i:"trash",t:"Eliminar las cargas filtradas",dng:1,w:1}]),"fuel");
+  h+='<div class="kpis"><div class="kpi"><span class="k">Litros cargados</span><span class="v" style="color:var(--c-viaje)">'+fL(lit)+'</span><span class="s">'+pl(list.length,"carga","cargas")+' en el período</span></div>'
+    +'<div class="kpi"><span class="k">Gasto</span><span class="v">'+fM(imp)+'</span><span class="s">'+(lit?fM(imp/lit)+" por litro promedio":"—")+'</span></div>'
+    +'<div class="kpi"><span class="k">Consumo de la flota</span><span class="v" style="color:var(--c-rut)">'+(lT?fKml(kmT/lT)+' <small style="font-size:14px">km/L</small>':"—")+'</span><span class="s">'+(lT?fKml(lT*100/kmT)+" L cada 100 km · "+fN(Math.round(kmT))+" km":"cargá el odómetro en cada carga")+'</span></div>'
+    +'<div class="kpi"><span class="k">Tanque propio</span><span class="v" style="color:'+(st.hay&&st.stock<0?"var(--bad)":"var(--c-caja)")+'">'+(st.hay?fL(st.stock):"—")+'</span><span class="s">'+(st.hay?"stock calculado · "+fL(st.c)+" comprados":"cargá las compras para ver el stock")+'</span></div></div>';
+  if(!S.gasoil.length&&!S.gascompras.length)return h+emptyCard("fuel","m-viaje","Todavía no hay cargas de gasoil","Registrá cada carga: camión, litros, importe y km del odómetro. El sistema calcula el consumo de cada unidad y avisa cuando se sale de lo normal.",'<button class="btn pri" data-act="gas-new">'+IC.plus+'Cargar gasoil</button>');
+  /* por camión */
+  const byC={};list.forEach(g=>{(byC[g.camionId]=byC[g.camionId]||[]).push(g)});
+  if(Object.keys(byC).length){
+    h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-viaje)"></span>Consumo por camión</h2><span class="s">km/L = km entre cargas ÷ litros · alerta si rinde 15% menos que su promedio</span></div><div class="tw"><table class="wide"><thead><tr><th>Camión</th><th class="num">Cargas</th><th class="num">Litros</th><th class="num">Importe</th><th class="num">Km recorridos</th><th class="num">km/L</th><th class="num">L/100 km</th><th class="num">Km según órdenes</th><th>Última carga</th><th></th></tr></thead><tbody>'
+      +Object.keys(byC).sort((a,b)=>byC[b].reduce((t,g)=>t+(+g.litros||0),0)-byC[a].reduce((t,g)=>t+(+g.litros||0),0)).map(cid=>{const arr=byC[cid];let k=0,l=0;arr.forEach(g=>{const c=C[g.id];if(c){k+=c.km;l+=+g.litros||0}});
+        const avg=camKml(cid,C),per=l?k/l:null,bad=per&&avg&&per<avg*.85,last=arr.slice().sort((a,b)=>(+b.km||0)-(+a.km||0)||String(b.fecha).localeCompare(String(a.fecha)))[0];
+        const kmO=S.salidas.filter(s=>s.camionId===cid&&actSal(s)&&(!F.desde||s.fecha>=F.desde)&&(!F.hasta||s.fecha<=F.hasta)).reduce((t,s)=>t+(s.kmRegreso&&s.kmSalida?s.kmRegreso-s.kmSalida:Number(s.kmPrevisto)||0),0);
+        return'<tr class="ck" data-act="gas-cam" data-v="'+(F.cam===cid?"":cid)+'"><td>'+camP(cid)+'</td><td class="num mono">'+arr.length+'</td><td class="num mono"><b>'+fL(arr.reduce((t,g)=>t+(+g.litros||0),0))+'</b></td><td class="num mono">'+fM(arr.reduce((t,g)=>t+gasImp(g),0))+'</td><td class="num mono">'+(k?fN(Math.round(k)):"—")+'</td><td class="num mono"><b>'+fKml(per)+'</b></td><td class="num mono">'+(l?fKml(l*100/k):"—")+'</td><td class="num mono">'+(kmO?fN(Math.round(kmO)):"—")+'</td><td>'+fDL(last.fecha)+(last.km?'<div class="sub">'+fN(last.km)+' km</div>':"")+'</td><td>'+(bad?chip("Rinde "+Math.round((1-per/avg)*100)+"% menos","bad"):per?chip("Normal","ok"):"")+'</td></tr>'}).join("")+'</tbody></table></div></section>'}
+  h+='<div class="flt"><input class="q" id="ga_q" type="search" data-ui="gas.q" value="'+esc(F.q)+'" placeholder="Buscar patente, chofer, estación…" aria-label="Buscar"><select id="ga_cam" data-ui="gas.cam" aria-label="Camión">'+opts([["","Todos los camiones"]].concat(S.camiones.filter(c=>!isAcop(c)).sort((a,b)=>String(a.patente).localeCompare(String(b.patente))).map(c=>[c.id,c.patente])),F.cam)+'</select><label>Desde <input type="date" id="ga_d" data-ui="gas.desde" value="'+F.desde+'"></label><label>Hasta <input type="date" id="ga_h" data-ui="gas.hasta" value="'+F.hasta+'"></label></div>';
+  h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-viaje)"></span>'+pl(list.length,"carga","cargas")+'</h2></div>'+(list.length?'<div class="tw"><table class="wide"><thead><tr><th>Fecha</th><th>Camión</th><th>Chofer</th><th class="num">Litros</th><th class="num">$/L</th><th class="num">Importe</th><th class="num">Odómetro</th><th class="num">km/L</th><th>Dónde</th><th></th></tr></thead><tbody>'
+    +list.map(g=>{const c=C[g.id],avg=camKml(g.camionId,C),bad=c&&avg&&c.kml<avg*.85;return'<tr class="ck" data-act="gas-ver" data-id="'+g.id+'"><td class="mono">'+fDL(g.fecha)+'</td><td>'+camP(g.camionId)+'</td><td>'+chofN(g.choferId)+'</td><td class="num mono"><b>'+fL(g.litros)+'</b></td><td class="num mono">'+(g.precio?fM(g.precio):"—")+'</td><td class="num mono">'+fM(gasImp(g))+'</td><td class="num mono">'+(g.km?fN(g.km):"—")+'</td><td class="num mono">'+(c?'<span class="st '+(bad?"bad":"ok")+'">'+fKml(c.kml)+'</span>':"—")+'</td><td>'+esc(g.lugar==="Surtidor propio"?"Surtidor propio":g.estacion||"Estación")+(g.foto?' <span class="tag">📷</span>':"")+'</td><td class="r">'+(canWrite?'<button class="btn sm ghost" data-act="gas-edit" data-id="'+g.id+'" aria-label="Editar">'+IC.edit+'</button><button class="btn sm ghost dng" data-act="gas-del" data-id="'+g.id+'" aria-label="Eliminar">'+IC.trash+'</button>':"")+'</td></tr>'}).join("")+'</tbody></table></div>':'<div class="none">No hay cargas en este período.</div>')+'</section>';
+  if(S.gascompras.length){const cl=S.gascompras.slice().sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).slice(0,30);
+    h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-caja)"></span>Compras para el tanque</h2><span class="s">Stock calculado: '+fL(st.stock)+' (comprado '+fL(st.c)+' − cargado del surtidor '+fL(st.u)+')</span></div><div class="tw"><table class="wide"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Remito</th><th class="num">Litros</th><th class="num">$/L</th><th class="num">Importe</th></tr></thead><tbody>'
+      +cl.map(c=>'<tr class="ck" data-act="gas-cedit" data-id="'+c.id+'"><td class="mono">'+fDL(c.fecha)+'</td><td>'+esc(c.proveedor||"—")+'</td><td class="mono">'+esc(c.remito||"—")+'</td><td class="num mono"><b>'+fL(c.litros)+'</b></td><td class="num mono">'+(c.precio?fM(c.precio):"—")+'</td><td class="num mono">'+fM(c.importe)+'</td></tr>').join("")+'</tbody></table></div></section>'}
+  return h;
+};
+Object.assign(GACT,{
+  "gas-new":()=>{if(!canWrite){toast("Acceso de solo lectura");return}formGas(null)},
+  "gas-compra":()=>{if(!canWrite){toast("Acceso de solo lectura");return}formGasCompra(null)},
+  "gas-cedit":(el,id)=>{const c=get("gascompras",id);if(c)formGasCompra(c)},
+  "gas-ver":(el,id)=>{const g=get("gasoil",id);if(g)verGas(g)},
+  "gas-edit":(el,id)=>{const g=get("gasoil",id);if(g&&canWrite)formGas(g)},
+  "gas-cam":el=>{UI.gas.cam=el.dataset.v||"";render()},
+  "gas-del":(el,id)=>{const g=get("gasoil",id);if(!g||!canWrite)return;confirmBox("Eliminar carga de gasoil","Se borra la carga de "+fL(g.litros)+" de "+esc((get("camiones",g.camionId)||{}).patente||"")+" del "+fDL(g.fecha)+".","Eliminar",async()=>{if(g.foto)try{await GFOTOS().doc(g.id).delete()}catch(e){}await del("gasoil",g.id)},"Carga eliminada")},
+  "gas-delfilt":()=>{const L=gasFiltered();if(!L.length||!canWrite){toast("No hay cargas para eliminar");return}confirmBox("Eliminar "+pl(L.length,"carga","cargas"),"Se borran "+pl(L.length,"carga","cargas")+" de gasoil del filtro actual. No se puede deshacer.","Eliminar",async()=>{for(const g of L){if(g.foto)try{await GFOTOS().doc(g.id).delete()}catch(e){}await del("gasoil",g.id)}},"Cargas eliminadas")},
+  "gas-csv":()=>{const C=gasConsumo();exportCSV("gasoil",[["Fecha",g=>g.fecha],["Camión",g=>(get("camiones",g.camionId)||{}).patente],["Chofer",g=>chofT(g.choferId)],["Litros",g=>g.litros],["Precio por litro",g=>g.precio],["Importe",g=>gasImp(g)],["Km odómetro",g=>g.km],["Km desde la anterior",g=>C[g.id]?C[g.id].km:""],["km/L",g=>C[g.id]?C[g.id].kml.toFixed(2):""],["Dónde",g=>g.lugar],["Estación",g=>g.estacion],["Pago",g=>g.pago],["Ticket",g=>g.ticket],["Observaciones",g=>g.obs]],gasFiltered())}
+});
+
+/* ================= informes: todo el sistema, con filtros, Excel, PDF y preguntas libres ================= */
+GRP.informes="informes";GRP.informe="informes";MOD.informes="m-hist";MOD.informe="m-hist";PARENT.informes="inicio";PARENT.informe="informes";
+UI.inf={id:"",desde:today().slice(0,8)+"01",hasta:today(),canal:"",cam:"",cho:"",suc:"",dep:"",grp:"",q:"",ask:"",ans:"",busy:false};
+ILL.chart='<svg viewBox="0 0 64 64"><rect x="6" y="6" width="52" height="52" rx="8" fill="#ffffff" stroke="#475569" stroke-width="3"/><rect x="14" y="34" width="8" height="16" rx="2" fill="#2457c5"/><rect x="28" y="24" width="8" height="26" rx="2" fill="#e0261c"/><rect x="42" y="14" width="8" height="36" rx="2" fill="#2b8a3e"/><path class="flowline" d="M14 26l14-8 14 4 10-10" fill="none" stroke="#ffd100" stroke-width="3" stroke-linecap="round"/></svg>';
+const inP=(f,F)=>!!f&&(!F.desde||f>=F.desde)&&(!F.hasta||f<=F.hasta);
+const kmRealS=s=>s.kmRegreso&&s.kmSalida&&s.kmRegreso>s.kmSalida?s.kmRegreso-s.kmSalida:null;
+const kmPrevS=s=>s.kmPrevisto!=null?Number(s.kmPrevisto)||0:(plan(s).total||0);
+const camLbl=id=>{const c=get("camiones",id);return c?c.patente:"(sin camión)"};
+const salF=F=>S.salidas.filter(s=>actSal(s)&&inP(s.fecha,F)&&(!F.canal||s.canal===F.canal)&&(!F.cam||s.camionId===F.cam||s.acopladoId===F.cam)&&(!F.cho||s.choferId===F.cho||s.cobradorId===F.cho)&&(!F.suc||(s.sucursalIds||[]).includes(F.suc)));
+const sum=(a,f)=>a.reduce((t,x)=>t+(Number(f(x))||0),0);
+const pct=(a,b)=>b?Math.round(a*100/b)+"%":"—";
+const mesL=m=>{const[y,mm]=m.split("-");return MESES[+mm-1].slice(0,3)+" "+y};
+const groupBy=(arr,kf)=>{const o={};arr.forEach(x=>{const k=kf(x);(o[k]=o[k]||[]).push(x)});return o};
+/** filas de cargas de preventa (clientes) del período */
+const cargasF=F=>S.cargas.filter(c=>inP(c.fecha,F)&&(!F.cam&&!F.cho||salF(Object.assign({},F,{canal:""})).some(s=>s.id===c.salidaId)));
+
+const INF=[
+ {id:"resumen",cat:"General",t:"Resumen general",d:"Todo junto por día o por mes: órdenes, km, clientes, guías, novedades, recepciones y gasoil",ill:"chart",f:["canal"],grp:[["auto","Automático"],["dia","Por día"],["mes","Por mes"]],
+  run(F){const S1=salF(F),dias=Math.round((P(F.hasta||today())-P(F.desde||"2026-01-01"))/864e5),mode=F.grp==="dia"?"dia":F.grp==="mes"?"mes":dias>62?"mes":"dia",key=f=>mode==="mes"?f.slice(0,7):f;
+   const G={};const add=(f,k,v)=>{if(!f||!inP(f,F))return;const g=G[key(f)]=G[key(f)]||{per:key(f),ord:0,pv:0,sc:0,kmp:0,kmr:0,cli:0,fac:0,gui:0,uni:0,nov:0,rec:0,pal:0,lit:0,gas:0};g[k]+=v};
+   S1.forEach(s=>{add(s.fecha,"ord",1);add(s.fecha,s.canal==="Preventa"?"pv":"sc",1);add(s.fecha,"kmp",kmPrevS(s));add(s.fecha,"kmr",kmRealS(s)||0)});
+   if(!F.canal||F.canal==="Preventa")cargasF(F).forEach(c=>{add(c.fecha,"cli",(c.items||[]).length);add(c.fecha,"fac",c.totalFac||0)});
+   if(!F.canal||F.canal==="Sucursales")S.guias.forEach(g=>{const s=g.salidaId&&get("salidas",g.salidaId);if(s&&actSal(s)){add(s.fecha,"gui",1);add(s.fecha,"uni",gUnid(g))}});
+   S.novedades.filter(n=>!F.canal||n.canal===F.canal).forEach(n=>add(n.fecha,"nov",1));
+   S.recepciones.forEach(r=>{add(r.fecha,"rec",1);add(r.fecha,"pal",Number(r.pallets)||0)});
+   S.gasoil.forEach(g=>{add(g.fecha,"lit",Number(g.litros)||0);add(g.fecha,"gas",gasImp(g))});
+   const rows=Object.values(G).sort((a,b)=>a.per.localeCompare(b.per)).map(r=>Object.assign(r,{perL:mode==="mes"?mesL(r.per):fDL(r.per)}));
+   return{kpis:[["Órdenes de carga",sum(rows,r=>r.ord)],["Km previstos",fN(Math.round(sum(rows,r=>r.kmp)))],["Clientes visitados",fN(sum(rows,r=>r.cli))],["Facturado preventa",fM(sum(rows,r=>r.fac))],["Guías despachadas",fN(sum(rows,r=>r.gui))],["Novedades",sum(rows,r=>r.nov)],["Pallets recibidos",fN(sum(rows,r=>r.pal))],["Gasoil",fL(sum(rows,r=>r.lit))+" · "+fM(sum(rows,r=>r.gas))]],
+    cols:[["Período","perL","t"],["Órdenes","ord","n"],["Preventa","pv","n"],["Sucursales","sc","n"],["Km previstos","kmp","km"],["Km reales","kmr","km"],["Clientes","cli","n"],["Facturado","fac","m"],["Guías","gui","n"],["Unidades","uni","n"],["Novedades","nov","n"],["Recepciones","rec","n"],["Pallets","pal","n"],["Litros gasoil","lit","n"],["$ gasoil","gas","m"]],rows,chart:{lab:"perL",val:"ord",t:"Órdenes por "+(mode==="mes"?"mes":"día"),noSort:true}}}},
+ {id:"ordenes",cat:"Operación",t:"Órdenes y viajes",d:"Detalle de cada orden: camión, chofer, destinos, estado y km",ill:"orden",f:["canal","cam","cho","suc"],
+  run(F){const rows=salF(F).sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.nro||0)-(b.nro||0)).map(s=>({nro:nro(s),fecha:fDL(s.fecha),canal:s.canal,cam:camLbl(s.camionId)+(s.acopladoId?" + "+camLbl(s.acopladoId):""),cho:chofT(s.choferId),cob:chofT(s.cobradorId),dest:destT(s),est:(EST[s.estado]||[s.estado])[0],kmp:Math.round(kmPrevS(s)),kmr:kmRealS(s),por:s.portonId?portT(s.portonId):"",ctrl:persT(s.controladorId)}));
+   return{kpis:[["Órdenes",rows.length],["Preventa",rows.filter(r=>r.canal==="Preventa").length],["Sucursales",rows.filter(r=>r.canal!=="Preventa").length],["Km previstos",fN(sum(rows,r=>r.kmp))],["Km reales",fN(sum(rows,r=>r.kmr))]],
+    cols:[["N°","nro","t"],["Fecha","fecha","t"],["Canal","canal","t"],["Camión","cam","t"],["Chofer","cho","t"],["Cobrador","cob","t"],["Destinos","dest","t"],["Estado","est","t"],["Km prev.","kmp","km"],["Km reales","kmr","km"],["Portón","por","t"],["Controlador","ctrl","t"]],rows}}},
+ {id:"camiones",cat:"Operación",t:"Por camión",d:"Viajes, km, gasoil, consumo y novedades de cada unidad",ill:"truck",f:["canal","cam"],
+  run(F){const S1=salF(F),C=gasConsumo(),G=S.gasoil.filter(g=>inP(g.fecha,F)&&(!F.cam||g.camionId===F.cam));
+   const ids=[...new Set(S1.map(s=>s.camionId).concat(S1.map(s=>s.acopladoId)).concat(G.map(g=>g.camionId)).filter(Boolean))];
+   const rows=ids.map(id=>{const ss=S1.filter(s=>s.camionId===id||s.acopladoId===id),gg=G.filter(g=>g.camionId===id);let k=0,l=0;gg.forEach(g=>{const c=C[g.id];if(c){k+=c.km;l+=+g.litros||0}});
+     return{cam:camLbl(id),tipo:(get("camiones",id)||{}).tipo||"",via:ss.length,dias:new Set(ss.map(s=>s.fecha)).size,kmp:Math.round(sum(ss,kmPrevS)),kmr:sum(ss,kmRealS),lit:sum(gg,g=>g.litros),gas:sum(gg,gasImp),kml:l?Math.round(k/l*100)/100:null,nov:S.novedades.filter(n=>ss.some(s=>s.id===n.salidaId)).length}}).sort((a,b)=>b.via-a.via||b.lit-a.lit);
+   return{kpis:[["Unidades usadas",rows.filter(r=>r.via).length],["Viajes",sum(rows,r=>r.via)],["Km previstos",fN(sum(rows,r=>r.kmp))],["Litros",fL(sum(rows,r=>r.lit))],["$ gasoil",fM(sum(rows,r=>r.gas))]],
+    cols:[["Camión","cam","t"],["Tipo","tipo","t"],["Viajes","via","n"],["Días","dias","n"],["Km previstos","kmp","km"],["Km reales","kmr","km"],["Litros gasoil","lit","n"],["$ gasoil","gas","m"],["km/L","kml","d2"],["Novedades","nov","n"]],rows,chart:{lab:"cam",val:"via",t:"Viajes por camión"}}}},
+ {id:"personal",cat:"Operación",t:"Choferes y cobradores",d:"Viajes de cada persona, km, novedades y rechazos",ill:"driver",f:["canal","cho"],
+  run(F){const S1=salF(F),N=S.novedades.filter(n=>inP(n.fecha,F)&&(!F.canal||n.canal===F.canal));
+   const ids=[...new Set(S1.flatMap(s=>[s.choferId,s.cobradorId]).filter(Boolean))].filter(id=>!F.cho||id===F.cho);
+   const rows=ids.map(id=>{const ch=S1.filter(s=>s.choferId===id),co=S1.filter(s=>s.cobradorId===id),nn=N.filter(n=>n.choferId===id||[...ch,...co].some(s=>s.id===n.salidaId));
+     return{per:chofT(id),leg:(get("choferes",id)||{}).legajo||"",pue:(get("choferes",id)||{}).puesto||"",ch:ch.length,co:co.length,kmp:Math.round(sum(ch,kmPrevS)),kmr:sum(ch,kmRealS),nov:nn.length,rec:nn.filter(n=>/Rechazo/.test(n.tipo)).length,dias:new Set([...ch,...co].map(s=>s.fecha)).size}}).sort((a,b)=>(b.ch+b.co)-(a.ch+a.co));
+   return{kpis:[["Personas",rows.length],["Viajes como chofer",sum(rows,r=>r.ch)],["Viajes como cobrador",sum(rows,r=>r.co)],["Novedades",sum(rows,r=>r.nov)]],
+    cols:[["Persona","per","t"],["Legajo","leg","t"],["Puesto","pue","t"],["Viajes chofer","ch","n"],["Viajes cobrador","co","n"],["Días trabajados","dias","n"],["Km manejados","kmp","km"],["Km reales","kmr","km"],["Novedades","nov","n"],["Rechazos","rec","n"]],rows,chart:{lab:"per",val:"ch",t:"Viajes como chofer"}}}},
+ {id:"programa",cat:"Operación",t:"Cumplimiento de la programación",d:"Zonas de preventa y programa semanal de sucursales: cumplido, no cumplido, pendiente",ill:"cal",f:["canal","suc"],
+  run(F){const rows=[];
+   if(F.canal!=="Sucursales"&&!F.suc)S.progzon.filter(p=>inP(p.fecha,F)).forEach(p=>{const st=pzStatus(p);rows.push({fecha:p.fecha,fechaL:fDL(p.fecha),tipo:"Preventa",dest:pzLabel(p),det:(p.zonaIds||[]).map(zonaT).join(", "),est:st.t,k:st.k,ord:st.sal?nro(st.sal):""})});
+   if(F.canal!=="Preventa")S.progsuc.filter(p=>inP(p.fecha,F)&&(!F.suc||p.sucursalId===F.suc)).forEach(p=>{const st=progStatus(p);rows.push({fecha:p.fecha,fechaL:fDL(p.fecha),tipo:"Sucursales",dest:sucT(p.sucursalId),det:p.rubro||"",est:st.t,k:st.k,ord:st.sal?nro(st.sal):""})});
+   rows.sort((a,b)=>a.fecha.localeCompare(b.fecha)||a.tipo.localeCompare(b.tipo));const ok=rows.filter(r=>r.k==="ok").length,no=rows.filter(r=>r.k==="no").length,va=rows.filter(r=>r.k!=="susp").length;
+   return{kpis:[["Programados",rows.length],["Cumplidos",ok],["En curso",rows.filter(r=>r.k==="curso").length],["No cumplidos",no],["Pendientes",rows.filter(r=>r.k==="pend").length],["% cumplido",pct(ok,va)]],
+    cols:[["Fecha","fechaL","t"],["Canal","tipo","t"],["Destino","dest","t"],["Zonas / rubro","det","t"],["Estado","est","t"],["Orden","ord","t"]],rows}}},
+ {id:"sucursales",cat:"Sucursales",t:"Por sucursal",d:"Viajes, programa cumplido, guías, unidades y observaciones de cada sucursal",ill:"store",f:["suc"],
+  run(F){const S1=salF(Object.assign({},F,{canal:"Sucursales"}));
+   const rows=S.sucursales.filter(x=>!F.suc||x.id===F.suc).slice().sort(sucCmp).map(x=>{const ps=S.progsuc.filter(p=>p.sucursalId===x.id&&inP(p.fecha,F)),st=ps.map(progStatus),G=S.guias.filter(g=>g.sucursalId===x.id),gd=G.filter(g=>{const s=g.salidaId&&get("salidas",g.salidaId);return s&&actSal(s)&&inP(s.fecha,F)}),k=km(depId(),x.locId);
+     return{suc:sucN(x),via:S1.filter(s=>(s.sucursalIds||[]).includes(x.id)).length,prog:ps.length,ok:st.filter(t=>t.k==="ok").length,no:st.filter(t=>t.k==="no").length,pc:pct(st.filter(t=>t.k==="ok").length,st.filter(t=>t.k!=="susp").length),gui:gd.length,uni:sum(gd,gUnid),pend:G.filter(g=>guiaSt(g).k==="pend").length,obs:S.novedades.filter(n=>n.sucursalId===x.id&&inP(n.fecha,F)).length,km:k.km}});
+   return{kpis:[["Viajes a sucursales",S1.length],["Envíos programados",sum(rows,r=>r.prog)],["Cumplidos",sum(rows,r=>r.ok)],["Guías despachadas",sum(rows,r=>r.gui)],["Unidades enviadas",fN(sum(rows,r=>r.uni))],["Guías pendientes hoy",sum(rows,r=>r.pend)]],
+    cols:[["Sucursal","suc","t"],["Viajes","via","n"],["Programados","prog","n"],["Cumplidos","ok","n"],["No cumplidos","no","n"],["% cumplido","pc","t"],["Guías despachadas","gui","n"],["Unidades","uni","n"],["Guías pendientes","pend","n"],["Observaciones","obs","n"],["Km desde depósito","km","d1"]],rows,chart:{lab:"suc",val:"uni",t:"Unidades enviadas"}}}},
+ {id:"guias",cat:"Sucursales",t:"Guías y mercadería",d:"Qué se mandó a cada sucursal: por sucursal, por rubro o por producto",ill:"sheet",f:["suc"],grp:[["sucursal","Por sucursal"],["rubro","Por rubro"],["producto","Por producto"],["detalle","Guía por guía"]],
+  run(F){const g0=S.guias.filter(g=>(!F.suc||g.sucursalId===F.suc)&&inP(g.fecha,F)),mode=F.grp||"sucursal";
+   const kp=[["Guías",g0.length],["Renglones",fN(sum(g0,g=>(g.items||[]).length))],["Unidades",fN(sum(g0,gUnid))],["Pendientes",g0.filter(g=>guiaSt(g).k==="pend").length],["Entregadas",g0.filter(g=>guiaSt(g).k==="ent").length]];
+   if(mode==="detalle"){const rows=g0.map(g=>{const st=guiaSt(g);return{nro:g.nro,fecha:fDL(g.fecha),suc:sucT(g.sucursalId),rub:gRubros(g).join(", "),ren:(g.items||[]).length,uni:gUnid(g),est:st.t}});return{kpis:kp,cols:[["Guía","nro","t"],["Fecha","fecha","t"],["Sucursal","suc","t"],["Rubros","rub","t"],["Renglones","ren","n"],["Unidades","uni","n"],["Estado","est","t"]],rows}}
+   if(mode==="sucursal"){const by=groupBy(g0,g=>g.sucursalId);const rows=Object.keys(by).map(k=>{const a=by[k];return{k:sucT(k),gui:a.length,ren:sum(a,g=>(g.items||[]).length),uni:sum(a,gUnid),pend:a.filter(g=>guiaSt(g).k==="pend").length,ent:a.filter(g=>guiaSt(g).k==="ent").length}}).sort((a,b)=>b.uni-a.uni);
+     return{kpis:kp,cols:[["Sucursal","k","t"],["Guías","gui","n"],["Renglones","ren","n"],["Unidades","uni","n"],["Entregadas","ent","n"],["Pendientes","pend","n"]],rows,chart:{lab:"k",val:"uni",t:"Unidades por sucursal"}}}
+   const it=g0.flatMap(g=>(g.items||[]).map(i=>Object.assign({g},i)));
+   if(mode==="rubro"){const by=groupBy(it,i=>(i.r||"Sin rubro")+"|"+(i.sr||""));const rows=Object.keys(by).map(k=>{const a=by[k],[r,sr]=k.split("|");return{r,sr,ren:a.length,uni:sum(a,i=>i.q),gui:new Set(a.map(i=>i.g.id)).size,suc:new Set(a.map(i=>i.g.sucursalId)).size}}).sort((a,b)=>a.r.localeCompare(b.r)||b.uni-a.uni);
+     return{kpis:kp,cols:[["Rubro","r","t"],["Subrubro","sr","t"],["Renglones","ren","n"],["Unidades","uni","n"],["Guías","gui","n"],["Sucursales","suc","n"]],rows,chart:{lab:"sr",val:"uni",t:"Unidades por subrubro"}}}
+   const by=groupBy(it,i=>i.c+"|"+i.d);const rows=Object.keys(by).map(k=>{const a=by[k];return{c:a[0].c,d:a[0].d,r:a[0].r,uni:sum(a,i=>i.q),suc:new Set(a.map(i=>i.g.sucursalId)).size,sucs:[...new Set(a.map(i=>(get("sucursales",i.g.sucursalId)||{}).codigo||"?"))].sort().join(", ")}}).sort((a,b)=>b.uni-a.uni);
+   return{kpis:kp,cols:[["Código","c","t"],["Producto","d","t"],["Rubro","r","t"],["Unidades","uni","n"],["Sucursales","suc","n"],["N° de sucursal","sucs","t"]],rows,chart:{lab:"d",val:"uni",t:"Productos más enviados"}}}},
+ {id:"zonas",cat:"Preventa",t:"Preventa por zona",d:"Clientes, facturas, facturado, entregas y rechazos de cada zona",ill:"pin",f:["cam","cho"],
+  run(F){const cs=cargasF(F);const by=groupBy(cs,c=>c.zonaId);
+   const rows=Object.keys(by).map(z=>{const a=by[z],ent=a.flatMap(c=>Object.values(c.entregas||{}));const cli=sum(a,c=>(c.items||[]).length);
+     return{z:zonaT(z),sal:new Set(a.map(c=>c.salidaId)).size,cli,fact:sum(a,c=>c.nFacturas),tot:sum(a,c=>c.totalFac),ent:ent.filter(v=>v==="Entregado").length,rp:ent.filter(v=>v==="Rechazo parcial").length,rt:ent.filter(v=>v==="Rechazo total").length,ce:ent.filter(v=>/Cerrado/.test(v)).length,nov:S.novedades.filter(n=>n.zonaId===z&&inP(n.fecha,F)).length}}).sort((a,b)=>b.tot-a.tot);
+   return{kpis:[["Zonas",rows.length],["Salidas",sum(rows,r=>r.sal)],["Clientes",fN(sum(rows,r=>r.cli))],["Facturas",fN(sum(rows,r=>r.fact))],["Facturado",fM(sum(rows,r=>r.tot))],["Rechazos",sum(rows,r=>r.rp+r.rt)]],
+    cols:[["Zona","z","t"],["Salidas","sal","n"],["Clientes","cli","n"],["Facturas","fact","n"],["Facturado","tot","m"],["Entregados","ent","n"],["Rechazo parcial","rp","n"],["Rechazo total","rt","n"],["Cerrado / ausente","ce","n"],["Novedades","nov","n"]],rows,chart:{lab:"z",val:"tot",t:"Facturado por zona",money:true}}}},
+ {id:"novedades",cat:"Calidad",t:"Novedades",d:"Rechazos, roturas, faltantes: por tipo, sucursal, zona, chofer o controlador",ill:"alert",f:["canal","suc","cho"],grp:[["tipo","Por tipo"],["sucursal","Por sucursal"],["zona","Por zona"],["chofer","Por chofer"],["controlador","Por controlador"],["camion","Por camión"],["mes","Por mes"],["detalle","Una por una"]],
+  run(F){const N=S.novedades.filter(n=>inP(n.fecha,F)&&(!F.canal||n.canal===F.canal)&&(!F.suc||n.sucursalId===F.suc)&&(!F.cho||n.choferId===F.cho)),mode=F.grp||"tipo";
+   const kp=[["Novedades",N.length],["Abiertas",N.filter(n=>n.estado==="Abierta").length],["Resueltas",N.filter(n=>n.estado==="Resuelta").length],["Importe",fM(sum(N,n=>n.importe))],["Rechazos",N.filter(n=>/Rechazo/.test(n.tipo)).length]];
+   if(mode==="detalle"){const rows=N.slice().sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))).map(n=>({f:fDL(n.fecha),c:n.canal,t:n.tipo,dest:n.sucursalId?sucT(n.sucursalId):n.zonaId?zonaT(n.zonaId):"",cli:n.cliente||"",pro:n.producto||"",can:n.cantidad,imp:n.importe,cho:chofT(n.choferId),ctrl:persT(n.controladorId),est:n.estado,d:n.descripcion||""}));
+     return{kpis:kp,cols:[["Fecha","f","t"],["Canal","c","t"],["Tipo","t","t"],["Sucursal / zona","dest","t"],["Cliente","cli","t"],["Producto","pro","t"],["Cantidad","can","n"],["Importe","imp","m"],["Chofer","cho","t"],["Controlador","ctrl","t"],["Estado","est","t"],["Qué pasó","d","t"]],rows}}
+   const kf={tipo:n=>n.tipo||"Otro",sucursal:n=>n.sucursalId?sucT(n.sucursalId):"(sin sucursal)",zona:n=>n.zonaId?zonaT(n.zonaId):"(sin zona)",chofer:n=>n.choferId?chofT(n.choferId):"(sin chofer)",controlador:n=>n.controladorId?persT(n.controladorId):"(sin controlador)",camion:n=>{const s=get("salidas",n.salidaId);return s?camLbl(s.camionId):n.camionId?camLbl(n.camionId):"(sin camión)"},mes:n=>mesL(String(n.fecha).slice(0,7))}[mode];
+   const by=groupBy(N,kf);const rows=Object.keys(by).map(k=>{const a=by[k];return{k,n:a.length,ab:a.filter(n=>n.estado!=="Resuelta").length,imp:sum(a,n=>n.importe),can:sum(a,n=>n.cantidad),pc:pct(a.length,N.length),top:Object.entries(groupBy(a,n=>n.tipo)).sort((x,y)=>y[1].length-x[1].length).slice(0,2).map(([t,v])=>t+" ("+v.length+")").join(", ")}}).sort((a,b)=>b.n-a.n);
+   return{kpis:kp,cols:[[{tipo:"Tipo",sucursal:"Sucursal",zona:"Zona",chofer:"Chofer",controlador:"Controlador",camion:"Camión",mes:"Mes"}[mode],"k","t"],["Novedades","n","n"],["% del total","pc","t"],["Sin resolver","ab","n"],["Unidades","can","n"],["Importe","imp","m"],["Tipos más frecuentes","top","t"]],rows,chart:{lab:"k",val:"n",t:"Novedades"}}}},
+ {id:"recepcion",cat:"Depósito",t:"Recepción de mercadería",d:"Por proveedor, depósito, producto o día: recepciones, pallets y remitos sin firma",ill:"box",f:["dep"],grp:[["proveedor","Por proveedor"],["deposito","Por depósito"],["producto","Por producto"],["dia","Por día"],["detalle","Remito por remito"]],
+  run(F){const R=S.recepciones.filter(r=>inP(r.fecha,F)&&(!F.dep||r.deposito===F.dep)),mode=F.grp||"proveedor";
+   const kp=[["Recepciones",R.length],["Pallets",fN(sum(R,r=>r.pallets))],["Unidades",fN(sum(R,recUnid))],["Proveedores",new Set(R.map(r=>r.proveedor)).size],["Sin firma",R.filter(r=>!r.firmado).length]];
+   if(mode==="detalle"){const rows=R.slice().sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))).map(r=>({f:fDL(r.fecha),p:r.proveedor,rem:r.remitoNro||"",dep:r.deposito,pal:r.pallets,uni:recUnid(r),pro:(r.items||[]).map(i=>(i.q??"")+" "+i.d).join(" | "),fir:r.firmado?"Sí":"No",rec:persT(r.recibioId),tr:r.transportista||""}));
+     return{kpis:kp,cols:[["Fecha","f","t"],["Proveedor","p","t"],["Remito","rem","t"],["Depósito","dep","t"],["Pallets","pal","n"],["Unidades","uni","n"],["Productos","pro","t"],["Firmado","fir","t"],["Recibió","rec","t"],["Transportista","tr","t"]],rows}}
+   if(mode==="producto"){const it=R.flatMap(r=>(r.items||[]).map(i=>Object.assign({r},i)));const by=groupBy(it,i=>(i.c||"")+"|"+i.d);const rows=Object.keys(by).map(k=>{const a=by[k];return{c:a[0].c,d:a[0].d,p:[...new Set(a.map(i=>i.r.proveedor))].join(", "),uni:sum(a,i=>i.q),rec:a.length}}).sort((a,b)=>b.uni-a.uni);
+     return{kpis:kp,cols:[["Código","c","t"],["Producto","d","t"],["Proveedor","p","t"],["Unidades","uni","n"],["Recepciones","rec","n"]],rows,chart:{lab:"d",val:"uni",t:"Productos más recibidos"}}}
+   const kf={proveedor:r=>r.proveedor||"(sin proveedor)",deposito:r=>r.deposito||"(sin depósito)",dia:r=>r.fecha}[mode];const by=groupBy(R,kf);
+   const rows=Object.keys(by).sort().map(k=>{const a=by[k];return{k:mode==="dia"?fDL(k):k,rec:a.length,pal:sum(a,r=>r.pallets),uni:sum(a,recUnid),sf:a.filter(r=>!r.firmado).length,deps:[...new Set(a.map(r=>r.deposito))].join(", ")}});if(mode!=="dia")rows.sort((a,b)=>b.pal-a.pal||b.rec-a.rec);
+   return{kpis:kp,cols:[[{proveedor:"Proveedor",deposito:"Depósito",dia:"Día"}[mode],"k","t"],["Recepciones","rec","n"],["Pallets","pal","n"],["Unidades","uni","n"],["Sin firma","sf","n"],["Depósitos","deps","t"]],rows,chart:{lab:"k",val:"pal",t:"Pallets",noSort:mode==="dia"}}}},
+ {id:"deposito",cat:"Depósito",t:"Carga en depósito",d:"Órdenes cargadas por portón, controlador y cargador, con sus novedades",ill:"door",f:["canal"],grp:[["controlador","Por controlador"],["porton","Por portón"],["cargador","Por cargador"]],
+  run(F){const S1=salF(F),mode=F.grp||"controlador",N=S.novedades.filter(n=>inP(n.fecha,F));let by={};
+   if(mode==="cargador")S1.forEach(s=>(s.equipoIds||[]).forEach(p=>(by[persT(p)||"(eliminado)"]=by[persT(p)||"(eliminado)"]||[]).push(s)));
+   else by=groupBy(S1,s=>mode==="porton"?(s.portonId?portT(s.portonId):"(sin portón)"):(s.controladorId?persT(s.controladorId):"(sin controlador)"));
+   const rows=Object.keys(by).map(k=>{const a=by[k],nn=N.filter(n=>a.some(s=>s.id===n.salidaId));return{k,ord:a.length,cam:new Set(a.map(s=>s.camionId)).size,dias:new Set(a.map(s=>s.fecha)).size,nov:nn.length,xo:a.length?Math.round(nn.length/a.length*100)/100:null,fal:nn.filter(n=>/Faltante|Sobrante|Error de picking/.test(n.tipo)).length}}).sort((a,b)=>b.ord-a.ord);
+   return{kpis:[["Órdenes cargadas",S1.length],["Con portón",S1.filter(s=>s.portonId).length],["Con controlador",S1.filter(s=>s.controladorId).length],["Novedades de esas órdenes",sum(rows,r=>r.nov)]],
+    cols:[[{controlador:"Controlador",porton:"Portón",cargador:"Cargador"}[mode],"k","t"],["Órdenes","ord","n"],["Camiones","cam","n"],["Días","dias","n"],["Novedades","nov","n"],["Novedades por orden","xo","d2"],["Faltantes / sobrantes / picking","fal","n"]],rows,chart:{lab:"k",val:"ord",t:"Órdenes cargadas"}}}},
+ {id:"gasoil",cat:"Gasoil",t:"Gasoil",d:"Litros, gasto y consumo por camión, chofer, mes o carga por carga",ill:"fuel",f:["cam","cho"],grp:[["camion","Por camión"],["chofer","Por chofer"],["mes","Por mes"],["lugar","Por lugar de carga"],["detalle","Carga por carga"]],
+  run(F){const C=gasConsumo(),G=S.gasoil.filter(g=>inP(g.fecha,F)&&(!F.cam||g.camionId===F.cam)&&(!F.cho||g.choferId===F.cho)),mode=F.grp||"camion";
+   let k0=0,l0=0;G.forEach(g=>{const c=C[g.id];if(c){k0+=c.km;l0+=+g.litros||0}});
+   const kp=[["Cargas",G.length],["Litros",fL(sum(G,g=>g.litros))],["Gasto",fM(sum(G,gasImp))],["$ por litro",sum(G,g=>g.litros)?fM(sum(G,gasImp)/sum(G,g=>g.litros)):"—"],["Consumo flota",l0?fKml(k0/l0)+" km/L":"—"]];
+   if(mode==="detalle"){const rows=G.slice().sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))).map(g=>{const c=C[g.id];return{f:fDL(g.fecha),cam:camLbl(g.camionId),cho:chofT(g.choferId),lit:g.litros,pre:g.precio,imp:gasImp(g),km:g.km,kmd:c?c.km:null,kml:c?Math.round(c.kml*100)/100:null,lug:g.lugar==="Surtidor propio"?"Surtidor propio":(g.estacion||"Estación")}});
+     return{kpis:kp,cols:[["Fecha","f","t"],["Camión","cam","t"],["Chofer","cho","t"],["Litros","lit","n"],["$/L","pre","m"],["Importe","imp","m"],["Odómetro","km","n"],["Km desde la anterior","kmd","n"],["km/L","kml","d2"],["Dónde","lug","t"]],rows}}
+   const kf={camion:g=>camLbl(g.camionId),chofer:g=>g.choferId?chofT(g.choferId):"(sin chofer)",mes:g=>String(g.fecha).slice(0,7),lugar:g=>g.lugar==="Surtidor propio"?"Surtidor propio":(g.estacion||"Estación de servicio")}[mode];const by=groupBy(G,kf);
+   const rows=Object.keys(by).sort().map(k=>{const a=by[k];let kk=0,ll=0;a.forEach(g=>{const c=C[g.id];if(c){kk+=c.km;ll+=+g.litros||0}});const lit=sum(a,g=>g.litros);return{k:mode==="mes"?mesL(k):k,n:a.length,lit,imp:sum(a,gasImp),ppl:lit?sum(a,gasImp)/lit:null,km:Math.round(kk),kml:ll?Math.round(kk/ll*100)/100:null}});if(mode!=="mes")rows.sort((a,b)=>b.lit-a.lit);
+   return{kpis:kp,cols:[[{camion:"Camión",chofer:"Chofer",mes:"Mes",lugar:"Lugar"}[mode],"k","t"],["Cargas","n","n"],["Litros","lit","n"],["Importe","imp","m"],["$ por litro","ppl","m"],["Km recorridos","km","n"],["km/L","kml","d2"]],rows,chart:{lab:"k",val:"lit",t:"Litros",noSort:mode==="mes"}}}}
+];
+const infGet=id=>INF.find(r=>r.id===id);
+function runInf(id,F){const r=infGet(id);try{return r.run(Object.assign({},F))}catch(e){console.error(e);return{kpis:[],cols:[["Error","e","t"]],rows:[{e:"No se pudo armar el informe"}]}}}
+const fmtCell=(v,t)=>v==null||v===""?"":t==="m"?fM(v):t==="km"||t==="n"?fN(Math.round(Number(v)*100)/100):t==="d1"?Number(v).toLocaleString("es-AR",{maximumFractionDigits:1}):t==="d2"?Number(v).toLocaleString("es-AR",{maximumFractionDigits:2}):String(v);
+const infPer=F=>(F.desde?fDY(F.desde):"inicio")+" al "+(F.hasta?fDY(F.hasta):"hoy");
+const infFiltrosTxt=F=>[F.canal&&"Canal "+F.canal,F.cam&&"Camión "+camLbl(F.cam),F.cho&&chofT(F.cho),F.suc&&sucT(F.suc),F.dep&&F.dep].filter(Boolean).join(" · ");
+function infChart(R){const c=R.chart;if(!c||!R.rows.length)return"";let rows=R.rows.filter(r=>Number(r[c.val])>0);if(!c.noSort)rows=rows.slice().sort((a,b)=>b[c.val]-a[c.val]);rows=rows.slice(0,c.noSort?31:12);if(!rows.length)return"";
+  const mx=Math.max(...rows.map(r=>Number(r[c.val])||0));
+  return'<div class="ichart"><div class="ich-t">'+esc(c.t)+'</div>'+rows.map(r=>'<div class="ich-r"><span class="ich-l" title="'+esc(r[c.lab])+'">'+esc(String(r[c.lab]).slice(0,34))+'</span><span class="ich-b"><i style="width:'+Math.max(2,Math.round((Number(r[c.val])||0)*100/mx))+'%"></i></span><span class="ich-v">'+(c.money?fM(r[c.val]):fN(Math.round(r[c.val]*10)/10))+'</span></div>').join("")+'</div>'}
+function infTable(R,limit){const rows=limit?R.rows.slice(0,limit):R.rows;
+  return'<div class="tw"><table class="wide"><thead><tr>'+R.cols.map(c=>'<th'+(c[2]!=="t"?' class="num"':"")+'>'+esc(c[0])+'</th>').join("")+'</tr></thead><tbody>'
+    +rows.map(r=>'<tr>'+R.cols.map((c,i)=>'<td'+(c[2]!=="t"?' class="num mono"':i===0?"":' class="wrap"')+'>'+(i===0?"<b>":"")+esc(fmtCell(r[c[1]],c[2]))+(i===0?"</b>":"")+'</td>').join("")+'</tr>').join("")
+    +'</tbody>'+(R.rows.length>1?'<tfoot><tr>'+R.cols.map((c,i)=>'<td'+(c[2]!=="t"?' class="num mono"':"")+'><b>'+(i===0?"Total":["n","m","km"].includes(c[2])&&!/^(%|km\/L|\$ por|\$\/L|Km desde dep|Novedades por|Odómetro|Sucursales|Camiones|Días|Proveedores|Guías$|Recepciones$)/.test(c[0])?esc(fmtCell(sum(R.rows,x=>x[c[1]]),c[2])):"")+'</b></td>').join("")+'</tr></tfoot>':"")+'</table></div>'
+    +(limit&&R.rows.length>limit?'<div class="none">Mostrando '+limit+' de '+R.rows.length+' filas. El Excel trae todas.</div>':"")}
+
+/* ---- vistas ---- */
+VIEWS.informes=function(){
+  const cats={};INF.forEach(r=>(cats[r.cat]=cats[r.cat]||[]).push(r));
+  let h=ph(crumb(["Inicio","inicio"],["Informes"]),"Informes","","chart");
+  h+='<p class="lead">Elegí un informe: se arma con los datos del sistema, lo filtrás por fechas, camión, chofer o sucursal, y lo bajás en Excel o lo imprimís en PDF.</p>';
+  h+='<div class="tiles">'+tile({act:"kpi-open",cls:"m-hist wide",ill:"chart",t:"Tablero de KPI",p:"Los indicadores clave del período, comparados con el anterior y con su meta: cumplimiento, rechazos, remitos sin firma, consumo de gasoil y más",meta:[KPIS.length+" indicadores","semáforo por meta"]})+'</div>';
+  h+=askBox();
+  const A=UI.inf.area;h+='<div class="seg2 inf-areas" role="tablist">'+AREAS.map(([k,t])=>'<button class="'+(A===k?"on":"")+'" data-act="inf-area" data-v="'+k+'">'+esc(t)+'</button>').join("")+'</div>';
+  Object.keys(cats).filter(c=>!A||areaOf(cats[c][0])===A).forEach(c=>{h+='<div class="secl">'+esc(c==="Depósito"?"Depósito · carga de camiones":c==="Recepción"?"Recepción de mercadería":c)+'</div><div class="tiles four">'+cats[c].map(r=>tile({act:"inf-open",v:r.id,cls:"sm "+(areaOf(r)==="rec"?"m-caja":areaOf(r)==="gas"?"m-viaje":"m-hist"),ill:r.ill,t:r.t,p:r.d})).join("")+'</div>'});
+  return h;
+};
+function askBox(){const F=UI.inf;
+  return'<section class="pn askbox"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-prog)"></span>'+IC.wand+' Preguntale a los datos</h2><span class="s">Usa el período elegido: '+esc(infPer(F))+'</span></div><div class="pnb">'
+    +'<div class="askrow"><input id="askq" class="q" type="search" placeholder="Ej.: ¿qué camión gastó más gasoil este mes? · ¿qué sucursal tuvo más faltantes? · ¿cuántos pallets recibimos de cada proveedor?" value="'+esc(F.ask)+'" aria-label="Pregunta"><button class="btn pri w" data-act="inf-ask"'+(F.busy?" disabled":"")+'>'+(F.busy?"Pensando…":"Preguntar")+'</button></div>'
+    +'<div class="ask-ej">'+["¿Qué camión hizo más km y cuánto gasoil gastó?","¿Qué sucursal tiene más guías pendientes?","¿Qué controlador tiene más observaciones por orden?","Resumime la semana"].map(q=>'<button class="btn sm ghost" data-act="inf-askq" data-v="'+esc(q)+'">'+esc(q)+'</button>').join("")+'</div>'
+    +(F.ans?'<div class="ask-ans" id="askans">'+F.ans+'</div>':'<div id="askans"></div>')+'</div></section>';
+}
+function infFiltros(r){const F=UI.inf,f=r.f||[];
+  const quick=[["hoy","Hoy"],["sem","Esta semana"],["mes","Este mes"],["mesant","Mes anterior"],["anio","Este año"]];
+  return'<div class="flt"><label>Desde <input type="date" id="if_d" data-ui="inf.desde" value="'+F.desde+'"></label><label>Hasta <input type="date" id="if_h" data-ui="inf.hasta" value="'+F.hasta+'"></label>'
+    +quick.map(([k,t])=>'<button class="btn sm ghost" data-act="inf-per" data-v="'+k+'">'+t+'</button>').join("")+'</div><div class="flt">'
+    +(f.includes("canal")?'<select id="if_c" data-ui="inf.canal" aria-label="Canal">'+opts([["","Preventa y sucursales"],"Preventa","Sucursales"],F.canal)+'</select>':"")
+    +(f.includes("cam")?'<select id="if_cam" data-ui="inf.cam" aria-label="Camión">'+opts([["","Todos los camiones"]].concat(S.camiones.slice().sort((a,b)=>isAcop(a)-isAcop(b)||String(a.patente).localeCompare(String(b.patente))).map(c=>[c.id,c.patente+(isAcop(c)?" (acoplado)":"")])),F.cam)+'</select>':"")
+    +(f.includes("cho")?'<select id="if_cho" data-ui="inf.cho" aria-label="Persona">'+opts([["","Todos los choferes y cobradores"]].concat(S.choferes.slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre))).map(c=>[c.id,c.nombre])),F.cho)+'</select>':"")
+    +(f.includes("suc")?'<select id="if_suc" data-ui="inf.suc" aria-label="Sucursal">'+opts([["","Todas las sucursales"]].concat(S.sucursales.slice().sort(sucCmp).map(x=>[x.id,sucN(x)])),F.suc)+'</select>':"")
+    +(f.includes("dep")?'<select id="if_dep" data-ui="inf.dep" aria-label="Depósito">'+opts([["","Todos los depósitos"]].concat(DEPOS),F.dep)+'</select>':"")
+    +(r.grp?'<select id="if_g" data-ui="inf.grp" aria-label="Agrupar">'+opts(r.grp,F.grp||r.grp[0][0])+'</select>':"")+'</div>';
+}
+VIEWS.informe=function(){
+  const r=infGet(UI.inf.id);if(!r){UI.route="informes";return VIEWS.informes()}
+  const F=UI.inf;if(r.grp&&!r.grp.some(g=>g[0]===F.grp))F.grp=r.grp[0][0];
+  const R=runInf(r.id,F);
+  let h=ph(crumb(["Inicio","inicio"],["Informes","informes"],[r.t]),r.t,'<button class="btn pri w" data-act="inf-xlsx">'+IC.dl+'Excel</button><button class="btn w" data-act="inf-pdf">'+IC.file+'Imprimir / PDF</button>',r.ill);
+  h+='<p class="lead">'+esc(r.d)+'</p>'+infFiltros(r);
+  h+='<div class="kpis">'+R.kpis.map(([l,v])=>'<div class="kpi"><span class="k">'+esc(l)+'</span><span class="v" style="font-size:'+(String(v).length>12?"17px":"24px")+'">'+esc(String(v))+'</span><span class="s">'+esc(infPer(F))+'</span></div>').join("")+'</div>';
+  h+=vizCard(R);
+  h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-hist)"></span>'+pl(R.rows.length,"fila","filas")+'</h2><span class="s">'+esc(infFiltrosTxt(F)||"Sin filtros")+'</span></div>'+(R.rows.length?infTable(R,400):'<div class="none">No hay datos para este período y filtros.</div>')+'</section>';
+  return h;
+};
+function setPer(k){const t=today(),F=UI.inf;
+  if(k==="hoy"){F.desde=t;F.hasta=t}else if(k==="sem"){F.desde=monday(t);F.hasta=t}else if(k==="mes"){F.desde=t.slice(0,8)+"01";F.hasta=t}
+  else if(k==="mesant"){const d=new Date(+t.slice(0,4),+t.slice(5,7)-2,1),e=new Date(+t.slice(0,4),+t.slice(5,7)-1,0);const f=x=>x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0");F.desde=f(d);F.hasta=f(e)}
+  else if(k==="anio"){F.desde=t.slice(0,4)+"-01-01";F.hasta=t}}
+async function infXlsx(){const r=infGet(UI.inf.id),F=UI.inf,R=runInf(r.id,F);if(!downloads){toast("La descarga no está disponible en esta vista");return}
+  await loadXLSX();const aoa=[["Portal Distribuidora · "+r.t],["Período: "+infPer(F)+(infFiltrosTxt(F)?" · "+infFiltrosTxt(F):"")],[],R.cols.map(c=>c[0])].concat(R.rows.map(x=>R.cols.map(c=>{const v=x[c[1]];return v==null?"":typeof v==="number"?Math.round(v*100)/100:String(v)})));
+  const ws=XLSX.utils.aoa_to_sheet(aoa);ws["!cols"]=R.cols.map(c=>({wch:Math.min(48,Math.max(10,c[0].length+2,...R.rows.slice(0,200).map(x=>String(x[c[1]]??"").length+1)))}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Informe");XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Indicador","Valor"]].concat(R.kpis.map(([l,v])=>[l,String(v)]))),"Resumen");
+  const name=(r.t+" "+(F.desde||"")+" a "+(F.hasta||today())).replace(/[\\/:*?"<>|]+/g,"-")+".xlsx";
+  try{await downloads.save({filename:name,data:new Blob([XLSX.write(wb,{bookType:"xlsx",type:"array"})])});toast("Excel descargado")}catch(e){if(e&&e.code!=="declined")toast("No se pudo descargar")}}
+function infPdf(){const r=infGet(UI.inf.id),F=UI.inf,R=runInf(r.id,F);
+  const head='<header class="p-head">'+P_LOGO+'<div class="p-wm"><b>PORTAL</b><i>DISTRIBUIDORA</i></div><div class="p-doc"><small>INFORME</small><b style="font-size:18px">'+esc(r.t)+'</b><span>'+esc(infPer(F))+'</span></div></header><div class="p-stripe"><i></i><i></i><i></i></div>';
+  const inner=head+(infFiltrosTxt(F)?'<p style="margin:6px 0;font-size:12px">'+esc(infFiltrosTxt(F))+'</p>':"")+'<div class="p-tot">'+R.kpis.slice(0,6).map(([l,v],i)=>pK(l,esc(String(v)),["#1f4a9b","#e0261c","#2b8a3e","#6f42d6","#f08c00","#0b8f7c"][i])).join("")+'</div>'
+    +(()=>{const c=vizHtml(R,F.ct,F.cm),D=chartData(R,F.cm);return c?VZ_PRINT+'<h3>'+esc(D?D.t:"Gráfico")+'</h3><div style="margin:4px 0 12px;break-inside:avoid">'+c+'</div>':""})()
+    +'<table class="p-t"><thead><tr>'+R.cols.map(c=>'<th'+(c[2]!=="t"?' style="text-align:right"':"")+'>'+esc(c[0])+'</th>').join("")+'</tr></thead><tbody>'+R.rows.map(x=>'<tr class="r">'+R.cols.map(c=>'<td'+(c[2]!=="t"?' style="text-align:right"':"")+'>'+esc(fmtCell(x[c[1]],c[2]))+'</td>').join("")+'</tr>').join("")+'</tbody></table>'
+    +'<footer class="p-foot"><span>Portal Distribuidora · TMS · '+esc(r.t)+'</span><span>Impreso el '+new Date().toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"})+'</span></footer>';
+  return dlDoc((r.t+" "+(F.desde||"")+" a "+(F.hasta||today())).replace(/[\\/:*?"<>|]+/g,"-")+".html","Informe · "+r.t,inner)}
+/* ---- preguntas libres: Claude consulta los informes como herramientas ---- */
+async function infAsk(q){const F=UI.inf;q=String(q||"").trim();if(!q)return;F.ask=q;
+  const s=await getSampleAny();if(!s){F.ans='<span style="color:var(--bad)">Las preguntas libres no están disponibles en esta vista. Abrí el sistema desde claude.ai con tu cuenta.</span>';render();return}
+  F.busy=true;F.ans='<span class="mu">Buscando en los datos…</span>';render();
+  const cat=INF.map(r=>r.id+": "+r.t+" — "+r.d+(r.grp?" (agrupar: "+r.grp.map(g=>g[0]).join(", ")+")":"")).join("\n");
+  const tools=[{name:"informe",description:"Arma un informe del sistema para un período y devuelve indicadores y filas. Informes disponibles:\n"+cat,
+    inputSchema:{type:"object",properties:{id:{type:"string",enum:INF.map(r=>r.id)},agrupar:{type:"string"},desde:{type:"string",description:"aaaa-mm-dd"},hasta:{type:"string",description:"aaaa-mm-dd"},canal:{type:"string",enum:["","Preventa","Sucursales"]}},required:["id"]},
+    execute:inp=>{const G=Object.assign({},F,{grp:inp.agrupar||"",desde:inp.desde||F.desde,hasta:inp.hasta||F.hasta,canal:inp.canal||""});const R=runInf(inp.id,G);
+      return{periodo:infPer(G),indicadores:Object.fromEntries(R.kpis.map(([l,v])=>[l,String(v)])),columnas:R.cols.map(c=>c[0]),filas:R.rows.slice(0,120).map(x=>R.cols.map(c=>x[c[1]]??"")),filasTotales:R.rows.length}}}];
+  const prompt="Sos el analista de logística de Portal Distribuidora (Tucumán, Argentina). Hoy es "+today()+". Período elegido en pantalla: "+infPer(F)+" ("+F.desde+" a "+(F.hasta||today())+").\n"
+    +"Respondé la pregunta usando la herramienta «informe» (podés llamarla varias veces, con otros períodos o agrupaciones si hace falta). No inventes datos: si algo no está en el sistema, decilo.\n"
+    +"Respondé en español rioplatense, corto y claro: primero la respuesta directa con los números clave, después 2 a 5 viñetas con detalle. Usá **negrita** para lo importante.\n\nPregunta: "+q;
+  try{const out=await s.s(prompt,{tools,modelTier:"default",onText:({text})=>{const b=$("askans");if(b)b.innerHTML=mdLite(text)}});F.ans=mdLite(out.text||"")}
+  catch(e){F.ans='<span style="color:var(--bad)">'+(e&&e.code==="not_granted"?"No se dio permiso para consultar.":e&&e.code==="rate_limited"?"Demasiadas preguntas seguidas. Probá en un rato.":"No pude responder. Probá de nuevo o reformulá la pregunta.")+'</span>'}
+  F.busy=false;render()}
+const mdLite=t=>esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/^\s*[-•*]\s+(.*)$/gm,"<li>$1</li>").replace(/(<li>.*<\/li>\n?)+/g,m=>"<ul>"+m+"</ul>").replace(/\n{2,}/g,"<br><br>").replace(/\n/g,"<br>");
+Object.assign(GACT,{
+  "inf-open":el=>{UI.inf.id=el.dataset.v;UI.inf.grp="";UI.inf.ct="auto";UI.inf.cm="";location.hash="#informe"},
+  "inf-per":el=>{setPer(el.dataset.v);render()},
+  "inf-xlsx":()=>infXlsx(),
+  "inf-pdf":()=>infPdf(),
+  "inf-ask":()=>{const i=$("askq");infAsk(i?i.value:UI.inf.ask)},
+  "inf-askq":el=>infAsk(el.dataset.v)
+});
+
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target&&e.target.id==="askq"){e.preventDefault();infAsk(e.target.value)}});
+
+/* ================= gráficos, recepción como área propia y tablero de KPI ================= */
+GRP.kpis="informes";MOD.kpis="m-hist";PARENT.kpis="informes";
+Object.assign(UI.inf,{area:"",ct:"auto",cm:""});
+const VZN=6;/* series del gráfico de torta: slots 1-5 + «Otros» en gris */
+const fmtV=(v,t)=>t==="m"?fM(v):Number(v).toLocaleString("es-AR",{maximumFractionDigits:t==="d2"?2:t==="d1"?1:Math.abs(v)<10?1:0});
+const niceMax=v=>{if(!(v>0))return 1;const p=Math.pow(10,Math.floor(Math.log10(v))),n=v/p;return(n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p};
+const numCols=R=>R.cols.filter(c=>["n","m","km","d1","d2"].includes(c[2]));
+
+/* ---- recepción: informes propios ---- */
+const recF=F=>S.recepciones.filter(r=>inP(r.fecha,F)&&(!F.dep||r.deposito===F.dep));
+const recDif=r=>r.cantTotal!=null&&r.cantTotal!==""&&Math.abs(Number(r.cantTotal)-recUnid(r))>.001;
+const recKp=R=>[["Recepciones",R.length],["Pallets",fN(sum(R,r=>r.pallets))],["Unidades",fN(sum(R,recUnid))],["Proveedores",new Set(R.map(r=>r.proveedor)).size],["Sin firma",R.filter(r=>!r.firmado).length+" ("+pct(R.filter(r=>!r.firmado).length,R.length)+")"]];
+const wkKey=f=>monday(f);
+const REC_INF=[
+ {id:"rec_evol",cat:"Recepción",t:"Evolución de la recepción",d:"Recepciones, pallets y unidades por día, semana o mes",ill:"box",f:["dep"],grp:[["dia","Por día"],["semana","Por semana"],["mes","Por mes"]],
+  run(F){const R=recF(F),mode=F.grp||"dia",kf=mode==="mes"?r=>r.fecha.slice(0,7):mode==="semana"?r=>wkKey(r.fecha):r=>r.fecha,by=groupBy(R,kf);
+   const rows=Object.keys(by).sort().map(k=>{const a=by[k];return{k:mode==="mes"?mesL(k):mode==="semana"?"Sem. "+fD(k):fDL(k),rec:a.length,pal:sum(a,r=>r.pallets),uni:sum(a,recUnid),prov:new Set(a.map(r=>r.proveedor)).size,sf:a.filter(r=>!r.firmado).length}});
+   return{kpis:recKp(R),cols:[[{dia:"Día",semana:"Semana",mes:"Mes"}[mode],"k","t"],["Recepciones","rec","n"],["Pallets","pal","n"],["Unidades","uni","n"],["Proveedores","prov","n"],["Sin firma","sf","n"]],rows,chart:{lab:"k",val:"pal",t:"Pallets recibidos",noSort:true,def:"columnas"}}}},
+ {id:"rec_prov",cat:"Recepción",t:"Por proveedor",d:"Cuánto recibimos de cada proveedor: remitos, pallets, unidades y sin firma",ill:"box",f:["dep"],
+  run(F){const R=recF(F),by=groupBy(R,r=>r.proveedor||"(sin proveedor)");
+   const rows=Object.keys(by).map(k=>{const a=by[k];return{k,rec:a.length,pal:sum(a,r=>r.pallets),uni:sum(a,recUnid),sf:a.filter(r=>!r.firmado).length,dif:a.filter(recDif).length,deps:[...new Set(a.map(r=>r.deposito))].join(", "),ult:fDL(a.map(r=>r.fecha).sort().pop())}}).sort((a,b)=>b.pal-a.pal||b.rec-a.rec);
+   return{kpis:recKp(R),cols:[["Proveedor","k","t"],["Remitos","rec","n"],["Pallets","pal","n"],["Unidades","uni","n"],["Sin firma","sf","n"],["Con diferencia","dif","n"],["Depósitos","deps","t"],["Última entrega","ult","t"]],rows,chart:{lab:"k",val:"pal",t:"Pallets por proveedor"}}}},
+ {id:"rec_dep",cat:"Recepción",t:"Por depósito",d:"Cómo se reparte lo recibido entre Depósito 1, Depósito 15 y Parque Logístico",ill:"depot",f:[],
+  run(F){const R=recF(F),by=groupBy(R,r=>r.deposito||"(sin depósito)");
+   const rows=DEPOS.concat(Object.keys(by).filter(k=>!DEPOS.includes(k))).filter(k=>by[k]).map(k=>{const a=by[k];return{k,rec:a.length,pal:sum(a,r=>r.pallets),uni:sum(a,recUnid),prov:new Set(a.map(r=>r.proveedor)).size,sf:a.filter(r=>!r.firmado).length,pc:pct(sum(a,r=>r.pallets),sum(R,r=>r.pallets))}});
+   return{kpis:recKp(R),cols:[["Depósito","k","t"],["Recepciones","rec","n"],["Pallets","pal","n"],["% de los pallets","pc","t"],["Unidades","uni","n"],["Proveedores","prov","n"],["Sin firma","sf","n"]],rows,chart:{lab:"k",val:"pal",t:"Pallets por depósito",def:"dona"}}}},
+ {id:"rec_prod",cat:"Recepción",t:"Por producto",d:"Productos más recibidos, de qué proveedor y en qué depósito",ill:"box",f:["dep"],
+  run(F){const R=recF(F),it=R.flatMap(r=>(r.items||[]).map(i=>Object.assign({r},i))),by=groupBy(it,i=>(i.c||"")+"|"+i.d);
+   const rows=Object.keys(by).map(k=>{const a=by[k];return{c:a[0].c,d:a[0].d,p:[...new Set(a.map(i=>i.r.proveedor))].join(", "),uni:sum(a,i=>i.q),rec:a.length,deps:[...new Set(a.map(i=>i.r.deposito))].join(", ")}}).sort((a,b)=>b.uni-a.uni);
+   return{kpis:recKp(R),cols:[["Código","c","t"],["Producto","d","t"],["Proveedor","p","t"],["Unidades","uni","n"],["Recepciones","rec","n"],["Depósitos","deps","t"]],rows,chart:{lab:"d",val:"uni",t:"Productos más recibidos"}}}},
+ {id:"rec_resp",cat:"Recepción",t:"Por quién recibió",d:"Recepciones y remitos sin firma de cada persona del depósito",ill:"worker",f:["dep"],
+  run(F){const R=recF(F),by=groupBy(R,r=>r.recibioId?persT(r.recibioId)||"(eliminado)":"(sin indicar)");
+   const rows=Object.keys(by).map(k=>{const a=by[k];return{k,rec:a.length,pal:sum(a,r=>r.pallets),sf:a.filter(r=>!r.firmado).length,dif:a.filter(recDif).length,pc:pct(a.filter(r=>!r.firmado).length,a.length)}}).sort((a,b)=>b.rec-a.rec);
+   return{kpis:recKp(R),cols:[["Recibió","k","t"],["Recepciones","rec","n"],["Pallets","pal","n"],["Sin firma","sf","n"],["% sin firma","pc","t"],["Con diferencia","dif","n"]],rows,chart:{lab:"k",val:"rec",t:"Recepciones por persona"}}}},
+ {id:"rec_ctrl",cat:"Recepción",t:"Control de remitos",d:"Remitos con problemas: sin firma, diferencia de cantidad, sin pallets o con observaciones",ill:"alert",f:["dep"],
+  run(F){const R=recF(F),rows=[];
+   R.forEach(r=>{const pr=[];if(!r.firmado)pr.push("Sin firma de recibido");if(recDif(r))pr.push("Remito dice "+fN(r.cantTotal)+" u. y se cargaron "+fN(recUnid(r)));if(r.pallets==null||r.pallets==="")pr.push("Sin pallets indicados");if(r.obs)pr.push("Observación: "+String(r.obs).slice(0,80));
+     if(pr.length)rows.push({f:fDL(r.fecha),fs:r.fecha,p:r.proveedor||"",rem:r.remitoNro||"",dep:r.deposito||"",n:pr.length,pr:pr.join(" · "),rec:persT(r.recibioId)})});
+   rows.sort((a,b)=>a.fs.localeCompare(b.fs));
+   return{kpis:[["Remitos revisados",R.length],["Con algún problema",rows.length+" ("+pct(rows.length,R.length)+")"],["Sin firma",R.filter(r=>!r.firmado).length],["Con diferencia de cantidad",R.filter(recDif).length],["Sin pallets indicados",R.filter(r=>r.pallets==null||r.pallets==="").length]],
+    cols:[["Fecha","f","t"],["Proveedor","p","t"],["Remito","rem","t"],["Depósito","dep","t"],["Problemas","n","n"],["Detalle","pr","t"],["Recibió","rec","t"]],rows}}},
+ {id:"rec_det",cat:"Recepción",t:"Remito por remito",d:"Listado completo de las recepciones con sus productos",ill:"sheet",f:["dep"],
+  run(F){const R=recF(F).slice().sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
+   const rows=R.map(r=>({f:fDL(r.fecha),p:r.proveedor,rem:r.remitoNro||"",dep:r.deposito,pal:r.pallets,uni:recUnid(r),pro:(r.items||[]).map(i=>(i.q??"")+" "+i.d).join(" | "),fir:r.firmado?"Sí":"No",rec:persT(r.recibioId),tr:r.transportista||""}));
+   return{kpis:recKp(R),cols:[["Fecha","f","t"],["Proveedor","p","t"],["Remito","rem","t"],["Depósito","dep","t"],["Pallets","pal","n"],["Unidades","uni","n"],["Productos","pro","t"],["Firmado","fir","t"],["Recibió","rec","t"],["Transportista","tr","t"]],rows}}}
+];
+{const i=INF.findIndex(r=>r.id==="recepcion");INF.splice(i<0?INF.length:i,i<0?0:1,...REC_INF)}
+const AREAS=[["","Todos"],["dist","Distribución"],["rec","Recepción"],["gas","Gasoil"]];
+const areaOf=r=>r.cat==="Recepción"?"rec":r.cat==="Gasoil"?"gas":"dist";
+const gasRes=INF.find(r=>r.id==="gasoil");if(gasRes&&gasRes.run){const o=gasRes.run;gasRes.run=F=>{const R=o(F);if(R.chart&&F.grp==="mes")R.chart.def="columnas";return R}}
+
+/* ---- motor de gráficos (SVG / HTML, una sola escala, colores por rol) ---- */
+function chartData(R,met){const c=R.chart||{lab:R.cols[0][1],val:(numCols(R)[0]||[])[1],t:""};const mc=numCols(R).find(x=>x[1]===met)||numCols(R).find(x=>x[1]===c.val)||numCols(R)[0];if(!mc)return null;
+  let rows=R.rows.map(r=>({l:String(r[c.lab]??""),v:Number(r[mc[1]])||0,raw:r})).filter(x=>x.l);
+  return{rows,col:mc,t:mc[1]===c.val&&c.t?c.t:mc[0],time:!!c.noSort,def:c.def}}
+function vizHtml(R,type,met){const D=chartData(R,met);if(!D||!D.rows.length||!D.rows.some(x=>x.v))return"";
+  let ty=type&&type!=="auto"?type:D.def||(D.time?(D.rows.length>31?"linea":"columnas"):"barras");
+  if(ty==="dona"&&(D.rows.length<2||D.rows.some(x=>x.v<0)))ty="barras";
+  const fmt=v=>fmtV(v,D.col[2]);
+  if(ty==="barras"){let rows=D.rows.filter(x=>x.v>0);if(!D.time)rows=rows.slice().sort((a,b)=>b.v-a.v);const more=rows.length-15;rows=rows.slice(0,15);const mx=Math.max(...rows.map(x=>x.v));
+    return'<div class="vz-bars">'+rows.map(x=>'<div class="vz-br" data-tip="'+esc(x.l)+': '+esc(fmt(x.v))+'"><span class="vz-bl" title="'+esc(x.l)+'">'+esc(x.l.slice(0,38))+'</span><span class="vz-bt"><i style="width:'+Math.max(1.5,x.v*100/mx)+'%"></i></span><span class="vz-bv">'+esc(fmt(x.v))+'</span></div>').join("")+(more>0?'<div class="mu" style="font-size:12px;margin-top:4px">+ '+more+' más en la tabla</div>':"")+'</div>'}
+  if(ty==="dona"){let rows=D.rows.filter(x=>x.v>0).slice().sort((a,b)=>b.v-a.v);if(rows.length>VZN){const rest=rows.slice(VZN-1);rows=rows.slice(0,VZN-1).concat([{l:"Otros ("+rest.length+")",v:rest.reduce((t,x)=>t+x.v,0),o:true}])}
+    const tot=rows.reduce((t,x)=>t+x.v,0),r0=78,th=26,cx=100,cy=100;let a0=-Math.PI/2;
+    const arcs=rows.map((x,i)=>{const a1=a0+x.v/tot*Math.PI*2,big=a1-a0>Math.PI?1:0,ro=r0,ri=r0-th,p=(r,a)=>(cx+r*Math.cos(a)).toFixed(2)+" "+(cy+r*Math.sin(a)).toFixed(2);
+      const d=rows.length===1?"":"M"+p(ro,a0)+" A"+ro+" "+ro+" 0 "+big+" 1 "+p(ro,a1)+" L"+p(ri,a1)+" A"+ri+" "+ri+" 0 "+big+" 0 "+p(ri,a0)+"Z";a0=a1;
+      return'<path d="'+d+'" class="vz-seg" style="fill:'+(x.o?"var(--vz-oth)":"var(--vz"+(i+1)+")")+'" data-tip="'+esc(x.l)+': '+esc(fmt(x.v))+' ('+Math.round(x.v*100/tot)+'%)"></path>'}).join("");
+    return'<div class="vz-donut"><svg viewBox="0 0 200 200" role="img" aria-label="'+esc(D.t)+'">'+arcs+'<text x="100" y="96" text-anchor="middle" class="vz-tot">'+esc(fmt(tot))+'</text><text x="100" y="116" text-anchor="middle" class="vz-sub">total</text></svg>'
+      +'<ul class="vz-leg">'+rows.map((x,i)=>'<li><i style="background:'+(x.o?"var(--vz-oth)":"var(--vz"+(i+1)+")")+'"></i><span>'+esc(x.l)+'</span><b>'+esc(fmt(x.v))+'</b><em>'+Math.round(x.v*100/tot)+'%</em></li>').join("")+'</ul></div>'}
+  /* columnas / línea */
+  let rows=D.rows;if(!D.time)rows=rows.slice().sort((a,b)=>b.v-a.v).slice(0,20);rows=rows.slice(-60);
+  const W=760,H=250,pl=58,pr=14,pt=14,pb=34,iw=W-pl-pr,ih=H-pt-pb,mn=Math.min(0,...rows.map(x=>x.v)),mx=niceMax(Math.max(...rows.map(x=>x.v))),n=rows.length,band=iw/n,y=v=>pt+ih-(v-mn)/(mx-mn)*ih;
+  let g='';for(let i=0;i<=4;i++){const v=mn+(mx-mn)*i/4,yy=y(v).toFixed(1);g+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+yy+'" y2="'+yy+'" class="'+(i===0?"vz-base":"vz-grid")+'"/><text x="'+(pl-8)+'" y="'+(+yy+4)+'" text-anchor="end" class="vz-ax">'+esc(fmtV(v,D.col[2]==="m"?"m":"n"))+'</text>'}
+  const step=Math.ceil(n/10);let xl='';rows.forEach((x,i)=>{if(i%step===0||i===n-1&&n<=12){const cx=pl+band*(i+.5);xl+='<text x="'+cx.toFixed(1)+'" y="'+(H-12)+'" text-anchor="middle" class="vz-ax">'+esc(x.l.length>11?x.l.slice(0,10)+"…":x.l)+'</text>'}});
+  let marks='';
+  if(ty==="linea"){const pts=rows.map((x,i)=>[pl+band*(i+.5),y(x.v)]);marks='<polyline class="vz-line" points="'+pts.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")+'"/>'
+      +rows.map((x,i)=>'<g class="vz-pt" data-tip="'+esc(x.l)+': '+esc(fmt(x.v))+'"><rect x="'+(pts[i][0]-Math.max(12,band/2)).toFixed(1)+'" y="'+pt+'" width="'+Math.max(24,band).toFixed(1)+'" height="'+ih+'" class="vz-hit"/>'+(n<=40?'<circle cx="'+pts[i][0].toFixed(1)+'" cy="'+pts[i][1].toFixed(1)+'" r="4" class="vz-dot"/>':"")+'</g>').join("")
+      +(()=>{const L=pts[n-1];return'<text x="'+Math.min(W-pr-2,L[0]).toFixed(1)+'" y="'+(L[1]-10).toFixed(1)+'" text-anchor="end" class="vz-lab">'+esc(fmt(rows[n-1].v))+'</text>'})()}
+  else{const bw=Math.max(2,Math.min(46,band-2)),mxi=rows.reduce((b,x,i)=>x.v>rows[b].v?i:b,0);
+    marks=rows.map((x,i)=>{const x0=pl+band*i+(band-bw)/2,y1=y(Math.max(0,x.v)),y0=y(0),h=Math.max(0,y0-y1),r=Math.min(4,bw/2,h);
+      const d=h<=0?"":"M"+x0.toFixed(1)+" "+y0.toFixed(1)+" V"+(y1+r).toFixed(1)+" Q"+x0.toFixed(1)+" "+y1.toFixed(1)+" "+(x0+r).toFixed(1)+" "+y1.toFixed(1)+" H"+(x0+bw-r).toFixed(1)+" Q"+(x0+bw).toFixed(1)+" "+y1.toFixed(1)+" "+(x0+bw).toFixed(1)+" "+(y1+r).toFixed(1)+" V"+y0.toFixed(1)+"Z";
+      return'<g class="vz-col" data-tip="'+esc(x.l)+': '+esc(fmt(x.v))+'"><rect x="'+(pl+band*i).toFixed(1)+'" y="'+pt+'" width="'+band.toFixed(1)+'" height="'+ih+'" class="vz-hit"/><path d="'+d+'" class="vz-bar"/>'+(i===mxi&&h>14?'<text x="'+(x0+bw/2).toFixed(1)+'" y="'+(y1-6).toFixed(1)+'" text-anchor="middle" class="vz-lab">'+esc(fmt(x.v))+'</text>':"")+'</g>'}).join("")}
+  return'<svg class="vz-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(D.t)+'">'+g+marks+xl+'</svg>';
+}
+function vizCard(R){const F=UI.inf,nc=numCols(R);if(!nc.length||!R.rows.length)return"";
+  const D=chartData(R,F.cm);if(!D)return"";const body=vizHtml(R,F.ct,F.cm);if(!body)return"";
+  return'<section class="pn vz-card"><div class="pnh"><h2><span class="sw" style="--sw:var(--vz1)"></span>'+esc(D.t)+'</h2><div class="pa vz-ctl"><select id="vz_t" data-ui="inf.ct" aria-label="Tipo de gráfico">'+opts([["auto","Gráfico automático"],["barras","Barras"],["columnas","Columnas"],["linea","Línea"],["dona","Torta (dona)"]],F.ct)+'</select>'
+    +(nc.length>1?'<select id="vz_m" data-ui="inf.cm" aria-label="Qué medir">'+opts(nc.map(c=>[c[1],c[0]]),D.col[1])+'</select>':"")+'</div></div><div class="pnb vz-body">'+body+'</div></section>'}
+/* tooltip: uno solo, sigue al puntero sobre cualquier marca con data-tip */
+(()=>{let tip=null;const show=(e,t)=>{if(!tip){tip=document.createElement("div");tip.className="vtip";document.body.appendChild(tip)}tip.textContent=t;tip.hidden=false;const x=Math.min(innerWidth-tip.offsetWidth-8,e.clientX+14),y=e.clientY-tip.offsetHeight-12;tip.style.left=x+"px";tip.style.top=(y<4?e.clientY+18:y)+"px"};
+  document.addEventListener("pointermove",e=>{const m=e.target.closest&&e.target.closest("[data-tip]");if(m)show(e,m.dataset.tip);else if(tip)tip.hidden=true});
+  document.addEventListener("pointerleave",()=>{if(tip)tip.hidden=true})})();
+
+/* ---- tablero de KPI ---- */
+const kpiCfg=()=>S.config.find(x=>x.id==="kpis")||{};
+const KPIS=[
+ {id:"cumpl",a:"Distribución",t:"Cumplimiento de la programación",u:"%",dir:"up",meta:95,h:"Envíos programados que salieron (preventa y sucursales)",
+  calc(F){const st=S.progzon.filter(p=>inP(p.fecha,F)).map(pzStatus).concat(S.progsuc.filter(p=>inP(p.fecha,F)).map(progStatus)).filter(s=>["ok","curso","no"].includes(s.k));return st.length?st.filter(s=>s.k!=="no").length*100/st.length:null}},
+ {id:"ordenes",a:"Distribución",t:"Órdenes de carga",u:"n",h:"Órdenes emitidas en el período",calc(F){return salF(F).length}},
+ {id:"km",a:"Distribución",t:"Km recorridos",u:"km",h:"Km reales (odómetro) o previstos de las órdenes",calc(F){return Math.round(sum(salF(F),s=>kmRealS(s)||kmPrevS(s)))}},
+ {id:"novord",a:"Calidad",t:"Novedades por orden",u:"d2",dir:"down",meta:.3,h:"Rechazos, roturas, faltantes… cada orden de carga",calc(F){const o=salF(F).length;return o?S.novedades.filter(n=>inP(n.fecha,F)).length/o:null}},
+ {id:"rech",a:"Calidad",t:"Rechazos en preventa",u:"%",dir:"down",meta:3,h:"Clientes con rechazo parcial o total sobre los entregados",
+  calc(F){const e=S.cargas.filter(c=>inP(c.fecha,F)).flatMap(c=>Object.values(c.entregas||{})).filter(v=>v&&v!=="Pendiente");return e.length?e.filter(v=>/Rechazo/.test(v)).length*100/e.length:null}},
+ {id:"guias3",a:"Distribución",t:"Guías atrasadas (+3 días)",u:"n",dir:"down",meta:0,now:true,h:"Guías de sucursales sin salir hace más de 3 días (hoy)",calc(){return S.guias.filter(g=>{const s=guiaSt(g);return s.k==="pend"&&s.d>3}).length}},
+ {id:"rec",a:"Recepción",t:"Recepciones",u:"n",h:"Remitos de proveedores recibidos",calc(F){return recF(F).length}},
+ {id:"pal",a:"Recepción",t:"Pallets recibidos",u:"n",h:"Suma de pallets de los remitos",calc(F){return sum(recF(F),r=>r.pallets)}},
+ {id:"sinf",a:"Recepción",t:"Remitos sin firma",u:"%",dir:"down",meta:0,h:"Recepciones sin firma de recibido",calc(F){const R=recF(F);return R.length?R.filter(r=>!r.firmado).length*100/R.length:null}},
+ {id:"dif",a:"Recepción",t:"Remitos con diferencia",u:"%",dir:"down",meta:2,h:"La cantidad total del remito no coincide con lo cargado",calc(F){const R=recF(F);return R.length?R.filter(recDif).length*100/R.length:null}},
+ {id:"kml",a:"Gasoil",t:"Consumo de la flota",u:"km/L",dir:"up",meta:3.5,h:"Km entre cargas ÷ litros",calc(F){const C=gasConsumo();let k=0,l=0;S.gasoil.forEach(g=>{const c=C[g.id];if(c&&inP(g.fecha,F)){k+=c.km;l+=+g.litros||0}});return l?k/l:null}},
+ {id:"litros",a:"Gasoil",t:"Litros de gasoil",u:"L",h:"Total cargado en el período",calc(F){return sum(S.gasoil.filter(g=>inP(g.fecha,F)),g=>g.litros)}},
+ {id:"pkm",a:"Gasoil",t:"Gasto de gasoil por km",u:"$",dir:"down",h:"$ de gasoil ÷ km recorridos entre cargas",calc(F){const C=gasConsumo();let k=0,m=0;S.gasoil.forEach(g=>{const c=C[g.id];if(c&&inP(g.fecha,F)){k+=c.km;m+=gasImp(g)}});return k?m/k:null}}
+];
+const kFmt=(v,u)=>v==null||!isFinite(v)?"—":u==="%"?Number(v).toLocaleString("es-AR",{maximumFractionDigits:1})+" %":u==="$"?fM(v):u==="km/L"?fKml(v)+" km/L":u==="L"?fL(v):u==="km"?fN(Math.round(v))+" km":u==="d2"?Number(v).toLocaleString("es-AR",{maximumFractionDigits:2}):fN(Math.round(v*10)/10);
+const kMeta=k=>{const m=(kpiCfg().metas||{})[k.id];return m===undefined?k.meta:m===""||m===null?undefined:Number(m)};
+function kStatus(k,v){const m=kMeta(k);if(m==null||v==null||!k.dir)return null;
+  const tol=m?Math.abs(m)*(k.dir==="up"?.1:.25):(k.u==="%"?2:1);
+  const ok=k.dir==="up"?v>=m:v<=m,near=k.dir==="up"?v>=m-tol:v<=m+tol;
+  return ok?{c:"good",i:"✓",t:"En meta"}:near?{c:"warn",i:"!",t:"Cerca de la meta"}:{c:"crit",i:"✕",t:"Fuera de meta"}}
+function prevPer(F){const d=F.desde||today(),h=F.hasta||today(),n=Math.round((P(h)-P(d))/864e5)+1;return{desde:addD(d,-n),hasta:addD(d,-1)}}
+function sparkVals(k){const out=[];let end=monday(today());for(let i=7;i>=0;i--){const d=addD(end,-7*i);out.push(k.calc({desde:d,hasta:addD(d,6)}))}return out}
+function spark(vals){const v=vals.map(x=>x==null?null:Number(x)),ok=v.filter(x=>x!=null);if(ok.length<2)return'<span class="mu" style="font-size:11px">sin historia</span>';
+  const mn=Math.min(...ok),mx=Math.max(...ok),W=120,H=30,y=x=>H-3-(mx===mn?.5:(x-mn)/(mx-mn))*(H-8);let pts=[];v.forEach((x,i)=>{if(x!=null)pts.push([(i*(W-8)/(v.length-1)+4).toFixed(1),y(x).toFixed(1)])});const L=pts[pts.length-1];
+  return'<svg class="vz-spark" viewBox="0 0 '+W+' '+H+'" aria-hidden="true"><polyline points="'+pts.map(p=>p.join(",")).join(" ")+'"/><circle cx="'+L[0]+'" cy="'+L[1]+'" r="3"/></svg>'}
+VIEWS.kpis=function(){
+  const F=UI.inf,PF=prevPer(F),oc=kpiCfg().ocultos||[];
+  let h=ph(crumb(["Inicio","inicio"],["Informes","informes"],["Tablero de KPI"]),"Tablero de KPI",(canWrite?'<button class="btn w" data-act="kpi-cfg">'+IC.gear+'Metas y KPI visibles</button>':"")+'<button class="btn pri w" data-act="kpi-xlsx">'+IC.dl+'Excel</button><button class="btn w" data-act="kpi-pdf">'+IC.file+'Imprimir / PDF</button>',"chart");
+  h+='<p class="lead">Cada indicador compara el período elegido con el período anterior del mismo largo ('+esc(infPer(PF))+') y con su meta. La línea chiquita muestra las últimas 8 semanas.</p>';
+  h+='<div class="flt"><label>Desde <input type="date" id="kp_d" data-ui="inf.desde" value="'+F.desde+'"></label><label>Hasta <input type="date" id="kp_h" data-ui="inf.hasta" value="'+F.hasta+'"></label>'+[["hoy","Hoy"],["sem","Esta semana"],["mes","Este mes"],["mesant","Mes anterior"],["anio","Este año"]].map(([k,t])=>'<button class="btn sm ghost" data-act="inf-per" data-v="'+k+'">'+t+'</button>').join("")+'</div>';
+  const areas={};KPIS.filter(k=>!oc.includes(k.id)).forEach(k=>(areas[k.a]=areas[k.a]||[]).push(k));
+  Object.keys(areas).forEach(a=>{h+='<div class="secl">'+esc(a)+'</div><div class="kgrid">'+areas[a].map(k=>{const v=k.calc(F),pv=k.now?null:k.calc(PF),st=kStatus(k,v),m=kMeta(k);
+    let dl="";if(v!=null&&pv!=null&&pv!==0){const d=(v-pv)*100/Math.abs(pv),better=k.dir?(k.dir==="up"?d>0:d<0):null;dl='<span class="kd '+(Math.abs(d)<.5?"":better===null?"":better?"up":"dn")+'">'+(d>0?"▲":d<0?"▼":"■")+" "+Math.abs(d).toLocaleString("es-AR",{maximumFractionDigits:0})+'% vs anterior ('+esc(kFmt(pv,k.u))+')</span>'}
+    else if(!k.now)dl='<span class="kd">'+(pv==null?"Sin datos del período anterior":"Período anterior: "+esc(kFmt(pv,k.u)))+'</span>';
+    return'<div class="kcard'+(st?" k-"+st.c:"")+'"><div class="kh"><span>'+esc(k.t)+'</span>'+(st?'<span class="kst k-'+st.c+'"><b>'+st.i+'</b>'+st.t+'</span>':"")+'</div><div class="kv">'+esc(kFmt(v,k.u))+'</div>'+dl
+      +'<div class="kf"><span class="mu">'+(m!=null&&k.dir?"Meta "+(k.dir==="up"?"≥ ":"≤ ")+esc(kFmt(m,k.u)):esc(k.h))+'</span>'+(k.now?"":spark(sparkVals(k)))+'</div></div>'}).join("")+'</div>'});
+  return h;
+};
+function formKpi(){const c=kpiCfg(),metas=Object.assign({},c.metas||{}),oc=new Set(c.ocultos||[]);
+  openForm({title:"Metas y KPI visibles",color:"c-hist",ok:"Metas guardadas",saveLabel:"Guardar metas",fields:[{k:"km",type:"html",cls:"gdet"}],
+    after:()=>{$("f_km").innerHTML='<p class="mu">Destildá los KPI que no quieras ver. La meta define el semáforo: verde en meta, amarillo cerca, rojo fuera. Dejala vacía para no usar semáforo.</p><div class="tw"><table class="wide"><thead><tr><th>Ver</th><th>KPI</th><th>Mejor si</th><th style="width:130px">Meta</th></tr></thead><tbody>'
+      +KPIS.map(k=>'<tr><td><input type="checkbox" data-kv="'+k.id+'"'+(oc.has(k.id)?"":" checked")+' aria-label="Ver '+esc(k.t)+'"></td><td><b>'+esc(k.t)+'</b><div class="sub">'+esc(k.h)+'</div></td><td>'+(k.dir==="up"?"más alto":k.dir==="down"?"más bajo":"—")+'</td><td>'+(k.dir?'<input type="number" step="any" data-km="'+k.id+'" value="'+esc(kMeta(k)??"")+'" aria-label="Meta de '+esc(k.t)+'"> <span class="mu">'+esc(k.u==="n"||k.u==="d2"?"":k.u)+'</span>':'<span class="mu">informativo</span>')+'</td></tr>').join("")+'</tbody></table></div>'},
+    save:async()=>{const m={},o=[];document.querySelectorAll("[data-km]").forEach(i=>m[i.dataset.km]=i.value===""?"":Number(i.value));document.querySelectorAll("[data-kv]").forEach(i=>{if(!i.checked)o.push(i.dataset.kv)});
+      await C("config").doc("kpis").set({metas:m,ocultos:o,updatedAt:new Date().toISOString(),updatedBy:uid})}});
+}
+function kpiRows(){const F=UI.inf,PF=prevPer(F),oc=kpiCfg().ocultos||[];return KPIS.filter(k=>!oc.includes(k.id)).map(k=>{const v=k.calc(F),pv=k.now?null:k.calc(PF),st=kStatus(k,v),m=kMeta(k);return{a:k.a,t:k.t,v:kFmt(v,k.u),pv:k.now?"(foto de hoy)":kFmt(pv,k.u),m:m!=null&&k.dir?(k.dir==="up"?"≥ ":"≤ ")+kFmt(m,k.u):"",st:st?st.t:"",vr:v,pr:pv}})}
+Object.assign(GACT,{
+  "kpi-open":()=>{location.hash="#kpis"},
+  "kpi-cfg":()=>{if(canWrite)formKpi()},
+  "inf-area":el=>{UI.inf.area=el.dataset.v||"";render()},
+  "kpi-xlsx":async()=>{if(!downloads){toast("La descarga no está disponible en esta vista");return}await loadXLSX();const F=UI.inf,rows=kpiRows();
+    const ws=XLSX.utils.aoa_to_sheet([["Portal Distribuidora · Tablero de KPI"],["Período: "+infPer(F)+" · comparado con "+infPer(prevPer(F))],[],["Área","KPI","Valor","Período anterior","Meta","Estado"]].concat(rows.map(r=>[r.a,r.t,r.v,r.pv,r.m,r.st])));ws["!cols"]=[{wch:14},{wch:34},{wch:16},{wch:18},{wch:14},{wch:18}];
+    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"KPI");try{await downloads.save({filename:"Tablero KPI "+(F.desde||"")+" a "+(F.hasta||today())+".xlsx",data:new Blob([XLSX.write(wb,{bookType:"xlsx",type:"array"})])});toast("Excel descargado")}catch(e){if(e&&e.code!=="declined")toast("No se pudo descargar")}},
+  "kpi-pdf":()=>{const F=UI.inf,rows=kpiRows();const head='<header class="p-head">'+P_LOGO+'<div class="p-wm"><b>PORTAL</b><i>DISTRIBUIDORA</i></div><div class="p-doc"><small>TABLERO DE KPI</small><b style="font-size:18px">'+esc(infPer(F))+'</b><span>vs '+esc(infPer(prevPer(F)))+'</span></div></header><div class="p-stripe"><i></i><i></i><i></i></div>';
+    const col={"En meta":"#0ca30c","Cerca de la meta":"#b77f00","Fuera de meta":"#d03b3b"};
+    dlDoc("Tablero KPI "+(F.desde||"")+" a "+(F.hasta||today())+".html","Tablero de KPI",head+'<table class="p-t"><thead><tr><th>Área</th><th>KPI</th><th style="text-align:right">Valor</th><th style="text-align:right">Período anterior</th><th>Meta</th><th>Estado</th></tr></thead><tbody>'+rows.map(r=>'<tr class="r"><td>'+esc(r.a)+'</td><td><b>'+esc(r.t)+'</b></td><td style="text-align:right"><b>'+esc(r.v)+'</b></td><td style="text-align:right">'+esc(r.pv)+'</td><td>'+esc(r.m)+'</td><td style="color:'+(col[r.st]||"#52514e")+'"><b>'+esc(r.st)+'</b></td></tr>').join("")+'</tbody></table><footer class="p-foot"><span>Portal Distribuidora · TMS · Tablero de KPI</span><span>Impreso el '+new Date().toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"})+'</span></footer>')}
+});
+const VZ_PRINT='<style>.pdoc{--vz1:#2a78d6;--vz2:#eb6834;--vz3:#1baf7a;--vz4:#eda100;--vz5:#e87ba4;--vz-oth:#b5b3ab;--panel:#ffffff;--line:#e1e0d9}.vz-svg{width:100%;height:auto;color:#52514e}.vz-grid{stroke:#e1e0d9;stroke-width:1}.vz-base{stroke:#c3c2b7;stroke-width:1}.vz-ax{font:10.5px Figtree,Arial,sans-serif;fill:#52514e}.vz-lab{font:700 11px Figtree,Arial,sans-serif;fill:#0b0b0b}.vz-bar{fill:#2a78d6}.vz-line{fill:none;stroke:#2a78d6;stroke-width:2}.vz-dot{fill:#2a78d6;stroke:#ffffff;stroke-width:2}.vz-hit{fill:transparent}.vz-bars{font:12px Figtree,Arial,sans-serif}.vz-br{display:grid;grid-template-columns:200px 1fr 80px;gap:8px;align-items:center;padding:2px 0}.vz-bt{height:12px}.vz-bt i{display:block;height:100%;background:#2a78d6;border-radius:0 4px 4px 0}.vz-bv{text-align:right}.vz-donut{display:flex;gap:18px;align-items:center}.vz-donut svg{width:180px}.vz-seg{stroke:#ffffff;stroke-width:2}.vz-tot{font:800 18px Figtree,Arial,sans-serif;fill:#0b0b0b}.vz-sub{font:11px Figtree,Arial,sans-serif;fill:#52514e}.vz-leg{list-style:none;margin:0;padding:0;font:12px Figtree,Arial,sans-serif}.vz-leg li{display:flex;gap:8px;align-items:center;padding:2px 0}.vz-leg i{width:10px;height:10px;border-radius:3px;display:inline-block}.vz-leg em{color:#52514e;font-style:normal}</style>';
 
 /* ================= render ================= */
 let rT=null,pendingRender=false;
@@ -2700,7 +3207,7 @@ function crearDownloads(){return{save:async({filename,data})=>{
   if(!db){ready=true;render();return}
   const keys=Object.keys(COLS);
   keys.forEach(k=>{let q=db.collection(COLS[k]);
-    q=["salidas","novedades","progsuc","zonadia","cargas","progzon","guias","recepciones"].includes(k)?q.orderBy("fecha","desc").limit(k==="cargas"?300:1000):q.limit(1000);
+    q=["salidas","novedades","progsuc","zonadia","cargas","progzon","guias","recepciones","gasoil","gascompras"].includes(k)?q.orderBy("fecha","desc").limit(k==="cargas"?300:1000):q.limit(1000);
     q.onSnapshot(snap=>{S[k]=snap.docs.map(d=>Object.assign({id:d.id},d.data()));if(k==="cz")flattenCz();loaded[k]=true;if(!ready&&keys.every(x=>loaded[x]))ready=true;if(ready)schedule()},
       err=>{console.error(k,err);toast("Se perdió la conexión. Recargá la página.")})});
   setTimeout(()=>{if(!ready){ready=true;render()}},6000);
