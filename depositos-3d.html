@@ -1057,7 +1057,7 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
   // ---- Estacionamiento de la flota, frente al playón del Depósito 1.
   // Los vehículos y sus vencimientos (VTV y SENASA) se leen en vivo del Portal Logístico (pestaña Vencimientos Flota):
   // la lista base viene copiada del portal y encima se aplican las ediciones, altas, bajas y "en trámite" que el portal
-  // guarda en su base en tiempo real. Se vuelve a consultar cada 2 minutos.
+  // guarda en su base en tiempo real. Se vuelve a consultar cada 30 segundos.
   const RTDB = "https://portal-logistica-2c88c-default-rtdb.firebaseio.com/";
   const FB = JSON.parse(document.getElementById("datos-flota").textContent);
   const FLOTA_BASE = { fecha: FB.fecha, vtv: FB.fv.map(([id, dom, desc, vtv, tipo]) => ({ id, dom, desc, vtv, tipo })), senasa: FB.sn.map(([id, dom, desc, vto]) => ({ id, dom, desc, vto })) };
@@ -1150,7 +1150,15 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
   };
   const leerFlota = async () => {
     await leerBase();
-    const g = async (k) => { const r = await fetch(RTDB + k + ".json", { cache: "no-store" }); if (!r.ok) throw new Error(k + " " + r.status); return (await r.json()) || {}; };
+    // Con tiempo máximo: si una lectura se queda colgada, se corta y se reintenta en la próxima vuelta
+    const g = async (k) => {
+      const corte = new AbortController(), t = setTimeout(() => corte.abort(), 15000);
+      try {
+        const r = await fetch(RTDB + k + ".json", { cache: "no-store", signal: corte.signal });
+        if (!r.ok) throw new Error(k + " " + r.status);
+        return (await r.json()) || {};
+      } finally { clearTimeout(t); }
+    };
     const [fo, fc, so, sc] = await Promise.all(["flota_venc_overrides", "flota_venc_custom", "senasa_venc_overrides", "senasa_venc_custom"].map(g));
     return { vtv: aplicar(base.vtv, fo, fc), senasa: aplicar(base.senasa, so, sc) };
   };
@@ -1337,10 +1345,10 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
     document.getElementById("fl-total").textContent = lista.length;
   };
   const salidaFlota = document.getElementById("fl-estado");
-  let enVivo = false, enCurso = null, otraVez = false;
+  let enCurso = null, otraVez = false;
   const hora = () => { const h = new Date(); return `${String(h.getHours()).padStart(2, "0")}:${String(h.getMinutes()).padStart(2, "0")}`; };
   const mostrarEstadoConexion = () => {
-    salidaFlota.textContent = `Conectado al Portal Logístico${enVivo ? " en tiempo real" : ""} · actualizado ${hora()}`
+    salidaFlota.textContent = `Conectado al Portal Logístico (se revisa cada 30 segundos) · actualizado ${hora()}`
       + (base.desdePortal ? "" : " · lista base: copia guardada");
   };
   const actualizarFlota = async () => {
@@ -1361,21 +1369,10 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
     await enCurso; enCurso = null;
     if (otraVez) { otraVez = false; actualizarFlota(); }
   };
-  // Tiempo real: la base del portal avisa cada cambio (edición, "en trámite", alta o baja) y el 3D vuelve a leer.
-  // El navegador reconecta solo si se corta. Igual se relee cada 5 minutos y al volver a la ventana, por las dudas.
-  let tCambio = null;
-  const alCambiar = () => { clearTimeout(tCambio); tCambio = setTimeout(actualizarFlota, 800); };
-  if (window.EventSource) {
-    ["flota_venc_overrides", "flota_venc_custom", "senasa_venc_overrides", "senasa_venc_custom"].forEach((k) => {
-      const es = new EventSource(RTDB + k + ".json");
-      let primero = true;
-      const ev = () => { enVivo = true; if (primero) { primero = false; return; } alCambiar(); };   // el primer aviso es el estado inicial
-      es.addEventListener("put", ev); es.addEventListener("patch", ev);
-      es.addEventListener("error", () => { enVivo = false; });
-    });
-  }
+  // Se relee la base del portal cada 30 segundos y al volver a la ventana. Antes se usaban 4 conexiones en tiempo real
+  // (EventSource), pero ocupaban las conexiones del navegador con esa base y la lectura de la flota quedaba colgada.
   actualizarFlota();
-  setInterval(actualizarFlota, 5 * 60000);
+  setInterval(actualizarFlota, 30000);
   window.addEventListener("focus", () => actualizarFlota());
 
   const textoDoc = (fecha, est, enTramite) => {
