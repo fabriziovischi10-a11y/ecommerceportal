@@ -8,6 +8,8 @@
 (function () {
   var script = document.currentScript;
   var APP = (script && script.dataset.app) || "";
+  // data-modo="suave": no tapa la página; solo aplica las restricciones si el usuario ya entró (antes de activar el bloqueo)
+  var SUAVE = !!(script && script.dataset.modo === "suave");
   var CFG = { apiKey: "AIzaSyCLP890Q5hyuqSs82vyF0rk9VhEg0pBlCA", authDomain: "ecommerce-e7ab2.firebaseapp.com", projectId: "ecommerce-e7ab2", storageBucket: "ecommerce-e7ab2.firebasestorage.app", messagingSenderId: "237845351422", appId: "1:237845351422:web:6350a5c3e103b088cf4eaf" };
   var ADMINS = ["fabriziovischi10@gmail.com", "fabriziovischi@distribuidoraportal.com"];
   var TORRE = "https://fabriziovischi10-a11y.github.io/ecommerceportal/escritorio.html";
@@ -33,6 +35,7 @@
   var esAdmin = function (u) { return !!u && u.emailVerified !== false && ADMINS.indexOf(mailDe(u)) >= 0; };
 
   /* ---------- pantalla que tapa la app ---------- */
+  if (SUAVE) { window.PortalAcceso_SUAVE = true; }
   var css = "#pa-velo{position:fixed;inset:0;z-index:2147483600;background:radial-gradient(900px 500px at 100% 0,rgba(254,212,3,.16),transparent 60%),linear-gradient(160deg,#0e2756,#16326b 60%,#0b1d42);display:grid;place-items:center;padding:20px;font:16px/1.45 'Segoe UI',system-ui,-apple-system,sans-serif;color:#fff}"
     + "#pa-velo[hidden]{display:none!important}"
     + "#pa-velo .pa-c{width:min(420px,100%);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:24px;padding:28px 24px;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,.35)}"
@@ -50,7 +53,7 @@
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
   var marca = '<p class="pa-m">PORTAL</p><p class="pa-s">DISTRIBUIDORA</p>';
   var donde = APP === "torre" ? "la Torre de control" : nombreApp(APP);
-  function pintar(html) { velo.innerHTML = '<div class="pa-c">' + marca + html + "</div>"; velo.hidden = false; }
+  function pintar(html) { if (SUAVE) { velo.hidden = true; return; } velo.innerHTML = '<div class="pa-c">' + marca + html + "</div>"; velo.hidden = false; }
   function cargando() { pintar('<div class="pa-sp"></div><p>Verificando el acceso…</p>'); }
   function pedirIngreso(err) {
     pintar("<h2>Ingresá con tu cuenta de Google</h2><p>Para usar " + esc(donde) + " tenés que entrar con el mail que te habilitó el administrador.</p>"
@@ -78,13 +81,15 @@
   var resolver, rechazar;
   var listo = new Promise(function (ok, no) { resolver = ok; rechazar = no; });
   var resuelto = false;
+  function sinDatos() { velo.hidden = true; if (!resuelto) { resuelto = true; resolver(null); } }
   async function verificar(u) {
-    if (!u || u.isAnonymous) { pedirIngreso(); return; }
+    if (!u || u.isAnonymous) { if (SUAVE) return sinDatos(); pedirIngreso(); return; }
     cargando();
     var mail = mailDe(u), admin = esAdmin(u), perfil = null;
     try { var s = await db().collection("torre_usuarios").doc(mail).get(); perfil = s.exists ? s.data() : null; }
-    catch (err) { if (!admin) { pintar('<h2>No se pudo verificar el acceso</h2><p>' + esc(err.message || err.code) + '</p><button class="pa-y" onclick="location.reload()">Reintentar</button>'); return; } }
+    catch (err) { if (SUAVE && !admin) return sinDatos(); if (!admin) { pintar('<h2>No se pudo verificar el acceso</h2><p>' + esc(err.message || err.code) + '</p><button class="pa-y" onclick="location.reload()">Reintentar</button>'); return; } }
     var apps = admin ? APPS.map(function (a) { return a[0]; }) : ((perfil && perfil.activo !== false && perfil.apps) || []);
+    if (SUAVE && !admin && (!perfil || perfil.activo === false || apps.indexOf(APP) < 0)) return sinDatos();
     if (!admin) {
       if (!perfil) { sinPermiso(u, { t: "Tu cuenta no está habilitada", d: "Pedile al administrador que te agregue en la Torre de control." }); return; }
       if (perfil.activo === false) { sinPermiso(u, { t: "Tu usuario está desactivado", d: "Hablá con el administrador para volver a tener acceso." }); return; }
@@ -92,7 +97,8 @@
       try { db().collection("torre_usuarios").doc(mail).set({ ultimoIngreso: new Date().toISOString() }, { merge: true }); } catch (e) {}
     }
     velo.hidden = true;
-    var datos = { app: app, db: db(), usuario: u, mail: mail, nombre: (perfil && perfil.nombre) || u.displayName || mail, perfil: perfil, admin: admin, apps: apps };
+    var datos = { app: app, db: db(), usuario: u, mail: mail, nombre: (perfil && perfil.nombre) || u.displayName || mail, perfil: perfil, admin: admin, apps: apps,
+      secciones: (!admin && perfil && perfil.secciones && perfil.secciones[APP] && perfil.secciones[APP].length) ? perfil.secciones[APP] : null };
     PortalAcceso.actual = datos;
     if (!resuelto) { resuelto = true; resolver(datos); }
     else if (typeof PortalAcceso.alCambiar === "function") PortalAcceso.alCambiar(datos);

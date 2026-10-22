@@ -241,24 +241,35 @@ function pintarLista(){
   $("adm-b").innerHTML='<p class="ayuda">Cada usuario entra con su cuenta de Google y solo ve las aplicaciones que le marques. Los administradores ('+admins.map(esc).join(" y ")+') ven todo.</p>'
     +'<div class="adm-top"><input id="u-q" type="search" placeholder="Buscar por nombre o mail" value="'+esc(filtroU)+'"><button class="bp" id="u-nuevo">+ Agregar usuario</button></div>'
     +(L.length?L.map(u=>'<div class="usr'+(u.activo===false?" off":"")+'"><span class="av">'+esc(inic(u.nombre||u.mail))+'</span><div><b>'+esc(u.nombre||u.mail)+'</b><small>'+esc(u.mail)+(u.ultimoIngreso?" · último ingreso "+new Date(u.ultimoIngreso).toLocaleString("es-AR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):" · todavía no entró")+'</small><div class="ch">'
-      +(u.activo===false?'<span class="off">Desactivado</span>':"")+((u.apps||[]).length?(u.apps||[]).map(id=>'<span>'+esc((appDe(id)||{n:id}).n)+'</span>').join(""):'<span class="off">Sin apps</span>')+'</div></div><button class="bp sec" data-ed="'+esc(u.mail)+'">Editar</button></div>').join("")
+      +(u.activo===false?'<span class="off">Desactivado</span>':"")+((u.apps||[]).length?(u.apps||[]).map(id=>'<span>'+esc((appDe(id)||{n:id}).n)+(seccDe(u,id).length?" · solo "+esc(seccDe(u,id).map(s=>seccNom(id,s)).join(", ")):"")+'</span>').join(""):'<span class="off">Sin apps</span>')+'</div></div><button class="bp sec" data-ed="'+esc(u.mail)+'">Editar</button></div>').join("")
       :'<p class="ayuda" style="margin-top:14px">'+(USU.length?"No hay usuarios con esa búsqueda.":"Todavía no agregaste usuarios.")+'</p>');
   $("u-q").oninput=e=>{filtroU=e.target.value;const p=e.target.selectionStart;pintarLista();$("u-q").focus();$("u-q").setSelectionRange(p,p)};
   $("u-nuevo").onclick=()=>pintarForm(null);
   $("adm-b").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>pintarForm(USU.find(u=>u.mail===b.dataset.ed)));
 }
+// Secciones que se pueden limitar dentro de una app (por ahora, el Parte diario). Sin marcar ninguna = ve todas.
+const SECCIONES={parte:[["dashboard","Dashboard"],["kpi","KPI"],["recepciones-prog","Recepciones Programadas"],["planilla-suc","Entrega de Sucursales"],["entrega-mensual","Entrega Mensual Preventa"],["baja-deposito","Baja Depósito"],["baja-preventa","Baja Preventa"],["flota-venc","Vencimientos Flota"],["recorridos","Recorridos de Preventa"],["sucursales","Recorridos de Sucursales"],["camiones","Recepción Camiones"],["config","Configuración"]]};
+const seccDe=(u,app)=>((u.secciones||{})[app]||[]);
+const seccNom=(app,id)=>((SECCIONES[app]||[]).find(x=>x[0]===id)||[id,id])[1];
 function pintarForm(u){
   edit=u||{};
   const apps=new Set((u&&u.apps)||[]);
+  const secc=Object.keys(SECCIONES).map(app=>{const sel=new Set(u?seccDe(u,app):[]);
+    return '<div class="full" data-sbox="'+app+'"'+(apps.has(app)?"":" hidden")+'><div style="font-weight:700;font-size:13.5px;color:#3d4a63;margin:2px 0 6px">Secciones de '+esc(appDe(app).n)+' que puede ver <span style="font-weight:600;color:#5a6880">· si no marcás ninguna, ve todas</span></div>'
+      +'<div class="cks" data-secc="'+app+'">'+SECCIONES[app].map(([id,n])=>'<label class="ck"><input type="checkbox" value="'+esc(id)+'"'+(sel.has(id)?" checked":"")+'>'+esc(n)+'</label>').join("")+'</div></div>'}).join("");
   $("adm-b").innerHTML='<div class="frm">'
     +'<label>Nombre<input id="f-nom" value="'+esc((u&&u.nombre)||"")+'" placeholder="Ej.: Juan Pérez"></label>'
     +'<label>Mail de Google<input id="f-mail" type="email" value="'+esc((u&&u.mail)||"")+'" placeholder="nombre@gmail.com"'+(u?" disabled":"")+'></label>'
     +'<div class="full"><div style="display:flex;align-items:center;gap:10px;margin:6px 0 8px;font-weight:700;font-size:13.5px;color:#3d4a63">Aplicaciones que puede usar <button type="button" class="bp sec" id="f-todas" style="padding:5px 10px;font-size:12.5px">Marcar todas</button><button type="button" class="bp sec" id="f-ninguna" style="padding:5px 10px;font-size:12.5px">Ninguna</button></div>'
     +'<div class="cks">'+APPS.map(a=>'<label class="ck"><input type="checkbox" value="'+esc(a.id)+'"'+(apps.has(a.id)?" checked":"")+'><i style="background:linear-gradient(145deg,'+a.c2+','+a.c1+')"></i>'+esc(a.n)+'</label>').join("")+'</div></div>'
+    +secc
     +'<label class="full" style="flex-direction:row;align-items:center;gap:10px"><input type="checkbox" id="f-act" style="width:18px;height:18px"'+(!u||u.activo!==false?" checked":"")+'> Usuario activo (si lo desactivás no puede entrar a nada)</label>'
     +'</div><p class="err" id="f-err"></p>'
     +'<div class="frm-pie">'+(u?'<button class="bp dng" id="f-del">Eliminar usuario</button>':"")+'<div class="der"><button class="bp sec" id="f-cancel">Cancelar</button><button class="bp" id="f-ok">'+(u?"Guardar cambios":"Agregar usuario")+'</button></div></div>';
-  const marcar=v=>$("adm-b").querySelectorAll('.cks input').forEach(i=>i.checked=v);
+  const appsIn=()=>$("adm-b").querySelectorAll('.cks:not([data-secc]) input');
+  const verSecc=()=>$("adm-b").querySelectorAll("[data-sbox]").forEach(b=>{const i=[...appsIn()].find(x=>x.value===b.dataset.sbox);b.hidden=!(i&&i.checked)});
+  appsIn().forEach(i=>i.addEventListener("change",verSecc));
+  const marcar=v=>{appsIn().forEach(i=>i.checked=v);verSecc()};
   $("f-todas").onclick=()=>marcar(true);$("f-ninguna").onclick=()=>marcar(false);
   $("f-cancel").onclick=pintarLista;
   $("f-ok").onclick=guardarUsu;
@@ -268,12 +279,13 @@ function pintarForm(u){
 }
 async function guardarUsu(){
   const mail=($("f-mail").value||"").trim().toLowerCase(),nombre=$("f-nom").value.trim();
-  const apps=[...$("adm-b").querySelectorAll('.cks input:checked')].map(i=>i.value),activo=$("f-act").checked;
+  const apps=[...$("adm-b").querySelectorAll('.cks:not([data-secc]) input:checked')].map(i=>i.value),activo=$("f-act").checked;
+  const secciones={};Object.keys(SECCIONES).forEach(app=>{secciones[app]=apps.includes(app)?[...$("adm-b").querySelectorAll('[data-secc="'+app+'"] input:checked')].map(i=>i.value):[]});
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)){$("f-err").textContent="Escribí un mail válido.";return}
   if(!edit.mail&&USU.some(u=>u.mail===mail)){$("f-err").textContent="Ese mail ya está cargado.";return}
   const b=$("f-ok");b.disabled=true;b.textContent="Guardando…";
   const ahora=new Date().toISOString(),quien=PortalAcceso.actual.mail;
-  try{await col().doc(mail).set(Object.assign({nombre:nombre||mail,apps,activo,actualizado:ahora,actualizadoPor:quien},edit.mail?{}:{creado:ahora,creadoPor:quien}),{merge:true});pintarLista()}
+  try{await col().doc(mail).set(Object.assign({nombre:nombre||mail,apps,secciones,activo,actualizado:ahora,actualizadoPor:quien},edit.mail?{}:{creado:ahora,creadoPor:quien}),{merge:true});pintarLista()}
   catch(e){b.disabled=false;b.textContent="Guardar";$("f-err").textContent="No se pudo guardar: "+(e.message||e.code)}
 }
 </script>
