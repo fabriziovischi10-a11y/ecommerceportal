@@ -720,7 +720,16 @@ const isAcop=c=>c.tipo==="Acoplado"||c.tipo==="Semirremolque";
 const portT=id=>{const x=get("portones",id);return x?x.nombre:"Sin portón"};
 const persT=id=>{const x=get("personal",id);return x?x.nombre:""};
 const equipoT=s=>(s.equipoIds||[]).map(persT).filter(Boolean).join(", ");
-const destT=s=>s.canal==="Preventa"?((s.zonaIds||[]).length?(s.zonaIds||[]).map(zonaT).join(", "):"Zonas sin cargar"):(s.sucursalIds||[]).map(sucT).join(", ");
+/* Responsable de cada zona: sale de «Zonas de recorrido» del Parte diario (nombres tipo «25 NESTOR UÑATES»).
+   Se lee en vivo; si el número aparece con dos nombres, se muestran los dos. */
+let RESPZ={};
+const tituloNom=s=>String(s).toLowerCase().replace(/(^|[\s(\/.-])([a-záéíóúñü])/g,(m,a,b)=>a+b.toUpperCase());
+fetch("https://portal-logistica-2c88c-default-rtdb.firebaseio.com/config/zonas.json").then(r=>r.json()).then(L=>{const m={};
+  (Array.isArray(L)?L:Object.values(L||{})).forEach(z=>{const x=String((z&&z.nombre)||"").trim().match(/^(\d+)\s+(.+)$/);if(!x)return;const k=String(+x[1]),n=tituloNom(x[2]);m[k]=m[k]||[];if(!m[k].includes(n))m[k].push(n)});
+  RESPZ=m;schedule()}).catch(e=>console.warn("No se pudieron leer las zonas del Parte diario",e));
+const zonaResp=id=>{const z=get("zonas",id);return z&&z.codigo!=null&&z.codigo!==""?(RESPZ[String(+z.codigo)]||[]).join(" / "):""};
+const zonaTR=id=>{const r=zonaResp(id);return zonaT(id)+(r?" ("+r+")":"")};
+const destT=s=>s.canal==="Preventa"?((s.zonaIds||[]).length?(s.zonaIds||[]).map(zonaTR).join(", "):"Zonas sin cargar"):(s.sucursalIds||[]).map(sucT).join(", ");
 const chip=(t,c,x)=>'<span class="st '+c+(x?" "+x:"")+'">'+esc(t)+'</span>';
 const canalTag=c=>c==="Preventa"?'<span class="tag pv">Preventa</span>':'<span class="tag sc">Sucursal</span>';
 const daysPills=arr=>'<span class="days">'+DIAS.slice(0,6).concat((arr||[]).includes(0)?[DIAS[6]]:[]).map(([n,s])=>'<span class="'+((arr||[]).includes(n)?"on":"")+'">'+s+'</span>').join("")+'</span>';
@@ -2540,6 +2549,7 @@ function formSal(s,pre){
       {k:"cobradorId",label:"Cobrador",type:"select",blank:"Sin cobrador",options:()=>perOpts(["Cobrador","Chofer y cobrador"])},
       {k:"origenLoc",label:"Origen",type:"rawselect",req:true,html:x=>locOpts(x||depId(),"Elegí el origen"),help:"Sale siempre del depósito del Parque Industrial"},{k:"destinoLoc",label:"Destino",type:"rawselect",html:x=>locOpts(x,"Sin destino fijo (solo las paradas)","suc"),help:"Adónde va el camión: última parada antes de volver"},{k:"regresoLoc",label:"Regreso (3er destino)",type:"rawselect",html:x=>locOpts(x||depId(),"Vuelve al origen"),help:"Dónde termina el viaje · por defecto el Parque Industrial"},
       {k:"destinos",label:"Sucursales",type:"checks",full:true,req:true,when:d=>d.canal==="Sucursales"},
+      {k:"zonasSel",label:"Zonas (a quién corresponde)",type:"checks",full:true,help:"El responsable de cada zona sale de «Zonas de recorrido» del Parte diario. Si no la elegís acá, se suma sola al cargar el Excel en la hoja de ruta."},
       {k:"guiasBox",type:"html",cls:"guiabox"},
       {k:"rec",type:"html",cls:"recbox"},
       {k:"sd",type:"sec",label:"Carga en depósito"},
@@ -2549,6 +2559,12 @@ function formSal(s,pre){
     extra:s?'<button type="button" class="btn" id="fnov">'+IC.alert+'Novedad</button>':"",
     after:F=>{
       const box=$("f_destinos"),rec=$("f_rec"),eq=$("f_equipoIds"),gb=$("f_guiasBox"),gck={};
+      const zb=$("f_zonasSel"),zsel0=s?(s.zonaIds||[]):((v.zonaIds)||[]);
+      const zOrd=(a,b)=>String(a.codigo).localeCompare(String(b.codigo),undefined,{numeric:true});
+      const drawZ=keep=>{const f=F.elements.fecha.value||today(),zs=S.zonas.filter(z=>isActive(z)||keep.includes(z.id)).sort(zOrd);
+        const it=z=>{const o=S.salidas.find(x=>x.id!==sid&&x.fecha===f&&actSal(x)&&(x.zonaIds||[]).includes(z.id));const r=zonaResp(z.id);return[z.id,zonaT(z.id),(r?r:"sin responsable en el Parte diario")+(o?" · ya va en N° "+nro(o):""),o?"al":r?"ok":""]};
+        zb.innerHTML=checksHtml("zonasSel",[{group:"Zonas de preventa",items:zs.map(it)}],keep)};
+      const curZ=()=>[...zb.querySelectorAll("input:checked")].map(i=>i.value);
       const drawG=()=>{const c=canalV();gb.hidden=c==="Preventa";if(c==="Preventa")return;const sucs=[...new Set(cur().map(x=>x.startsWith("ps:")?x.split(":")[1]:x.startsWith("p:")?(get("progsuc",x.slice(2))||{}).sucursalId:x.slice(2)).filter(Boolean))];gb.innerHTML=guiaPicker(sucs,sid,gck)};
       gb.addEventListener("change",e=>{if(e.target.name==="guia"){gck[e.target.value]=e.target.checked;drawG()}});
       const act=S.personal.filter(x=>isActive(x)||(v.equipoIds||[]).includes(x.id)).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre)));
@@ -2557,10 +2573,10 @@ function formSal(s,pre){
       const cur=()=>[...box.querySelectorAll("input:checked")].map(i=>i.value);
       const preview=()=>{const c=canalV(),vals=cur();const tmp={canal:c,fecha:F.elements.fecha.value||today(),origenLoc:F.elements.origenLoc.value,destinoLoc:F.elements.destinoLoc.value,regresoLoc:F.elements.regresoLoc.value,
           zonaIds:c==="Preventa"?vals:[],sucursalIds:c==="Preventa"?[]:vals.map(x=>x.startsWith("ps:")?x.split(":")[1]:x.startsWith("p:")?(get("progsuc",x.slice(2))||{}).sucursalId:x.slice(2)).filter(Boolean)};
-        if(c==="Preventa"){rec.innerHTML='<span>Las zonas se cargan después, en la <b style="font-size:inherit">hoja de ruta</b>, con el Excel de cada zona.</span><span class="mu">Ahí el sistema arma las paradas, las localidades y calcula los km solo.</span>';return}
+        if(c==="Preventa"){rec.innerHTML='<span>Los clientes de cada zona se cargan después, en la <b style="font-size:inherit">hoja de ruta</b>, con el Excel de cada zona.</span><span class="mu">Ahí el sistema arma las paradas, las localidades y calcula los km solo.</span>';return}
         if(!vals.length&&!F.elements.destinoLoc.value){rec.innerHTML='<span class="mu">Elegí las sucursales o el destino para ver el recorrido y los km.</span>';return}
         const p=plan(tmp);rec.innerHTML='<span>Recorrido estimado · '+pl(p.stops.length,"parada","paradas")+'</span><b>'+[p.origen].concat(p.seq.slice(1,-1)).concat([p.destino]).map(locName).join(" → ")+'</b><span>'+(p.total?(p.exact?"":"≈ ")+fKm(p.total)+" por ruta":"Sin km: falta el origen o la localidad de los clientes")+(p.sinExcel.length?" · sin Excel del día en "+p.sinExcel.length+" zona(s): se usan todos sus clientes":"")+'</span>'};
-      const rebuild=keep=>{const c=canalV();F.querySelector('[data-f="destinos"]').hidden=c==="Preventa";
+      const rebuild=keep=>{const c=canalV();F.querySelector('[data-f="destinos"]').hidden=c==="Preventa";F.querySelector('[data-f="zonasSel"]').hidden=c!=="Preventa";if(c==="Preventa")drawZ(zb.innerHTML?curZ():zsel0);
         const gr=destGroups(c,F.elements.fecha.value||today(),sid);box.innerHTML=checksHtml("destinos",gr,c==="Preventa"?(keep||cur()):normDest(keep||cur()));
         F.querySelector('[data-f="cobradorId"]').hidden=c!=="Preventa";preview();drawG()};
       rebuild(initDest);
@@ -2573,7 +2589,7 @@ function formSal(s,pre){
     },
     save:async d=>{delete d.sd;if(d.canal!=="Preventa")d.destinos=expandDest(d.destinos);
       d.guiaIds=d.canal==="Preventa"?[]:[...document.querySelectorAll('#f_guiasBox input[name="guia"]:checked')].map(i=>i.value);
-      if(d.canal!=="Preventa")d.cobradorId="";d._zonas=s?(s.zonaIds||[]):((pre&&pre.zonaIds)||[]);if(!s&&pre&&pre.progZonId)d.progZonId=pre.progZonId;
+      if(d.canal!=="Preventa")d.cobradorId="";d._zonas=d.canal==="Preventa"?(d.zonasSel||[]):[];delete d.zonasSel;if(!s&&pre&&pre.progZonId)d.progZonId=pre.progZonId;
       const nid=await saveSal(s,d);if(!s&&d.canal==="Preventa"){UI.hojaId=nid;location.hash="#hoja"}},
     del:s&&(()=>deleteSal(s))});
 }
