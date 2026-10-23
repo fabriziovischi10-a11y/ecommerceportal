@@ -548,6 +548,7 @@ button.st.novlink{border:0;cursor:pointer;font:inherit;font-size:12px;font-weigh
 @media(max-width:600px){.vz-br{grid-template-columns:96px 1fr 70px}.kv{font-size:24px}}
 .flujo{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px}.fl-steps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:280px}.fl-steps li{display:flex;gap:8px;align-items:center;padding:6px 12px 6px 6px;border-radius:999px;background:color-mix(in srgb,var(--line) 45%,transparent);flex:1;min-width:150px}.fl-steps li b{display:block;font-size:13px}.fl-steps li small{display:block;font-size:11.5px;color:var(--muted)}.fl-n{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--panel);border:2px solid var(--line);font-weight:800;font-size:12px;flex:none}.fl-steps li.done{background:color-mix(in srgb,var(--k-good) 12%,transparent)}.fl-steps li.done .fl-n{background:var(--k-good);border-color:var(--k-good);color:#ffffff}.fl-steps li.cur{background:color-mix(in srgb,var(--c-log) 14%,transparent);box-shadow:inset 0 0 0 2px var(--c-log)}.fl-steps li.cur .fl-n{border-color:var(--c-log);color:var(--c-log)}.fl-cta{display:flex;gap:8px;flex-wrap:wrap}.kpis-in{padding:0 16px 8px;margin:0}.lc.flash{animation:lcFlash 2.4s ease-out 2}@keyframes lcFlash{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c-log) 60%,transparent)}40%{box-shadow:0 0 0 8px color-mix(in srgb,var(--c-log) 25%,transparent)}100%{box-shadow:0 0 0 0 transparent}}
 .flujo{flex-direction:column;align-items:stretch}.fl-steps{min-width:0}.fl-steps li{min-width:0}.fl-steps li small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fl-cta{justify-content:flex-end}@media(max-width:700px){.fl-steps li{flex:1 1 45%}}
+.hpill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:3px 10px 3px 4px;border-radius:999px;white-space:nowrap}.hpill b{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;color:#ffffff;font-size:11px}.hpill.h-pend{background:color-mix(in srgb,var(--k-warn) 18%,transparent)}.hpill.h-pend b{background:var(--k-warn);color:#1b1b1b}.hpill.h-carg{background:color-mix(in srgb,var(--c-log) 14%,transparent)}.hpill.h-carg b{background:var(--c-log)}.hpill.h-lista{background:color-mix(in srgb,var(--k-good) 15%,transparent)}.hpill.h-lista b{background:var(--k-good)}.lc.hl-pend{border-left:4px solid var(--k-warn)}.lc.hl-carg{border-left:4px solid var(--c-log)}.lc.hl-lista{border-left:4px solid var(--k-good)}.hstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:0 0 14px}.hst{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--panel);cursor:pointer;text-align:left;font:inherit;color:inherit;border-top:4px solid var(--line)}.hst b{font-size:24px;font-weight:800}.hst span{font-size:12.5px;color:var(--muted)}.hst.h-pend{border-top-color:var(--k-warn)}.hst.h-carg{border-top-color:var(--c-log)}.hst.h-lista{border-top-color:var(--k-good)}.hst.on{box-shadow:0 0 0 2px var(--c-log) inset}.selbox{display:inline-grid;place-items:center;width:34px;height:34px;flex:none;cursor:pointer}.selbox input{width:19px;height:19px;cursor:pointer}.lc.sel-able{position:relative}.lc.sel-able .selbox{grid-row:1/span 2}.lc.sel{box-shadow:0 0 0 2px var(--c-log) inset}.selbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 12px;margin:0 0 10px;border:1px dashed var(--line);border-radius:12px;font-size:13.5px;color:var(--muted)}.selbar.on{border-style:solid;border-color:var(--c-log);color:var(--ink);background:color-mix(in srgb,var(--c-log) 8%,transparent)}
 </style>
 <style>
 /* ===== celular: tablas como tarjetas, botones cómodos para el dedo, sin zoom al escribir ===== */
@@ -946,8 +947,8 @@ VIEWS.logistica=function(){
   +'<div class="flow">'+[["1","f1","Órdenes emitidas","esperan carga",c("Programada")],["2","f2","Cargadas","listas para salir",c("Cargada")],["3","f3","En viaje","en la ruta",c("En ruta")],["4","f4","Volvieron","viajes cerrados",c("Finalizada")]]
     .map(([n,cl,t,d,v])=>'<div class="fs '+cl+(v?" on":"")+'"><span class="n">'+n+'</span><div><b data-count="'+v+'">'+v+'</b><span>'+t+' · '+d+'</span></div></div>').join("")+'</div>'
   +'<div class="tiles">'
-  +tile({href:"#ordenes",cls:"m-log wide",ill:"orden",t:"Órdenes de carga",p:"Lo programado que falta emitir: camión, chofer, cobrador, origen y destino",meta:[porCargar(today()).n+" por emitir"]})
-  +tile({href:"#hojas",cls:"m-hoja",ill:"sheet",t:"Hojas de ruta",p:"Cargar guías o facturas, grabar y pasar a Viajes",meta:[S.salidas.filter(s=>s.estado==="Programada").length+" por completar"]})
+  +tile({href:"#ordenes",cls:"m-log wide",ill:"orden",t:"Órdenes de carga",p:"Lo programado que falta emitir: camión, chofer, cobrador, origen y destino",meta:[porCargar(today()).n+" por emitir",S.salidas.filter(s=>s.estado==="Programada"&&s.hojaEmitida===false).length+" sin hoja de ruta"]})
+  +tile({href:"#hojas",cls:"m-hoja",ill:"sheet",t:"Hojas de ruta",p:"Cargar guías o facturas, grabar y pasar a Viajes",meta:[S.salidas.filter(s=>s.estado==="Programada"&&s.hojaEmitida!==false).length+" por completar"]})
   +tile({href:"#viajes",cls:"m-viaje",ill:"trip",t:"Viajes",p:"Camiones listos para salir y en la ruta",meta:[S.salidas.filter(s=>s.estado==="Cargada").length+" listos",S.salidas.filter(s=>s.estado==="En ruta").length+" en viaje"]})
   +(()=>{const gp=S.guias.filter(g=>guiaSt(g).k==="pend");return tile({href:"#guias",cls:"m-prog",ill:"sheet",t:"Guías de sucursales",p:"Mercadería que sale para cada sucursal y lo que quedó pendiente",meta:[gp.length+" pendientes",gp.filter(g=>guiaSt(g).volvio).length+" volvieron"]})})()
   
@@ -2342,7 +2343,9 @@ function flujoBar(s,dz){if(s.estado==="Anulada")return"";
   const steps=[["1","Orden de carga","N° "+nro(s)+" emitida","done"],["2","Hoja de ruta",hojaTxt,est==="Programada"?(docs?"cur ok":"cur"):"done"],["3","Viaje",est==="Cargada"?"cargado · listo para salir":est==="En ruta"?"en viaje"+(s.horaSalida?" desde las "+s.horaSalida:""):est==="Finalizada"?"hecho":"en espera",est==="Cargada"||est==="En ruta"?"cur":est==="Finalizada"?"done":""],["4","Regreso",est==="Finalizada"?"volvió"+(s.horaRegreso?" a las "+s.horaRegreso:""):"en espera",est==="Finalizada"?"done":""]];
   let cta="";
   const gr=hojaGrabada(s),salir='<button class="btn w" data-act="hoja-salir" data-id="'+s.id+'">Salir</button>';
-  if(est==="Programada")cta='<button class="btn w" data-act="docs-load" data-id="'+s.id+'">'+IC.up+(pv?"Cargar facturas":"Cargar guías")+'</button>'
+  if(est==="Programada"&&!hojaEmit(s)){steps[1][2]="sin emitir · la emitís desde Órdenes de carga";steps[1][3]="cur";
+    cta='<button class="btn pri w" data-act="hr-emit" data-id="'+s.id+'">'+IC.file+'Emitir hoja de ruta</button>'+salir}
+  else if(est==="Programada")cta='<button class="btn w" data-act="docs-load" data-id="'+s.id+'">'+IC.up+(pv?"Cargar facturas":"Cargar guías")+'</button>'
     +(gr?'<button class="btn pri w" data-act="hoja-ok" data-id="'+s.id+'">'+IC.truck+'Pasar a Viajes</button>':'<button class="btn save on w" data-act="hoja-grabar" data-id="'+s.id+'">'+IC.save+'Grabar</button>')+salir;
   else if(est==="Cargada")cta='<button class="btn w" data-act="go-viajes" data-id="'+s.id+'">Ver en Viajes</button><button class="btn pri w" data-act="salio" data-id="'+s.id+'">'+IC.truck+'Marcar salida</button>';
   else if(est==="En ruta")cta='<button class="btn w" data-act="go-viajes" data-id="'+s.id+'">Ver en Viajes</button><button class="btn pri w" data-act="volvio" data-id="'+s.id+'">'+IC.check+'Marcar regreso</button>';
@@ -2381,48 +2384,74 @@ Object.assign(GACT,{
     await pasarViajes(s)}
 });
 
-/* ================= bandejas por etapa: cada pantalla muestra solo lo pendiente de esa etapa ================= */
+/* ================= bandejas por etapa ================= */
+/* orden emitida → (manual) hoja de ruta emitida → grabada → Viajes → regreso */
 const _hojasDia=VIEWS.hojas,_viajesDia=VIEWS.viajes;
 VIEWS["hojas-hist"]=_hojasDia;VIEWS["viajes-hist"]=_viajesDia;
 GRP["hojas-hist"]="logistica";MOD["hojas-hist"]="m-hoja";PARENT["hojas-hist"]="hojas";
 GRP["viajes-hist"]="logistica";MOD["viajes-hist"]="m-viaje";PARENT["viajes-hist"]="viajes";
+UI.selOrd=new Set();UI.hstat="";
 const fechaChip=f=>{const d=daysTo(f);return d===0?chip("Hoy","info"):d<0?chip(fDL(f)+" · atrasada","bad"):chip(fDL(f),"mute")};
+/** las órdenes viejas (sin el campo) se toman como con hoja emitida */
+const hojaEmit=s=>s.hojaEmitida!==false;
 const hojaGrabada=s=>!!s.hojaGrabadaAt&&!(UI.draft&&UI.draft.sid===s.id&&dirty(s));
-/** resumen de documentos cargados en una hoja (guías o facturas) */
-function docsChip(s){if(s.canal==="Preventa"){const cs=cargasDe(s);return cs.length?chip(pl(cs.reduce((t,c)=>t+(c.items||[]).length,0),"cliente","clientes")+" · "+fN(cs.reduce((t,c)=>t+(c.nFacturas||0),0))+" fact. · "+fM(cs.reduce((t,c)=>t+(c.totalFac||0),0)),"ok"):chip("Faltan las facturas","warn")}
-  const G=guiasDe(s).filter(g=>g.salidaId===s.id);return G.length?chip(pl(G.length,"guía","guías")+" · "+fN(G.reduce((t,g)=>t+gUnid(g),0))+" u."+(G.some(gTieneImp)?" · "+fM(G.reduce((t,g)=>t+gImp(g),0)):""),"ok"):chip("Faltan las guías","warn")}
+const ordSinHoja=()=>S.salidas.filter(s=>s.estado==="Programada"&&!hojaEmit(s)).sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.nro||0)-(b.nro||0));
+const hojasPend=()=>S.salidas.filter(s=>s.estado==="Programada"&&hojaEmit(s)).sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.nro||0)-(b.nro||0));
+/** estado de la hoja según lo cargado: pend (faltan guías/facturas) · carg (cargadas, sin grabar) · lista (grabada) */
+function hojaEstado(s){const pv=s.canal==="Preventa",d=docsDe(s);
+  if(!d)return{k:"pend",t:pv?"Pendiente de facturas":"Pendiente de guías",c:"warn",i:"!"};
+  if(!hojaGrabada(s))return{k:"carg",t:(pv?"Facturas cargadas":"Guías cargadas")+" · sin grabar",c:"info",i:"●"};
+  return{k:"lista",t:"Grabada · lista para Viajes",c:"ok",i:"✓"}}
+const hojaPill=s=>{const e=hojaEstado(s);return'<span class="hpill h-'+e.k+'"><b>'+e.i+'</b>'+esc(e.t)+'</span>'};
+function docsChip(s){if(s.canal==="Preventa"){const cs=cargasDe(s);return cs.length?'<span>'+pl(cs.reduce((t,c)=>t+(c.items||[]).length,0),"cliente","clientes")+' · '+fN(cs.reduce((t,c)=>t+(c.nFacturas||0),0))+' fact. · <b>'+fM(cs.reduce((t,c)=>t+(c.totalFac||0),0))+'</b></span>':""}
+  const G=guiasDe(s).filter(g=>g.salidaId===s.id);return G.length?'<span>'+pl(G.length,"guía","guías")+' · '+fN(G.reduce((t,g)=>t+gUnid(g),0))+' u.'+(G.some(gTieneImp)?' · <b>'+fM(G.reduce((t,g)=>t+gImp(g),0))+'</b>':"")+'</span>':""}
 
-/* ---- Órdenes de carga: solo lo que falta emitir ---- */
+/* ---- Órdenes de carga: las emitidas que esperan hoja de ruta + lo programado sin orden ---- */
+function ordPendCard(s){const p=plan(s),sel=UI.selOrd.has(s.id);
+  return'<article class="lc sel-able'+(sel?" sel":"")+(UI.flashSal===s.id?" flash":"")+'"><label class="selbox" title="Seleccionar"><input type="checkbox" data-act="ord-sel" data-id="'+s.id+'"'+(sel?" checked":"")+' aria-label="Seleccionar orden '+nro(s)+'"></label>'
+    +'<button class="t" data-act="open-orden" data-id="'+s.id+'"><span class="nro">N° '+nro(s)+'</span>'+esc(destT(s)||"Sin destino")+'</button>'
+    +'<div class="a">'+fechaChip(s.fecha)+chip("Sin hoja de ruta","warn")+(canWrite?'<button class="btn sm pri w" data-act="hr-emit" data-id="'+s.id+'">'+IC.file+'Emitir hoja de ruta</button>':"")
+    +dots([{a:"open-orden",id:s.id,i:"edit",t:"Ver orden de carga"},{a:"edit-sal",id:s.id,i:"edit",t:"Editar orden"},{a:"dl-orden",id:s.id,i:"dl",t:"Imprimir orden de carga"},"-",{a:"anular",id:s.id,i:"pause",t:"Anular orden",dng:1,w:1},{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar orden",dng:1,w:1}])+'</div>'
+    +'<div class="m">'+canalTag(s.canal)+camP(s.camionId)+(s.acopladoId?'<span class="tag ac">+ acoplado '+esc((get("camiones",s.acopladoId)||{}).patente||"")+'</span>':"")+'<span><b>'+chofN(s.choferId)+'</b>'+(s.cobradorId?' · cobra '+chofN(s.cobradorId):"")+'</span>'+(s.portonId?'<span class="tag">'+esc(portT(s.portonId))+'</span>':"")+'<span>'+esc(rutaT(p))+'</span>'+(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b></span>':"")+'</div></article>'}
 VIEWS.ordenes=function(){
-  const f=today(),pc=porCargar(f),emHoy=S.salidas.filter(s=>actSal(s)&&s.fecha===f).length,hp=S.salidas.filter(s=>s.estado==="Programada").length;
+  const f=today(),pc=porCargar(f),sh=ordSinHoja();UI.selOrd.forEach(id=>{if(!sh.some(s=>s.id===id))UI.selOrd.delete(id)});
+  const hp=hojasPend().length,ns=UI.selOrd.size;
   let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Órdenes de carga"]),"Órdenes de carga",newOrden()+'<a class="btn w" href="#salidas">'+IC.list+'Consultar órdenes emitidas</a>',"orden");
-  h+='<div class="sumrow"><span class="'+(pc.n?"hl":"")+'"><b>'+pc.n+'</b> por emitir</span><span><b>'+emHoy+'</b> emitidas hoy</span>'+(hp?'<a href="#hojas"><b>'+hp+'</b> '+(hp===1?"hoja de ruta espera":"hojas de ruta esperan")+' que la completes ›</a>':"")+'</div>';
+  h+='<div class="sumrow"><span class="'+(sh.length?"hl":"")+'"><b>'+sh.length+'</b> sin hoja de ruta</span><span><b>'+pc.n+'</b> programados sin orden</span>'+(hp?'<a href="#hojas"><b>'+hp+'</b> '+(hp===1?"hoja de ruta en curso":"hojas de ruta en curso")+' ›</a>':"")+'</div>';
   if(!depId())h+='<div class="banner">Elegí el <a href="#" data-act="cfg">punto de partida</a> (localidad del depósito) para que el sistema calcule los km de cada viaje.</div>';
-  let L='<div><div class="secl">Por emitir <span class="c">'+pc.n+'</span> <span class="mu" style="font-weight:500;text-transform:none;letter-spacing:0">· programado para hoy y lo atrasado</span></div>';
-  if(!pc.n)L+=emptyCard("orden","m-log","No hay órdenes pendientes de emitir","Todo lo programado ya tiene su orden de carga. Si sale algo fuera de programa, emití una orden nueva.",'<button class="btn pri" data-act="new-sal" data-v="Preventa">'+IC.truck+'Orden de preventa</button><button class="btn" data-act="new-sal" data-v="Sucursales">'+IC.store+'Orden de sucursales</button>');
+  let L='<div><div class="secl">Órdenes emitidas · esperan hoja de ruta <span class="c">'+sh.length+'</span></div>';
+  if(sh.length){
+    L+='<div class="selbar'+(ns?" on":"")+'"><label class="selbox"><input type="checkbox" data-act="ord-selall"'+(ns&&ns===sh.length?" checked":"")+' aria-label="Seleccionar todas"></label><span>'+(ns?pl(ns,"orden seleccionada","órdenes seleccionadas"):"Seleccioná las órdenes para emitir su hoja de ruta")+'</span>'+(ns&&canWrite?'<button class="btn sm pri w" data-act="hr-emit-sel">'+IC.file+'Emitir hoja de ruta ('+ns+')</button><button class="btn sm ghost" data-act="ord-selnone">Quitar selección</button>':"")+'</div>';
+    L+='<div class="lcs">'+sh.map(ordPendCard).join("")+'</div>'}
+  else L+='<div class="emptycard" style="padding:18px">'+IC.check+' No hay órdenes esperando hoja de ruta.</div>';
+  L+='<div class="secl" style="margin-top:18px">Programado sin orden de carga <span class="c">'+pc.n+'</span> <span class="mu" style="font-weight:500;text-transform:none;letter-spacing:0">· hoy y lo atrasado</span></div>';
+  if(!pc.n)L+=emptyCard("orden","m-log","Todo lo programado ya tiene orden","Si sale algo fuera de programa, emití una orden nueva.",'<button class="btn pri" data-act="new-sal" data-v="Preventa">'+IC.truck+'Orden de preventa</button><button class="btn" data-act="new-sal" data-v="Sucursales">'+IC.store+'Orden de sucursales</button>');
   else{L+='<div class="lcs">';
-    pc.zPend.forEach(x=>{if(x.pz){const p=x.pz;L+='<article class="lc"><div class="ic">'+IC.truck+'</div><button class="t" data-act="pz-desp" data-id="'+p.id+'">'+esc(pzLabel(p))+'</button><div class="a">'+(x.st.k==="no"?chip("No cumplido · "+fDL(p.fecha),"bad"):chip("Hoy","info"))+'<button class="btn sm pri w" data-act="pz-desp" data-id="'+p.id+'">'+IC.truck+'Emitir orden</button>'+dots([{a:"pz-susp",id:p.id,i:"pause",t:"Hoy no sale",w:1}])+'</div><div class="m"><span class="tag pv">Preventa</span><span>'+esc((p.zonaIds||[]).map(zonaT).join(", "))+'</span></div></article>';return}
-      const z=x.z,st=x.st;L+='<article class="lc"><div class="ic">'+IC.truck+'</div><button class="t" data-act="zona-desp" data-id="'+z.id+'" data-f="'+f+'">'+esc(zonaT(z.id))+'</button><div class="a">'+(st.t==="No salió"?chip("No salió","bad"):chip("Hoy","info"))+'<button class="btn sm pri w" data-act="zona-desp" data-id="'+z.id+'" data-f="'+f+'">'+IC.truck+'Emitir orden</button>'+dots([{a:"zona-sin",id:z.id,f:f,i:"pause",t:"Hoy no sale",w:1}])+'</div><div class="m"><span class="tag pv">Preventa</span>'+(z.preventista?'<span>'+esc(z.preventista)+'</span>':"")+'</div></article>'});
-    pc.sPend.forEach(p=>{const late=p.fecha<f;L+='<article class="lc"><div class="ic">'+IC.store+'</div><button class="t" data-act="prog-desp" data-id="'+p.id+'">'+esc(sucT(p.sucursalId))+'</button><div class="a">'+(late?chip("No cumplido · "+fDL(p.fecha),"bad"):chip("Hoy","info"))+'<button class="btn sm pri w" data-act="prog-desp" data-id="'+p.id+'">'+IC.truck+'Emitir orden</button>'+dots([{a:"prog-susp",id:p.id,i:"pause",t:"Suspender envío",w:1},{a:"prog-del",id:p.id,i:"x",t:"Quitar del programa",dng:1,w:1}])+'</div><div class="m"><span class="tag sc">Sucursal</span>'+(p.rubro?'<span>'+esc(p.rubro)+'</span>':"")+'<span>programada '+fDL(p.fecha)+'</span></div></article>'});
+    pc.zPend.forEach(x=>{if(x.pz){const p=x.pz;L+='<article class="lc"><div class="ic">'+IC.truck+'</div><button class="t" data-act="pz-desp" data-id="'+p.id+'">'+esc(pzLabel(p))+'</button><div class="a">'+(x.st.k==="no"?chip("No cumplido · "+fDL(p.fecha),"bad"):chip("Hoy","info"))+'<button class="btn sm w" data-act="pz-desp" data-id="'+p.id+'">'+IC.truck+'Emitir orden</button>'+dots([{a:"pz-susp",id:p.id,i:"pause",t:"Hoy no sale",w:1}])+'</div><div class="m"><span class="tag pv">Preventa</span><span>'+esc((p.zonaIds||[]).map(zonaT).join(", "))+'</span></div></article>';return}
+      const z=x.z,st=x.st;L+='<article class="lc"><div class="ic">'+IC.truck+'</div><button class="t" data-act="zona-desp" data-id="'+z.id+'" data-f="'+f+'">'+esc(zonaT(z.id))+'</button><div class="a">'+(st.t==="No salió"?chip("No salió","bad"):chip("Hoy","info"))+'<button class="btn sm w" data-act="zona-desp" data-id="'+z.id+'" data-f="'+f+'">'+IC.truck+'Emitir orden</button>'+dots([{a:"zona-sin",id:z.id,f:f,i:"pause",t:"Hoy no sale",w:1}])+'</div><div class="m"><span class="tag pv">Preventa</span>'+(z.preventista?'<span>'+esc(z.preventista)+'</span>':"")+'</div></article>'});
+    pc.sPend.forEach(p=>{const late=p.fecha<f;L+='<article class="lc"><div class="ic">'+IC.store+'</div><button class="t" data-act="prog-desp" data-id="'+p.id+'">'+esc(sucT(p.sucursalId))+'</button><div class="a">'+(late?chip("No cumplido · "+fDL(p.fecha),"bad"):chip("Hoy","info"))+'<button class="btn sm w" data-act="prog-desp" data-id="'+p.id+'">'+IC.truck+'Emitir orden</button>'+dots([{a:"prog-susp",id:p.id,i:"pause",t:"Suspender envío",w:1},{a:"prog-del",id:p.id,i:"x",t:"Quitar del programa",dng:1,w:1}])+'</div><div class="m"><span class="tag sc">Sucursal</span>'+(p.rubro?'<span>'+esc(p.rubro)+'</span>':"")+'<span>programada '+fDL(p.fecha)+'</span></div></article>'});
     L+='</div>'}
   L+='</div>';
   const vv=[];S.camiones.filter(c=>c.estado!=="Baja").forEach(c=>{[["vtvVence","VTV"],["seguroVence","Seguro"]].forEach(([k,l])=>{if(c[k]&&daysTo(c[k])<=30)vv.push({d:c[k],t:plate(c.patente)+" "+l,act:"edit-cam",id:c.id})})});
   S.choferes.filter(isActive).forEach(c=>{if(c.licenciaVence&&daysTo(c.licenciaVence)<=30)vv.push({d:c.licenciaVence,t:esc(c.nombre)+" · licencia",act:"edit-cho",id:c.id})});vv.sort((a,b)=>a.d.localeCompare(b.d));
-  let R='<div class="rail"><section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-log)"></span>Cómo sigue</h2></div><div class="pnb mu" style="font-size:13px;line-height:1.5">1 · Emitís la orden y se abre su <b>hoja de ruta</b>.<br>2 · En la hoja cargás guías o facturas, <b>Grabar</b> y <b>Pasar a Viajes</b>.<br>3 · En <b>Viajes</b> marcás la salida y el regreso.<br><br>Las órdenes ya emitidas no aparecen acá: las ves en <a href="#salidas">Consultar órdenes emitidas</a>.</div></section>';
+  let R='<div class="rail"><section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-log)"></span>Cómo sigue</h2></div><div class="pnb mu" style="font-size:13px;line-height:1.55">1 · Emitís la orden de carga: queda acá, <b>esperando hoja de ruta</b>.<br>2 · Cuando quieras, tildás una o varias y <b>Emitir hoja de ruta</b>: pasan a Hojas de ruta.<br>3 · En la hoja cargás guías o facturas, <b>Grabar</b> y <b>Pasar a Viajes</b>.<br>4 · En <b>Viajes</b> marcás la salida y el regreso.</div></section>';
   if(vv.length)R+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--bad)"></span>Vencimientos</h2></div><div class="list">'+vv.slice(0,6).map(v=>{const d=daysTo(v.d);return'<div class="li" data-act="'+v.act+'" data-id="'+v.id+'" style="cursor:pointer"><div class="t">'+v.t+'</div><div class="r">'+chip(d<0?"Vencido":d===0?"Vence hoy":"En "+d+" días",d<0?"bad":"warn")+'</div></div>'}).join("")+'</div></section>';
   R+='</div>';
   return h+'<div class="hoy">'+L+R+'</div>';
 };
 
-/* ---- Hojas de ruta: solo las que falta completar ---- */
+/* ---- Hojas de ruta: las emitidas que falta completar, con su estado ---- */
 VIEWS.hojas=function(){
-  const list=S.salidas.filter(s=>s.estado==="Programada").sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.nro||0)-(b.nro||0));
+  const all=hojasPend(),cnt={pend:0,carg:0,lista:0};all.forEach(s=>cnt[hojaEstado(s).k]++);
+  const list=UI.hstat?all.filter(s=>hojaEstado(s).k===UI.hstat):all;
   let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Hojas de ruta"]),"Hojas de ruta",'<a class="btn w" href="#hojas-hist">'+IC.list+'Consultar hojas de ruta</a>',"sheet");
-  h+='<div class="sumrow"><span class="'+(list.length?"hl":"")+'"><b>'+list.length+'</b> por completar</span><span><b>'+list.filter(hojaGrabada).length+'</b> grabadas, listas para pasar a Viajes</span><span><b>'+list.filter(s=>!docsDe(s)).length+'</b> sin guías / facturas</span></div>';
-  if(!list.length)return h+emptyCard("sheet","m-hoja","No hay hojas de ruta pendientes","Cuando emitís una orden de carga, su hoja aparece acá hasta que la grabás y la pasás a Viajes. Las anteriores las ves en «Consultar hojas de ruta».",'<a class="btn pri" href="#ordenes">'+IC.truck+'Ir a órdenes de carga</a><a class="btn" href="#hojas-hist">Consultar hojas de ruta</a>');
-  return h+'<div class="lcs">'+list.map(s=>{const p=plan(s),gr=hojaGrabada(s);
-    return'<article class="lc '+estCls(s)+'"><div class="ic">'+IC.file+'</div><button class="t" data-act="open-hoja" data-id="'+s.id+'"><span class="nro">HR '+nro(s)+'</span>'+esc(destT(s)||"Sin destino")+'</button>'
-      +'<div class="a">'+fechaChip(s.fecha)+(gr?chip("Grabada","ok"):"")+'<button class="btn sm pri w" data-act="open-hoja" data-id="'+s.id+'">'+IC.edit+(gr?"Abrir":"Completar")+'</button>'+(gr&&canWrite?'<button class="btn sm w" data-act="hoja-ok" data-id="'+s.id+'">'+IC.truck+'Pasar a Viajes</button>':"")+dots([{a:"open-orden",id:s.id,i:"edit",t:"Ver orden de carga"},{a:"dl-hoja",id:s.id,i:"dl",t:"Descargar para imprimir"},"-",{a:"anular",id:s.id,i:"pause",t:"Anular orden",dng:1,w:1},{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar hoja de ruta",d:"Borra la orden y sus zonas",dng:1,w:1}])+'</div>'
+  h+='<div class="hstats">'+[["","Todas",all.length,""],["pend","Pendientes de guías / facturas",cnt.pend,"warn"],["carg","Cargadas · sin grabar",cnt.carg,"info"],["lista","Grabadas · listas para Viajes",cnt.lista,"ok"]].map(([k,t,n,c])=>'<button class="hst'+(UI.hstat===k?" on":"")+(c?" h-"+(k):"")+'" data-act="hoja-stat" data-v="'+k+'"><b>'+n+'</b><span>'+t+'</span></button>').join("")+'</div>';
+  if(!all.length)return h+emptyCard("sheet","m-hoja","No hay hojas de ruta en curso","Las hojas se emiten desde Órdenes de carga: tildás las órdenes y tocás «Emitir hoja de ruta». Las anteriores las ves en «Consultar hojas de ruta».",'<a class="btn pri" href="#ordenes">'+IC.truck+'Ir a órdenes de carga</a><a class="btn" href="#hojas-hist">Consultar hojas de ruta</a>');
+  if(!list.length)return h+'<div class="emptycard" style="padding:18px">No hay hojas en este estado. <a href="#" data-act="hoja-stat" data-v="">Ver todas</a></div>';
+  return h+'<div class="lcs">'+list.map(s=>{const p=plan(s),e=hojaEstado(s),pv=s.canal==="Preventa";
+    const btn=e.k==="pend"?'<button class="btn sm pri w" data-act="docs-load" data-id="'+s.id+'">'+IC.up+(pv?"Cargar facturas":"Cargar guías")+'</button>':e.k==="carg"?'<button class="btn sm save on w" data-act="hoja-grabar" data-id="'+s.id+'">'+IC.save+'Grabar</button>':'<button class="btn sm pri w" data-act="hoja-ok" data-id="'+s.id+'">'+IC.truck+'Pasar a Viajes</button>';
+    return'<article class="lc hl-'+e.k+'"><div class="ic">'+IC.file+'</div><button class="t" data-act="open-hoja" data-id="'+s.id+'"><span class="nro">HR '+nro(s)+'</span>'+esc(destT(s)||"Sin destino")+'</button>'
+      +'<div class="a">'+hojaPill(s)+fechaChip(s.fecha)+(canWrite?btn:"")+'<button class="btn sm w" data-act="open-hoja" data-id="'+s.id+'">Abrir</button>'+dots([{a:"open-orden",id:s.id,i:"edit",t:"Ver orden de carga"},{a:"dl-hoja",id:s.id,i:"dl",t:"Descargar para imprimir"},{a:"hr-desemit",id:s.id,i:"pause",t:"Volver a órdenes de carga",d:"Deja la orden sin hoja de ruta",w:1},"-",{a:"anular",id:s.id,i:"pause",t:"Anular orden",dng:1,w:1},{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar hoja de ruta",d:"Borra la orden y sus zonas",dng:1,w:1}])+'</div>'
       +'<div class="m">'+canalTag(s.canal)+camP(s.camionId)+'<span><b>'+chofN(s.choferId)+'</b></span>'+docsChip(s)+'<span>'+pl(p.stops.length,"parada","paradas")+'</span>'+(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b></span>':"")+'</div></article>'}).join("")+'</div>';
 };
 
@@ -2436,11 +2465,20 @@ VIEWS.viajes=function(){
   const sec=(t,arr,e)=>'<div><div class="secl">'+t+' <span class="c">'+arr.length+'</span></div>'+(arr.length?'<div class="lcs">'+arr.map(ordenCard).join("")+'</div>':'<div class="emptycard" style="padding:18px">'+e+'</div>')+'</div>';
   return h+sec("Listos para salir",lis,"Ningún camión esperando salir.")+sec("En viaje",enV,"Ningún camión en la ruta en este momento.");
 };
+async function emitirHojas(ids){const now=new Date().toISOString();for(const id of ids)await C("salidas").doc(id).update({hojaEmitida:true,hojaEmitidaAt:now,updatedAt:now,updatedBy:uid})}
 Object.assign(GACT,{
+  "ord-sel":(el,id)=>{UI.selOrd.has(id)?UI.selOrd.delete(id):UI.selOrd.add(id);render()},
+  "ord-selall":()=>{const sh=ordSinHoja();if(UI.selOrd.size===sh.length)UI.selOrd.clear();else sh.forEach(s=>UI.selOrd.add(s.id));render()},
+  "ord-selnone":()=>{UI.selOrd.clear();render()},
+  "hr-emit":async(el,id)=>{if(!canWrite)return;const s=get("salidas",id);await emitirHojas([id]);UI.selOrd.delete(id);toast("Hoja de ruta N° "+nro(s)+" emitida · la seguís en Hojas de ruta")},
+  "hr-emit-sel":()=>{if(!canWrite)return;const ids=[...UI.selOrd];if(!ids.length)return;
+    confirmBox("Emitir "+pl(ids.length,"hoja de ruta","hojas de ruta"),"Se emiten las hojas de ruta de las órdenes N° "+ids.map(id=>nro(get("salidas",id))).join(", ")+". Pasan a <b>Hojas de ruta</b> para cargar guías o facturas.","Emitir "+pl(ids.length,"hoja","hojas"),async()=>{await emitirHojas(ids);UI.selOrd.clear()},pl(ids.length,"hoja de ruta emitida","hojas de ruta emitidas"))},
+  "hr-desemit":async(el,id)=>{if(!canWrite)return;const s=get("salidas",id);await C("salidas").doc(id).update({hojaEmitida:false,hojaGrabadaAt:null,updatedAt:new Date().toISOString(),updatedBy:uid});toast("La orden N° "+nro(s)+" volvió a Órdenes de carga, sin hoja de ruta")},
+  "hoja-stat":el=>{UI.hstat=el.dataset.v||"";render()},
   "hoja-grabar":async(el,id)=>{if(!canWrite){toast("Acceso de solo lectura");return}const s=get("salidas",id);if(!s)return;
     if(UI.draft&&UI.draft.sid===id&&dirty(s))await grabarHoja(id);
     await C("salidas").doc(id).update({hojaGrabadaAt:new Date().toISOString(),updatedAt:new Date().toISOString(),updatedBy:uid});toast("Hoja de ruta N° "+nro(s)+" grabada")},
-  "hoja-salir":(el,id)=>{const s=get("salidas",id);const go=()=>{if(UI.draft&&UI.draft.sid===id)UI.draft=null;location.hash="#hojas"};
+  "hoja-salir":(el,id)=>{const s=get("salidas",id);const go=()=>{if(UI.draft&&UI.draft.sid===id)UI.draft=null;location.hash=s&&!hojaEmit(s)?"#ordenes":"#hojas"};
     if(s&&UI.draft&&UI.draft.sid===id&&dirty(s)){confirmBox("Salir sin grabar","Tenés cambios sin grabar en la hoja N° "+nro(s)+". Si salís ahora se pierden. Tocá «Cancelar» y después «Grabar» para guardarlos.","Salir sin grabar",async()=>go(),"Saliste sin grabar");return}go()}
 });
 
@@ -2712,7 +2750,7 @@ function formSal(s,pre){
     save:async d=>{delete d.sd;if(d.canal!=="Preventa")d.destinos=expandDest(d.destinos);
       d.guiaIds=d.canal==="Preventa"?[]:[...document.querySelectorAll('#f_guiasBox input[name="guia"]:checked')].map(i=>i.value);
       if(d.canal!=="Preventa")d.cobradorId="";d._zonas=d.canal==="Preventa"?(d.zonasSel||[]):[];delete d.zonasSel;if(!s&&pre&&pre.progZonId)d.progZonId=pre.progZonId;
-      const nid=await saveSal(s,d);if(!s){UI.hojaId=nid;UI.hojaFrom="ordenes";MF.ok="Orden de carga emitida · ahora completá la hoja de ruta";location.hash="#hoja"}},
+      const nid=await saveSal(s,d);if(!s){UI.flashSal=nid;setTimeout(()=>{UI.flashSal=""},6000);MF.ok="Orden de carga emitida · quedó pendiente de hoja de ruta";if(UI.route!=="ordenes")location.hash="#ordenes"}},
     del:s&&(()=>deleteSal(s))});
 }
 async function saveSal(prev,d){
@@ -2731,7 +2769,7 @@ async function saveSal(prev,d){
   d.kmPrevisto=plan(Object.assign({},prev||{},d)).total||null;
   const now=new Date().toISOString();
   if(prev)await ref.update(Object.assign(d,{updatedAt:now,updatedBy:uid}));
-  else await ref.set(Object.assign(d,{nro:nextNro(),createdAt:now,createdBy:uid,updatedAt:now}));
+  else await ref.set(Object.assign(d,{nro:nextNro(),hojaEmitida:false,createdAt:now,createdBy:uid,updatedAt:now}));
   try{if(anul)await syncGuias(id,[],true);else if(Array.isArray(d.guiaIds))await syncGuias(id,d.guiaIds)}catch(e){console.warn(e)}
   for(const pid of progIds){if(created.includes(pid))continue;const p=get("progsuc",pid);if(!p)continue;
     try{if(anul&&p.extra)await del("progsuc",pid);else await C("progsuc").doc(pid).update(anul?{estado:"Pendiente",salidaId:null}:{estado:"Despachada",salidaId:id})}catch(e){console.warn(e)}}
