@@ -1428,6 +1428,16 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
       bloque(0.03, 0.28, zM - z0 - 0.3, matVidrio, x0 - 0.01, y, (z0 + zM) / 2);
       for (let z = z0 + 0.45; z < zM - 0.2; z += 0.45) bloque(0.035, 0.28, 0.03, new THREE.MeshLambertMaterial({ color: 0x2A3036 }), x0 - 0.02, y, z);
     });
+    // Ala de la torre que sigue hacia el norte, pegada a la pared oeste del Dep. 15 (junto a la cara J), según el dibujo del
+    // usuario: llena la esquina entre las oficinas y el depósito, con las mismas fajas de ventanas; arriba queda de piedra, igual que la torre
+    {
+      const xa = x0, xb = X(537), za = Z(306), zb = z0;
+      bloque(xb - xa, H + 0.3, zb - za, piedra((xb - xa) / 1.6, (H + 0.3) / 1.6), (xa + xb) / 2, (H + 0.3) / 2, (za + zb) / 2);
+      [0.55, H - 0.25].forEach((y) => {
+        bloque(0.03, 0.28, zb - za - 0.3, matVidrio, xa - 0.01, y, (za + zb) / 2);
+        for (let z = za + 0.45; z < zb - 0.2; z += 0.45) bloque(0.035, 0.28, 0.03, new THREE.MeshLambertMaterial({ color: 0x2A3036 }), xa - 0.02, y, z);
+      });
+    }
     // Logo de Portal en blanco sobre la pared oeste, entre la torre y la esquina (el bloque gris que lo tenía se sacó a pedido del usuario)
     const zB0 = zM, zB1 = z1 - ESQ;   // tramo de la pared oeste entre la torre y la esquina
     const logoBlanco = (() => {
