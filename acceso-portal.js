@@ -16,7 +16,7 @@
   var APPS = [
     ["parte", "Parte Diario"], ["tms", "TMS Portal"], ["ecommerce", "Ecommerce"], ["gestientrega", "GestiEntrega"],
     ["monitoreo", "Monitoreo"], ["asistencia", "Asistencia"], ["premio", "Premio del mes"], ["depositos3d", "Depósitos 3D"],
-    ["conteo", "Ajustes / Conteo de stock"]
+    ["conteo", "Ajustes / Conteo de stock"], ["vehiculos", "Recepción de vehículos"]
   ];
   var nombreApp = function (id) { var a = APPS.filter(function (x) { return x[0] === id; })[0]; return a ? a[1] : id; };
 
