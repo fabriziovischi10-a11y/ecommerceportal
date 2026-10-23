@@ -1713,7 +1713,8 @@ async function init(){
   setStatus(true,"Conectando…");
   const setters={novedades:a=>novedades=a,incidentes:a=>incidentes=a,vehiculos:a=>vehiculos=a,descargas:a=>descargas=a,personal:a=>{personal=a.sort((x,y)=>x.nombre.localeCompare(y.nombre,"es"));renderChips()}};
   const sub=(col,tries=0)=>{
-    db.collection(col).orderBy("ts","desc").limit(LIVE_MAX).onSnapshot(s=>{
+    // El personal no tiene "ts": ordenarlo por ts lo dejaba vacío (y la importación de Dotación duplicaba gente)
+    (col==="personal"?db.collection(col).limit(2000):db.collection(col).orderBy("ts","desc").limit(LIVE_MAX)).onSnapshot(s=>{
       live[col]=s.docs.map(d=>({...d.data(),_id:d.id})); merge(col); setStatus(true,"En línea"); renderAll();
     },e=>{
       setStatus(false,"Reconectando…");
