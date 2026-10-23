@@ -1456,7 +1456,9 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
     cartelLogo.position.set(x0 - 0.06, 1.15, (zB0 + zB1) / 2 + 0.2); cartelLogo.rotation.y = -Math.PI / 2; ofi.add(cartelLogo);   // mira al oeste
     // Cuerpo principal: núcleo de vidrio oscuro y, por delante, pilares de piedra que sobresalen (entre ellos se ven las
     // ventanas altas y angostas) en la pared sur, desde la esquina vidriada hasta la punta este
-    bloque(x1 - x0, H, z1 - z0, matVidrio, (x0 + x1) / 2, H / 2, (z0 + z1) / 2);
+    // (el núcleo no pasa por adentro de la torre de piedra: si no, la torre se ve más oscura que el ala de al lado)
+    bloque(x1 - x0 - 2.2, H, z1 - z0, matVidrio, (x0 + 2.2 + x1) / 2, H / 2, (z0 + z1) / 2);
+    bloque(2.2, H, z1 - zM, matVidrio, x0 + 1.1, H / 2, (zM + z1) / 2);
     for (let x = x0 + ESQ + 0.25; x < x1 - 0.2; x += 0.78) bloque(0.48, H, 0.22, piedra(0.3, H / 1.6), x, H / 2, z1 + 0.1);
     bloque(0.4, H, 0.22, piedra(0.25, H / 1.6), x1 - 0.2, H / 2, z1 + 0.1);   // pilar de la punta este
     bloque(x1 - x0, 0.5, 0.22, piedra((x1 - x0) / 1.6, 0.3), (x0 + x1) / 2, H - 0.25, z0 - 0.1);   // remate de piedra atrás
@@ -1495,6 +1497,17 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
       cara([A, B, sube(B), sube(A)], matCenefa);              // cenefa de adelante
       cara([A, D, sube(D), sube(A)], matCenefa);              // cenefa oeste
       cara([B, C, sube(C), sube(B)], matCenefa);              // cenefa este
+      // El techo sigue sobre el ala de piedra del norte (pegada a la cara J), con el mismo material, así la torre y el ala
+      // se ven iguales desde arriba (pedido del usuario)
+      {
+        const xJ = X(537), zN = Z(306) - 0.3, hJ = D[1] + (C[1] - D[1]) * (xJ - D[0]) / (C[0] - D[0]);
+        const B2 = [xJ, hJ, D[2]], C2 = [xJ, hJ, zN], D2 = [D[0], D[1], zN];
+        cara([sube(D), sube(B2), sube(C2), sube(D2)], matTecho);
+        cara([D, B2, C2, D2], matCielo);
+        cara([D, D2, sube(D2), sube(D)], matCenefa);   // cenefa oeste
+        cara([D2, C2, sube(C2), sube(D2)], matCenefa); // cenefa norte
+        cara([C2, B2, sube(B2), sube(C2)], matCenefa); // cenefa contra el depósito
+      }
       // Vidrio entre las paredes y el techo, en la pared sur y en la oeste
       const tri = (pts) => { const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pts.flat(), 3)); g.computeVertexNormals(); ofi.add(new THREE.Mesh(g, matVidrio)); };
       const yS = (x) => A[1] + (B[1] - A[1]) * (x - A[0]) / (B[0] - A[0]) - 0.05;   // borde del techo sobre la pared sur
@@ -1557,6 +1570,7 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
   // Techo que une el Dep. 3 y el Dep. 15 (como en la foto de la entrada), cubriendo el playón por donde pasan los autoelevadores
   techoEnArco(X(158), X(537), Z(12), Z(328), ALTO_MURO, 6);
 
+  let puertaOficina1 = null;   // [x, z] de la puerta de la oficina del Dep. 1 (la usa la animación del personal)
   // ---- Depósito 1 como en la foto que pasó el usuario (2026-10-23): frentes de las naves (sin techo) y adelante
   // (del lado de la flota, delante de la nave oeste) el bloque de oficinas gris oscuro con el logo de Portal.
   {
@@ -1606,6 +1620,7 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
     pieza1(1.9, 0.05, 0.02, 0xD32F2F, xl - 0.05, 1.18, oz0 - 0.02);
     // Puerta con marco y escalón, y ventanita con reja y alero de madera
     const xpu = xl - 0.2;
+    puertaOficina1 = [xpu, oz0];
     pieza1(0.62, 0.95, 0.05, 0x6C7278, xpu, 0.5, oz0 - 0.02);
     pieza1(0.48, 0.86, 0.05, 0x1E2327, xpu, 0.46, oz0 - 0.04);
     pieza1(0.8, 0.06, 0.35, 0xC9C4BA, xpu, 0.03, oz0 - 0.18);
@@ -1619,6 +1634,72 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
     // Todo semitransparente, como el resto de los edificios (lo importante es ver los depósitos)
     g1.traverse((o) => { if (!o.isMesh) return; o.castShadow = false; o.material.transparent = true; o.material.depthWrite = false; o.material.opacity = o === logo ? 0.9 : 0.3; });
   }
+
+  // ---- Personal con el uniforme de Portal (chomba roja con cuello y franja blancos, pantalón azul marino y zapatillas negras)
+  // caminando hacia las oficinas: la del Dep. 15 (entra por la esquina vidriada) y la del Dep. 1 (por la puerta).
+  // Cada uno sigue su recorrido, entra, desaparece unos segundos adentro y vuelve a empezar (pedido del usuario, 2026-10-23).
+  const pasoPersonal = (() => {
+    const M = (color) => new THREE.MeshLambertMaterial({ color });
+    const mat = { remera: M(0xC8102E), blanco: M(0xF4F4F4), pantalon: M(0x1F2A44), zapa: M(0x1A1A1A), piel: M(0xE0AC80), pelo: M(0x3B2A20) };
+    const caja = (sx, sy, sz, m, x, y, z, padre) => { const o = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), m); o.position.set(x, y, z); o.castShadow = true; padre.add(o); return o; };
+    // Una persona de ~1,75 m (0,53 u), mirando hacia +x; piernas y brazos cuelgan de pivotes para poder balancearlos
+    const persona = () => {
+      const g = new THREE.Group();
+      const piernas = [0.045, -0.045].map((z) => {
+        const p = new THREE.Group(); p.position.set(0, 0.25, z); g.add(p);
+        caja(0.06, 0.22, 0.055, mat.pantalon, 0, -0.11, 0, p);
+        caja(0.09, 0.035, 0.06, mat.zapa, 0.015, -0.235, 0, p);
+        return p;
+      });
+      caja(0.1, 0.17, 0.17, mat.remera, 0, 0.34, 0, g);                 // chomba
+      caja(0.102, 0.02, 0.172, mat.blanco, 0, 0.36, 0, g);              // franja blanca
+      caja(0.06, 0.02, 0.08, mat.blanco, 0.03, 0.425, 0, g);            // cuello
+      caja(0.1, 0.04, 0.17, mat.pantalon, 0, 0.255, 0, g);              // cintura
+      const brazos = [0.1, -0.1].map((z) => {
+        const b = new THREE.Group(); b.position.set(0, 0.41, z); g.add(b);
+        caja(0.045, 0.07, 0.045, mat.remera, 0, -0.035, 0, b);          // manga
+        caja(0.04, 0.11, 0.04, mat.piel, 0, -0.125, 0, b);              // brazo
+        return b;
+      });
+      const cabeza = new THREE.Mesh(new THREE.SphereGeometry(0.048, 12, 10), mat.piel); cabeza.position.set(0, 0.48, 0); g.add(cabeza);
+      const pelo = new THREE.Mesh(new THREE.SphereGeometry(0.051, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2.2), mat.pelo); pelo.position.set(-0.005, 0.487, 0); g.add(pelo);
+      scene.add(g);
+      return { g, piernas, brazos };
+    };
+    const VEL = 0.55, ESPERA = 4;   // u/s (~1,8 m/s) y segundos adentro antes de volver a salir
+    const recorrido = (puntos, desfase) => {
+      const p = persona();
+      const tramos = []; let L = 0;
+      for (let i = 1; i < puntos.length; i++) { const [ax, az] = puntos[i - 1], [bx, bz] = puntos[i]; const l = Math.hypot(bx - ax, bz - az); tramos.push({ ax, az, bx, bz, l, d: L }); L += l; }
+      const T = L / VEL + ESPERA;
+      return (seg) => {
+        const t = (seg + desfase * T) % T, s = t * VEL;
+        if (s >= L) { p.g.visible = false; return; }   // ya entró a la oficina
+        p.g.visible = true;
+        const tr = tramos.find((x) => s < x.d + x.l) || tramos[tramos.length - 1];
+        const u = (s - tr.d) / tr.l;
+        p.g.position.set(tr.ax + (tr.bx - tr.ax) * u, 0, tr.az + (tr.bz - tr.az) * u);
+        p.g.rotation.y = Math.atan2(-(tr.bz - tr.az), tr.bx - tr.ax);
+        const paso = Math.sin(s * 14) * 0.55;
+        p.piernas[0].rotation.z = paso; p.piernas[1].rotation.z = -paso;
+        p.brazos[0].rotation.z = -paso * 0.8; p.brazos[1].rotation.z = paso * 0.8;
+        p.g.position.y = Math.abs(Math.cos(s * 14)) * 0.012;   // leve subida en cada paso
+      };
+    };
+    const caminantes = [];
+    // Oficinas del Dep. 15: entran por la esquina vidriada (sudoeste, x 523 / y 410)
+    const e15 = [X(523) + 0.5, Z(410) - 0.5], frente15 = [X(523) - 0.5, Z(410) + 0.6];
+    caminantes.push(recorrido([[X(240), Z(330)], [X(420), Z(395)], frente15, e15], 0));
+    caminantes.push(recorrido([[X(600), Z(560)], [X(560), Z(450)], frente15, e15], 0.35));
+    caminantes.push(recorrido([[X(360), Z(560)], [X(470), Z(440)], frente15, e15], 0.7));
+    // Oficina del Dep. 1: vienen del estacionamiento de la flota hasta la puerta
+    if (puertaOficina1) {
+      const [px, pz] = puertaOficina1, frente1 = [px, pz - 0.7], adentro1 = [px, pz + 0.4];
+      caminantes.push(recorrido([[X(960), Z(285)], [px - 1.5, Z(430)], frente1, adentro1], 0.15));
+      caminantes.push(recorrido([[X(1150), Z(285)], [px + 2, Z(440)], frente1, adentro1], 0.6));
+    }
+    return (ms) => caminantes.forEach((f) => f(ms / 1000));
+  })();
 
   // ---- Logo de Portal gigante acostado en el piso, delante (al sur) del playón de MERMA.
   // El relieve se arma con capas apiladas: arriba los colores del logo y debajo copias más oscuras, como letras corpóreas.
@@ -2284,7 +2365,7 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
   const loop = (t) => {
     const dt = (t - tPrev) / 1000; tPrev = t;
     if (anim) anim(t);
-    pasoMaquina(t); pasoClass(t); pasoNoble(t);
+    pasoMaquina(t); pasoClass(t); pasoNoble(t); pasoPersonal(t);
     if (cam.activo) pasoCaminar(dt); else { pasoMapa(dt); controls.update(); limitarVista(); }
     pasoHover();
     renderer.render(scene, camera); requestAnimationFrame(loop);
