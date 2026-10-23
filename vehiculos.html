@@ -320,9 +320,11 @@ const regresoISO=s=>new Date(s.fecha+"T"+(/^\d{1,2}:\d{2}/.test(s.horaRegreso||"
 // Un regreso ya está controlado si hay una recepción de ese viaje, o una del vehículo cargada después de que volvió.
 const recepcionDe=(s,camId)=>(RECS||[]).find(r=>r.camionId===camId&&(r.salidaId===s.id||String(r.fecha)>=regresoISO(s)))||null;
 // Vehículos para controlar: su último viaje figura «Volvió» (Finalizada) en el TMS y todavía no tiene recepción.
+// Solo cuentan los regresos desde que se empezó a usar la app (los anteriores nunca se controlaron).
+const DESDE_CONTROL=new Date(2026,9,23).toISOString();
 function paraControlar(){
   return CAM.map(c=>({cam:c,sal:SAL.find(x=>x.camionId===c.id||x.acopladoId===c.id)}))
-    .filter(x=>x.sal&&x.sal.estado==="Finalizada"&&!recepcionDe(x.sal,x.cam.id))
+    .filter(x=>x.sal&&x.sal.estado==="Finalizada"&&regresoISO(x.sal)>=DESDE_CONTROL&&!recepcionDe(x.sal,x.cam.id))
     .sort((a,b)=>regresoISO(b.sal).localeCompare(regresoISO(a.sal)));
 }
 // Chofer habitual: el que tiene esta patente como «Camión habitual» en Choferes del TMS (o el que figura en la ficha del camión).
