@@ -352,7 +352,7 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
   const BAJA15 = 90, CORRE15 = 37;   // además se bajó 90 px para que entre en el playón y se corrió 37 px al este (la descarga queda al ras del borde este)
   const gira15 = ([x, y]) => [C15[0] + CORRE15 + (y - C15[1]), C15[1] + BAJA15 - (x - C15[0])];
   const DEP15 = [[470, 13], [803, 13], [803, 213], [412, 213], [397, 118], [470, 118]].map(gira15);
-  const DEP1 = [[885, 415], [1082, 415], [1082, 392], [1263, 392], [1263, 640], [885, 640]].map(e1);
+  const DEP1 = [[885, 370], [1082, 370], [1082, 392], [1263, 392], [1263, 640], [885, 640]].map(e1);
   edificio(DEP3, COLOR.dep3);
   edificio(DEP15, COLOR.dep15);
   edificio(DEP1, COLOR.dep1);
@@ -391,7 +391,7 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
   PORTONES3.forEach((py, i) => hacerPorton(X(158) + 0.03, Z(py), Math.PI / 2, i + 1));
   // Portones del Depósito 1 en la pared norte (la que da a la flota), según el dibujo del usuario: el 1 frente al pasillo
   // AQ–AP (tramo oeste, y = 415) y el 2 frente al pasillo AO–AN (tramo este, y = 392). Se numeran de oeste a este.
-  [[1058, 415], [1118, 392]].map(e1).forEach(([px, py], i) => hacerPorton(X(px), Z(py) - 0.03, Math.PI, i + 1, 2.4, 1.6));
+  [[1058, 370], [1118, 392]].map(e1).forEach(([px, py], i) => hacerPorton(X(px), Z(py) - 0.03, Math.PI, i + 1, 2.4, 1.6));
 
 
   // ---- Carteles (sprites con texto)
@@ -434,7 +434,8 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
     m.rotation.x = -Math.PI / 2; m.position.set(x, 0.08, z); scene.add(m);
   };
   textoSuelo("PLAYÓN", X(278), Z(120), 14);
-  textoSuelo("PLAYÓN", X(e1([1073, 335])[0]), Z(520), 12);
+  // En la parte libre del playón del Dep. 1 (al este de la oficina y del portón 1), para que se vea
+  textoSuelo("PLAYÓN", X((e1([1118, 0])[0] + e1([1263, 0])[0]) / 2 + 10), Z((460 + e1([1263, 392])[1]) / 2), 10);
 
   // ---- Stock real (export StockPorUbicacion): estanterías por posición y nivel, playón del Depósito 3 y MERMA.
   // Posiciones y niveles de cada pasillo salen del export UbicacionesAlmacenamiento; cada caja es un pallet real.
@@ -1399,6 +1400,217 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
     caja.getCenter(marca.position); caja.getSize(marca.scale); marca.scale.multiplyScalar(1.06); marca.quaternion.identity();
     marca.visible = true; ficha.hidden = false;
   };
+
+  // ---- Edificio de oficinas (fachada de la foto del usuario, 2026-10-23) en el hueco al sudoeste del Dep. 15, al lado del ala chica:
+  // torre de piedra con pilares y ventanas angostas de vidrio oscuro, esquina vidriada, techo inclinado de chapa gris que
+  // sobresale, balcón con baranda de vidrio, un bloque bajo gris oscuro con el logo de Portal y plantas al frente.
+  {
+    const x0 = X(541), x1 = X(639), z0 = Z(336), z1 = Z(410), H = 2.6;
+    const texPiedra = (() => {
+      const c = document.createElement("canvas"); c.width = 256; c.height = 256;
+      const g = c.getContext("2d");
+      g.fillStyle = "#8F7E6E"; g.fillRect(0, 0, 256, 256);
+      for (let f = 0; f < 16; f++) for (let k = 0; k < 8; k++) {
+        const t = 120 + ((f * 37 + k * 53) % 40);
+        g.fillStyle = `rgb(${t + 25},${t + 10},${t - 8})`;
+        g.fillRect(k * 32 + (f % 2) * 16 + 1, f * 16 + 1, 30, 14);
+      }
+      const tx = new THREE.CanvasTexture(c); tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.anisotropy = 4; return tx;
+    })();
+    const piedra = (rx, ry) => { const t = texPiedra.clone(); t.needsUpdate = true; t.repeat.set(rx, ry); return new THREE.MeshLambertMaterial({ map: t }); };
+    const matVidrio = new THREE.MeshPhongMaterial({ color: 0x1C2630, shininess: 90, specular: 0x9AB0C0 });
+    const matChapa = new THREE.MeshLambertMaterial({ color: 0x5E656B, side: THREE.DoubleSide });
+    const ofi = new THREE.Group(); scene.add(ofi);
+    const bloque = (sx, sy, sz, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; ofi.add(m); return m; };
+    // Como en la foto, mirando desde el sudoeste (perspectiva que marcó el usuario): la cara izquierda de la foto es la
+    // pared OESTE (torre de piedra al fondo, el logo y la esquina vidriada) y la derecha es la pared SUR
+    // (pilares de piedra, balcón y árboles). La esquina vidriada y la punta del techo están en el sudoeste.
+    const ESQ = 1.4;                       // ancho de la esquina vidriada en cada cara
+    const zM = z0 + (z1 - z0) * 0.42;      // en la pared oeste: torre de piedra al norte de zM, logo al sur
+    // Torre de piedra (norte de la pared oeste), un poco más alta, con dos fajas de ventanas horizontales mirando al oeste
+    bloque(2.2, H + 0.3, zM - z0, piedra(1.4, (H + 0.3) / 1.6), x0 + 1.1, (H + 0.3) / 2, (z0 + zM) / 2);
+    [0.55, H - 0.25].forEach((y) => {
+      bloque(0.03, 0.28, zM - z0 - 0.3, matVidrio, x0 - 0.01, y, (z0 + zM) / 2);
+      for (let z = z0 + 0.45; z < zM - 0.2; z += 0.45) bloque(0.035, 0.28, 0.03, new THREE.MeshLambertMaterial({ color: 0x2A3036 }), x0 - 0.02, y, z);
+    });
+    // Logo de Portal en blanco sobre la pared oeste, entre la torre y la esquina (el bloque gris que lo tenía se sacó a pedido del usuario)
+    const zB0 = zM, zB1 = z1 - ESQ;   // tramo de la pared oeste entre la torre y la esquina
+    const logoBlanco = (() => {
+      const img = new Image(), c = document.createElement("canvas"), tx = new THREE.CanvasTexture(c);
+      img.onload = () => {
+        c.width = img.width; c.height = img.height;
+        const g = c.getContext("2d"); g.drawImage(img, 0, 0);
+        const d = g.getImageData(0, 0, c.width, c.height), p = d.data;
+        for (let i = 0; i < p.length; i += 4) if (p[i + 3] > 0 && p[i] < 140) { p[i] = p[i + 1] = p[i + 2] = 255; }   // el azul del texto pasa a blanco; el rojo queda
+        g.putImageData(d, 0, 0); tx.needsUpdate = true;
+      };
+      img.src = document.getElementById("logo-portal").textContent.trim();
+      return tx;
+    })();
+    const cartelLogo = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 2.0 * 163 / 512), new THREE.MeshBasicMaterial({ map: logoBlanco, transparent: true, alphaTest: 0.1 }));
+    cartelLogo.position.set(x0 - 0.06, 1.15, (zB0 + zB1) / 2 + 0.2); cartelLogo.rotation.y = -Math.PI / 2; ofi.add(cartelLogo);   // mira al oeste
+    // Cuerpo principal: núcleo de vidrio oscuro y, por delante, pilares de piedra que sobresalen (entre ellos se ven las
+    // ventanas altas y angostas) en la pared sur, desde la esquina vidriada hasta la punta este
+    bloque(x1 - x0, H, z1 - z0, matVidrio, (x0 + x1) / 2, H / 2, (z0 + z1) / 2);
+    for (let x = x0 + ESQ + 0.25; x < x1 - 0.2; x += 0.78) bloque(0.48, H, 0.22, piedra(0.3, H / 1.6), x, H / 2, z1 + 0.1);
+    bloque(0.4, H, 0.22, piedra(0.25, H / 1.6), x1 - 0.2, H / 2, z1 + 0.1);   // pilar de la punta este
+    bloque(x1 - x0, 0.5, 0.22, piedra((x1 - x0) / 1.6, 0.3), (x0 + x1) / 2, H - 0.25, z0 - 0.1);   // remate de piedra atrás
+    // Esquina vidriada (sudoeste): paños de vidrio con montantes, desde el piso hasta el techo, en las dos caras
+    const HV = H + 1.3;
+    bloque(ESQ, HV, 0.05, matVidrio, x0 + ESQ / 2, HV / 2, z1 + 0.05);
+    bloque(0.05, HV, ESQ, matVidrio, x0 - 0.05, HV / 2, z1 - ESQ / 2);
+    const matMontante = new THREE.MeshLambertMaterial({ color: 0x2A3036 });
+    [0.35, 0.7, 1.05].forEach((f) => {
+      bloque(0.03, HV, 0.03, matMontante, x0 + f * ESQ / 1.05 * 0.95, HV / 2, z1 + 0.08);
+      bloque(0.03, HV, 0.03, matMontante, x0 - 0.08, HV / 2, z1 - f * ESQ / 1.05 * 0.95);
+    });
+    [0.9, 1.9, 2.9].forEach((y) => { bloque(ESQ, 0.03, 0.03, matMontante, x0 + ESQ / 2, y, z1 + 0.08); bloque(0.03, 0.03, ESQ, matMontante, x0 - 0.08, y, z1 - ESQ / 2); });
+    // Balcón de hormigón con baranda de vidrio, pasamanos y una planta
+    const matHormigon = new THREE.MeshLambertMaterial({ color: 0xB9BDBF });
+    bloque(2.2, 0.16, 0.95, matHormigon, x1 - 1.45, 1.42, z1 + 0.5);
+    bloque(2.2, 0.36, 0.03, new THREE.MeshPhongMaterial({ color: 0xBFD8E4, shininess: 90 }), x1 - 1.45, 1.68, z1 + 0.96);
+    bloque(0.03, 0.36, 0.95, new THREE.MeshPhongMaterial({ color: 0xBFD8E4, shininess: 90 }), x1 - 2.54, 1.68, z1 + 0.5);
+    bloque(2.2, 0.025, 0.04, matMontante, x1 - 1.45, 1.87, z1 + 0.96);
+    // Techo "ala" de chapa: losa gruesa, alta en la esquina vidriada (sudoeste) y bajando hacia el este y hacia el norte, con
+    // alero grande, cenefa plateada en los bordes y cielorraso gris claro abajo
+    {
+      const ESP = 0.2;
+      const A = [x0 - 0.8, H + 1.5, z1 + 1.3], B = [x1 + 0.9, H + 0.45, z1 + 1.3], C = [x1 + 0.9, H + 0.15, z0 - 0.3], D = [x0 - 0.8, H + 0.45, z0 - 0.3];
+      const sube = (p) => [p[0], p[1] + ESP, p[2]];
+      const cara = (pts, mat) => {
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute("position", new THREE.Float32BufferAttribute([...pts[0], ...pts[1], ...pts[2], ...pts[0], ...pts[2], ...pts[3]].flat(), 3));
+        geo.computeVertexNormals(); const m = new THREE.Mesh(geo, mat); ofi.add(m); return m;
+      };
+      const matTecho = new THREE.MeshLambertMaterial({ color: 0x737A80, side: THREE.DoubleSide });
+      const matCielo = new THREE.MeshLambertMaterial({ color: 0xA7ADB2, side: THREE.DoubleSide });
+      const matCenefa = new THREE.MeshLambertMaterial({ color: 0xB8BEC2, side: THREE.DoubleSide });
+      cara([sube(A), sube(B), sube(C), sube(D)], matTecho);   // arriba
+      cara([A, B, C, D], matCielo);                           // cielorraso
+      cara([A, B, sube(B), sube(A)], matCenefa);              // cenefa de adelante
+      cara([A, D, sube(D), sube(A)], matCenefa);              // cenefa oeste
+      cara([B, C, sube(C), sube(B)], matCenefa);              // cenefa este
+      // Vidrio entre las paredes y el techo, en la pared sur y en la oeste
+      const tri = (pts) => { const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pts.flat(), 3)); g.computeVertexNormals(); ofi.add(new THREE.Mesh(g, matVidrio)); };
+      const yS = (x) => A[1] + (B[1] - A[1]) * (x - A[0]) / (B[0] - A[0]) - 0.05;   // borde del techo sobre la pared sur
+      const yO = (z) => A[1] + (D[1] - A[1]) * (A[2] - z) / (A[2] - D[2]) - 0.05;   // borde del techo sobre la pared oeste
+      tri([[x0, H, z1], [x1, H, z1], [x1, yS(x1), z1], [x0, H, z1], [x1, yS(x1), z1], [x0, yS(x0), z1]]);
+      tri([[x0, H, z1], [x0, H + 0.3, zM], [x0, yO(zM), zM], [x0, H, z1], [x0, yO(zM), zM], [x0, yO(z1), z1]]);
+      tri([[x0, H + 0.3, zM], [x0, H + 0.3, z0], [x0, yO(z0), z0], [x0, H + 0.3, zM], [x0, yO(z0), z0], [x0, yO(zM), zM]]);
+    }
+    // Todo el edificio semitransparente, como los muros de los depósitos (pedido del usuario: lo importante es ver los depósitos).
+    // El techo un poco más marcado para que se lea la forma; el logo casi opaco.
+    const vistos = new Set();
+    ofi.traverse((o) => {
+      if (!o.isMesh) return;
+      o.castShadow = false;
+      if (vistos.has(o.material)) return; vistos.add(o.material);
+      o.material.transparent = true; o.material.depthWrite = false;
+      const c = o.material.color ? o.material.color.getHex() : 0;
+      o.material.opacity = o === cartelLogo ? 0.85 : [0x737A80, 0xA7ADB2, 0xB8BEC2].includes(c) ? 0.65
+        : [0x3E7D3A, 0x5C9A45, 0xB39DDB, 0x6D5844].includes(c) ? 0.55 : 0.3;
+    });
+  }
+
+  // ---- Techos en arco (bóveda de chapa sobre arcos metálicos), todos semitransparentes para que se vean los depósitos.
+  // Cubre de xa a xb (el arco va en x) y de za a zb (a lo largo, en z), apoyado a la altura BASE y con FLECHA de alto.
+  // tapas: cierra los frentes curvos de cada punta; ventiladores: extractores de techo a lo largo de la cumbrera.
+  const matHierroTecho = new THREE.MeshLambertMaterial({ color: 0x343A40, transparent: true, opacity: 0.28, depthWrite: false });
+  const techoEnArco = (xa, xb, za, zb, BASE, FLECHA, { color = 0xC8D3DA, opacidad = 0.2, tapas = false, ventiladores = false } = {}) => {
+    const s = xb - xa, R = (s * s / 4 + FLECHA * FLECHA) / (2 * FLECHA), cx = (xa + xb) / 2, cy = BASE + FLECHA - R;
+    const alto = (x) => cy + Math.sqrt(Math.max(0, R * R - (x - cx) * (x - cx)));
+    const matChapa = new THREE.MeshLambertMaterial({ color, transparent: true, opacity: opacidad, side: THREE.DoubleSide, depthWrite: false });
+    // Chapas
+    const N = 48, pos = [], idx = [];
+    for (let i = 0; i <= N; i++) { const x = xa + s * i / N, y = alto(x); pos.push(x, y, za, x, y, zb); }
+    for (let i = 0; i < N; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+    scene.add(new THREE.Mesh(geo, matChapa));
+    // Arcos (cada ~3 u) y correas a lo largo
+    class Arco extends THREE.Curve { constructor(z) { super(); this.z = z; } getPoint(t, v = new THREE.Vector3()) { const x = xa + s * t; return v.set(x, alto(x), this.z); } }
+    const nArcos = Math.max(2, Math.round((zb - za) / 3));
+    for (let k = 0; k <= nArcos; k++) scene.add(new THREE.Mesh(new THREE.TubeGeometry(new Arco(za + (zb - za) * k / nArcos), 40, 0.07, 5), matHierroTecho));
+    const geoCorrea = new THREE.CylinderGeometry(0.035, 0.035, zb - za, 5); geoCorrea.rotateX(Math.PI / 2);
+    for (let i = 1; i < 12; i++) { const x = xa + s * i / 12, c = new THREE.Mesh(geoCorrea, matHierroTecho); c.position.set(x, alto(x), (za + zb) / 2); scene.add(c); }
+    // Frentes curvos (el "medio punto" de chapa arriba de la pared)
+    if (tapas) [za, zb].forEach((z) => {
+      const forma = new THREE.Shape(); forma.moveTo(xa, BASE);
+      for (let i = 0; i <= N; i++) { const x = xa + s * i / N; forma.lineTo(x, alto(x)); }
+      forma.lineTo(xb, BASE);
+      const t = new THREE.Mesh(new THREE.ShapeGeometry(forma), matChapa); t.position.z = z; scene.add(t);
+    });
+    // Extractores eólicos sobre la cumbrera
+    if (ventiladores) {
+      const matV = new THREE.MeshLambertMaterial({ color: 0xA9B0B5, transparent: true, opacity: 0.4, depthWrite: false });
+      const geoCuello = new THREE.CylinderGeometry(0.12, 0.12, 0.18, 10), geoBola = new THREE.SphereGeometry(0.2, 12, 8);
+      for (let z = za + 1.2; z < zb - 0.8; z += 2.2) {
+        const c = new THREE.Mesh(geoCuello, matV); c.position.set(cx, BASE + FLECHA + 0.09, z); scene.add(c);
+        const b = new THREE.Mesh(geoBola, matV); b.position.set(cx, BASE + FLECHA + 0.3, z); scene.add(b);
+      }
+    }
+  };
+  // Techo que une el Dep. 3 y el Dep. 15 (como en la foto de la entrada), cubriendo el playón por donde pasan los autoelevadores
+  techoEnArco(X(158), X(537), Z(12), Z(328), ALTO_MURO, 6);
+
+  // ---- Depósito 1 como en la foto que pasó el usuario (2026-10-23): frentes de las naves (sin techo) y adelante
+  // (del lado de la flota, delante de la nave oeste) el bloque de oficinas gris oscuro con el logo de Portal.
+  {
+    const [xo] = e1([885, 0]), [xe] = e1([1263, 0]), yN = e1([885, 370])[1], yNe = e1([1263, 392])[1], yS = e1([885, 640])[1];
+    const xm = (xo + xe) / 2;
+    // Sin techo (el usuario pidió sacarlo para ver el depósito; la versión con dos naves en arco está en el respaldo "(dep1 con techo)")
+    const g1 = new THREE.Group(); scene.add(g1);
+    const pieza1 = (sx, sy, sz, color, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), new THREE.MeshLambertMaterial({ color })); m.position.set(x, y, z); g1.add(m); return m; };
+    // Frentes de las naves (pared norte): paneles beige, columnas grises y una faja gris a media altura, como en la foto
+    const frenteNave = (xa, xb, z) => {
+      pieza1(xb - xa, ALTO_MURO, 0.03, 0xE4DAC0, (xa + xb) / 2, ALTO_MURO / 2, z - 0.03);
+      pieza1(xb - xa, 0.12, 0.06, 0x8D949A, (xa + xb) / 2, ALTO_MURO * 0.72, z - 0.05);
+      const n = Math.max(2, Math.round((xb - xa) / 3.2));
+      for (let i = 0; i <= n; i++) pieza1(0.22, ALTO_MURO, 0.08, 0x8D949A, xa + (xb - xa) * i / n, ALTO_MURO / 2, z - 0.05);
+    };
+    frenteNave(X(xo), X(xm), Z(yN));
+    frenteNave(X(xm), X(xe), Z(yNe));
+    // Equipos de aire acondicionado al lado de los portones
+    const [xP1] = e1([1058, 0]), [xP2] = e1([1118, 0]);
+    [[X(xP1) + 1.6, Z(yN)], [X(xP2) - 1.7, Z(yNe)], [X(xP2) - 2.2, Z(yNe)]].forEach(([x, z]) => pieza1(0.38, 0.26, 0.14, 0xF2F2F0, x, 1.65, z - 0.12));
+    // Nave este: ventanita con alero de madera al lado del portón 2
+    pieza1(0.6, 0.35, 0.04, 0x23282D, X(xP2) + 2.0, 0.75, Z(yNe) - 0.06);
+    pieza1(0.75, 0.05, 0.3, 0x6B5A44, X(xP2) + 2.0, 1.0, Z(yNe) - 0.18);
+
+    // Oficinas delante de la nave oeste, al oeste (a la derecha mirando desde la flota) del portón 1, como en la foto:
+    // bloque principal gris oscuro con el logo, la puerta y la ventanita con alero, y un ala más baja con ventanas enrejadas.
+    const ox1 = X(xP1) - 1.6, ox0 = X(xo) + 0.6, oz1 = Z(yN) - 0.02, oz0 = oz1 - 3.0;
+    const xp = ox1 - 9.5;   // donde termina el bloque principal y empieza el ala baja
+    const OH = 1.95, AH = 1.45;
+    pieza1(ox1 - xp, OH, oz1 - oz0, 0x4A5056, (xp + ox1) / 2, OH / 2, (oz0 + oz1) / 2);                       // bloque principal
+    pieza1(xp - ox0, AH, oz1 - oz0 - 0.5, 0x4A5056, (ox0 + xp) / 2, AH / 2, (oz0 + 0.5 + oz1) / 2);           // ala baja
+    // Parapetos y techos de chapa gris claro de cada parte
+    pieza1(ox1 - xp - 0.25, 0.04, oz1 - oz0 - 0.25, 0xA9B0B5, (xp + ox1) / 2, OH - 0.08, (oz0 + oz1) / 2);
+    pieza1(xp - ox0 - 0.25, 0.04, oz1 - oz0 - 0.75, 0xA9B0B5, (ox0 + xp) / 2, AH - 0.08, (oz0 + 0.5 + oz1) / 2);
+    // Remate rojo y blanco en la esquina de arriba del bloque principal (lado del portón)
+    pieza1(0.1, 0.1, oz1 - oz0, 0xD32F2F, ox1 - 0.05, OH + 0.02, (oz0 + oz1) / 2);
+    pieza1(0.1, 0.05, oz1 - oz0, 0xF4F4F4, ox1 - 0.05, OH + 0.1, (oz0 + oz1) / 2);
+    pieza1(1.6, 0.1, 0.1, 0xD32F2F, ox1 - 0.8, OH + 0.02, oz0 + 0.05);
+    // Logo de Portal con la franja roja abajo
+    const xl = (xp + ox1) / 2 + 0.6;
+    const logo = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 2.1 * 163 / 512),
+      new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load(document.getElementById("logo-portal").textContent.trim()), transparent: true, alphaTest: 0.1, side: THREE.DoubleSide }));
+    logo.position.set(xl, 1.45, oz0 - 0.03); logo.rotation.y = Math.PI; g1.add(logo);   // mira al norte, hacia la flota
+    pieza1(1.9, 0.05, 0.02, 0xD32F2F, xl - 0.05, 1.18, oz0 - 0.02);
+    // Puerta con marco y escalón, y ventanita con reja y alero de madera
+    const xpu = xl - 0.2;
+    pieza1(0.62, 0.95, 0.05, 0x6C7278, xpu, 0.5, oz0 - 0.02);
+    pieza1(0.48, 0.86, 0.05, 0x1E2327, xpu, 0.46, oz0 - 0.04);
+    pieza1(0.8, 0.06, 0.35, 0xC9C4BA, xpu, 0.03, oz0 - 0.18);
+    pieza1(0.62, 0.32, 0.04, 0x23282D, xpu + 1.1, 0.55, oz0 - 0.02);
+    pieza1(0.8, 0.06, 0.32, 0x6B5A44, xpu + 1.1, 0.8, oz0 - 0.16);
+    // Ventanas enrejadas en el ala baja y en el costado del bloque principal
+    [0.3, 0.7].forEach((fx) => pieza1(0.9, 0.32, 0.04, 0x23282D, ox0 + (xp - ox0) * fx, 0.95, oz0 + 0.5 - 0.02));
+    pieza1(0.85, 0.3, 0.04, 0x23282D, xp + 1.0, 1.25, oz0 - 0.02);
+    // Vereda al frente (el pasto se sacó a pedido del usuario)
+    pieza1(ox1 - ox0 + 0.4, 0.02, 0.7, 0xC9C4BA, (ox0 + ox1) / 2, 0.01, oz0 - 0.35);
+    // Todo semitransparente, como el resto de los edificios (lo importante es ver los depósitos)
+    g1.traverse((o) => { if (!o.isMesh) return; o.castShadow = false; o.material.transparent = true; o.material.depthWrite = false; o.material.opacity = o === logo ? 0.9 : 0.3; });
+  }
 
   // ---- Logo de Portal gigante acostado en el piso, delante (al sur) del playón de MERMA.
   // El relieve se arma con capas apiladas: arriba los colores del logo y debajo copias más oscuras, como letras corpóreas.
