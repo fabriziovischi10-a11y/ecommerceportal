@@ -150,7 +150,6 @@ body.caminando #escena canvas, #escena canvas { cursor: grab; }
     <button id="v-dep15">Depósito 15</button>
     <button id="v-dep1">Depósito 1</button>
     <button id="v-playon3">Playón Dep. 3</button>
-    <button id="v-merma">Merma</button>
     <button id="v-flota">Flota</button>
     <button id="v-planta">Planta</button>
     <button id="v-caminar">Caminar</button>
@@ -159,7 +158,6 @@ body.caminando #escena canvas, #escena canvas { cursor: grab; }
     <div><i style="background: var(--dep15)"></i> Depósito 15 · pasillos <b>A–J</b></div>
     <div><i style="background: var(--dep3)"></i> Depósito 3 · pasillos <b>K–AG</b></div>
     <div><i style="background: var(--dep1)"></i> Depósito 1 · pasillos <b>AH–AW</b></div>
-    <div><i style="background: #8A5CC2"></i> Merma · playón aparte</div>
   </div>
   <label class="chk"><input type="checkbox" id="chk-etiquetas" checked> Mostrar letras de pasillo</label>
   <section class="playon" aria-labelledby="pl-titulo">
@@ -318,7 +316,7 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
     const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.6, gapSize: 0.4 }));
     l.computeLineDistances(); scene.add(l);
   };
-  playon(158, 0, 803, 459);   // llega más al sur desde que el Dep. 15 está girado (TRASBASE03 y REBAL02 se corrieron)
+  playon(158, 0, 803, 532);   // llega más al sur: abajo de REBAL02 está TRASBASE03 (donde antes estaba el playón de MERMA)
   // Playón norte del Dep. 1: del ancho del edificio (su lado oeste coincide con el borde del playón del Dep. 15) y hasta la pared
   playon(e1([885, 0])[0], 460, e1([1263, 0])[0], e1([885, 415])[1]);   // mismo alto que el playón de MERMA (y 460 a 580)
 
@@ -593,18 +591,15 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
   parantes.count = iPar; largueros.count = iLar;
   [parantes, largueros].forEach((m) => { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; });
 
-  // Playón del Dep. 3 (REBALDEXT, TRASBASE03, REBAL02) y MERMA aparte. En estas zonas el sistema no tiene posiciones:
+  // Playón del Dep. 3 (REBALDEXT, TRASBASE03, REBAL02); el de MERMA se sacó (2026-10-23). En estas zonas el sistema no tiene posiciones:
   // los pallets se apilan de a 3 y los que vencen primero quedan adelante (lado sur).
-  playon(160, 460, 803, 580);
   // Playones de descarga: REBAL1501 al este del Depósito 15 y REBAL01 al sur del Depósito 1
   playon(741, 20, 803, 358); textoSuelo("DESCARGA DEP. 15", X(772), Z(40), 5.6);   // al este del Dep. 15 (girado), a lo largo de la pared
   playon(...e1([919, 660]), ...e1([1266, 716])); textoSuelo("DESCARGA DEP. 1", X(e1([1092, 716])[0]), Z(e1([1092, 716])[1]) + 1.6, 9);
-  textoSuelo("MERMA", X(480), Z(468) - 0.2, 10);
   const ZONAS = [
     { id: "REBALDEXT", grupo: "Playón Dep. 3", x1: 172, y1: 230, x2: 384, y2: 344, color: COLOR.dep3, porRubro: true, pegadoA: "REBAL02" },
-    { id: "TRASBASE03", grupo: "Playón Dep. 3", x1: 384, y1: 342, x2: 534, y2: 456, color: COLOR.dep3, porRubro: true },
+    { id: "TRASBASE03", grupo: "Playón Dep. 3", x1: 176, y1: 470, x2: 326, y2: 522, color: COLOR.dep3, porRubro: true },
     { id: "REBAL02", grupo: "Playón Dep. 3", x1: 176, y1: 348, x2: 376, y2: 458, color: COLOR.dep3, porRubro: true },
-    { id: "MERMA", grupo: "Merma", x1: 176, y1: 480, x2: 788, y2: 574, color: COLOR.merma },
     { id: "REBAL1501", grupo: "Descarga Dep. 15", x1: 747, y1: 30, x2: 797, y2: 350, color: COLOR.dep15 },
     { id: "REBAL01", grupo: "Descarga Dep. 1", x1: e1([929, 668])[0], y1: e1([929, 668])[1], x2: e1([1256, 708])[0], y2: e1([1256, 708])[1], color: COLOR.dep1 },
   ];
@@ -746,7 +741,7 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
 
   // Resumen en el panel
   const grupoDe = (it) => it.tipo === "rack" ? NOMBRE[it.dep] : it.grupo;
-  const GRUPOS = ["Depósito 15", "Depósito 3", "Depósito 1", "Playón Dep. 3", "Picking Dep. 3", "Descarga Dep. 15", "Descarga Dep. 1", "Merma"];
+  const GRUPOS = ["Depósito 15", "Depósito 3", "Depósito 1", "Playón Dep. 3", "Picking Dep. 3", "Descarga Dep. 15", "Descarga Dep. 1"];   // el playón de MERMA se sacó a pedido del usuario (2026-10-23)
   const resumen = {}; GRUPOS.forEach((g) => { resumen[g] = { pal: 0, v6: 0 }; });
   items.forEach((it) => { const r = resumen[grupoDe(it)]; it.pals.forEach((d) => { r.pal++; if (rango(d[3]) === "v6") r.v6++; }); });
   const ocupDe = { "Depósito 15": ocup.dep15, "Depósito 3": ocup.dep3, "Depósito 1": ocup.dep1 };
@@ -1405,7 +1400,7 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
   // torre de piedra con pilares y ventanas angostas de vidrio oscuro, esquina vidriada, techo inclinado de chapa gris que
   // sobresale, balcón con baranda de vidrio, un bloque bajo gris oscuro con el logo de Portal y plantas al frente.
   {
-    const x0 = X(541), x1 = X(639), z0 = Z(336), z1 = Z(410), H = 2.6;
+    const x0 = X(523), x1 = X(642), z0 = Z(336), z1 = Z(410), H = 2.6;   // del lado oeste llega más allá de la cara J y del este se pega al ala chica del Dep. 15 (pedidos del usuario)
     const texPiedra = (() => {
       const c = document.createElement("canvas"); c.width = 256; c.height = 256;
       const g = c.getContext("2d");
@@ -1936,7 +1931,6 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
     dep15: { pos: [X(637) - 8, 30, Z(203) + 44], target: [X(637), 0, Z(203)] },
     dep1: { pos: [X(e1([1074, 520])[0]) - 12, 30, Z(e1([1074, 520])[1]) + 42], target: [X(e1([1074, 520])[0]), 0, Z(e1([1074, 520])[1])] },
     playon3: { pos: [X(470), 26, Z(290) + 34], target: [X(470), 0, Z(286)] },
-    merma: { pos: [X(480), 28, Z(526) + 36], target: [X(480), 0, Z(526)] },
     flota: { pos: [X(1076), 30, Z(209) + 30], target: [X(1076), 0, Z(205)] },
     planta: { pos: [X(640), 210, Z(580) + 0.01], target: [X(640), 0, Z(580)] },
   };
