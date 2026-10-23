@@ -1396,6 +1396,7 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
     marca.visible = true; ficha.hidden = false;
   };
 
+  let puertaOficina15 = null;   // [x, z] de la puerta doble de las oficinas del Dep. 15 (la usa la animación del personal)
   // ---- Edificio de oficinas (fachada de la foto del usuario, 2026-10-23) en el hueco al sudoeste del Dep. 15, al lado del ala chica:
   // torre de piedra con pilares y ventanas angostas de vidrio oscuro, esquina vidriada, techo inclinado de chapa gris que
   // sobresale, balcón con baranda de vidrio, un bloque bajo gris oscuro con el logo de Portal y plantas al frente.
@@ -1453,12 +1454,20 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
       return tx;
     })();
     const cartelLogo = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 2.0 * 163 / 512), new THREE.MeshBasicMaterial({ map: logoBlanco, transparent: true, alphaTest: 0.1 }));
-    cartelLogo.position.set(x0 - 0.06, 1.15, (zB0 + zB1) / 2 + 0.2); cartelLogo.rotation.y = -Math.PI / 2; ofi.add(cartelLogo);   // mira al oeste
+    cartelLogo.position.set(x0 - 0.06, 1.5, (zB0 + zB1) / 2 + 0.2);   // arriba de la puerta doble
+    cartelLogo.rotation.y = -Math.PI / 2; ofi.add(cartelLogo);   // mira al oeste
+    // Puerta doble de la entrada, debajo del logo (pedido del usuario): marco gris oscuro, dos hojas de vidrio oscuro y manijas
+    const zPuerta = (zB0 + zB1) / 2 + 0.2;
+    puertaOficina15 = [x0, zPuerta];
+    bloque(0.05, 1.02, 1.0, new THREE.MeshLambertMaterial({ color: 0x2E3338 }), x0 - 0.05, 0.51, zPuerta);
+    [-0.235, 0.235].forEach((dz) => bloque(0.04, 0.92, 0.44, new THREE.MeshPhongMaterial({ color: 0x18222B, shininess: 90, specular: 0x9AB0C0 }), x0 - 0.08, 0.47, zPuerta + dz));
+    [-0.04, 0.04].forEach((dz) => bloque(0.03, 0.22, 0.015, new THREE.MeshLambertMaterial({ color: 0xC9CED2 }), x0 - 0.11, 0.5, zPuerta + dz));
     // Cuerpo principal: núcleo de vidrio oscuro y, por delante, pilares de piedra que sobresalen (entre ellos se ven las
     // ventanas altas y angostas) en la pared sur, desde la esquina vidriada hasta la punta este
-    // (el núcleo no pasa por adentro de la torre de piedra: si no, la torre se ve más oscura que el ala de al lado)
-    bloque(x1 - x0 - 2.2, H, z1 - z0, matVidrio, (x0 + 2.2 + x1) / 2, H / 2, (z0 + z1) / 2);
-    bloque(2.2, H, z1 - zM, matVidrio, x0 + 1.1, H / 2, (zM + z1) / 2);
+    // Vidrio oscuro solo como paños finos detrás de las fachadas (sur y oeste), no como un bloque macizo: así lo que queda
+    // detrás de la torre de piedra es igual a lo que queda detrás del ala, y las dos se ven del mismo tono
+    bloque(x1 - x0, H, 0.12, matVidrio, (x0 + x1) / 2, H / 2, z1 - 0.06);
+    bloque(0.12, H, z1 - zM, matVidrio, x0 + 0.06, H / 2, (zM + z1) / 2);
     for (let x = x0 + ESQ + 0.25; x < x1 - 0.2; x += 0.78) bloque(0.48, H, 0.22, piedra(0.3, H / 1.6), x, H / 2, z1 + 0.1);
     bloque(0.4, H, 0.22, piedra(0.25, H / 1.6), x1 - 0.2, H / 2, z1 + 0.1);   // pilar de la punta este
     bloque(x1 - x0, 0.5, 0.22, piedra((x1 - x0) / 1.6, 0.3), (x0 + x1) / 2, H - 0.25, z0 - 0.1);   // remate de piedra atrás
@@ -1514,7 +1523,7 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
       const yO = (z) => A[1] + (D[1] - A[1]) * (A[2] - z) / (A[2] - D[2]) - 0.05;   // borde del techo sobre la pared oeste
       tri([[x0, H, z1], [x1, H, z1], [x1, yS(x1), z1], [x0, H, z1], [x1, yS(x1), z1], [x0, yS(x0), z1]]);
       tri([[x0, H, z1], [x0, H + 0.3, zM], [x0, yO(zM), zM], [x0, H, z1], [x0, yO(zM), zM], [x0, yO(z1), z1]]);
-      tri([[x0, H + 0.3, zM], [x0, H + 0.3, z0], [x0, yO(z0), z0], [x0, H + 0.3, zM], [x0, yO(z0), z0], [x0, yO(zM), zM]]);
+      // (arriba de la torre de piedra no va vidrio: oscurecía la torre y la hacía ver de otro tono que el ala de al lado)
     }
     // Todo el edificio semitransparente, como los muros de los depósitos (pedido del usuario: lo importante es ver los depósitos).
     // El techo un poco más marcado para que se lea la forma; el logo casi opaco.
@@ -1525,7 +1534,7 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
       if (vistos.has(o.material)) return; vistos.add(o.material);
       o.material.transparent = true; o.material.depthWrite = false;
       const c = o.material.color ? o.material.color.getHex() : 0;
-      o.material.opacity = o === cartelLogo ? 0.85 : [0x737A80, 0xA7ADB2, 0xB8BEC2].includes(c) ? 0.65
+      o.material.opacity = o === cartelLogo ? 0.85 : [0x737A80, 0xA7ADB2, 0xB8BEC2, 0x2E3338, 0x18222B, 0xC9CED2].includes(c) ? 0.65
         : [0x3E7D3A, 0x5C9A45, 0xB39DDB, 0x6D5844].includes(c) ? 0.55 : 0.3;
     });
   }
@@ -1640,35 +1649,48 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
   // Cada uno sigue su recorrido, entra, desaparece unos segundos adentro y vuelve a empezar (pedido del usuario, 2026-10-23).
   const pasoPersonal = (() => {
     const M = (color) => new THREE.MeshLambertMaterial({ color });
-    const mat = { remera: M(0xC8102E), blanco: M(0xF4F4F4), pantalon: M(0x1F2A44), zapa: M(0x1A1A1A), piel: M(0xE0AC80), pelo: M(0x3B2A20) };
+    const mat = { remera: M(0xC8102E), blanco: M(0xF4F4F4), pantalon: M(0x1F2A44), zapa: M(0x1A1A1A), piel: M(0xE0AC80),
+      traje: M(0x2B2F36), corbata: M(0x8E1B26) };
+    const matPelo = {};   // un material por color de pelo
     const caja = (sx, sy, sz, m, x, y, z, padre) => { const o = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), m); o.position.set(x, y, z); o.castShadow = true; padre.add(o); return o; };
-    // Una persona de ~1,75 m (0,53 u), mirando hacia +x; piernas y brazos cuelgan de pivotes para poder balancearlos
-    const persona = () => {
-      const g = new THREE.Group();
+    // Una persona de ~1,75 m (0,53 u) con escala 1, mirando hacia +x; piernas y brazos cuelgan de pivotes para balancearlos.
+    // ropa: "uniforme" (chomba roja de Portal) o "traje" (saco y pantalón gris oscuro, camisa blanca y corbata);
+    // pelo: color, o null si es pelado.
+    const persona = ({ ropa = "uniforme", pelo = 0x3B2A20, escala = 1 } = {}) => {
+      const g = new THREE.Group(), cuerpo = new THREE.Group(); cuerpo.scale.setScalar(escala); g.add(cuerpo);
+      const deTraje = ropa === "traje", arriba = deTraje ? mat.traje : mat.remera, abajo = deTraje ? mat.traje : mat.pantalon;
       const piernas = [0.045, -0.045].map((z) => {
-        const p = new THREE.Group(); p.position.set(0, 0.25, z); g.add(p);
-        caja(0.06, 0.22, 0.055, mat.pantalon, 0, -0.11, 0, p);
+        const p = new THREE.Group(); p.position.set(0, 0.25, z); cuerpo.add(p);
+        caja(0.06, 0.22, 0.055, abajo, 0, -0.11, 0, p);
         caja(0.09, 0.035, 0.06, mat.zapa, 0.015, -0.235, 0, p);
         return p;
       });
-      caja(0.1, 0.17, 0.17, mat.remera, 0, 0.34, 0, g);                 // chomba
-      caja(0.102, 0.02, 0.172, mat.blanco, 0, 0.36, 0, g);              // franja blanca
-      caja(0.06, 0.02, 0.08, mat.blanco, 0.03, 0.425, 0, g);            // cuello
-      caja(0.1, 0.04, 0.17, mat.pantalon, 0, 0.255, 0, g);              // cintura
+      caja(0.1, 0.17, 0.17, arriba, 0, 0.34, 0, cuerpo);                // chomba o saco
+      if (deTraje) {
+        caja(0.012, 0.13, 0.05, mat.blanco, 0.051, 0.37, 0, cuerpo);    // camisa (por la abertura del saco)
+        caja(0.014, 0.11, 0.018, mat.corbata, 0.058, 0.365, 0, cuerpo); // corbata
+      } else {
+        caja(0.102, 0.02, 0.172, mat.blanco, 0, 0.36, 0, cuerpo);       // franja blanca
+        caja(0.06, 0.02, 0.08, mat.blanco, 0.03, 0.425, 0, cuerpo);     // cuello
+      }
+      caja(0.1, 0.04, 0.17, abajo, 0, 0.255, 0, cuerpo);                 // cintura
       const brazos = [0.1, -0.1].map((z) => {
-        const b = new THREE.Group(); b.position.set(0, 0.41, z); g.add(b);
-        caja(0.045, 0.07, 0.045, mat.remera, 0, -0.035, 0, b);          // manga
-        caja(0.04, 0.11, 0.04, mat.piel, 0, -0.125, 0, b);              // brazo
+        const b = new THREE.Group(); b.position.set(0, 0.41, z); cuerpo.add(b);
+        if (deTraje) { caja(0.045, 0.16, 0.045, mat.traje, 0, -0.08, 0, b); caja(0.035, 0.035, 0.035, mat.piel, 0, -0.175, 0, b); }   // manga larga y mano
+        else { caja(0.045, 0.07, 0.045, mat.remera, 0, -0.035, 0, b); caja(0.04, 0.11, 0.04, mat.piel, 0, -0.125, 0, b); }            // manga corta y brazo
         return b;
       });
-      const cabeza = new THREE.Mesh(new THREE.SphereGeometry(0.048, 12, 10), mat.piel); cabeza.position.set(0, 0.48, 0); g.add(cabeza);
-      const pelo = new THREE.Mesh(new THREE.SphereGeometry(0.051, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2.2), mat.pelo); pelo.position.set(-0.005, 0.487, 0); g.add(pelo);
+      const cabeza = new THREE.Mesh(new THREE.SphereGeometry(0.048, 12, 10), mat.piel); cabeza.position.set(0, 0.48, 0); cuerpo.add(cabeza);
+      if (pelo !== null) {
+        const mp = matPelo[pelo] || (matPelo[pelo] = M(pelo));
+        const h = new THREE.Mesh(new THREE.SphereGeometry(0.051, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2.2), mp); h.position.set(-0.005, 0.487, 0); cuerpo.add(h);
+      }
       scene.add(g);
       return { g, piernas, brazos };
     };
     const VEL = 0.55, ESPERA = 4;   // u/s (~1,8 m/s) y segundos adentro antes de volver a salir
-    const recorrido = (puntos, desfase) => {
-      const p = persona();
+    const recorrido = (puntos, desfase, aspecto) => {
+      const p = persona(aspecto);
       const tramos = []; let L = 0;
       for (let i = 1; i < puntos.length; i++) { const [ax, az] = puntos[i - 1], [bx, bz] = puntos[i]; const l = Math.hypot(bx - ax, bz - az); tramos.push({ ax, az, bx, bz, l, d: L }); L += l; }
       const T = L / VEL + ESPERA;
@@ -1687,11 +1709,14 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
       };
     };
     const caminantes = [];
-    // Oficinas del Dep. 15: entran por la esquina vidriada (sudoeste, x 523 / y 410)
-    const e15 = [X(523) + 0.5, Z(410) - 0.5], frente15 = [X(523) - 0.5, Z(410) + 0.6];
-    caminantes.push(recorrido([[X(240), Z(330)], [X(420), Z(395)], frente15, e15], 0));
-    caminantes.push(recorrido([[X(600), Z(560)], [X(560), Z(450)], frente15, e15], 0.35));
-    caminantes.push(recorrido([[X(360), Z(560)], [X(470), Z(440)], frente15, e15], 0.7));
+    // Oficinas del Dep. 15: gente de traje que entra por la puerta doble de la pared oeste (pedido del usuario): uno pelado de
+    // estatura mediana, uno de pelo castaño bastante más alto que el resto y otro de pelo negro
+    if (puertaOficina15) {
+      const [px, pz] = puertaOficina15, frente15 = [px - 0.8, pz], e15 = [px + 0.6, pz];
+      caminantes.push(recorrido([[X(240), Z(330)], [X(430), Z(370)], frente15, e15], 0, { ropa: "traje", pelo: null, escala: 1 }));
+      caminantes.push(recorrido([[X(360), Z(560)], [X(470), Z(420)], frente15, e15], 0.35, { ropa: "traje", pelo: 0x7B4A2A, escala: 1.15 }));
+      caminantes.push(recorrido([[X(300), Z(250)], [X(460), Z(330)], frente15, e15], 0.7, { ropa: "traje", pelo: 0x1E1A18, escala: 0.98 }));
+    }
     // Oficina del Dep. 1: vienen del estacionamiento de la flota hasta la puerta
     if (puertaOficina1) {
       const [px, pz] = puertaOficina1, frente1 = [px, pz - 0.7], adentro1 = [px, pz + 0.4];
