@@ -172,6 +172,13 @@ body:has(.barra-guardar) #btn-escritorio{display:none!important}
 .bt.chico{min-height:34px;padding:5px 10px;font-size:13px}
 @media (max-width:420px){.fila-res{grid-template-columns:1fr auto}.fila-res small{grid-column:1/-1}}
 .veh .pat{min-width:118px}
+.veh.ctrl{border-color:rgba(255,209,0,.35);background:linear-gradient(135deg,rgba(255,209,0,.10),rgba(255,255,255,.05))}
+.veh .volvio{color:#6fe3a4}
+@media (max-width:520px){.veh.ctrl{grid-template-columns:auto minmax(0,1fr)}.veh.ctrl>.etq{display:none}}
+.pestanas{overflow-x:auto}
+.pestanas button{white-space:nowrap}
+.cuenta{display:inline-block;min-width:20px;font-size:12px;font-weight:800;border-radius:999px;padding:1px 6px;background:var(--amarillo);color:var(--noche);margin-left:2px}
+.cuenta:empty{display:none}
 
 /* historial */
 .rec{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px;align-items:center;padding:10px;border-radius:16px;background:var(--vidrio);border:1px solid var(--borde);margin-bottom:8px;text-decoration:none;cursor:pointer}
@@ -300,12 +307,24 @@ async function cargarBase(){
   CHO=cho.sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre)));
   suc.forEach(s=>SUC[s.id]=s.nombre||s.id);
   zon.forEach(z=>ZON[z.id]=[z.numero?"Zona "+z.numero:"",z.nombre||""].filter(Boolean).join(" ")||z.id);
-  // órdenes de carga de los últimos 60 días, para mostrar en la flota a quién está asignada cada patente
+  await cargarSalidas();
+}
+// Órdenes de carga de los últimos 60 días: a quién está asignada cada patente y qué vehículos volvieron.
+let SAL=[],RECS=null;
+async function cargarSalidas(){
   const desde=new Date(Date.now()-60*864e5).toISOString().slice(0,10);
   try{SAL=(await tms("salidas").where("fecha",">=",desde).get()).docs.map(d=>Object.assign({id:d.id},d.data())).filter(s=>s.estado!=="Anulada"&&s.fecha<=hoyISO())
-    .sort((a,b)=>b.fecha.localeCompare(a.fecha)||(b.nro||0)-(a.nro||0))}catch(e){console.warn(e);SAL=[]}
+    .sort((a,b)=>b.fecha.localeCompare(a.fecha)||(b.nro||0)-(a.nro||0))}catch(e){console.warn(e)}
 }
-let SAL=[];
+const regresoISO=s=>new Date(s.fecha+"T"+(/^\d{1,2}:\d{2}/.test(s.horaRegreso||"")?s.horaRegreso.padStart(5,"0"):"00:00")).toISOString();
+// Un regreso ya está controlado si hay una recepción de ese viaje, o una del vehículo cargada después de que volvió.
+const recepcionDe=(s,camId)=>(RECS||[]).find(r=>r.camionId===camId&&(r.salidaId===s.id||String(r.fecha)>=regresoISO(s)))||null;
+// Vehículos para controlar: su último viaje figura «Volvió» (Finalizada) en el TMS y todavía no tiene recepción.
+function paraControlar(){
+  return CAM.map(c=>({cam:c,sal:SAL.find(x=>x.camionId===c.id||x.acopladoId===c.id)}))
+    .filter(x=>x.sal&&x.sal.estado==="Finalizada"&&!recepcionDe(x.sal,x.cam.id))
+    .sort((a,b)=>regresoISO(b.sal).localeCompare(regresoISO(a.sal)));
+}
 // Chofer habitual: el que tiene esta patente como «Camión habitual» en Choferes del TMS (o el que figura en la ficha del camión).
 const habitual=cam=>CHO.find(c=>c.camionId===cam.id&&c.estado!=="Inactivo")||null;
 // A quién está asignada la patente: la última orden de carga del TMS; si no hay, el chofer habitual.
@@ -318,7 +337,7 @@ function asignado(cam){
 async function cargarUltimas(){
   const s=await mia("recepciones").orderBy("fecha","desc").limit(300).get();
   ULT={};s.docs.forEach(d=>{const r=d.data();if(!ULT[r.camionId])ULT[r.camionId]=Object.assign({id:d.id},r)});
-  return s.docs.map(d=>Object.assign({id:d.id},d.data()));
+  return RECS=s.docs.map(d=>Object.assign({id:d.id},d.data()));
 }
 // Último viaje del vehículo según las órdenes de carga del TMS: de ahí sale quién lo traía.
 async function ultimoViaje(cam){
@@ -340,7 +359,7 @@ function ruta(){
   if(h[0]==="v"&&h[1])return verVehiculo(decodeURIComponent(h[1]),h[2]);
   if(h[0]==="r"&&h[1])return verRecepcion(h[1]);
   if(h[0]==="qr")return verEtiquetas();
-  return verInicio(h[0]==="historial"?"historial":"flota");
+  return verInicio(h[0]==="historial"||h[0]==="flota"?h[0]:"controlar");
 }
 addEventListener("hashchange",ruta);
 const ir=h=>{location.hash=h};
@@ -352,13 +371,16 @@ async function verInicio(tab){
   v.innerHTML='<h1>Recepción de <em>vehículos</em></h1><p class="sub">Escaneá el QR del vehículo cuando vuelve, sacale fotos y calificá cómo llegó.</p>'
    +'<div class="panel escanear"><span class="qr-ico"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 14h2M14 18v2M18 18h2v2"/></svg></span>'
    +'<div><b>Escaneá el QR del vehículo</b><p>O elegilo de la lista si la etiqueta no se lee.</p><div class="fila"><button class="bt am" data-qr>Abrir cámara</button><a class="bt" href="#qr"><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg>Imprimir etiquetas QR</a></div></div></div>'
-   +'<div class="pestanas" role="tablist"><button role="tab" aria-selected="'+(tab==="flota")+'" data-tab="flota">Flota</button><button role="tab" aria-selected="'+(tab==="historial")+'" data-tab="historial">Últimas recepciones</button></div>'
+   +'<div class="pestanas" role="tablist"><button role="tab" aria-selected="'+(tab==="controlar")+'" data-tab="">Para controlar <span class="cuenta" id="n-ctrl"></span></button><button role="tab" aria-selected="'+(tab==="historial")+'" data-tab="historial">Recepciones</button><button role="tab" aria-selected="'+(tab==="flota")+'" data-tab="flota">Toda la flota</button></div>'
    +'<div id="cuerpo"><div class="carga">Cargando…</div></div>';
   v.querySelector("[data-qr]").onclick=abrirCamara;
-  v.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>ir(b.dataset.tab==="flota"?"":"historial"));
+  v.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>ir(b.dataset.tab));
   let recs=[];
-  try{recs=await cargarUltimas()}catch(e){console.warn(e)}
+  try{[recs]=await Promise.all([cargarUltimas(),cargarSalidas()])}catch(e){console.warn(e)}
+  const pend=paraControlar();
+  $("n-ctrl").textContent=pend.length||"";
   if(tab==="historial")return pintarHistorial(recs);
+  if(tab==="controlar")return pintarControlar(pend);
   $("cuerpo").innerHTML='<label class="buscar"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input class="campo" id="q" type="search" placeholder="Buscar patente, modelo o chofer" autocomplete="off" value="'+esc(filtro)+'"></label><div class="flota" id="flota"></div>';
   const pintar=()=>{
     const q=norm(filtro),qp=clavePat(filtro);
@@ -377,6 +399,14 @@ function filaRec(r,conPat){
     +'<div style="min-width:0"><div class="l1">'+(conPat?pat(r.patente):"")+'<span class="est">'+est(r.estrellas)+'</span><b style="font-size:14px">'+esc(CALIF[r.estrellas]||"")+'</b></div>'
     +'<small>'+fFechaHora(r.fecha)+' · '+esc(r.choferNombre||"Sin chofer")+(r.revisadoPor?' · revisó '+esc(r.revisadoPor):"")+'</small>'
     +(r.detalle?'<div class="det">'+esc(r.detalle)+'</div>':"")+'</div></a>';
+}
+function pintarControlar(pend){
+  $("cuerpo").innerHTML=pend.length
+    ?'<p class="mu" style="margin:0 0 12px;font-size:14px">Vehículos que figuran como <b style="color:#6fe3a4">Volvió</b> en el TMS y todavía no se controlaron. Al guardar la recepción salen de esta lista.</p><div class="flota">'
+      +pend.map(({cam:c,sal:s})=>'<a class="veh ctrl" href="#v/'+esc(clavePat(c.patente))+'">'+pat(c.patente)
+        +'<div style="min-width:0"><div class="m">'+esc(c.modelo||c.tipo||"")+'</div><small>👤 '+esc(choNom(s.choferId)||"Sin chofer")+'</small><small class="volvio">Volvió '+fFecha(s.fecha)+(s.horaRegreso?" · "+esc(s.horaRegreso):"")+' · N° '+esc(String(s.nro||"—").padStart(5,"0"))+'</small></div>'
+        +'<span class="etq">Controlar</span></a>').join("")+'</div>'
+    :'<div class="vacio"><b style="display:block;font-size:17px;color:#fff;margin-bottom:4px">No hay vehículos para controlar</b>Cuando un camión figure como «Volvió» en el TMS, aparece acá.</div>';
 }
 function pintarHistorial(recs){
   $("cuerpo").innerHTML=recs.length?recs.slice(0,80).map(r=>filaRec(r,true)).join(""):'<div class="vacio">Todavía no se cargó ninguna recepción.</div>';
@@ -416,8 +446,12 @@ async function verVehiculo(clave,paso){
      +(sal.camionId!==cam.id&&camDe(sal.camionId)?'<div><small>Tractor</small><b>'+esc(camDe(sal.camionId).patente)+'</b></div>':"")+(hab&&hab.id!==sal.choferId?habHTML:"")+'</div>'
     :hab?'<div class="viaje">'+habHTML+'</div><p class="mu" style="margin:10px 0 0;font-size:13.5px">No hay órdenes de carga de esta patente; se toma el chofer habitual.</p>'
     :'<div class="aviso">Esta patente no tiene órdenes de carga ni chofer habitual en el TMS. Elegí abajo quién lo trajo (o asignale un «Camión habitual» en Choferes del TMS).</div>');
+  if(!RECS){try{await cargarUltimas()}catch(e){}}
+  let estadoHTML="";
+  if(sal&&sal.estado!=="Finalizada")estadoHTML='<div class="aviso" style="margin-bottom:12px">Según el TMS este vehículo <b>todavía no volvió</b> ('+esc((EST_SAL[sal.estado]||[sal.estado])[0])+'). Si ya está en el depósito, podés registrar la recepción igual.</div>';
+  else if(sal){const r=recepcionDe(sal,cam.id);if(r)estadoHTML='<div class="aviso" style="margin-bottom:12px">Este regreso <b>ya se controló</b> el '+fFechaHora(r.fecha)+(r.revisadoPor?" ("+esc(r.revisadoPor)+")":"")+'. Si cargás otra recepción queda como una nueva.</div>'}
   const ch0=sal?sal.choferId||"":hab?hab.id:"";
-  F={cam,sal,viajeHTML,paso:0,origen:sal?"orden":hab?"habitual":"",choferId:ch0,cobradorId:sal?sal.cobradorId||"":"",km:"",estrellas:null,detalle:"",revisadoPor:ls.get("veh_revisa")||"",fotos:{exterior:[],interior:[],cubiertas:[]},guardando:false};
+  F={cam,sal,viajeHTML:estadoHTML+viajeHTML,paso:0,origen:sal?"orden":hab?"habitual":"",choferId:ch0,cobradorId:sal?sal.cobradorId||"":"",km:"",estrellas:null,detalle:"",revisadoPor:ls.get("veh_revisa")||"",fotos:{exterior:[],interior:[],cubiertas:[]},guardando:false};
   pintarPaso();
 }
 // Qué le falta a un paso para poder continuar (lista vacía = completo)
@@ -456,7 +490,7 @@ function pintarPaso(){
      +filaRes(0,"Revisó",esc(f.revisadoPor))
      +'</div></div>';
   }
-  $("vista").innerHTML='<a class="volver" href="#">‹ Flota</a>'
+  $("vista").innerHTML='<a class="volver" href="#">‹ Volver</a>'
    +'<div class="ficha ficha-chica">'+pat(cam.patente)+'<div class="dat"><b>'+esc(cam.modelo||cam.tipo||"")+'</b><span>'+esc(cam.tipo||"")+(cam.estado&&cam.estado!=="Disponible"?' · <span class="etq">'+esc(cam.estado)+'</span>':"")+'</span></div></div>'
    +'<div class="progreso" aria-label="Paso '+(i+1)+' de '+PASOS.length+'">'+PASOS.map((x,j)=>'<i class="'+(j<i?"hecho":j===i?"actual":"")+'"></i>').join("")+'</div>'
    +'<div class="paso-tit"><span class="n">'+(i+1)+'</span><div><small>Paso '+(i+1)+' de '+PASOS.length+'</small><b>'+esc(p.t)+'</b></div></div>'
