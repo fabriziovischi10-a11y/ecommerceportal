@@ -145,6 +145,32 @@ textarea.campo{min-height:110px;resize:vertical;line-height:1.45}
 .barra-guardar .falta{font-size:13.5px;color:var(--tinta-2);flex:1;min-width:0}
 .barra-guardar .bt{padding:12px 20px;font-size:15.5px}
 body:has(.barra-guardar) #btn-escritorio{display:none!important}
+.barra-guardar .falta:empty{visibility:hidden}
+
+/* asistente por pasos */
+.ficha-chica{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+.ficha-chica .dat b{font-size:16px}
+.ficha-chica .dat span{font-size:13px}
+.progreso{display:flex;gap:5px;margin-bottom:14px}
+.progreso i{flex:1;height:6px;border-radius:99px;background:rgba(255,255,255,.14);transition:background .3s}
+.progreso i.hecho{background:var(--amarillo)}
+.progreso i.actual{background:linear-gradient(90deg,var(--amarillo),rgba(255,209,0,.45))}
+.paso-tit{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.paso-tit .n{width:40px;height:40px;border-radius:13px;background:var(--amarillo);color:var(--noche);font:900 19px var(--f-disp);display:grid;place-items:center;flex:none}
+.paso-tit small{display:block;color:var(--tinta-3);font-weight:700;font-size:12.5px;text-transform:uppercase;letter-spacing:.05em}
+.paso-tit b{font:900 22px/1.15 var(--f-disp)}
+.paso-cuerpo{animation:entraPaso .35s cubic-bezier(.2,.8,.2,1) both}
+@keyframes entraPaso{from{opacity:0;transform:translateX(24px)}}
+.paso-cuerpo .miniaturas{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.resumen{display:flex;flex-direction:column}
+.fila-res{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--borde)}
+.fila-res:first-child{border-top:0;padding-top:0}
+.fila-res small{color:var(--tinta-3);font-weight:700;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em}
+.fila-res>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:700;min-width:0}
+.tira{display:flex;gap:4px}
+.tira img{width:38px;height:38px;border-radius:8px;object-fit:cover}
+.bt.chico{min-height:34px;padding:5px 10px;font-size:13px}
+@media (max-width:420px){.fila-res{grid-template-columns:1fr auto}.fila-res small{grid-column:1/-1}}
 .veh .pat{min-width:118px}
 
 /* historial */
@@ -311,7 +337,7 @@ function ruta(){
   if(p&&!location.hash){history.replaceState(null,"",URL_APP+"#v/"+clavePat(p));}
   const h=location.hash.replace(/^#/,"").split("/");
   window.scrollTo(0,0);
-  if(h[0]==="v"&&h[1])return verVehiculo(decodeURIComponent(h[1]));
+  if(h[0]==="v"&&h[1])return verVehiculo(decodeURIComponent(h[1]),h[2]);
   if(h[0]==="r"&&h[1])return verRecepcion(h[1]);
   if(h[0]==="qr")return verEtiquetas();
   return verInicio(h[0]==="historial"?"historial":"flota");
@@ -358,20 +384,32 @@ function pintarHistorial(recs){
 
 /* ---------- vehículo: ficha, último viaje y formulario ---------- */
 let F=null;   // recepción en curso
-async function verVehiculo(clave){
+// La recepción se carga por pasos; cada paso tiene su propia dirección (#v/PATENTE/n) para que el «atrás» del celular vuelva un paso sin perder nada.
+const PASOS=[
+  {k:"quien",t:"Quién lo trajo"},
+  {k:"exterior",t:"Fotos del exterior",foto:true},
+  {k:"interior",t:"Fotos del interior",foto:true},
+  {k:"cubiertas",t:"Fotos de las cubiertas",foto:true},
+  {k:"calif",t:"¿Cómo llegó?"},
+  {k:"detalle",t:"Detalles y confirmar"}];
+async function verVehiculo(clave,paso){
   const v=$("vista");
   const cam=CAM.find(c=>clavePat(c.patente)===clavePat(clave))||CAM.find(c=>c.id===clave);
   if(!cam){v.innerHTML='<a class="volver" href="#">‹ Volver</a><div class="aviso err">No encontré ningún vehículo con la patente <b>'+esc(clave)+'</b>. Revisá que esté cargado en la Flota del TMS.</div>';return}
-  v.innerHTML='<a class="volver" href="#">‹ Flota</a>'
-   +'<div class="panel"><div class="ficha">'+pat(cam.patente,true)+'<div class="dat"><b>'+esc(cam.modelo||cam.tipo||"")+'</b><span>'+esc(cam.tipo||"")+(cam.interno?" · interno "+esc(cam.interno):"")+(cam.estado&&cam.estado!=="Disponible"?' · <span class="etq">'+esc(cam.estado)+'</span>':"")+'</span></div></div></div>'
-   +'<div class="panel" id="p-viaje"><h2>Asignación en el TMS</h2><div class="carga">Buscando en el TMS…</div></div>'
-   +'<div id="form"></div>'
-   +'<div class="panel"><h2>Recepciones anteriores</h2><div id="hist"><div class="carga">Cargando…</div></div></div>';
+  paso=Math.max(0,Math.min(PASOS.length-1,parseInt(paso,10)||0));
+  // misma recepción en curso: solo cambia de paso
+  if(F&&F.cam.id===cam.id){
+    const max=primerIncompleto();
+    if(paso>max){history.replaceState(null,"",URL_APP+"#v/"+clavePat(cam.patente)+(max?"/"+max:""));paso=max}
+    F.paso=paso;return pintarPaso();
+  }
+  if(paso>0){history.replaceState(null,"",URL_APP+"#v/"+clavePat(cam.patente));}
+  v.innerHTML='<div class="carga">Buscando en el TMS…</div>';
   let sal=null;
   try{sal=await ultimoViaje(cam)}catch(e){console.warn(e)}
   const hab=habitual(cam);
   const habHTML=hab?'<div><small>Chofer habitual</small><b>'+esc(hab.nombre)+'</b>'+(hab.legajo?'<span class="s2">Legajo '+esc(hab.legajo)+'</span>':"")+'</div>':"";
-  $("p-viaje").innerHTML='<h2>Asignación en el TMS</h2>'+(sal
+  const viajeHTML='<h2>Asignación en el TMS</h2>'+(sal
     ?'<div class="viaje"><div><small>Último viaje</small><b>'+fFecha(sal.fecha)+'</b><span class="s2">'+(sal.horaSalida?"Salió "+esc(sal.horaSalida):"")+(sal.horaRegreso?" · volvió "+esc(sal.horaRegreso):"")+'</span></div>'
      +'<div><small>Chofer</small><b>'+esc(choNom(sal.choferId)||"—")+'</b>'+(sal.cobradorId?'<span class="s2">Acompañante: '+esc(choNom(sal.cobradorId))+'</span>':"")+'</div>'
      +'<div><small>Orden de carga</small><b>N° '+esc(String(sal.nro||"—").padStart(5,"0"))+'</b> <span class="etq '+((EST_SAL[sal.estado]||[])[1]||"")+'">'+esc((EST_SAL[sal.estado]||[sal.estado||""])[0])+'</span><span class="s2">'+esc(sal.canal||"")+(destino(sal)?" · "+esc(destino(sal)):"")+'</span></div>'
@@ -379,10 +417,67 @@ async function verVehiculo(clave){
     :hab?'<div class="viaje">'+habHTML+'</div><p class="mu" style="margin:10px 0 0;font-size:13.5px">No hay órdenes de carga de esta patente; se toma el chofer habitual.</p>'
     :'<div class="aviso">Esta patente no tiene órdenes de carga ni chofer habitual en el TMS. Elegí abajo quién lo trajo (o asignale un «Camión habitual» en Choferes del TMS).</div>');
   const ch0=sal?sal.choferId||"":hab?hab.id:"";
-  F={cam,sal,origen:sal?"orden":hab?"habitual":"",choferId:ch0,cobradorId:sal?sal.cobradorId||"":"",km:"",estrellas:null,detalle:"",revisadoPor:ls.get("veh_revisa")||"",fotos:{exterior:[],interior:[],cubiertas:[]},guardando:false};
-  pintarForm();
-  cargarHistVeh(cam);
+  F={cam,sal,viajeHTML,paso:0,origen:sal?"orden":hab?"habitual":"",choferId:ch0,cobradorId:sal?sal.cobradorId||"":"",km:"",estrellas:null,detalle:"",revisadoPor:ls.get("veh_revisa")||"",fotos:{exterior:[],interior:[],cubiertas:[]},guardando:false};
+  pintarPaso();
 }
+// Qué le falta a un paso para poder continuar (lista vacía = completo)
+function faltaPaso(i){
+  const f=F,p=PASOS[i],L=[];
+  if(p.k==="quien"){if(!f.choferId)L.push("elegí el chofer");if(!f.revisadoPor.trim())L.push("escribí quién revisa")}
+  else if(p.foto){const a=f.fotos[p.k];if(a.includes(null))L.push("procesando fotos…");else if(!a.length)L.push("sacá al menos una foto")}
+  else if(p.k==="calif"&&f.estrellas==null)L.push("elegí de 0 a 5 estrellas");
+  return L;
+}
+const primerIncompleto=()=>{for(let i=0;i<PASOS.length;i++)if(faltaPaso(i).length)return i;return PASOS.length-1};
+const irPaso=i=>ir("v/"+clavePat(F.cam.patente)+(i?"/"+i:""));
+function pintarPaso(){
+  const f=F,i=f.paso,p=PASOS[i],ult=i===PASOS.length-1,cam=f.cam;
+  let cuerpo="";
+  if(p.k==="quien"){
+    cuerpo='<div class="panel">'+f.viajeHTML+'</div>'
+     +'<div class="panel"><div class="paso"><h2>¿Quién lo trajo?</h2>'+(f.origen?'<span class="ok">'+(f.origen==="orden"?"según la orden del TMS":"chofer habitual del TMS")+'</span>':"")+'</div>'
+     +'<div class="dos"><label>Chofer<select class="campo" id="f-cho">'+opcCho(f.choferId,"— Elegí el chofer —")+'</select></label>'
+     +'<label>Acompañante<select class="campo" id="f-cob">'+opcCho(f.cobradorId,"Sin acompañante")+'</select></label>'
+     +'<label>Km del tablero <span class="mu" style="font-weight:600">(opcional)</span><input class="campo" id="f-km" type="number" inputmode="numeric" min="0" placeholder="Ej.: 152340" value="'+esc(f.km)+'"></label>'
+     +'<label>Revisado por<input class="campo" id="f-rev" placeholder="Tu nombre" value="'+esc(f.revisadoPor)+'" autocomplete="name"></label></div></div>'
+     +'<div class="panel"><h2>Recepciones anteriores</h2><div id="hist"><div class="carga">Cargando…</div></div></div>';
+  }else if(p.foto){
+    const t=TIPOS.find(x=>x[0]===p.k);
+    cuerpo='<div class="panel"><p class="mu" style="margin:0 0 12px;font-size:14.5px">'+esc(t[2])+'. Sacá al menos una; podés sumar varias.</p><div id="fotos"></div></div>';
+  }else if(p.k==="calif"){
+    cuerpo='<div class="panel" style="text-align:center"><div class="paso" style="justify-content:center"><h2>¿En qué estado llegó?</h2></div><div class="estrellas" id="estrellas" role="radiogroup" aria-label="Calificación de 0 a 5 estrellas" style="justify-content:center"></div><div class="calif-txt" id="calif-txt"></div></div>';
+  }else{
+    const nf=k=>f.fotos[k].length;
+    cuerpo='<div class="panel"><div class="paso"><h2>Detalles del vehículo</h2><span class="mu" style="margin-left:auto;font-size:13px">opcional</span></div><textarea class="campo" id="f-det" placeholder="Golpes, rayones, luces quemadas, limpieza, cubiertas gastadas, faltantes…">'+esc(f.detalle)+'</textarea></div>'
+     +'<div class="panel"><h2>Resumen</h2><div class="resumen">'
+     +filaRes(0,"Lo trajo",esc(choNom(f.choferId))+(f.cobradorId?' <span class="mu">· con '+esc(choNom(f.cobradorId))+'</span>':"")+(f.km?' <span class="mu">· '+Number(f.km).toLocaleString("es-AR")+' km</span>':""))
+     +TIPOS.map(([k,n],j)=>filaRes(j+1,n,'<span class="tira">'+f.fotos[k].map(d=>'<img src="'+d+'" alt="">').join("")+'</span>'+nf(k)+' foto'+(nf(k)>1?"s":""))).join("")
+     +filaRes(4,"Calificación",'<span style="color:var(--amarillo);letter-spacing:1px">'+est(f.estrellas)+'</span> '+esc(CALIF[f.estrellas]))
+     +filaRes(0,"Revisó",esc(f.revisadoPor))
+     +'</div></div>';
+  }
+  $("vista").innerHTML='<a class="volver" href="#">‹ Flota</a>'
+   +'<div class="ficha ficha-chica">'+pat(cam.patente)+'<div class="dat"><b>'+esc(cam.modelo||cam.tipo||"")+'</b><span>'+esc(cam.tipo||"")+(cam.estado&&cam.estado!=="Disponible"?' · <span class="etq">'+esc(cam.estado)+'</span>':"")+'</span></div></div>'
+   +'<div class="progreso" aria-label="Paso '+(i+1)+' de '+PASOS.length+'">'+PASOS.map((x,j)=>'<i class="'+(j<i?"hecho":j===i?"actual":"")+'"></i>').join("")+'</div>'
+   +'<div class="paso-tit"><span class="n">'+(i+1)+'</span><div><small>Paso '+(i+1)+' de '+PASOS.length+'</small><b>'+esc(p.t)+'</b></div></div>'
+   +'<div class="paso-cuerpo">'+cuerpo+'</div>'
+   +'<div class="barra-guardar"><div class="in">'+(i?'<button class="bt" id="f-atras" aria-label="Paso anterior">‹ Atrás</button>':"")
+   +'<span class="falta" id="falta"></span>'
+   +(ult?'<button class="bt am" id="f-ok">Guardar recepción</button>':'<button class="bt am" id="f-sig">Continuar ›</button>')+'</div></div>';
+  if(i)$("f-atras").onclick=()=>history.back();
+  if(ult)$("f-ok").onclick=guardar;else $("f-sig").onclick=()=>{if(!faltaPaso(i).length)irPaso(i+1)};
+  if(p.k==="quien"){
+    $("f-cho").onchange=e=>{f.choferId=e.target.value;validar()};
+    $("f-cob").onchange=e=>{f.cobradorId=e.target.value};
+    $("f-km").oninput=e=>{f.km=e.target.value};
+    $("f-rev").oninput=e=>{f.revisadoPor=e.target.value;validar()};
+    cargarHistVeh(cam);
+  }else if(p.foto)pintarFotos();
+  else if(p.k==="calif")pintarEstrellas();
+  else{$("f-det").oninput=e=>{f.detalle=e.target.value};$("vista").querySelectorAll("[data-paso]").forEach(b=>b.onclick=()=>irPaso(+b.dataset.paso))}
+  validar();
+}
+const filaRes=(paso,nom,val)=>'<div class="fila-res"><small>'+nom+'</small><div>'+val+'</div>'+(paso!=null?'<button class="bt chico" data-paso="'+paso+'">Cambiar</button>':"")+'</div>';
 async function cargarHistVeh(cam){
   try{
     const s=await mia("recepciones").where("camionId","==",cam.id).get();
@@ -391,26 +486,6 @@ async function cargarHistVeh(cam){
   }catch(e){$("hist").innerHTML='<div class="aviso err">No se pudo leer el historial: '+esc(e.message||e.code)+'</div>'}
 }
 const opcCho=(sel,blank)=>'<option value="">'+blank+'</option>'+CHO.filter(c=>c.estado!=="Inactivo"||c.id===sel).map(c=>'<option value="'+esc(c.id)+'"'+(c.id===sel?" selected":"")+'>'+esc(c.nombre)+(c.puesto?" · "+esc(c.puesto):"")+'</option>').join("");
-function pintarForm(){
-  const f=F;
-  $("form").innerHTML=
-    '<div class="panel"><div class="paso"><span class="n">1</span><h2>Quién lo trajo</h2>'+(f.origen?'<span class="ok">'+(f.origen==="orden"?"según la orden del TMS":"chofer habitual del TMS")+'</span>':"")+'</div>'
-    +'<div class="dos"><label>Chofer<select class="campo" id="f-cho">'+opcCho(f.choferId,"— Elegí el chofer —")+'</select></label>'
-    +'<label>Acompañante<select class="campo" id="f-cob">'+opcCho(f.cobradorId,"Sin acompañante")+'</select></label>'
-    +'<label>Km del tablero <span class="mu" style="font-weight:600">(opcional)</span><input class="campo" id="f-km" type="number" inputmode="numeric" min="0" placeholder="Ej.: 152340" value="'+esc(f.km)+'"></label>'
-    +'<label>Revisado por<input class="campo" id="f-rev" placeholder="Tu nombre" value="'+esc(f.revisadoPor)+'" autocomplete="name"></label></div></div>'
-    +'<div class="panel"><div class="paso"><span class="n">2</span><h2>Fotos del vehículo</h2></div><p class="mu" style="margin:-4px 0 10px;font-size:14px">Al menos una foto de cada parte. Podés sacar varias.</p><div id="fotos"></div></div>'
-    +'<div class="panel"><div class="paso"><span class="n">3</span><h2>¿Cómo llegó?</h2></div><div class="estrellas" id="estrellas" role="radiogroup" aria-label="Calificación de 0 a 5 estrellas"></div><div class="calif-txt" id="calif-txt"></div></div>'
-    +'<div class="panel"><div class="paso"><span class="n">4</span><h2>Detalles</h2></div><textarea class="campo" id="f-det" placeholder="Golpes, rayones, luces quemadas, limpieza, cubiertas gastadas, faltantes…">'+esc(f.detalle)+'</textarea></div>'
-    +'<div class="barra-guardar"><div class="in"><span class="falta" id="falta"></span><button class="bt am" id="f-ok">Guardar recepción</button></div></div>';
-  $("f-cho").onchange=e=>{f.choferId=e.target.value;validar()};
-  $("f-cob").onchange=e=>{f.cobradorId=e.target.value};
-  $("f-km").oninput=e=>{f.km=e.target.value};
-  $("f-rev").oninput=e=>{f.revisadoPor=e.target.value;validar()};
-  $("f-det").oninput=e=>{f.detalle=e.target.value};
-  $("f-ok").onclick=guardar;
-  pintarFotos();pintarEstrellas();validar();
-}
 const ESTRELLA='<svg viewBox="0 0 24 24"><path stroke-linejoin="round" d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z"/></svg>';
 function pintarEstrellas(){
   const n=F.estrellas;
@@ -420,7 +495,9 @@ function pintarEstrellas(){
   const t=$("calif-txt");t.className="calif-txt"+(n==null?" nada":"");t.textContent=n==null?"Tocá las estrellas para calificar (0 = muy mal estado).":n+" de 5 · "+CALIF[n];
 }
 function pintarFotos(){
-  $("fotos").innerHTML=TIPOS.map(([k,n,ayuda])=>{const L=F.fotos[k];return'<div class="fotos-tipo"><div class="cab"><div><b>'+n+'</b><small>'+ayuda+'</small></div><span class="cnt'+(L.length?" ok":"")+'">'+(L.length?L.length+" foto"+(L.length>1?"s":""):"Falta")+'</span></div>'
+  if(!$("fotos")||!F)return;
+  const actual=PASOS[F.paso].k;
+  $("fotos").innerHTML=TIPOS.filter(t=>t[0]===actual).map(([k,n])=>{const L=F.fotos[k];return'<div class="fotos-tipo"><div class="cab"><span class="cnt'+(L.length?" ok":"")+'">'+(L.length?L.length+" foto"+(L.length>1?"s":""):"Falta")+'</span></div>'
     +'<div class="miniaturas">'+L.map((d,i)=>d?'<div class="mini"><img src="'+d+'" alt="'+n+' '+(i+1)+'" data-ver="'+k+'" data-i="'+i+'"><button class="x" data-del="'+k+'" data-i="'+i+'" aria-label="Quitar foto">×</button></div>':'<div class="mini cargando">Procesando…</div>').join("")
     +'<label class="agregar"><svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>Sacar foto<input type="file" accept="image/*" capture="environment" data-tipo="'+k+'"></label>'
     +'<label class="agregar"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg>De la galería<input type="file" accept="image/*" multiple data-tipo="'+k+'"></label>'
@@ -462,9 +539,17 @@ function faltantes(){
   return L;
 }
 function validar(){
-  const L=faltantes(),cargando=Object.values(F.fotos).some(a=>a.includes(null));
-  $("falta").textContent=cargando?"Procesando fotos…":L.length?"Falta: "+L.join(", "):"Todo listo para guardar.";
-  $("f-ok").disabled=F.guardando||cargando||L.length>0;
+  if(!F||!$("falta"))return;
+  const i=F.paso,ult=i===PASOS.length-1;
+  if(ult){
+    const L=faltantes(),cargando=Object.values(F.fotos).some(a=>a.includes(null));
+    $("falta").textContent=cargando?"Procesando fotos…":L.length?"Falta: "+L.join(", "):"";
+    $("f-ok").disabled=F.guardando||cargando||L.length>0;
+  }else{
+    const L=faltaPaso(i);
+    $("falta").textContent=L.length?(L[0]==="procesando fotos…"?"Procesando fotos…":"Para seguir: "+L.join(" y ")):"";
+    $("f-sig").disabled=L.length>0;
+  }
 }
 async function guardar(){
   const f=F;if(faltantes().length||f.guardando)return;
