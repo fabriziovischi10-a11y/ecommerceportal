@@ -1562,8 +1562,11 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
       const n = Math.max(2, Math.round((xb - xa) / 3.2));
       for (let i = 0; i <= n; i++) pieza1(0.22, ALTO_MURO, 0.08, 0x8D949A, xa + (xb - xa) * i / n, ALTO_MURO / 2, z - 0.05);
     };
-    frenteNave(X(xo), X(xm), Z(yN));
-    frenteNave(X(xm), X(xe), Z(yNe));
+    // Cada frente llega justo hasta el escalón de la pared (x 1082 del plano original), y el costado del escalón también lleva panel
+    const xEsc = X(e1([1082, 0])[0]);
+    frenteNave(X(xo), xEsc, Z(yN));
+    frenteNave(xEsc, X(xe), Z(yNe));
+    pieza1(0.03, ALTO_MURO, Math.abs(Z(yNe) - Z(yN)), 0xE4DAC0, xEsc + 0.03, ALTO_MURO / 2, (Z(yN) + Z(yNe)) / 2);   // costado del escalón (mira al este)
     // Equipos de aire acondicionado al lado de los portones
     const [xP1] = e1([1058, 0]), [xP2] = e1([1118, 0]);
     [[X(xP1) + 1.6, Z(yN)], [X(xP2) - 1.7, Z(yNe)], [X(xP2) - 2.2, Z(yNe)]].forEach(([x, z]) => pieza1(0.38, 0.26, 0.14, 0xF2F2F0, x, 1.65, z - 0.12));
