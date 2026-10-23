@@ -956,7 +956,7 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
       const ZONAS_PLAYON = ["REBALDEXT", "TRASBASE03", "REBAL02"];
       const ZONAS_PICKING = Object.keys(DATOS.zonas || {}).filter((z) => /^P(AS|ICK)01/.test(z));
       const NOMBRE_PICK = { ALIM: "Comestible", BAZA: "Bazar", PAN: "Pañal", PERF: "Perfumería", LIMP: "Limpieza" };
-      const hojaZonas = (nombre, zonas, picking) => {
+      const hojaZonas = (nombre, zonas, picking, colorEnc = "FFE07A1F") => {
         const ws = wb.addWorksheet(nombre, { views: [{ state: "frozen", ySplit: 1 }] });
         const cols = [[picking ? "Pasillo de picking" : "Zona del playón", 18], [picking ? "Categoría" : "Rubro", 16], ["N° de paleta", 13], ["Código", 10], ["Producto", 52],
           ["Otros productos en la paleta", 34], ["Cantidad (unid.)", 11], ["Vencimiento", 12], ["Rango de vencimiento", 17], ["Observación", 22]];
@@ -973,16 +973,20 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
         }));
         ws.getColumn(7).numFmt = "#,##0"; ws.getColumn(8).numFmt = "dd/mm/yyyy";
         const h = ws.getRow(1); h.height = 30;
-        h.eachCell((c) => { c.font = { bold: true, color: { argb: "FFFFFFFF" } }; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE07A1F" } }; c.alignment = { wrapText: true, vertical: "middle" }; });
+        h.eachCell((c) => { c.font = { bold: true, color: { argb: "FFFFFFFF" } }; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: colorEnc } }; c.alignment = { wrapText: true, vertical: "middle" }; });
         ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: Math.max(1, n + 1), column: cols.length } };
         return n;
       };
       const nPlayon = hojaZonas("Playón Dep. 3", ZONAS_PLAYON, false);
       const nPicking = hojaZonas("Picking Dep. 3", ZONAS_PICKING, true);
+      const nDescarga15 = hojaZonas("Descarga Dep. 15", ["REBAL1501"], false, "FF2F6FD0");   // playón de descarga del Dep. 15
       r.addRow([]);
       r.addRow(["Depósito 3 fuera de las estanterías"]).font = { bold: true };
       r.addRow(["Playón Dep. 3 (REBALDEXT, TRASBASE03, REBAL02)", nPlayon, "paletas"]);
       r.addRow(["Picking Dep. 3 (PAS01 / PICK01)", nPicking, "productos"]);
+      r.addRow([]);
+      r.addRow(["Depósito 15 fuera de las estanterías"]).font = { bold: true };
+      r.addRow(["Descarga Dep. 15 (REBAL1501)", nDescarga15, "paletas"]);
       if (hayFiltro()) {
         hojaPosiciones(wb, "Según filtros", filas.filter(pasaFiltros));
         r.addRow([]);
@@ -2073,7 +2077,7 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
 };
 </script>
 
-<!-- ===== Acceso online: solo mails autorizados, con link al mail (Firebase Auth) ===== -->
+<!-- ===== Acceso online: ingreso con Google y permiso "Depósitos 3D" de la Torre de control (acceso-portal.js) ===== -->
 <style>
 .acceso { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: var(--bg); }
 .acceso[hidden] { display: none; }
@@ -2096,43 +2100,33 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
 body:has(.acceso:not([hidden])) .firma { color: #E6ECE9; text-shadow: none; opacity: 0.7; }
 </style>
 <div class="acceso" id="acceso">
-  <form class="acceso-caja" id="acceso-form">
+  <div class="acceso-caja">
     <img id="acceso-logo" alt="Portal">
     <h1>Depósitos Portal 3D</h1>
-    <p>Acceso solo para usuarios autorizados. Ingresá tu mail y te mandamos un link para entrar, sin contraseña.</p>
-    <label>Mail
-      <input type="email" id="acceso-mail" autocomplete="email" required placeholder="nombre@ejemplo.com">
-    </label>
-    <button type="submit" id="acceso-btn">Enviarme el link</button>
-    <p class="acceso-msg" id="acceso-msg" role="status" aria-live="polite"></p>
-  </form>
+    <p class="acceso-msg" id="acceso-msg" role="status" aria-live="polite">Verificando el acceso…</p>
+    <button type="button" id="acceso-reintentar" hidden>Reintentar</button>
+  </div>
 </div>
 <button type="button" class="btn-salir" id="btn-salir" hidden>Cerrar sesión</button>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://fabriziovischi10-a11y.github.io/ecommerceportal/acceso-portal.js?v=3" data-app="depositos3d"></script>
 <script>
 (() => {
   // Mismo Firebase que las demás apps del portal (ecommerce-e7ab2, base "default"). El stock está en depositos3d/stock y
-  // las reglas de seguridad solo dejan leerlo a estos mails (la lista de acá es solo para avisar antes de mandar el link).
-  const firebaseConfig = { apiKey: "AIzaSyCLP890Q5hyuqSs82vyF0rk9VhEg0pBlCA", authDomain: "ecommerce-e7ab2.firebaseapp.com", projectId: "ecommerce-e7ab2", storageBucket: "ecommerce-e7ab2.firebasestorage.app", messagingSenderId: "237845351422", appId: "1:237845351422:web:6350a5c3e103b088cf4eaf" };
-  const FIRESTORE_DATABASE_ID = "default";
-  const AUTORIZADOS = ["fabriziovischi10@gmail.com", "jpgrignola7833@gmail.com"];
-  const CLAVE_MAIL = "dep3d-mail-para-link";
-
-  const acceso = document.getElementById("acceso"), form = document.getElementById("acceso-form");
-  const inMail = document.getElementById("acceso-mail"), btn = document.getElementById("acceso-btn"), msg = document.getElementById("acceso-msg");
-  const salir = document.getElementById("btn-salir");
+  // las reglas de seguridad solo dejan leerlo a los mails habilitados (hoy fabriziovischi10@gmail.com y jpgrignola7833@gmail.com).
+  // Antes se entraba con un link al mail, pero Firebase limita esos mails por día (auth/quota-exceeded): desde el 2026-10-23
+  // el ingreso es con Google, igual que la Torre de control.
+  const acceso = document.getElementById("acceso"), msg = document.getElementById("acceso-msg");
+  const salir = document.getElementById("btn-salir"), reintentar = document.getElementById("acceso-reintentar");
   document.getElementById("acceso-logo").src = document.getElementById("logo-portal-icono").textContent.trim();
   const aviso = (t, tipo) => { msg.textContent = t; msg.className = "acceso-msg" + (tipo ? " " + tipo : ""); };
-  const leer = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
-  const guardar = (k, v) => { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
+  reintentar.addEventListener("click", () => location.reload());
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const app = firebase.app();
-  const fs = new firebase.firestore.Firestore(app, app._delegate.container.getProvider("firestore").getImmediate({ identifier: FIRESTORE_DATABASE_ID }));
-  try { fs.settings({ experimentalAutoDetectLongPolling: true }); } catch (e) {}
+  // El ingreso con Google y el permiso "Depósitos 3D" los controla acceso-portal.js (Torre de control → Usuarios)
+  const auth = PortalAcceso.auth;
+  const fs = PortalAcceso.db();
 
   // El stock viaja comprimido (gzip + base64) para entrar holgado en un documento
   const descomprimir = async (b64) => {
@@ -2151,47 +2145,17 @@ body:has(.acceso:not([hidden])) .firma { color: #E6ECE9; text-shadow: none; opac
     if (!iniciado) { iniciado = true; window.__iniciar3D(); }
   };
 
-  // Mandar el link: solo a mails de la lista
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const mail = inMail.value.trim().toLowerCase();
-    if (!AUTORIZADOS.includes(mail)) { aviso("Ese mail no tiene acceso. Pedile a Fabrizio que lo habilite.", "error"); return; }
-    btn.disabled = true; aviso("Enviando…");
-    try {
-      await auth.sendSignInLinkToEmail(mail, { url: location.origin + location.pathname, handleCodeInApp: true });
-      guardar(CLAVE_MAIL, mail);
-      aviso(`Listo. Te mandamos un link a ${mail}. Abrilo desde este mismo dispositivo para entrar (revisá también Spam).`, "ok");
-    } catch (err) {
-      aviso("No se pudo mandar el link: " + (err.message || err.code), "error");
-    } finally { btn.disabled = false; }
-  });
+  salir.addEventListener("click", () => PortalAcceso.salir());
 
-  salir.addEventListener("click", () => auth.signOut().then(() => location.reload()));
-
-  // Al volver desde el link del mail se completa el ingreso
-  const entrarConLink = async () => {
-    if (!auth.isSignInWithEmailLink(location.href)) return;
-    let mail = leer(CLAVE_MAIL);
-    if (!mail) mail = (prompt("Para terminar de entrar, confirmá tu mail:") || "").trim().toLowerCase();
-    try {
-      await auth.signInWithEmailLink(mail, location.href);
-      guardar(CLAVE_MAIL, null);
-    } catch (err) {
-      aviso("El link no es válido o ya venció. Pedí uno nuevo.", "error");
-    }
-    history.replaceState(null, "", location.origin + location.pathname);
-  };
-
-  auth.onAuthStateChanged(async (u) => {
-    if (u && u.email && AUTORIZADOS.includes(u.email.toLowerCase())) {
-      try { await cargarStock(); }
-      catch (err) { acceso.hidden = false; aviso("No se pudo cargar el stock: " + (err.message || err.code), "error"); }
-    } else {
-      if (u) { aviso("Ese usuario no tiene acceso.", "error"); auth.signOut(); }
-      acceso.hidden = false; salir.hidden = true;
+  PortalAcceso.listo.then(async () => {
+    try { await cargarStock(); }
+    catch (err) {
+      acceso.hidden = false; reintentar.hidden = false;
+      const sinPermiso = err && err.code === "permission-denied";
+      aviso(sinPermiso ? "Tu cuenta entró, pero todavía no tiene permiso para leer el stock del 3D. Pedile a Fabrizio que lo habilite."
+        : "No se pudo cargar el stock: " + (err.message || err.code), "error");
     }
   });
-  entrarConLink();
 })();
 </script>
 <!-- Botón para volver al Escritorio Portal (mismo que las demás apps; acá va arriba a la derecha) -->
