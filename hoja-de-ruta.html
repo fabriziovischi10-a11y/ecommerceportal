@@ -549,6 +549,33 @@ button.st.novlink{border:0;cursor:pointer;font:inherit;font-size:12px;font-weigh
 .flujo{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px}.fl-steps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:280px}.fl-steps li{display:flex;gap:8px;align-items:center;padding:6px 12px 6px 6px;border-radius:999px;background:color-mix(in srgb,var(--line) 45%,transparent);flex:1;min-width:150px}.fl-steps li b{display:block;font-size:13px}.fl-steps li small{display:block;font-size:11.5px;color:var(--muted)}.fl-n{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--panel);border:2px solid var(--line);font-weight:800;font-size:12px;flex:none}.fl-steps li.done{background:color-mix(in srgb,var(--k-good) 12%,transparent)}.fl-steps li.done .fl-n{background:var(--k-good);border-color:var(--k-good);color:#ffffff}.fl-steps li.cur{background:color-mix(in srgb,var(--c-log) 14%,transparent);box-shadow:inset 0 0 0 2px var(--c-log)}.fl-steps li.cur .fl-n{border-color:var(--c-log);color:var(--c-log)}.fl-cta{display:flex;gap:8px;flex-wrap:wrap}.kpis-in{padding:0 16px 8px;margin:0}.lc.flash{animation:lcFlash 2.4s ease-out 2}@keyframes lcFlash{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c-log) 60%,transparent)}40%{box-shadow:0 0 0 8px color-mix(in srgb,var(--c-log) 25%,transparent)}100%{box-shadow:0 0 0 0 transparent}}
 .flujo{flex-direction:column;align-items:stretch}.fl-steps{min-width:0}.fl-steps li{min-width:0}.fl-steps li small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fl-cta{justify-content:flex-end}@media(max-width:700px){.fl-steps li{flex:1 1 45%}}
 .hpill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:3px 10px 3px 4px;border-radius:999px;white-space:nowrap}.hpill b{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;color:#ffffff;font-size:11px}.hpill.h-pend{background:color-mix(in srgb,var(--k-warn) 18%,transparent)}.hpill.h-pend b{background:var(--k-warn);color:#1b1b1b}.hpill.h-carg{background:color-mix(in srgb,var(--c-log) 14%,transparent)}.hpill.h-carg b{background:var(--c-log)}.hpill.h-lista{background:color-mix(in srgb,var(--k-good) 15%,transparent)}.hpill.h-lista b{background:var(--k-good)}.lc.hl-pend{border-left:4px solid var(--k-warn)}.lc.hl-carg{border-left:4px solid var(--c-log)}.lc.hl-lista{border-left:4px solid var(--k-good)}.hstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:0 0 14px}.hst{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--panel);cursor:pointer;text-align:left;font:inherit;color:inherit;border-top:4px solid var(--line)}.hst b{font-size:24px;font-weight:800}.hst span{font-size:12.5px;color:var(--muted)}.hst.h-pend{border-top-color:var(--k-warn)}.hst.h-carg{border-top-color:var(--c-log)}.hst.h-lista{border-top-color:var(--k-good)}.hst.on{box-shadow:0 0 0 2px var(--c-log) inset}.selbox{display:inline-grid;place-items:center;width:34px;height:34px;flex:none;cursor:pointer}.selbox input{width:19px;height:19px;cursor:pointer}.lc.sel-able{position:relative}.lc.sel-able .selbox{grid-row:1/span 2}.lc.sel{box-shadow:0 0 0 2px var(--c-log) inset}.selbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 12px;margin:0 0 10px;border:1px dashed var(--line);border-radius:12px;font-size:13.5px;color:var(--muted)}.selbar.on{border-style:solid;border-color:var(--c-log);color:var(--ink);background:color-mix(in srgb,var(--c-log) 8%,transparent)}
+.tank{display:block;height:8px;border-radius:5px;background:color-mix(in srgb,var(--line) 70%,transparent);overflow:hidden;margin:4px 0}.tank i{display:block;height:100%;border-radius:5px}.tag.gas{background:color-mix(in srgb,var(--c-viaje) 12%,transparent);border-color:transparent;color:var(--ink)}
+.tag.carga{background:color-mix(in srgb,var(--c-prog) 12%,transparent);border-color:transparent;color:var(--ink)}.tag.carga.on{background:color-mix(in srgb,var(--k-warn) 22%,transparent);font-weight:700}
+.eqgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin:0 0 16px}.eqcard{background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--c-base);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}.eqcard.off{opacity:.6}.eqh{display:flex;justify-content:space-between;align-items:center;font-size:16px}.eqk{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12.5px;color:var(--muted)}.eqk b{color:var(--ink)}.eqm{display:flex;flex-wrap:wrap;gap:6px}.pchip{display:inline-flex;align-items:center;gap:4px;padding:3px 4px 3px 10px;border-radius:999px;background:color-mix(in srgb,var(--c-base) 10%,transparent);font-size:12.5px}.pchip.ctrl{background:color-mix(in srgb,var(--c-prog) 14%,transparent)}.pchip button{border:0;background:transparent;cursor:pointer;font-size:15px;line-height:1;width:20px;height:20px;border-radius:50%;color:var(--muted)}.pchip button:hover{background:var(--line);color:var(--ink)}
+
+button.tag.cost{cursor:pointer;font:inherit;font-size:inherit;border:1px solid color-mix(in srgb,var(--c-caja) 35%,transparent);background:color-mix(in srgb,var(--c-caja) 10%,transparent);color:inherit}button.tag.cost:hover{background:color-mix(in srgb,var(--c-caja) 18%,transparent)}
+
+.fechas{display:flex;flex-wrap:wrap;gap:6px 8px;margin-top:4px}.lc .fechas{grid-column:2/-1}.fechas span{display:inline-flex;flex-direction:column;gap:1px;padding:4px 10px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--ink) 3%,transparent);line-height:1.2}.fechas small{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}.fechas b{font-size:13px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}.fechas-pn .fechas{padding:0 2px 4px}.fechas-pn .fechas span{padding:6px 12px}.fechas-pn .fechas b{font-size:14.5px}.diah{display:flex;align-items:center;gap:8px;margin:14px 0 8px;font-size:14px}.diah .c{color:var(--muted);font-size:13px}@media (max-width:640px){.lc .fechas{grid-column:1/-1}}
+
+/* preventa (azul) vs sucursales (naranja) */
+:root{--ch-pv:#2a78d6;--ch-sc:#d0611f}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ch-pv:#5b9dea;--ch-sc:#f08a4b}}
+:root[data-theme="dark"]{--ch-pv:#5b9dea;--ch-sc:#f08a4b}
+.lc.ch-pv{--ch:var(--ch-pv)}.lc.ch-sc{--ch:var(--ch-sc)}
+.lc.ch-pv,.lc.ch-sc{background:linear-gradient(90deg,color-mix(in srgb,var(--ch) 7%,var(--panel)) 0,var(--panel) 45%);border-color:color-mix(in srgb,var(--ch) 28%,var(--line))}
+.lc.ch-pv .ic,.lc.ch-sc .ic{background:color-mix(in srgb,var(--ch) 16%,transparent);color:var(--ch)}
+.chb{display:inline-flex;align-items:center;gap:5px;padding:2px 9px 2px 7px;margin-right:8px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;line-height:1.6;color:#fff;white-space:nowrap}
+.chb svg{width:13px;height:13px}
+.chb.pv{background:var(--ch-pv)}.chb.sc{background:var(--ch-sc)}
+.ph .chb{font-size:12px;padding:4px 11px 4px 9px}
+.chseg{display:inline-flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.chseg button{font:inherit;font-size:13.5px;font-weight:600;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.chseg button b{font-variant-numeric:tabular-nums;color:var(--muted)}
+.chseg button.on{background:var(--ink);color:var(--panel);border-color:var(--ink)}.chseg button.on b{color:inherit}
+.chseg button.k-pv.on{background:var(--ch-pv);border-color:var(--ch-pv);color:#fff}
+.chseg button.k-sc.on{background:var(--ch-sc);border-color:var(--ch-sc);color:#fff}
+.chseg button.k-pv:not(.on){border-color:color-mix(in srgb,var(--ch-pv) 45%,var(--line))}
+.chseg button.k-sc:not(.on){border-color:color-mix(in srgb,var(--ch-sc) 45%,var(--line))}
 </style>
 <style>
 /* ===== celular: tablas como tarjetas, botones cómodos para el dedo, sin zoom al escribir ===== */
@@ -649,7 +676,7 @@ const TIPOS=["Observación","Rechazo total","Rechazo parcial","Rotura","Faltante
 const CAM_TIPOS=["Camión","Chasis c/cabina","Camión c/plataforma","Camión térmico","Furgón","Acoplado","Semirremolque","Utilitario","Otro"];
 const PUESTOS=["Chofer","Cobrador","Chofer y cobrador"];
 const ENTREGAS=["Pendiente","Entregado","Rechazo parcial","Rechazo total","Cerrado / ausente","Reprogramado"];
-const COLS={gasoil:"gasoil",gascompras:"gasoil_compras",recepciones:"recepciones",guias:"guias",portones:"portones",personal:"personal",progzon:"prog_zonas",camiones:"camiones",choferes:"choferes",zonas:"zonas",sucursales:"sucursales",salidas:"salidas",progsuc:"prog_sucursales",zonadia:"zona_dia",novedades:"novedades",cz:"clientes_zona",cargas:"cargas",config:"config"};
+const COLS={cajachica:"caja_chica",equipos:"equipos_carga",gasoil:"gasoil",gascompras:"gasoil_compras",recepciones:"recepciones",guias:"guias",portones:"portones",personal:"personal",progzon:"prog_zonas",camiones:"camiones",choferes:"choferes",zonas:"zonas",sucursales:"sucursales",salidas:"salidas",progsuc:"prog_sucursales",zonadia:"zona_dia",novedades:"novedades",cz:"clientes_zona",cargas:"cargas",config:"config"};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pad=n=>String(n).padStart(2,"0");
@@ -678,7 +705,7 @@ const title=s=>String(s||"").toLowerCase().replace(/(^|[\s(\-/.])([a-záéíóú
 const pl=(n,s,p)=>n+" "+(n===1?s:p);
 
 /* ================= estado ================= */
-const S={gasoil:[],gascompras:[],recepciones:[],guias:[],portones:[],personal:[],progzon:[],camiones:[],choferes:[],zonas:[],sucursales:[],salidas:[],progsuc:[],zonadia:[],novedades:[],cz:[],clientes:[],cargas:[],config:[]};
+const S={cajachica:[],equipos:[],gasoil:[],gascompras:[],recepciones:[],guias:[],portones:[],personal:[],progzon:[],camiones:[],choferes:[],zonas:[],sucursales:[],salidas:[],progsuc:[],zonadia:[],novedades:[],cz:[],clientes:[],cargas:[],config:[]};
 const loaded={};
 const UI={route:"inicio",fecha:today(),semana:monday(today()),progTab:"pv",cargaId:null,hojaId:null,
   sal:{desde:addD(today(),-15),hasta:addD(today(),7),canal:"",estado:"",q:""},
@@ -976,13 +1003,13 @@ function ordenCard(s){
     .concat([])
     .concat(pv?[]:[{a:"wa",id:s.id,i:"chat",t:"Cargar mensaje de WhatsApp",d:"Observaciones de la sucursal",w:1}]).concat([{a:"nov-sal",id:s.id,i:"alert",t:"Registrar novedad",w:1}])
     .concat(["-"]).concat(anul?[]:[{a:"anular",id:s.id,i:"pause",t:"Anular orden",d:"Queda en el historial como anulada",dng:1,w:1}]).concat([{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar orden y hoja de ruta",d:"Se borra del todo",dng:1,w:1}]));
-  return'<article class="lc '+estCls(s)+(anul?" anul":"")+(UI.flashSal===s.id?" flash":"")+'" id="oc_'+s.id+'"><div class="ic">'+(pv?IC.truck:IC.store)+'</div>'
-    +'<button class="t" data-act="open-hoja" data-id="'+s.id+'"><span class="nro">N° '+nro(s)+'</span>'+esc(destT(s)||"Sin destino")+'</button>'
+  return'<article class="lc '+estCls(s)+chCls(s)+(anul?" anul":"")+(UI.flashSal===s.id?" flash":"")+'" id="oc_'+s.id+'"><div class="ic">'+(pv?IC.truck:IC.store)+'</div>'
+    +'<button class="t" data-act="open-hoja" data-id="'+s.id+'">'+chBadge(s)+'<span class="nro">N° '+nro(s)+'</span>'+esc(destT(s)||"Sin destino")+'</button>'
     +'<div class="a">'+estChip(s)+'<button class="btn sm" data-act="open-orden" data-id="'+s.id+'">'+IC.edit+'Ver orden</button><button class="btn sm" data-act="open-hoja" data-id="'+s.id+'">'+IC.file+'Hoja</button>'+(anul?"":nextBtn(s))+menu+'</div>'
     +'<div class="m">'+camP(s.camionId)+(s.acopladoId?'<span class="tag ac">+ acoplado '+esc((get("camiones",s.acopladoId)||{}).patente||"")+'</span>':"")+'<span><b>'+chofN(s.choferId)+'</b>'+(s.cobradorId?' · cobra '+chofN(s.cobradorId):"")+'</span>'
     +(s.portonId?'<span class="tag">'+esc(portT(s.portonId))+'</span>':"")+'<span>'+esc(rutaT(p))+'</span><span>'+pl(p.stops.length,"parada","paradas")+'</span>'
-    +(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b> previstos</span>':"")+(kmR!=null?'<span>'+fKm(kmR)+' reales</span>':"")
-    +(pv&&!anul&&!cargasDe(s).length?chip("Falta cargar el Excel en la hoja","warn"):"")+(nn?novBtn(s,nn):"")+'</div></article>';
+    +(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b> previstos</span>':"")+(kmR!=null?'<span>'+fKm(kmR)+' reales</span>':"")+odoChip(s)+gasChip(s)+cargaChip(s)+costoChip(s)
+    +(pv&&!anul&&!cargasDe(s).length?chip("Falta cargar el Excel en la hoja","warn"):"")+(nn?novBtn(s,nn):"")+'</div>'+fechasRow(s)+'</article>';
 }
 VIEWS.ordenes=function(){
   const f=UI.fecha,isToday=f===today(),sal=salDia(f),act=sal.filter(actSal),pc=porCargar(f);
@@ -1149,7 +1176,7 @@ function printDoc(title,inner){return'<!doctype html><html lang="es"><head><meta
 VIEWS.orden=function(){
   const s=get("salidas",UI.ordenId);if(!s){UI.route="ordenes";return VIEWS.ordenes()}
   return ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Órdenes de carga","ordenes"],["N° "+nro(s)]),"Orden de carga N° "+nro(s),
-    estChip(s)+'<button class="btn w" data-act="edit-sal" data-id="'+s.id+'">'+IC.edit+'Editar</button><button class="btn" data-act="dl-orden" data-id="'+s.id+'">'+IC.dl+'Imprimir</button><button class="btn pri" data-act="open-hoja" data-id="'+s.id+'">'+IC.file+'Ver hoja de ruta</button>'
+    chBadge(s)+estChip(s)+'<button class="btn w" data-act="edit-sal" data-id="'+s.id+'">'+IC.edit+'Editar</button><button class="btn" data-act="dl-orden" data-id="'+s.id+'">'+IC.dl+'Imprimir</button><button class="btn pri" data-act="open-hoja" data-id="'+s.id+'">'+IC.file+'Ver hoja de ruta</button>'
     +dots([{a:"nov-sal",id:s.id,i:"alert",t:"Registrar novedad",w:1},"-",{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar orden y hoja de ruta",dng:1,w:1}]),"orden")
   +'<div class="pdoc">'+ordenInner(s)+'</div>';
 };
@@ -1163,11 +1190,11 @@ VIEWS.hoja=function(){
   const s=withDraft(s0),p=plan(s),pv=s.canal==="Preventa",urls=gmUrls(p),cs=pv?cargasDe(s):[],ro=canWrite?"":" disabled",dz=dirty(s0);
   const cam=get("camiones",s.camionId)||{},acop=get("camiones",s.acopladoId);
   let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Hojas de ruta","hojas"],["N° "+nro(s)]),"Hoja de ruta N° "+nro(s),
-    estChip(s)+'<button class="btn '+(dz?"save on":"save")+' w" data-act="hoja-grabar" data-id="'+s.id+'"'+(dz?"":" disabled")+'>'+(dz?IC.save+"Grabar":IC.check+"Grabado")+'</button>'
+    chBadge(s)+estChip(s)+'<button class="btn '+(dz?"save on":"save")+' w" data-act="hoja-grabar" data-id="'+s.id+'"'+(dz?"":" disabled")+'>'+(dz?IC.save+"Grabar":IC.check+"Grabado")+'</button>'
     +'<button class="btn" data-act="open-orden" data-id="'+s.id+'">'+IC.edit+'Ver orden de carga</button>'+(S.novedades.some(n=>n.salidaId===s.id)?'<button class="btn" data-act="ver-nov" data-id="'+s.id+'" data-v="'+esc(s.canal)+'">'+IC.alert+'Novedades <b class="cnt">'+S.novedades.filter(n=>n.salidaId===s.id).length+'</b></button>':"")+'<button class="btn" data-act="dl-hoja" data-id="'+s.id+'">'+IC.dl+'Imprimir</button>'
     +dots([{a:"prev-hoja",id:s.id,i:"file",t:"Ver formato de impresión"},{a:"csv-hoja",id:s.id,i:"list",t:"Exportar paradas (CSV)"},{a:"edit-sal",id:s.id,i:"edit",t:"Editar orden de carga"},{a:"nov-sal",id:s.id,i:"alert",t:"Registrar novedad",w:1},"-",{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar hoja de ruta",dng:1,w:1}]),"sheet");
   if(dz)h+='<div class="savebar"><span>'+IC.alert+' Tenés cambios sin grabar en esta hoja de ruta.</span><span class="pa"><button class="btn ghost" data-act="descartar" data-id="'+s.id+'">Descartar</button><button class="btn save on" data-act="hoja-grabar" data-id="'+s.id+'">'+IC.save+'Grabar cambios</button></span></div>';
-  h+=flujoBar(s,dz);
+  h+=flujoBar(s,dz)+'<section class="pn fechas-pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-hoja)"></span>Fechas y horas</h2></div>'+fechasRow(s)+'</section>';
   h+='<section class="pn"><div class="doc-grid">'
     +'<div><small>Camión</small><b>'+camP(s.camionId)+'</b><div class="sub">'+esc(cam.modelo||"")+(acop?' · acoplado '+esc(acop.patente):"")+'</div></div>'
     +'<div><small>Chofer'+(pv?" · cobrador":"")+'</small><b>'+chofN(s.choferId)+'</b>'+(pv?'<div class="sub">'+(s.cobradorId?chofN(s.cobradorId):"Sin cobrador")+'</div>':"")+'</div>'
@@ -1177,12 +1204,13 @@ VIEWS.hoja=function(){
   h+='<div class="kpis"><div class="kpi"><span class="k">Km del recorrido</span><span class="v" style="color:var(--c-rut)">'+(p.total?(p.exact?"":"≈ ")+fKm(p.total):"—")+'</span><span class="s">'+(p.total?(kmR!=null?"Reales: "+fKm(kmR):"calculados solos por ruta"):"cargá "+(pv?"el Excel":"las sucursales")+" y el origen")+'</span></div>'
     +'<div class="kpi"><span class="k">Destino</span><span class="v" style="font-size:19px">'+esc(p.dest?locName(p.dest):p.locs.length?locName(p.locs[p.locs.length-1].loc):"—")+'</span><span class="s">'+(s.canal==="Preventa"?pl(p.locs.length,"localidad","localidades"):pl(p.locs.length,"sucursal","sucursales"))+' · vuelve a '+esc(locName(p.destino))+'</span></div>'
     +'<div class="kpi"><span class="k">'+(pv?"Clientes":"Envíos")+'</span><span class="v">'+p.stops.length+'</span><span class="s">'+(pv?fM(p.stops.reduce((t,r)=>t+(Number(r.total)||0),0))+" facturado":esc(s.remitos||""))+'</span></div>'
-    +'<div class="kpi"><span class="k">Portón de carga</span><span class="v" style="font-size:19px">'+esc(portT(s.portonId))+'</span><span class="s">'+(s.controladorId?"Controló "+esc(persT(s.controladorId)):"Sin controlador")+'</span></div></div>';
+    +'<div class="kpi"><span class="k">Portón de carga</span><span class="v" style="font-size:19px">'+esc(portT(s.portonId))+'</span><span class="s">'+(s.controladorId?"Controló "+esc(persT(s.controladorId)):"Sin controlador")+'</span></div>'+cargaKpi(s)+gasKpi(s)+'</div>';
   if(!pv){const nn=S.novedades.filter(n=>n.salidaId===s.id).sort((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||""));
     h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-nov)"></span>Observaciones de las sucursales</h2><span class="pa">'+(nn.length?'<button class="btn" data-act="ver-nov" data-id="'+s.id+'" data-v="Sucursales">Ver en Novedades ›</button>':"")+'<button class="btn wa w" data-act="wa" data-id="'+s.id+'">'+IC.chat+'Cargar mensaje de WhatsApp</button></span></div>'
       +(nn.length?'<div class="list">'+nn.map(n=>'<div class="li" data-act="edit-nov" data-id="'+n.id+'" style="cursor:pointer"><div><div class="t">'+esc(n.sucursalId?sucT(n.sucursalId):"Sin sucursal")+' · '+esc(n.tipo)+(n.producto?' · '+esc(n.producto)+(n.cantidad?' ('+fN(n.cantidad)+')':""):"")+'</div><div class="d">'+esc(n.descripcion)+(n.origen==="WhatsApp"?'<span class="tag wa">WhatsApp</span>':"")+'</div></div><div class="r">'+chip(n.estado,novEstCls[n.estado]||"mute")+'</div></div>').join("")+'</div>'
         :'<div class="none">Sin observaciones todavía. Cuando los encargados manden su mensaje, pegalo acá.</div>')+'</section>'}
   if(!pv)h+=guiasHojaSec(s);else h+=pvResumen(s,p);
+  h+=costoSec(s);
   if(pv){
     h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-rut)"></span>Zonas de esta hoja</h2><button class="btn pri w" data-act="imp-hoja" data-id="'+s.id+'">'+IC.up+(cs.length?"Agregar Excel":"Cargar Excel de zonas")+'</button></div>';
     if(!cs.length&&!(s.zonaIds||[]).length)h+='<div class="pnb">'+emptyCard("excel","m-rut","Cargá el Excel de la zona","Subí uno o varios archivos de facturas por cliente (como «SANTIAGO ZONA 25»). La zona se detecta por el nombre del archivo y el sistema arma las paradas, las localidades y los km.",'<button class="btn pri" data-act="imp-hoja" data-id="'+s.id+'">'+IC.up+'Cargar Excel de zonas</button>')+'</div>';
@@ -1391,6 +1419,8 @@ VIEWS.base=function(){
   +tile({href:"#sucursales",cls:"sm m-nov",ill:"store",t:"Sucursales",p:"Días habituales de envío",meta:[S.sucursales.length+" sucursales"]})
   +tile({href:"#portones",cls:"sm m-viaje",ill:"door",t:"Portones",p:"Portones de carga del depósito",meta:[pl(S.portones.length,"portón","portones")]})
   +tile({href:"#personal",cls:"sm m-prog",ill:"worker",t:"Personal de depósito",p:"Controladores y equipo de carga",meta:[S.personal.length+" personas"]})
+  +tile({href:"#equipos",cls:"sm m-base",ill:"worker",t:"Equipos de carga",p:"Equipos del depósito y sus tiempos de carga",meta:[pl(S.equipos.length,"equipo","equipos")]})
+  +tile({href:"#cajachica",cls:"sm m-caja",ill:"cash",t:"Caja chica",p:"Caja chica del chofer por zona y costos del viaje",meta:[pl(S.cajachica.length,"zona o ruta","zonas o rutas")]})
   +tile({act:"cfg",cls:"sm m-viaje wide",ill:"depot",t:"Punto de partida",p:"Desde dónde salen los camiones",meta:[depId()?locName(depId()):"Sin configurar"]})
   +tile({act:"imp-hub",cls:"sm m-caja",ill:"excel",t:"Importar Excel",p:"Flota, choferes o clientes por zona"})
   +'</div>';
@@ -1866,18 +1896,21 @@ const GFOTOS=()=>db.collection("gasoil_fotos");
 /** consumo de cada carga: km desde la carga anterior del mismo camión ÷ litros de esta carga */
 function gasConsumo(){
   const by={},res={};S.gasoil.filter(g=>g.camionId&&Number(g.km)>0).forEach(g=>(by[g.camionId]=by[g.camionId]||[]).push(g));
-  Object.values(by).forEach(arr=>{arr.sort((a,b)=>a.km-b.km||String(a.fecha).localeCompare(String(b.fecha)));
-    for(let i=1;i<arr.length;i++){const d=arr[i].km-arr[i-1].km,l=Number(arr[i].litros)||0;if(d>0&&d<6000&&l>0)res[arr[i].id]={km:d,kml:d/l,l100:l*100/d,prev:arr[i-1]}}});
+  /* cargas con el mismo odómetro (dos despachos en la misma parada) se suman como una sola */
+  Object.values(by).forEach(arr=>{arr.sort((a,b)=>a.km-b.km||String(a.fecha).localeCompare(String(b.fecha))||String(a.hora||"").localeCompare(String(b.hora||"")));
+    const grp=[];arr.forEach(g=>{const last=grp[grp.length-1];if(last&&Number(g.km)===last.km)last.items.push(g);else grp.push({km:Number(g.km),items:[g]})});
+    for(let i=1;i<grp.length;i++){const d=grp[i].km-grp[i-1].km,l=grp[i].items.reduce((t,x)=>t+(Number(x.litros)||0),0);
+      if(d>0&&d<6000&&l>0&&d/l>=.8&&d/l<=20)grp[i].items.forEach((x,j)=>{res[x.id]={km:j===0?d:0,kml:d/l,l100:l*100/d,prev:grp[i-1].items[0],grupo:grp[i].items.length}})}});
   return res;
 }
 /** promedio histórico km/L de un camión (todas sus cargas) */
 function camKml(camId,C){let k=0,l=0;S.gasoil.forEach(g=>{const c=C[g.id];if(c&&g.camionId===camId){k+=c.km;l+=Number(g.litros)||0}});return l?k/l:null}
-const gasStock=()=>{const c=S.gascompras.reduce((t,x)=>t+(Number(x.litros)||0),0),u=S.gasoil.filter(g=>g.lugar==="Surtidor propio").reduce((t,g)=>t+(Number(g.litros)||0),0);return{c,u,stock:c-u,hay:S.gascompras.length>0}};
+let gasStock=()=>{const c=S.gascompras.reduce((t,x)=>t+(Number(x.litros)||0),0),u=S.gasoil.filter(g=>g.lugar==="Surtidor propio").reduce((t,g)=>t+(Number(g.litros)||0),0);return{c,u,stock:c-u,hay:S.gascompras.length>0}};
 const kmMaxCam=(camId,exceptId)=>S.gasoil.filter(g=>g.camionId===camId&&g.id!==exceptId&&Number(g.km)>0).reduce((m,g)=>Math.max(m,Number(g.km)),0);
 
 function formGas(g){let foto=null,leido=false;
   const choOpts=()=>perOpts(["Chofer","Chofer y cobrador"]);
-  openForm({title:g?"Carga de gasoil · "+fDL(g.fecha):"Cargar gasoil",color:"c-viaje",values:g||{fecha:today(),lugar:"Surtidor propio",pago:"Cuenta corriente",combustible:"Gasoil"},meta:metaOf(g),ok:g?"Carga actualizada":"Carga de gasoil grabada",saveLabel:g?"Guardar":"Grabar carga",
+  openForm({title:g?"Carga de gasoil · "+fDL(g.fecha):"Cargar gasoil",color:"c-viaje",values:g||{fecha:today(),lugar:"Surtidor propio",pago:"Cuenta corriente",combustible:"Gasoil",precio:gasCfg().precio},meta:metaOf(g),ok:g?"Carga actualizada":"Carga de gasoil grabada",saveLabel:g?"Guardar":"Grabar carga",
     fields:[...(g?[]:[{k:"foto",label:"Foto del ticket (opcional)",type:"file",accept:"image/*",full:true,help:"Si cargó en una estación, sacale foto al ticket: el sistema completa litros, precio e importe."},{k:"lee",type:"html",cls:"recbox"}]),
       {k:"camionId",label:"Camión",type:"select",req:true,blank:"Elegí la unidad",options:()=>camOpts(false),two:true},{k:"fecha",label:"Fecha",type:"date",req:true},
       {k:"choferId",label:"Chofer",type:"select",blank:"—",options:choOpts,two:true},{k:"km",label:"Km del odómetro",type:"number",help:"El del tablero al momento de cargar: con eso se calcula el consumo"},
@@ -1890,7 +1923,7 @@ function formGas(g){let foto=null,leido=false;
       const up=()=>{const l=Number(F.elements.litros.value)||0,p=Number(F.elements.precio.value)||0;if(l&&p&&!F.elements.importe.dataset.man)F.elements.importe.value=Math.round(l*p*100)/100;
         F.querySelector('[data-f="estacion"]').hidden=F.querySelector('input[name="lugar"]:checked').value!=="Estación de servicio"};
       F.elements.importe.addEventListener("input",()=>F.elements.importe.dataset.man=F.elements.importe.value?"1":"");
-      ["litros","precio"].forEach(n=>F.elements[n].addEventListener("input",up));F.querySelectorAll('input[name="lugar"]').forEach(r=>r.addEventListener("change",up));up();
+      ["litros","precio"].forEach(n=>F.elements[n].addEventListener("input",up));F.querySelectorAll('input[name="lugar"]').forEach(r=>r.addEventListener("change",()=>{if(r.checked&&r.value==="Surtidor propio"){F.elements.precio.value=gasCfg().precio;F.elements.importe.dataset.man=""}up()}));up();
       F.elements.camionId.addEventListener("change",()=>{const c=F.elements.camionId.value;if(!F.elements.choferId.value){const s=S.salidas.find(x=>x.camionId===c&&x.fecha===F.elements.fecha.value&&actSal(x));const ch=s?s.choferId:(S.choferes.find(x=>x.camionId===c&&isActive(x))||{}).id;if(ch)F.elements.choferId.value=ch}
         const mx=kmMaxCam(c,g&&g.id);const h=F.querySelector('[data-f="km"] small');if(h)h.textContent=mx?"Última carga de esta unidad: "+fN(mx)+" km":"El del tablero al momento de cargar: con eso se calcula el consumo"});
       if(g)return;
@@ -1907,6 +1940,7 @@ function formGas(g){let foto=null,leido=false;
         catch(e){lee.innerHTML='<span style="color:var(--bad)">No pude leer el ticket. Completá los datos a mano.</span>'}})},
     save:async d=>{
       if(!d.lugar){ferr("Elegí dónde cargó.");return false}
+      if(d.lugar==="Surtidor propio"&&!d.km){ferr("Poné el km del odómetro: en las cargas del tanque propio es obligatorio para calcular el consumo.");return false}
       const mx=kmMaxCam(d.camionId,g&&g.id);if(d.km!=null&&mx&&d.km<mx&&!(g&&g.km===d.km)){ferr("El odómetro ("+fN(d.km)+" km) es menor que la última carga de esta unidad ("+fN(mx)+" km). Revisalo.");return false}
       if(d.importe==null&&d.litros&&d.precio)d.importe=Math.round(d.litros*d.precio*100)/100;
       if(d.precio==null&&d.litros&&d.importe)d.precio=Math.round(d.importe/d.litros*100)/100;
@@ -1935,12 +1969,15 @@ VIEWS.gasoil=function(){
   const F=UI.gas,list=gasFiltered(),C=gasConsumo(),st=gasStock();
   const lit=list.reduce((t,g)=>t+(Number(g.litros)||0),0),imp=list.reduce((t,g)=>t+gasImp(g),0);
   let kmT=0,lT=0;list.forEach(g=>{const c=C[g.id];if(c){kmT+=c.km;lT+=Number(g.litros)||0}});
-  let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Gasoil"]),"Gasoil",'<button class="btn pri w" data-act="gas-new">'+IC.plus+'Cargar gasoil</button>'+dots([{a:"gas-compra",i:"plus",t:"Compra para el tanque",d:"Litros que entran al surtidor propio",w:1},{a:"gas-csv",i:"dl",t:"Exportar a Excel (CSV)"},"-",{a:"gas-delfilt",i:"trash",t:"Eliminar las cargas filtradas",dng:1,w:1}]),"fuel");
+  let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Gasoil"]),"Gasoil",'<button class="btn pri w" data-act="gas-new">'+IC.plus+'Cargar gasoil</button><button class="btn w" data-act="gas-imp">'+IC.up+'Importar Excel</button><button class="btn w" data-act="gas-cfg">'+IC.gear+'Precio y tanque</button>'+dots([{a:"gas-compra",i:"plus",t:"Compra para el tanque",d:"Litros que entran al surtidor propio",w:1},{a:"gas-tpl",i:"dl",t:"Bajar plantilla de Excel"},{a:"gas-csv",i:"dl",t:"Exportar a Excel (CSV)"},"-",{a:"gas-delfilt",i:"trash",t:"Eliminar las cargas filtradas",dng:1,w:1}]),"fuel");
   h+='<div class="kpis"><div class="kpi"><span class="k">Litros cargados</span><span class="v" style="color:var(--c-viaje)">'+fL(lit)+'</span><span class="s">'+pl(list.length,"carga","cargas")+' en el período</span></div>'
     +'<div class="kpi"><span class="k">Gasto</span><span class="v">'+fM(imp)+'</span><span class="s">'+(lit?fM(imp/lit)+" por litro promedio":"—")+'</span></div>'
     +'<div class="kpi"><span class="k">Consumo de la flota</span><span class="v" style="color:var(--c-rut)">'+(lT?fKml(kmT/lT)+' <small style="font-size:14px">km/L</small>':"—")+'</span><span class="s">'+(lT?fKml(lT*100/kmT)+" L cada 100 km · "+fN(Math.round(kmT))+" km":"cargá el odómetro en cada carga")+'</span></div>'
-    +'<div class="kpi"><span class="k">Tanque propio</span><span class="v" style="color:'+(st.hay&&st.stock<0?"var(--bad)":"var(--c-caja)")+'">'+(st.hay?fL(st.stock):"—")+'</span><span class="s">'+(st.hay?"stock calculado · "+fL(st.c)+" comprados":"cargá las compras para ver el stock")+'</span></div></div>';
+    +(()=>{const cf=gasCfg(),pc=st.cap?Math.max(0,Math.min(100,st.stock*100/st.cap)):null,low=pc!=null&&pc<(Number(cf.alerta)||20);
+      return'<div class="kpi"><span class="k">Tanque propio · '+fL(st.cap)+'</span><span class="v" style="color:'+(st.hay&&(st.stock<0||low)?"var(--bad)":"var(--c-caja)")+'">'+(st.hay?fL(st.stock):"—")+'</span>'+(st.hay&&pc!=null?'<span class="tank"><i style="width:'+pc.toFixed(1)+'%;background:'+(low?"var(--k-crit)":"var(--k-good)")+'"></i></span>':"")+'<span class="s">'+(st.hay?Math.round(pc||0)+"% lleno"+(low?" · ⚠ cargar el tanque":"")+" · litro a "+fM(cf.precio):"cargá una medición o las compras · litro a "+fM(cf.precio))+'</span></div>'})()+'</div>';
   if(!S.gasoil.length&&!S.gascompras.length)return h+emptyCard("fuel","m-viaje","Todavía no hay cargas de gasoil","Registrá cada carga: camión, litros, importe y km del odómetro. El sistema calcula el consumo de cada unidad y avisa cuando se sale de lo normal.",'<button class="btn pri" data-act="gas-new">'+IC.plus+'Cargar gasoil</button>');
+  {const esp=gasEsperando(),fuera=S.gasoil.filter(g=>!g.camionId&&(g.patente||g.unidad));
+    if(esp.length||fuera.length)h+='<div class="banner">'+IC.alert+' '+(esp.length?'<b>'+pl(esp.length,"carga espera","cargas esperan")+' su orden de carga</b> ('+esc([...new Set(esp.map(g=>(get("camiones",g.camionId)||{}).patente))].slice(0,8).join(", "))+'): se relacionan solas en cuanto emitas la orden de esa patente. ':"")+(fuera.length?'<b>'+pl(fuera.length,"carga","cargas")+'</b> de patentes que no están en la flota ('+esc([...new Set(fuera.map(g=>g.patente||g.unidad))].slice(0,6).join(", "))+'): se relacionan cuando las agregues en Base de datos › Flota.':"")+'</div>'}
   /* por camión */
   const byC={};list.forEach(g=>{(byC[g.camionId]=byC[g.camionId]||[]).push(g)});
   if(Object.keys(byC).length){
@@ -1950,8 +1987,8 @@ VIEWS.gasoil=function(){
         const kmO=S.salidas.filter(s=>s.camionId===cid&&actSal(s)&&(!F.desde||s.fecha>=F.desde)&&(!F.hasta||s.fecha<=F.hasta)).reduce((t,s)=>t+(s.kmRegreso&&s.kmSalida?s.kmRegreso-s.kmSalida:Number(s.kmPrevisto)||0),0);
         return'<tr class="ck" data-act="gas-cam" data-v="'+(F.cam===cid?"":cid)+'"><td>'+camP(cid)+'</td><td class="num mono">'+arr.length+'</td><td class="num mono"><b>'+fL(arr.reduce((t,g)=>t+(+g.litros||0),0))+'</b></td><td class="num mono">'+fM(arr.reduce((t,g)=>t+gasImp(g),0))+'</td><td class="num mono">'+(k?fN(Math.round(k)):"—")+'</td><td class="num mono"><b>'+fKml(per)+'</b></td><td class="num mono">'+(l?fKml(l*100/k):"—")+'</td><td class="num mono">'+(kmO?fN(Math.round(kmO)):"—")+'</td><td>'+fDL(last.fecha)+(last.km?'<div class="sub">'+fN(last.km)+' km</div>':"")+'</td><td>'+(bad?chip("Rinde "+Math.round((1-per/avg)*100)+"% menos","bad"):per?chip("Normal","ok"):"")+'</td></tr>'}).join("")+'</tbody></table></div></section>'}
   h+='<div class="flt"><input class="q" id="ga_q" type="search" data-ui="gas.q" value="'+esc(F.q)+'" placeholder="Buscar patente, chofer, estación…" aria-label="Buscar"><select id="ga_cam" data-ui="gas.cam" aria-label="Camión">'+opts([["","Todos los camiones"]].concat(S.camiones.filter(c=>!isAcop(c)).sort((a,b)=>String(a.patente).localeCompare(String(b.patente))).map(c=>[c.id,c.patente])),F.cam)+'</select><label>Desde <input type="date" id="ga_d" data-ui="gas.desde" value="'+F.desde+'"></label><label>Hasta <input type="date" id="ga_h" data-ui="gas.hasta" value="'+F.hasta+'"></label></div>';
-  h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-viaje)"></span>'+pl(list.length,"carga","cargas")+'</h2></div>'+(list.length?'<div class="tw"><table class="wide"><thead><tr><th>Fecha</th><th>Camión</th><th>Chofer</th><th class="num">Litros</th><th class="num">$/L</th><th class="num">Importe</th><th class="num">Odómetro</th><th class="num">km/L</th><th>Dónde</th><th></th></tr></thead><tbody>'
-    +list.map(g=>{const c=C[g.id],avg=camKml(g.camionId,C),bad=c&&avg&&c.kml<avg*.85;return'<tr class="ck" data-act="gas-ver" data-id="'+g.id+'"><td class="mono">'+fDL(g.fecha)+'</td><td>'+camP(g.camionId)+'</td><td>'+chofN(g.choferId)+'</td><td class="num mono"><b>'+fL(g.litros)+'</b></td><td class="num mono">'+(g.precio?fM(g.precio):"—")+'</td><td class="num mono">'+fM(gasImp(g))+'</td><td class="num mono">'+(g.km?fN(g.km):"—")+'</td><td class="num mono">'+(c?'<span class="st '+(bad?"bad":"ok")+'">'+fKml(c.kml)+'</span>':"—")+'</td><td>'+esc(g.lugar==="Surtidor propio"?"Surtidor propio":g.estacion||"Estación")+(g.foto?' <span class="tag">📷</span>':"")+'</td><td class="r">'+(canWrite?'<button class="btn sm ghost" data-act="gas-edit" data-id="'+g.id+'" aria-label="Editar">'+IC.edit+'</button><button class="btn sm ghost dng" data-act="gas-del" data-id="'+g.id+'" aria-label="Eliminar">'+IC.trash+'</button>':"")+'</td></tr>'}).join("")+'</tbody></table></div>':'<div class="none">No hay cargas en este período.</div>')+'</section>';
+  h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-viaje)"></span>'+pl(list.length,"carga","cargas")+'</h2></div>'+(list.length?'<div class="tw"><table class="wide"><thead><tr><th>Fecha</th><th>Camión</th><th>Chofer</th><th class="num">Litros</th><th class="num">$/L</th><th class="num">Importe</th><th class="num">Odómetro</th><th class="num">km/L</th><th>Viaje</th><th>Dónde</th><th></th></tr></thead><tbody>'
+    +list.map(g=>{const c=C[g.id],avg=camKml(g.camionId,C),bad=c&&avg&&c.kml<avg*.85;return'<tr class="ck" data-act="gas-ver" data-id="'+g.id+'"><td class="mono">'+fDL(g.fecha)+'</td><td>'+(g.camionId?camP(g.camionId):'<span class="pat">'+esc(g.patente||g.unidad||"?")+'</span><div class="sub">fuera de la flota</div>')+'</td><td>'+chofN(g.choferId)+'</td><td class="num mono"><b>'+fL(g.litros)+'</b></td><td class="num mono">'+(g.precio?fM(g.precio):"—")+'</td><td class="num mono">'+fM(gasImp(g))+'</td><td class="num mono">'+(g.km?fN(g.km):"—")+'</td><td class="num mono">'+(c?'<span class="st '+(bad?"bad":"ok")+'">'+fKml(c.kml)+'</span>':"—")+'</td><td>'+(()=>{const sv=gasSal(g);return(sv?'<button class="st info novlink" data-act="open-hoja" data-id="'+sv.id+'">N° '+nro(sv)+' ›</button>':'<span class="mu">sin viaje</span>')+(canWrite?' <button class="btn sm ghost" data-act="gas-sal" data-id="'+g.id+'" title="Cambiar el viaje" aria-label="Cambiar el viaje">'+IC.edit+'</button>':"")})()+'</td><td>'+esc(g.lugar==="Surtidor propio"?"Surtidor propio":g.estacion||"Estación")+(g.foto?' <span class="tag">📷</span>':"")+'</td><td class="r">'+(canWrite?'<button class="btn sm ghost" data-act="gas-edit" data-id="'+g.id+'" aria-label="Editar">'+IC.edit+'</button><button class="btn sm ghost dng" data-act="gas-del" data-id="'+g.id+'" aria-label="Eliminar">'+IC.trash+'</button>':"")+'</td></tr>'}).join("")+'</tbody></table></div>':'<div class="none">No hay cargas en este período.</div>')+'</section>';
   if(S.gascompras.length){const cl=S.gascompras.slice().sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).slice(0,30);
     h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-caja)"></span>Compras para el tanque</h2><span class="s">Stock calculado: '+fL(st.stock)+' (comprado '+fL(st.c)+' − cargado del surtidor '+fL(st.u)+')</span></div><div class="tw"><table class="wide"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Remito</th><th class="num">Litros</th><th class="num">$/L</th><th class="num">Importe</th></tr></thead><tbody>'
       +cl.map(c=>'<tr class="ck" data-act="gas-cedit" data-id="'+c.id+'"><td class="mono">'+fDL(c.fecha)+'</td><td>'+esc(c.proveedor||"—")+'</td><td class="mono">'+esc(c.remito||"—")+'</td><td class="num mono"><b>'+fL(c.litros)+'</b></td><td class="num mono">'+(c.precio?fM(c.precio):"—")+'</td><td class="num mono">'+fM(c.importe)+'</td></tr>').join("")+'</tbody></table></div></section>'}
@@ -1967,6 +2004,181 @@ Object.assign(GACT,{
   "gas-del":(el,id)=>{const g=get("gasoil",id);if(!g||!canWrite)return;confirmBox("Eliminar carga de gasoil","Se borra la carga de "+fL(g.litros)+" de "+esc((get("camiones",g.camionId)||{}).patente||"")+" del "+fDL(g.fecha)+".","Eliminar",async()=>{if(g.foto)try{await GFOTOS().doc(g.id).delete()}catch(e){}await del("gasoil",g.id)},"Carga eliminada")},
   "gas-delfilt":()=>{const L=gasFiltered();if(!L.length||!canWrite){toast("No hay cargas para eliminar");return}confirmBox("Eliminar "+pl(L.length,"carga","cargas"),"Se borran "+pl(L.length,"carga","cargas")+" de gasoil del filtro actual. No se puede deshacer.","Eliminar",async()=>{for(const g of L){if(g.foto)try{await GFOTOS().doc(g.id).delete()}catch(e){}await del("gasoil",g.id)}},"Cargas eliminadas")},
   "gas-csv":()=>{const C=gasConsumo();exportCSV("gasoil",[["Fecha",g=>g.fecha],["Camión",g=>(get("camiones",g.camionId)||{}).patente],["Chofer",g=>chofT(g.choferId)],["Litros",g=>g.litros],["Precio por litro",g=>g.precio],["Importe",g=>gasImp(g)],["Km odómetro",g=>g.km],["Km desde la anterior",g=>C[g.id]?C[g.id].km:""],["km/L",g=>C[g.id]?C[g.id].kml.toFixed(2):""],["Dónde",g=>g.lugar],["Estación",g=>g.estacion],["Pago",g=>g.pago],["Ticket",g=>g.ticket],["Observaciones",g=>g.obs]],gasFiltered())}
+});
+
+/* ================= gasoil: precio fijo, tanque de 20.000 L, importación masiva y relación con los viajes ================= */
+const gasCfg=()=>Object.assign({precio:2560,capacidad:20000,alerta:20,stockIni:null,stockIniFecha:""},S.config.find(x=>x.id==="gasoil")||{});
+/* stock del tanque: medición inicial (si hay) + compras − lo cargado del surtidor propio desde esa fecha */
+gasStock=function(){const c=gasCfg(),f0=c.stockIniFecha||"",ini=c.stockIni!=null&&c.stockIni!==""?Number(c.stockIni):null,desde=x=>!f0||String(x.fecha)>=f0;
+  const comp=S.gascompras.filter(desde).reduce((t,x)=>t+(Number(x.litros)||0),0),uso=S.gasoil.filter(g=>g.lugar==="Surtidor propio"&&desde(g)).reduce((t,g)=>t+(Number(g.litros)||0),0);
+  return{c:comp,u:uso,stock:(ini||0)+comp-uso,hay:ini!=null||S.gascompras.length>0,ini,cap:Number(c.capacidad)||0}};
+
+/* ---- relación carga ↔ orden de carga / viaje (automática por camión y fecha; se puede fijar a mano) ---- */
+let _gmK=null,_gmV=null;
+/** viaje de una carga: la orden/viaje de ESE camión que está activa (orden emitida, lista para salir o en viaje), del día o de los 2 días siguientes a la carga; si no hay, el viaje cerrado de ese mismo día */
+const ABIERTA=s=>["Programada","Cargada","En ruta"].includes(s.estado);
+function gasSalAuto(g){if(!g.camionId)return null;
+  const c=S.salidas.filter(s=>actSal(s)&&s.camionId===g.camionId).map(s=>({s,d:Math.round((P(s.fecha)-P(g.fecha))/864e5)})).filter(x=>x.d>=-1&&x.d<=2);
+  if(!c.length)return null;const rk=x=>(ABIERTA(x.s)?0:100)+(x.d===0?0:x.d>0?x.d*10:15);
+  return c.sort((a,b)=>rk(a)-rk(b)||(a.s.nro||0)-(b.s.nro||0))[0].s}
+function gasMap(){if(_gmK&&_gmK[0]===S.gasoil&&_gmK[1]===S.salidas)return _gmV;const m={bySal:{},ofG:{}};
+  S.gasoil.forEach(g=>{const s=g.salidaId!==undefined&&g.salidaId!==null?(g.salidaId?get("salidas",g.salidaId):null):gasSalAuto(g);if(s){m.ofG[g.id]=s;(m.bySal[s.id]=m.bySal[s.id]||[]).push(g)}});
+  _gmK=[S.gasoil,S.salidas];_gmV=m;return m}
+const gasSal=g=>gasMap().ofG[g.id]||null;
+function viajeGas(s){const G=gasMap().bySal[s.id]||[];if(!G.length)return null;const kms=G.map(g=>Number(g.km)).filter(x=>x>0);
+  return{n:G.length,l:G.reduce((t,g)=>t+(Number(g.litros)||0),0),imp:G.reduce((t,g)=>t+gasImp(g),0),km0:kms.length?Math.min(...kms):null}}
+const gasChip=s=>{const v=viajeGas(s),l=s.litrosViaje!=null?s.litrosViaje:v&&v.l;if(!l)return"";
+  return'<span class="tag gas" title="Gasoil del viaje">⛽ '+fL(l)+(s.rendKml?' · <b>'+fKml(s.rendKml)+' km/L</b>':v?' · '+fM(v.imp):"")+'</span>'};
+
+/* ---- configuración fija: precio del litro y tanque ---- */
+function formGasCfg(){const c=gasCfg();
+  openForm({title:"Gasoil · precio y tanque",color:"c-viaje",values:c,ok:"Configuración del gasoil guardada",saveLabel:"Guardar",
+    fields:[{k:"precio",label:"Precio del litro ($)",type:"number",req:true,help:"Se aplica solo a cada carga del surtidor propio. Si cambia el precio, las cargas anteriores conservan el suyo."},{k:"capacidad",label:"Capacidad del tanque (litros)",type:"number",req:true},
+      {k:"alerta",label:"Avisar cuando el tanque baje de (%)",type:"number"},{k:"s1",type:"sec",label:"Medición del tanque (opcional)"},{k:"stockIni",label:"Litros medidos en el tanque",type:"number",help:"Para arrancar el stock desde una medición real"},{k:"stockIniFecha",label:"Fecha de la medición",type:"date"}],
+    save:async d=>{delete d.s1;await C("config").doc("gasoil").set(Object.assign({},d,{updatedAt:new Date().toISOString(),updatedBy:uid}))}});
+}
+
+/* ---- importación masiva desde Excel ---- */
+const gasId=(f,cam,km,l)=>"gx-"+slug(f+"-"+cam+"-"+(km||0)+"-"+l).toLowerCase();
+function camByTxt(t){const n=normPat(t);if(!n)return null;return S.camiones.find(c=>normPat(c.patente)===n)||S.camiones.find(c=>c.interno&&String(c.interno).replace(/\D/g,"")===n.replace(/\D/g,"")&&/^\d+$/.test(n))||null}
+function choByTxt(t){const n=normH(t);if(!n)return null;return S.choferes.find(c=>normH(c.nombre)===n)||S.choferes.find(c=>{const a=normH(c.nombre).split(" ").filter(x=>x.length>2);return a.length&&a.every(x=>n.includes(x))})||null}
+async function parseGasXls(file){const wb=await readBook(file),out=[];
+  const fISO=v=>{if(typeof v==="string"&&/^\d{4}-\d{2}-\d{2}/.test(v))return v.slice(0,10);return toISO(v)};
+  const num=v=>typeof v==="number"?v:arNum(v);
+  for(const sn of wb.SheetNames){const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:""});
+    /* el «Reporte de Consumos» del surtidor trae encabezado de usuario y filtros: busco la fila de títulos en las primeras 40 */
+    const hi=rows.slice(0,40).findIndex(r=>{const h=r.map(normH);return h.some(x=>/litro|lts|^cantidad$/.test(x))&&h.some(x=>/patente|dominio|unidad|camion|odometro/.test(x))});if(hi<0)continue;
+    const H=rows[hi].map(normH),ix=(...res)=>{for(const re of res){const i=H.findIndex(h=>re.test(h));if(i>=0)return i}return-1};
+    const I={tx:ix(/transacci/),f:ix(/^fecha de inicio$/,/^fecha$/,/fecha/),h:ix(/^hora inicio$/,/^hora$/),pat:ix(/^patente$/,/dominio/),cam:ix(/^unidades?$/,/camion|vehiculo|movil/),int:ix(/^main id$/,/interno/),cho:ix(/chofer|conductor|operador/),km:ix(/^odometro$/,/kilometraje/,/^km$/),kmt:ix(/^km trans/),l:ix(/litro|lts/,/^cantidad$/),p:ix(/precio/),imp:ix(/importe|monto/),dep:ix(/^departamentos?$/),el:ix(/^eliminado$/),obs:ix(/obs|nota|detalle/),lug:ix(/lugar|estacion/)};
+    rows.slice(hi+1).forEach((r,i)=>{const v=k=>I[k]>=0?r[I[k]]:"";const l=num(v("l"));if(!l||l<=0)return;if(String(v("el")).trim()==="1")return;
+      const cho=String(v("cho")||"").trim();
+      out.push({fila:hi+i+2,tx:String(v("tx")||"").trim(),fecha:fISO(v("f"))||today(),hora:String(v("h")||"").slice(0,5),patTxt:String(v("pat")||"").trim(),camTxt:String(v("cam")||"").trim(),intTxt:String(v("int")||"").trim(),choTxt:/^n\/?a/i.test(cho)?"":cho,
+        km:num(v("km"))||null,kmTrans:num(v("kmt"))||null,litros:Math.round(l*1000)/1000,precio:num(v("p")),importe:num(v("imp")),dep:String(v("dep")||"").trim(),obs:String(v("obs")||"").trim(),
+        lugar:/estaci|ypf|shell|axion|puma/i.test(String(v("lug")))?"Estación de servicio":"Surtidor propio",estacion:/estaci|ypf|shell|axion|puma/i.test(String(v("lug")))?String(v("lug")).trim():""})})}
+  if(!out.length)throw new Error("columnas");return out}
+function formGasImp(){let rows=[];const cfg=gasCfg();
+  const camOpt=(v,r)=>'<option value="">¿Qué camión?</option>'+((r.patTxt||r.camTxt)?'<option value="__new"'+(v==="__new"?" selected":"")+'>＋ Agregar '+esc(r.patTxt||r.camTxt)+' a la flota</option>':"")+'<option value="__skip"'+(v==="__skip"?" selected":"")+'>Omitir · no es de la flota</option>'+S.camiones.filter(c=>!isAcop(c)).sort((a,b)=>String(a.patente).localeCompare(String(b.patente))).map(c=>'<option value="'+c.id+'"'+(c.id===v?" selected":"")+'>'+esc(c.patente)+(c.modelo?" · "+esc(c.modelo):"")+'</option>').join("");
+  const precioDe=r=>r.precio||(r.lugar==="Surtidor propio"?cfg.precio:null),impDe=r=>r.importe!=null?r.importe:(precioDe(r)?Math.round(r.litros*precioDe(r)*100)/100:null);
+  const check=()=>{const last={};S.gasoil.forEach(g=>{if(g.camionId&&g.km>0)last[g.camionId]=Math.max(last[g.camionId]||0,g.km)});
+    rows.slice().sort((a,b)=>a.fecha.localeCompare(b.fecha)||String(a.hora).localeCompare(String(b.hora))||(a.km||0)-(b.km||0)).forEach(r=>{r.st="ok";r.msg="";r.sal="";
+      if(r.camionId==="__skip"){r.st="skip";r.msg=r.dep&&r.dep.toUpperCase()!=="PORTAL"?"Departamento "+r.dep:"No es de la flota";return}
+      if(!r.camionId){r.st="pend";r.msg="Patente que no está en la flota: se importa igual y se relaciona sola cuando la agregues";r.id=r.tx?"gt-"+slug(r.tx).toLowerCase():gasId(r.fecha,r.patTxt||r.camTxt,r.km,r.litros);if(get("gasoil",r.id)){r.st="dup";r.msg="Ya estaba cargada"}return}
+      const pat=r.camionId==="__new"?(r.patTxt||r.camTxt):(get("camiones",r.camionId)||{}).patente;r.id=r.tx?"gt-"+slug(r.tx).toLowerCase():gasId(r.fecha,pat,r.km,r.litros);
+      if(get("gasoil",r.id)){r.st="dup";r.msg="Ya estaba cargada";return}
+      if(r.camionId==="__new"){r.msg="Se agrega a la flota";return}
+      if(r.lugar==="Surtidor propio"&&!r.km){r.st="warn";r.msg="Sin odómetro: no se calcula el consumo"}
+      else if(r.km&&last[r.camionId]&&r.km<last[r.camionId]){r.st="warn";r.msg="Odómetro menor que la carga anterior ("+fN(last[r.camionId])+" km)"}
+      if(r.km)last[r.camionId]=Math.max(last[r.camionId]||0,r.km);
+      const s=gasSalAuto({camionId:r.camionId,fecha:r.fecha});r.sal=s?s.id:""})};
+  const draw=()=>{const box=$("f_sum");if(!rows.length){box.innerHTML='<span class="mu">Subí el <b>Reporte de Consumos</b> tal cual sale del surtidor (o una planilla con Fecha · Patente · Odómetro · Litros). Se toman: transacción, fecha y hora, patente, <b>cantidad (litros)</b>, <b>odómetro</b> y km recorridos. El precio del litro es el fijo: <b>'+fM(cfg.precio)+'</b>. <a href="#" data-act="gas-tpl">Bajar plantilla simple</a></span>';return}
+    check();const ok=rows.filter(r=>r.st==="ok"||r.st==="warn"||r.st==="pend"),L=ok.reduce((t,r)=>t+r.litros,0),M=ok.reduce((t,r)=>t+(impDe(r)||0),0),cnt=k=>rows.filter(r=>r.st===k).length;
+    box.innerHTML='<div class="sumrow"><span><b>'+rows.length+'</b> cargas en el archivo</span><span><b>'+ok.length+'</b> para importar · <b>'+fL(L)+'</b> · <b>'+fM(M)+'</b></span>'+(cnt("dup")?'<span>'+cnt("dup")+' ya estaban</span>':"")+(cnt("skip")?'<span>'+cnt("skip")+' omitidas</span>':"")+(cnt("pend")?'<span><b>'+cnt("pend")+'</b> con patente fuera de la flota</span>':"")+'<span>'+ok.filter(r=>r.camionId&&!r.sal).length+' esperando su orden de carga</span></div>'
+      +'<div class="banner" style="margin:0 0 8px">'+IC.check+' Se importa todo de una. Cada carga se relaciona <b>sola</b> con la orden de carga o el viaje de su patente: si la orden todavía no está emitida, queda esperando y se asigna en cuanto la emitas.</div>'
+      +(cnt("pend")?'<div class="pa" style="margin:0 0 8px"><span class="mu">Patentes que no están en la flota (opcional):</span><button type="button" class="btn sm" data-gall="__new">＋ Agregarlas a la flota</button><button type="button" class="btn sm ghost" data-gall="__skip">No importarlas</button></div>':"")
+      +'<div class="tw"><table class="wide" style="min-width:820px"><thead><tr><th>Trans.</th><th>Fecha</th><th>Camión</th><th class="num">Odómetro</th><th class="num">Km recorr.</th><th class="num">Litros</th><th class="num">Importe</th><th>Viaje</th><th>Estado</th></tr></thead><tbody>'
+      +rows.map((r,i)=>{const s=r.sal&&get("salidas",r.sal),known=r.camionId&&!r.camionId.startsWith("__")&&!r.pick;return'<tr class="'+(r.st==="skip"||r.st==="dup"?"mu":"")+'"><td class="mono">'+esc(r.tx||"—")+'</td><td>'+fDL(r.fecha)+(r.hora?'<div class="sub">'+esc(r.hora)+'</div>':"")+'</td><td>'+(known?plate((get("camiones",r.camionId)||{}).patente):'<select data-gr="'+i+'" aria-label="Camión">'+camOpt(r.camionId,r)+'</select>')+'<div class="sub">'+esc([r.patTxt&&!known?"dice «"+r.patTxt+"»":"",r.camTxt,r.dep&&r.dep.toUpperCase()!=="PORTAL"?"dpto. "+r.dep:""].filter(Boolean).join(" · "))+'</div></td><td class="num mono">'+(r.km?fN(r.km):"—")+'</td><td class="num mono">'+(r.kmTrans?fN(r.kmTrans):"—")+'</td><td class="num mono"><b>'+fL(r.litros)+'</b></td><td class="num mono">'+(impDe(r)!=null?fM(impDe(r)):"—")+'</td><td>'+(s?'N° '+nro(s):r.camionId&&!r.camionId.startsWith("__")?'<span class="mu">espera la orden</span>':'<span class="mu">—</span>')+'</td><td>'+chip(r.st==="ok"?"OK":r.st==="dup"?"Repetida":r.st==="pend"?"Fuera de flota":r.st==="skip"?"Omitida":"Revisar",r.st==="ok"?"ok":r.st==="dup"||r.st==="skip"?"mute":r.st==="pend"?"info":"warn")+(r.msg?'<div class="sub">'+esc(r.msg)+'</div>':"")+'</td></tr>'}).join("")+'</tbody></table></div>'};
+  openForm({title:"Importar cargas de gasoil (Excel)",color:"c-viaje",ok:"Cargas importadas",saveLabel:"Importar cargas",
+    fields:[{k:"archivo",label:"Reporte de Consumos del surtidor",type:"file",accept:".xls,.xlsx,.csv",full:true},{k:"sum",type:"html",html:""}],
+    after:F=>{draw();
+      $("f_sum").addEventListener("change",e=>{const i=e.target.dataset.gr;if(i==null)return;rows[i].camionId=e.target.value;rows[i].pick=true;draw()});
+      $("f_sum").addEventListener("click",e=>{const b=e.target.closest("[data-gall]");if(!b)return;rows.forEach(r=>{if(r.st==="err"){r.camionId=b.dataset.gall;r.pick=true}});draw()});
+      F.elements.archivo.addEventListener("change",async()=>{const f=F.elements.archivo.files[0];if(!f)return;$("f_sum").innerHTML='<span class="mu">Leyendo…</span>';
+        try{rows=(await parseGasXls(f)).map(r=>{const c=camByTxt(r.patTxt)||camByTxt(r.camTxt)||camByTxt(r.intTxt),ch=choByTxt(r.choTxt);
+            return Object.assign(r,{camionId:c?c.id:(r.dep&&r.dep.toUpperCase()!=="PORTAL"?"__skip":""),choferId:ch?ch.id:""})});draw()}
+        catch(e){$("f_sum").innerHTML='<span style="color:var(--bad)">No encuentro la columna de litros (Cantidad / Litros). Revisá que sea el Reporte de Consumos o una planilla con Fecha, Patente, Odómetro y Litros.</span>'}})},
+    save:async()=>{if(!rows.length){ferr("Elegí el reporte.");return false}check();
+      const ok=rows.filter(r=>r.st==="ok"||r.st==="warn"||r.st==="pend"),now=new Date().toISOString(),nuevos={};
+      for(const r of ok.filter(r=>r.camionId==="__new")){const ident=(r.patTxt||r.camTxt).toUpperCase(),k=normPat(ident);if(!nuevos[k]){const c=camByTxt(ident);nuevos[k]=c?c.id:await write("camiones",null,{patente:ident,modelo:r.camTxt,tipo:/autoelev/i.test(r.camTxt)?"Otro":/hilux|camioneta|pick/i.test(r.camTxt)?"Utilitario":"Otro",estado:"Disponible",obs:"Agregado desde el Reporte de Consumos"+(r.patTxt?"":" (sin patente)")})}r.camionId=nuevos[k]}
+      for(const r of ok){const pr=precioDe(r);
+        await C("gasoil").doc(r.id).set({fecha:r.fecha,hora:r.hora||"",camionId:r.camionId||"",patente:(r.patTxt||r.camTxt||"").toUpperCase(),unidad:r.camTxt||"",choferId:r.choferId||"",km:r.km||null,kmTrans:r.kmTrans||null,litros:r.litros,precio:pr,importe:pr?Math.round(r.litros*pr*100)/100:(r.importe??null),lugar:r.lugar,estacion:r.estacion,obs:r.obs,transaccion:r.tx||"",origen:"Reporte de Consumos",createdAt:now,createdBy:uid,updatedAt:now})}
+      const esp=ok.filter(r=>r.camionId&&!gasSalAuto({camionId:r.camionId,fecha:r.fecha})).length;
+      MF.ok=pl(ok.length,"carga importada","cargas importadas")+" · "+fL(ok.reduce((t,r)=>t+r.litros,0))+(esp?" · "+esp+" esperan su orden de carga":"")+(Object.keys(nuevos).length?" · "+pl(Object.keys(nuevos).length,"vehículo agregado","vehículos agregados")+" a la flota":"")}});
+}
+async function gasTpl(){if(!downloads){toast("La descarga no está disponible en esta vista");return}await loadXLSX();
+  const ws=XLSX.utils.aoa_to_sheet([["Fecha","Patente","Chofer","Odómetro","Litros","Observaciones"],[today().split("-").reverse().join("/"),(S.camiones.find(c=>!isAcop(c))||{}).patente||"AB 123 CD","",125000,180,""]]);ws["!cols"]=[{wch:12},{wch:12},{wch:24},{wch:12},{wch:10},{wch:30}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Cargas");try{await downloads.save({filename:"plantilla-cargas-gasoil.xlsx",data:new Blob([XLSX.write(wb,{bookType:"xlsx",type:"array"})])})}catch(e){}}
+function formGasSal(g){const cand=S.salidas.filter(s=>actSal(s)&&(s.camionId===g.camionId||s.acopladoId===g.camionId)&&Math.abs(Math.round((P(s.fecha)-P(g.fecha))/864e5))<=5).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  openForm({title:"¿A qué viaje corresponde?",color:"c-viaje",values:{sal:g.salidaId===undefined||g.salidaId===null?"auto":g.salidaId||"none"},ok:"Carga asignada",
+    fields:[{k:"sal",label:"Viaje",type:"select",blank:false,full:true,options:[["auto","Automático (por camión y fecha)"],["none","No corresponde a ningún viaje"]].concat(cand.map(s=>[s.id,"N° "+nro(s)+" · "+fDL(s.fecha)+" · "+destT(s).slice(0,50)]))}],
+    save:async d=>{await C("gasoil").doc(g.id).update({salidaId:d.sal==="auto"?null:d.sal==="none"?"":d.sal})}})}
+Object.assign(GACT,{
+  "gas-cfg":()=>{if(canWrite)formGasCfg()},
+  "gas-imp":()=>{if(canWrite)formGasImp();else toast("Acceso de solo lectura")},
+  "gas-tpl":()=>gasTpl(),
+  "gas-sal":(el,id)=>{const g=get("gasoil",id);if(g&&canWrite)formGasSal(g)}
+});
+/** recuadro de gasoil en la hoja de ruta: litros, $ y consumo del viaje */
+function gasKpi(s){const v=viajeGas(s),l=s.litrosViaje!=null?s.litrosViaje:v&&v.l,kmR=s.kmViaje||(s.kmRegreso&&s.kmSalida?s.kmRegreso-s.kmSalida:null),r=s.rendKml||(kmR&&l?kmR/l:null);
+  return'<div class="kpi"><span class="k">Gasoil del viaje</span><span class="v" style="font-size:19px;color:var(--c-viaje)">'+(r?fKml(r)+' <small style="font-size:13px">km/L</small>':l?fL(l):"—")+'</span><span class="s">'+(l?fL(l)+" · "+fM(v?v.imp:l*gasCfg().precio)+(kmR?" · "+fN(kmR)+" km · "+fKml(l*100/kmR)+" L/100 km":" · el rendimiento sale al marcar el regreso")+(v&&v.km0&&!kmR?" · odómetro "+fN(v.km0):""):(gasEstim(s)?"sin cargas: estimado "+fL(gasEstim(s).litros)+" ≈ "+fM(gasEstim(s).importe)+" ("+gasEstTxt(gasEstim(s))+")":"sin cargas asignadas"))+'</span></div>'}/** cargas importadas con una patente que todavía no estaba en la flota: se relacionan solas cuando aparece el camión */
+function resolveGasCam(){_gmK=null;S.gasoil.forEach(g=>{if(!g.camionId&&(g.patente||g.unidad)){const c=camByTxt(g.patente)||camByTxt(g.unidad);if(c)g.camionId=c.id}})}
+/** cargas con camión que todavía no tienen orden de carga / viaje */
+const gasEsperando=()=>S.gasoil.filter(g=>g.camionId&&g.fecha>=addD(today(),-3)&&!gasSal(g)&&g.salidaId!=="");
+/* ================= gasoil 2.0: consumo con «KM Trans.» del surtidor y pantalla en 3 vistas ================= */
+UI.gas.tab=UI.gas.tab||"camiones";
+/** rendimiento de cada carga (método tanque lleno): km recorridos desde la carga anterior ÷ litros de esta carga.
+ *  km: 1) «KM Trans.» del surtidor (lo calcula el propio surtidor) · 2) diferencia de odómetro con la carga anterior.
+ *  Dos despachos seguidos en la misma parada (mismo odómetro) se suman como una sola carga. 9999 = «sin carga anterior» del surtidor. */
+gasConsumo=function(){
+  const by={},res={};S.gasoil.filter(g=>g.camionId).forEach(g=>(by[g.camionId]=by[g.camionId]||[]).push(g));
+  Object.values(by).forEach(arr=>{
+    arr.sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))||String(a.hora||"").localeCompare(String(b.hora||""))||(Number(a.km)||0)-(Number(b.km)||0));
+    const grp=[];arr.forEach(g=>{const last=grp[grp.length-1],k=Number(g.km)||0;if(last&&k>0&&k===last.km&&g.fecha===last.fecha)last.items.push(g);else grp.push({km:k,items:[g]})});
+    grp.forEach((G,i)=>{const l=G.items.reduce((t,x)=>t+(Number(x.litros)||0),0),kt=Math.max(0,...G.items.map(x=>Number(x.kmTrans)||0));let d=null,src="";
+      if(kt>0&&kt<5000){d=kt;src="surtidor"}
+      else if(i>0&&G.km>0&&grp[i-1].km>0&&G.km>grp[i-1].km&&G.km-grp[i-1].km<5000){d=G.km-grp[i-1].km;src="odómetro"}
+      if(d&&l>0){const ok=d/l>=.8&&d/l<=20;G.items.forEach((x,j)=>{res[x.id]=ok?{km:j===0?d:0,kml:d/l,l100:l*100/d,grupo:G.items.length,src,lit:l}:{bad:true,km:0,kmRaw:d,lit:l,src}})}});
+  });
+  /* los cálculos que no son posibles no entran en los promedios */
+  Object.keys(res).forEach(k=>{if(res[k].bad){res["x_"+k]=res[k];delete res[k]}});return res};
+const gasBad=(C,g)=>C["x_"+g.id];
+const camTxt=id=>{const c=get("camiones",id);return c?c.patente:""};
+const camMod=id=>{const c=get("camiones",id);return c?(c.modelo||c.tipo||""):""};
+
+function gasPeriodo(){const F=UI.gas;return S.gasoil.filter(g=>(!F.desde||g.fecha>=F.desde)&&(!F.hasta||g.fecha<=F.hasta))}
+function gasPorCamion(list,C){const by={};list.forEach(g=>{const k=g.camionId||("?"+(g.patente||g.unidad||"sin patente"));(by[k]=by[k]||[]).push(g)});
+  return Object.keys(by).map(k=>{const a=by[k];let km=0,l=0;a.forEach(g=>{const c=C[g.id];if(c){km+=c.km;l+=Number(g.litros)||0}});
+    const last=a.slice().sort((x,y)=>String(y.fecha+(y.hora||"")).localeCompare(String(x.fecha+(x.hora||""))))[0];const id=k.startsWith("?")?null:k;
+    return{k,id,lit:a.reduce((t,g)=>t+(Number(g.litros)||0),0),imp:a.reduce((t,g)=>t+gasImp(g),0),n:a.length,km,kml:l?km/l:null,prom:id?camKml(id,C):null,last,viajes:new Set(a.map(g=>(gasSal(g)||{}).id).filter(Boolean)).size}}).sort((a,b)=>b.lit-a.lit)}
+VIEWS.gasoil=function(){
+  const F=UI.gas,C=gasConsumo(),list=gasPeriodo(),st=gasStock(),cf=gasCfg();
+  const lit=list.reduce((t,g)=>t+(Number(g.litros)||0),0),imp=list.reduce((t,g)=>t+gasImp(g),0);let kmT=0,lT=0;list.forEach(g=>{const c=C[g.id];if(c){kmT+=c.km;lT+=Number(g.litros)||0}});
+  let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Gasoil"]),"Gasoil",'<button class="btn pri w" data-act="gas-imp">'+IC.up+'Importar Reporte de Consumos</button><button class="btn w" data-act="gas-new">'+IC.plus+'Carga a mano</button>'+dots([{a:"gas-cfg",i:"gear",t:"Precio del litro y tanque"},{a:"gas-compra",i:"plus",t:"Compra para el tanque",w:1},{a:"gas-tpl",i:"dl",t:"Bajar plantilla simple"},{a:"gas-csv",i:"dl",t:"Exportar cargas (CSV)"},"-",{a:"gas-delfilt",i:"trash",t:"Eliminar las cargas del período",dng:1,w:1}]),"fuel");
+  h+='<div class="flt"><label>Desde <input type="date" id="ga_d" data-ui="gas.desde" value="'+F.desde+'"></label><label>Hasta <input type="date" id="ga_h" data-ui="gas.hasta" value="'+F.hasta+'"></label>'+[["sem","Esta semana"],["mes","Este mes"],["mesant","Mes anterior"]].map(([k,t])=>'<button class="btn sm ghost" data-act="gas-per" data-v="'+k+'">'+t+'</button>').join("")+'<span class="mu" style="margin-left:auto">Litro a <b>'+fM(cf.precio)+'</b></span></div>';
+  h+='<div class="kpis"><div class="kpi"><span class="k">Litros cargados</span><span class="v" style="color:var(--c-viaje)">'+fL(lit)+'</span><span class="s">'+pl(list.length,"carga","cargas")+' · '+new Set(list.map(g=>g.camionId||g.patente)).size+' vehículos</span></div>'
+    +'<div class="kpi"><span class="k">Gasto en gasoil</span><span class="v">'+fM(imp)+'</span><span class="s">'+(kmT?fM(imp*(lT/lit||1)/kmT)+" por km recorrido":"")+'</span></div>'
+    +'<div class="kpi"><span class="k">Rendimiento de la flota</span><span class="v" style="color:var(--c-rut)">'+(lT?fKml(kmT/lT)+' <small style="font-size:14px">km/L</small>':"—")+'</span><span class="s">'+(lT?fN(Math.round(kmT))+" km · "+fKml(lT*100/kmT)+" L cada 100 km":"importá el reporte con odómetro")+'</span></div>'
+    +(st.hay?(()=>{const pc=st.cap?Math.max(0,Math.min(100,st.stock*100/st.cap)):null,low=pc!=null&&pc<(Number(cf.alerta)||20);return'<div class="kpi"><span class="k">Tanque · '+fL(st.cap)+'</span><span class="v" style="color:'+(low?"var(--bad)":"var(--c-caja)")+'">'+fL(st.stock)+'</span><span class="tank"><i style="width:'+(pc||0).toFixed(1)+'%;background:'+(low?"var(--k-crit)":"var(--k-good)")+'"></i></span><span class="s">'+Math.round(pc||0)+'% '+(low?"· ⚠ pedir gasoil":"")+'</span></div>'})()
+      :'<div class="kpi"><span class="k">Tanque · '+fL(Number(cf.capacidad)||20000)+'</span><span class="v" style="font-size:16px">Sin medición</span><span class="s">'+(canWrite?'<a href="#" data-act="gas-cfg">Cargá cuántos litros tiene hoy</a> y se descuenta solo':"")+'</span></div>')+'</div>';
+  if(!S.gasoil.length)return h+emptyCard("fuel","m-viaje","Todavía no hay cargas de gasoil","Importá el «Reporte de Consumos» del surtidor tal cual lo sacás: se toman la patente, los litros, el odómetro y los km desde la carga anterior.",'<button class="btn pri" data-act="gas-imp">'+IC.up+'Importar Reporte de Consumos</button>');
+  {const esp=gasEsperando(),fuera=S.gasoil.filter(g=>!g.camionId&&(g.patente||g.unidad));
+    if(esp.length||fuera.length)h+='<div class="banner">'+IC.alert+' '+(esp.length?'<b>'+pl(esp.length,"carga reciente espera","cargas recientes esperan")+' su orden de carga</b>: se asignan solas cuando emitas la orden de esa patente. ':"")+(fuera.length?pl(fuera.length,"carga","cargas")+' de patentes fuera de la flota ('+esc([...new Set(fuera.map(g=>g.patente||g.unidad))].slice(0,5).join(", "))+').':"")+'</div>'}
+  const tab=F.tab;h+='<div class="seg2" role="tablist" style="margin:4px 0 12px">'+[["camiones","Por camión"],["cargas","Cargas"],["viajes","Por viaje"]].map(([k,t])=>'<button class="'+(tab===k?"on":"")+'" data-act="gas-tab" data-v="'+k+'">'+t+'</button>').join("")+'</div>';
+  if(tab==="camiones"){const R=gasPorCamion(list,C);
+    h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-viaje)"></span>Rendimiento por camión</h2><span class="s">km desde la carga anterior (del surtidor) ÷ litros · tocá un camión para ver su historial</span></div><div class="tw"><table class="wide"><thead><tr><th>Camión</th><th class="num">Cargas</th><th class="num">Litros</th><th class="num">Gasto</th><th class="num">Km</th><th class="num">km/L</th><th class="num">L/100 km</th><th>Contra su promedio</th><th>Última carga</th><th class="num">Viajes</th></tr></thead><tbody>'
+      +R.map(r=>{const dif=r.kml&&r.prom?Math.round((r.kml/r.prom-1)*100):null;
+        return'<tr class="ck" data-act="gas-ficha" data-v="'+esc(r.k)+'"><td>'+(r.id?plate(camTxt(r.id))+'<div class="sub">'+esc(camMod(r.id))+'</div>':'<span class="pat">'+esc(r.k.slice(1))+'</span><div class="sub">fuera de la flota</div>')+'</td><td class="num mono">'+r.n+'</td><td class="num mono"><b>'+fL(r.lit)+'</b></td><td class="num mono">'+fM(r.imp)+'</td><td class="num mono">'+(r.km?fN(Math.round(r.km)):"—")+'</td><td class="num mono"><b>'+fKml(r.kml)+'</b></td><td class="num mono">'+(r.kml?fKml(100/r.kml):"—")+'</td><td>'+(dif==null?'<span class="mu">—</span>':Math.abs(dif)<5?chip("Normal","ok"):dif<0?chip("▼ "+Math.abs(dif)+"% peor",dif<-15?"bad":"warn"):chip("▲ "+dif+"% mejor","ok"))+'</td><td>'+fDL(r.last.fecha)+'<div class="sub">'+(r.last.km?fN(r.last.km)+" km":"")+'</div></td><td class="num mono">'+(r.viajes||"—")+'</td></tr>'}).join("")+'</tbody></table></div></section>'}
+  else if(tab==="cargas"){const q=F.q.trim().toLowerCase(),L=list.filter(g=>(!F.cam||g.camionId===F.cam)&&(!q||[camTxt(g.camionId),g.patente,g.unidad,g.transaccion,chofT(g.choferId)].join(" ").toLowerCase().includes(q))).sort((a,b)=>String(b.fecha+(b.hora||"")).localeCompare(String(a.fecha+(a.hora||""))));
+    h+='<div class="flt"><input class="q" id="ga_q" type="search" data-ui="gas.q" value="'+esc(F.q)+'" placeholder="Buscar patente, transacción…" aria-label="Buscar"><select id="ga_cam" data-ui="gas.cam" aria-label="Camión">'+opts([["","Todos los vehículos"]].concat(S.camiones.slice().sort((a,b)=>String(a.patente).localeCompare(String(b.patente))).map(c=>[c.id,c.patente])),F.cam)+'</select></div>';
+    h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-viaje)"></span>'+pl(L.length,"carga","cargas")+'</h2><span class="s">'+fL(L.reduce((t,g)=>t+(Number(g.litros)||0),0))+'</span></div>'+(L.length?'<div class="tw"><table class="wide"><thead><tr><th>Fecha</th><th>Vehículo</th><th class="num">Litros</th><th class="num">Importe</th><th class="num">Odómetro</th><th class="num">Km desde la anterior</th><th class="num">km/L</th><th>Orden / viaje</th><th></th></tr></thead><tbody>'
+      +L.map(g=>{const c=C[g.id],b=gasBad(C,g),sv=gasSal(g);return'<tr class="ck" data-act="gas-ver" data-id="'+g.id+'"><td class="mono">'+fDL(g.fecha)+(g.hora?'<div class="sub">'+esc(g.hora)+(g.transaccion?" · trans. "+esc(g.transaccion):"")+'</div>':"")+'</td><td>'+(g.camionId?plate(camTxt(g.camionId)):'<span class="pat">'+esc(g.patente||g.unidad||"?")+'</span><div class="sub">fuera de la flota</div>')+'</td><td class="num mono"><b>'+fL(g.litros)+'</b></td><td class="num mono">'+fM(gasImp(g))+'</td><td class="num mono">'+(g.km?fN(g.km):"—")+'</td><td class="num mono">'+(c?(c.km?fN(c.km):'<span class="mu">misma parada</span>')+(c.src==="odómetro"?'<div class="sub">por odómetro</div>':""):b?'<span class="st warn" title="El dato del surtidor no es posible ('+fN(b.kmRaw)+' km con '+fL(b.lit)+')">Revisar</span>':"—")+'</td><td class="num mono">'+(c?'<b>'+fKml(c.kml)+'</b>':"—")+'</td><td>'+(sv?'<button class="st info novlink" data-act="open-hoja" data-id="'+sv.id+'">N° '+nro(sv)+' ›</button>':g.camionId?'<span class="mu">sin orden</span>':"—")+'</td><td class="r">'+(canWrite?'<button class="btn sm ghost" data-act="gas-sal" data-id="'+g.id+'" title="Cambiar la orden" aria-label="Cambiar la orden">'+IC.edit+'</button><button class="btn sm ghost dng" data-act="gas-del" data-id="'+g.id+'" aria-label="Eliminar">'+IC.trash+'</button>':"")+'</td></tr>'}).join("")+'</tbody></table></div>':'<div class="none">No hay cargas con este filtro.</div>')+'</section>'}
+  else{const S1=S.salidas.filter(s=>actSal(s)&&(!F.desde||s.fecha>=F.desde)&&(!F.hasta||s.fecha<=F.hasta)).map(s=>({s,v:viajeGas(s)})).filter(x=>x.v||x.s.litrosViaje).sort((a,b)=>b.s.fecha.localeCompare(a.s.fecha)||(b.s.nro||0)-(a.s.nro||0));
+    h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-viaje)"></span>Gasoil por viaje</h2><span class="s">El rendimiento del viaje sale al marcar el regreso con los km</span></div>'+(S1.length?'<div class="tw"><table class="wide"><thead><tr><th>Orden</th><th>Fecha</th><th>Camión</th><th>Destinos</th><th class="num">Litros</th><th class="num">Gasoil $</th><th class="num">Km del viaje</th><th class="num">km/L</th><th>Estado</th></tr></thead><tbody>'
+      +S1.map(({s,v})=>{const l=s.litrosViaje!=null?s.litrosViaje:v.l,km=s.kmViaje||(s.kmRegreso&&s.kmSalida?s.kmRegreso-s.kmSalida:null);return'<tr class="ck" data-act="open-hoja" data-id="'+s.id+'"><td class="mono"><b>N° '+nro(s)+'</b></td><td>'+fDL(s.fecha)+'</td><td>'+camP(s.camionId)+'</td><td class="wrap">'+esc(destT(s))+'</td><td class="num mono"><b>'+fL(l)+'</b></td><td class="num mono">'+fM(v?v.imp:l*cf.precio)+'</td><td class="num mono">'+(km?fN(km):"—")+'</td><td class="num mono"><b>'+(s.rendKml?fKml(s.rendKml):km&&l?fKml(km/l):"—")+'</b></td><td>'+estChip(s)+'</td></tr>'}).join("")+'</tbody></table></div>':'<div class="none">Ningún viaje del período tiene gasoil asignado todavía.</div>')+'</section>'}
+  return h;
+};
+/** ficha de un camión: todas sus cargas en orden, con km y rendimiento de cada una */
+function gasFicha(k){const C=gasConsumo(),id=k.startsWith("?")?null:k,G=S.gasoil.filter(g=>id?g.camionId===id:("?"+(g.patente||g.unidad||"sin patente"))===k).sort((a,b)=>String(a.fecha+(a.hora||"")).localeCompare(String(b.fecha+(b.hora||""))));
+  const ok=G.filter(g=>C[g.id]),km=ok.reduce((t,g)=>t+C[g.id].km,0),l=ok.reduce((t,g)=>t+(Number(g.litros)||0),0);
+  openForm({title:(id?camTxt(id):k.slice(1))+(id&&camMod(id)?" · "+camMod(id):""),color:"c-viaje",noSave:true,fields:[{k:"fc",type:"html",cls:"gdet"}],
+    after:()=>{$("f_fc").innerHTML='<div class="doc-grid" style="margin-bottom:10px"><div><small>Rendimiento histórico</small><b>'+(l?fKml(km/l)+" km/L":"—")+'</b><div class="sub">'+(l?fKml(l*100/km)+" L/100 km":"")+'</div></div><div><small>Cargas</small><b>'+G.length+'</b><div class="sub">'+fL(G.reduce((t,g)=>t+(Number(g.litros)||0),0))+'</div></div><div><small>Gasto</small><b>'+fM(G.reduce((t,g)=>t+gasImp(g),0))+'</b></div><div><small>Último odómetro</small><b>'+(G.length&&G[G.length-1].km?fN(G[G.length-1].km)+" km":"—")+'</b><div class="sub">'+(G.length?fDL(G[G.length-1].fecha):"")+'</div></div></div>'
+      +(ok.length>1?'<div style="margin:4px 0 10px"><small class="mu">km/L de cada carga</small><br>'+spark(ok.map(g=>C[g.id].kml)).replace('class="vz-spark"','class="vz-spark" style="width:100%;height:46px"')+'</div>':"")
+      +'<div class="tw"><table class="wide"><thead><tr><th>Fecha</th><th class="num">Litros</th><th class="num">Odómetro</th><th class="num">Km desde la anterior</th><th class="num">km/L</th><th>Orden</th></tr></thead><tbody>'
+      +G.slice().reverse().map(g=>{const c=C[g.id],b=gasBad(C,g),sv=gasSal(g);return'<tr><td>'+fDL(g.fecha)+(g.hora?" <span class=\"mu\">"+esc(g.hora)+"</span>":"")+'</td><td class="num mono">'+fL(g.litros)+'</td><td class="num mono">'+(g.km?fN(g.km):"—")+'</td><td class="num mono">'+(c?(c.km?fN(c.km):"misma parada"):b?'<span class="st warn">Revisar · '+fN(b.kmRaw)+'</span>':"—")+'</td><td class="num mono"><b>'+(c?fKml(c.kml):"—")+'</b></td><td>'+(sv?"N° "+nro(sv):'<span class="mu">—</span>')+'</td></tr>'}).join("")+'</tbody></table></div>'}});
+}
+Object.assign(GACT,{
+  "gas-tab":el=>{UI.gas.tab=el.dataset.v;render()},
+  "gas-ficha":el=>gasFicha(el.dataset.v),
+  "gas-per":el=>{const t=today(),F=UI.gas,k=el.dataset.v;if(k==="sem"){F.desde=monday(t);F.hasta=""}else if(k==="mes"){F.desde=t.slice(0,8)+"01";F.hasta=""}else{const d=new Date(+t.slice(0,4),+t.slice(5,7)-2,1),e=new Date(+t.slice(0,4),+t.slice(5,7)-1,0),f=x=>x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0");F.desde=f(d);F.hasta=f(e)}render()}
 });
 
 /* ================= informes: todo el sistema, con filtros, Excel, PDF y preguntas libres ================= */
@@ -1997,11 +2209,11 @@ const INF=[
    S.gasoil.forEach(g=>{add(g.fecha,"lit",Number(g.litros)||0);add(g.fecha,"gas",gasImp(g))});
    const rows=Object.values(G).sort((a,b)=>a.per.localeCompare(b.per)).map(r=>Object.assign(r,{perL:mode==="mes"?mesL(r.per):fDL(r.per)}));
    return{kpis:[["Órdenes de carga",sum(rows,r=>r.ord)],["Km previstos",fN(Math.round(sum(rows,r=>r.kmp)))],["Clientes visitados",fN(sum(rows,r=>r.cli))],["Facturado preventa",fM(sum(rows,r=>r.fac))],["Guías despachadas",fN(sum(rows,r=>r.gui))],["Novedades",sum(rows,r=>r.nov)],["Pallets recibidos",fN(sum(rows,r=>r.pal))],["Gasoil",fL(sum(rows,r=>r.lit))+" · "+fM(sum(rows,r=>r.gas))]],
-    cols:[["Período","perL","t"],["Órdenes","ord","n"],["Preventa","pv","n"],["Sucursales","sc","n"],["Km previstos","kmp","km"],["Km reales","kmr","km"],["Clientes","cli","n"],["Facturado","fac","m"],["Guías","gui","n"],["Unidades","uni","n"],["Novedades","nov","n"],["Recepciones","rec","n"],["Pallets","pal","n"],["Litros gasoil","lit","n"],["$ gasoil","gas","m"]],rows,chart:{lab:"perL",val:"ord",t:"Órdenes por "+(mode==="mes"?"mes":"día"),noSort:true}}}},
+    cols:[["Período","perL","t"],["Órdenes","ord","n"],["Preventa","pv","n"],["Sucursales","sc","n"],["Km previstos","kmp","km"],["Km reales","kmr","km"],["Clientes","cli","n"],["Facturado","fac","m"],["Guías","gui","n"],["Unidades","uni","n"],["Novedades","nov","n"],["Recepciones","rec","n"],["Pallets","pal","n"],["Litros gasoil","lit","n"],["$ gasoil","gas","m"],["Rendimiento km/L","kml","d2"]],rows,chart:{lab:"perL",val:"ord",t:"Órdenes por "+(mode==="mes"?"mes":"día"),noSort:true}}}},
  {id:"ordenes",cat:"Operación",t:"Órdenes y viajes",d:"Detalle de cada orden: camión, chofer, destinos, estado y km",ill:"orden",f:["canal","cam","cho","suc"],
-  run(F){const rows=salF(F).sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.nro||0)-(b.nro||0)).map(s=>({nro:nro(s),fecha:fDL(s.fecha),canal:s.canal,cam:camLbl(s.camionId)+(s.acopladoId?" + "+camLbl(s.acopladoId):""),cho:chofT(s.choferId),cob:chofT(s.cobradorId),dest:destT(s),est:(EST[s.estado]||[s.estado])[0],kmp:Math.round(kmPrevS(s)),kmr:kmRealS(s),por:s.portonId?portT(s.portonId):"",ctrl:persT(s.controladorId)}));
+  run(F){const rows=salF(F).sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.nro||0)-(b.nro||0)).map(s=>({nro:nro(s),fecha:fDL(s.fecha),canal:s.canal,cam:camLbl(s.camionId)+(s.acopladoId?" + "+camLbl(s.acopladoId):""),cho:chofT(s.choferId),cob:chofT(s.cobradorId),dest:destT(s),est:(EST[s.estado]||[s.estado])[0],kmp:Math.round(kmPrevS(s)),kmr:kmRealS(s),por:s.portonId?portT(s.portonId):"",ctrl:persT(s.controladorId),lit:s.litrosViaje!=null?s.litrosViaje:((viajeGas(s)||{}).l||null),gas:(viajeGas(s)||{}).imp||null,kml:s.rendKml||null}));
    return{kpis:[["Órdenes",rows.length],["Preventa",rows.filter(r=>r.canal==="Preventa").length],["Sucursales",rows.filter(r=>r.canal!=="Preventa").length],["Km previstos",fN(sum(rows,r=>r.kmp))],["Km reales",fN(sum(rows,r=>r.kmr))]],
-    cols:[["N°","nro","t"],["Fecha","fecha","t"],["Canal","canal","t"],["Camión","cam","t"],["Chofer","cho","t"],["Cobrador","cob","t"],["Destinos","dest","t"],["Estado","est","t"],["Km prev.","kmp","km"],["Km reales","kmr","km"],["Portón","por","t"],["Controlador","ctrl","t"]],rows}}},
+    cols:[["N°","nro","t"],["Fecha","fecha","t"],["Canal","canal","t"],["Camión","cam","t"],["Chofer","cho","t"],["Cobrador","cob","t"],["Destinos","dest","t"],["Estado","est","t"],["Km prev.","kmp","km"],["Km reales","kmr","km"],["Portón","por","t"],["Controlador","ctrl","t"],["Litros gasoil","lit","n"],["$ gasoil","gas","m"],["Rendimiento km/L","kml","d2"]],rows}}},
  {id:"camiones",cat:"Operación",t:"Por camión",d:"Viajes, km, gasoil, consumo y novedades de cada unidad",ill:"truck",f:["canal","cam"],
   run(F){const S1=salF(F),C=gasConsumo(),G=S.gasoil.filter(g=>inP(g.fecha,F)&&(!F.cam||g.camionId===F.cam));
    const ids=[...new Set(S1.map(s=>s.camionId).concat(S1.map(s=>s.acopladoId)).concat(G.map(g=>g.camionId)).filter(Boolean))];
@@ -2289,7 +2501,7 @@ const KPIS=[
  {id:"litros",a:"Gasoil",t:"Litros de gasoil",u:"L",h:"Total cargado en el período",calc(F){return sum(S.gasoil.filter(g=>inP(g.fecha,F)),g=>g.litros)}},
  {id:"pkm",a:"Gasoil",t:"Gasto de gasoil por km",u:"$",dir:"down",h:"$ de gasoil ÷ km recorridos entre cargas",calc(F){const C=gasConsumo();let k=0,m=0;S.gasoil.forEach(g=>{const c=C[g.id];if(c&&inP(g.fecha,F)){k+=c.km;m+=gasImp(g)}});return k?m/k:null}}
 ];
-const kFmt=(v,u)=>v==null||!isFinite(v)?"—":u==="%"?Number(v).toLocaleString("es-AR",{maximumFractionDigits:1})+" %":u==="$"?fM(v):u==="km/L"?fKml(v)+" km/L":u==="L"?fL(v):u==="km"?fN(Math.round(v))+" km":u==="d2"?Number(v).toLocaleString("es-AR",{maximumFractionDigits:2}):fN(Math.round(v*10)/10);
+let kFmt=(v,u)=>v==null||!isFinite(v)?"—":u==="%"?Number(v).toLocaleString("es-AR",{maximumFractionDigits:1})+" %":u==="$"?fM(v):u==="km/L"?fKml(v)+" km/L":u==="L"?fL(v):u==="km"?fN(Math.round(v))+" km":u==="d2"?Number(v).toLocaleString("es-AR",{maximumFractionDigits:2}):fN(Math.round(v*10)/10);
 const kMeta=k=>{const m=(kpiCfg().metas||{})[k.id];return m===undefined?k.meta:m===""||m===null?undefined:Number(m)};
 function kStatus(k,v){const m=kMeta(k);if(m==null||v==null||!k.dir)return null;
   const tol=m?Math.abs(m)*(k.dir==="up"?.1:.25):(k.u==="%"?2:1);
@@ -2340,7 +2552,7 @@ const docsDe=s=>s.canal==="Preventa"?cargasDe(s).length:guiasDe(s).filter(g=>g.s
 function flujoBar(s,dz){if(s.estado==="Anulada")return"";
   const pv=s.canal==="Preventa",est=s.estado,docs=docsDe(s);
   const hojaTxt=(docs?(pv?pl(docs,"zona con facturas","zonas con facturas"):pl(docs,"guía cargada","guías cargadas")):(pv?"falta cargar las facturas":"falta cargar las guías"))+(est==="Programada"?(hojaGrabada(s)?" · grabada":" · sin grabar"):"");
-  const steps=[["1","Orden de carga","N° "+nro(s)+" emitida","done"],["2","Hoja de ruta",hojaTxt,est==="Programada"?(docs?"cur ok":"cur"):"done"],["3","Viaje",est==="Cargada"?"cargado · listo para salir":est==="En ruta"?"en viaje"+(s.horaSalida?" desde las "+s.horaSalida:""):est==="Finalizada"?"hecho":"en espera",est==="Cargada"||est==="En ruta"?"cur":est==="Finalizada"?"done":""],["4","Regreso",est==="Finalizada"?"volvió"+(s.horaRegreso?" a las "+s.horaRegreso:""):"en espera",est==="Finalizada"?"done":""]];
+  const steps=[["1","Orden de carga","N° "+nro(s)+" emitida"+cargaTxt(s),"done"],["2","Hoja de ruta",hojaTxt,est==="Programada"?(docs?"cur ok":"cur"):"done"],["3","Viaje",est==="Cargada"?"cargado · listo para salir":est==="En ruta"?"en viaje"+(s.horaSalida?" desde las "+s.horaSalida:""):est==="Finalizada"?"hecho":"en espera",est==="Cargada"||est==="En ruta"?"cur":est==="Finalizada"?"done":""],["4","Regreso",est==="Finalizada"?"volvió"+(s.horaRegreso?" a las "+s.horaRegreso:""):"en espera",est==="Finalizada"?"done":""]];
   let cta="";
   const gr=hojaGrabada(s),salir='<button class="btn w" data-act="hoja-salir" data-id="'+s.id+'">Salir</button>';
   if(est==="Programada"&&!hojaEmit(s)){steps[1][2]="sin emitir · la emitís desde Órdenes de carga";steps[1][3]="cur";
@@ -2373,7 +2585,7 @@ function formDocs(s){const pv=s.canal==="Preventa";
         box.innerHTML='<span>Encontré <b>'+pl(gu.length,"planilla de guías","planillas de guías")+'</b> y <b>'+pl(fa.length,"planilla de facturas","planillas de facturas")+'</b>. Cargalas por separado:</span><span class="pa"><button type="button" class="btn sm pri" id="dG">Cargar las guías</button>'+(pv?'<button type="button" class="btn sm" id="dF">Cargar las facturas</button>':"")+'</span>';
         $("dG").onclick=()=>{closeForm();formImpGuias(s,gu)};const b=$("dF");if(b)b.onclick=()=>{closeForm();formImportHoja(s,fa)}})}});
 }
-async function pasarViajes(s){await C("salidas").doc(s.id).update({estado:"Cargada",horaCarga:s.horaCarga||nowHM(),hojaLista:true,updatedAt:new Date().toISOString(),updatedBy:uid});
+async function pasarViajes(s){await C("salidas").doc(s.id).update({estado:"Cargada",horaCarga:s.horaCarga||nowHM(),cargaFin:s.cargaFin||(s.cargaInicio?dtLocal():null),cargadaAt:new Date().toISOString(),hojaLista:true,updatedAt:new Date().toISOString(),updatedBy:uid});
   UI.fecha=s.fecha;UI.flashSal=s.id;setTimeout(()=>{UI.flashSal=""},5000);location.hash="#viajes";toast("Hoja N° "+nro(s)+" lista · el camión quedó en Viajes, listo para salir")}
 Object.assign(GACT,{
   "docs-load":(el,id)=>{const s=get("salidas",id);if(s&&canWrite)formDocs(s)},
@@ -2383,6 +2595,32 @@ Object.assign(GACT,{
     if(!docsDe(s)){const pv=s.canal==="Preventa";confirmBox("¿Pasar a Viajes sin "+(pv?"facturas":"guías")+"?","La hoja N° "+nro(s)+" todavía no tiene "+(pv?"el Excel de facturas cargado":"guías cargadas")+". Podés cargarlas antes con «"+(pv?"Cargar facturas":"Cargar guías")+"», o pasarla igual a Viajes.","Pasar igual",()=>pasarViajes(s),"Pasada a Viajes");return}
     await pasarViajes(s)}
 });
+
+/* ---- fecha y hora de cada etapa: orden, carga, hoja de ruta, salida y regreso ---- */
+const dtP=v=>{if(!v)return null;const d=new Date(v);return isNaN(d)?null:d};
+const dtF=v=>{const d=dtP(v);return d?DN[d.getDay()]+" "+pad2(d.getDate())+"/"+pad2(d.getMonth()+1)+" "+pad2(d.getHours())+":"+pad2(d.getMinutes()):""};
+const hmF=v=>{const d=dtP(v);return d?pad2(d.getHours())+":"+pad2(d.getMinutes()):""};
+const salidaDT=s=>s.salidaAt||(s.horaSalida&&["En ruta","Finalizada"].includes(s.estado)?s.fecha+"T"+s.horaSalida:"");
+const regresoDT=s=>s.regresoAt||(s.horaRegreso&&s.estado==="Finalizada"?s.fecha+"T"+s.horaRegreso:"");
+/** etapas con fecha y hora, en orden */
+function etapas(s){const e=[["Orden",s.createdAt?dtF(s.createdAt):fDL(s.fecha)]];
+  if(s.cargaInicio)e.push(["Carga",dtF(s.cargaInicio)+(s.cargaFin?" a "+(String(s.cargaFin).slice(0,10)===String(s.cargaInicio).slice(0,10)?hmF(s.cargaFin):dtF(s.cargaFin)):" · en curso")]);
+  if(s.hojaEmitidaAt)e.push(["Hoja de ruta",dtF(s.hojaEmitidaAt)]);
+  if(s.cargadaAt)e.push(["Lista para salir",dtF(s.cargadaAt)]);
+  if(salidaDT(s))e.push(["Salió",dtF(salidaDT(s))]);
+  if(regresoDT(s))e.push(["Volvió",dtF(regresoDT(s))]);
+  return e}
+const fechasRow=s=>'<div class="fechas">'+etapas(s).map(([t,v])=>'<span><small>'+t+'</small><b>'+esc(v)+'</b></span>').join("")+'</div>';
+
+/* ---- preventa vs sucursales: color, etiqueta y filtro en órdenes, hojas y viajes ---- */
+UI.canalF="";
+const esPv=s=>s.canal==="Preventa";
+const chCls=s=>esPv(s)?" ch-pv":" ch-sc";
+const chBadge=s=>'<span class="chb '+(esPv(s)?"pv":"sc")+'">'+(esPv(s)?IC.truck+"Preventa":IC.store+"Sucursales")+'</span>';
+const canalOk=s=>!UI.canalF||(UI.canalF==="Preventa")===esPv(s);
+const canalSeg=list=>{const n=k=>list.filter(s=>!k||(k==="Preventa")===esPv(s)).length;
+  return'<div class="chseg" role="group" aria-label="Filtrar por canal">'+[["","Todas"],["Preventa","Preventa"],["Sucursales","Sucursales"]].map(([k,t])=>'<button type="button" class="'+(UI.canalF===k?"on":"")+(k?" k-"+(k==="Preventa"?"pv":"sc"):"")+'" data-act="canal-f" data-v="'+k+'" aria-pressed="'+(UI.canalF===k)+'">'+t+' <b>'+n(k)+'</b></button>').join("")+'</div>'};
+GACT["canal-f"]=el=>{UI.canalF=el.dataset.v||"";render()};
 
 /* ================= bandejas por etapa ================= */
 /* orden emitida → (manual) hoja de ruta emitida → grabada → Viajes → regreso */
@@ -2408,16 +2646,18 @@ function docsChip(s){if(s.canal==="Preventa"){const cs=cargasDe(s);return cs.len
 
 /* ---- Órdenes de carga: las emitidas que esperan hoja de ruta + lo programado sin orden ---- */
 function ordPendCard(s){const p=plan(s),sel=UI.selOrd.has(s.id);
-  return'<article class="lc sel-able'+(sel?" sel":"")+(UI.flashSal===s.id?" flash":"")+'"><label class="selbox" title="Seleccionar"><input type="checkbox" data-act="ord-sel" data-id="'+s.id+'"'+(sel?" checked":"")+' aria-label="Seleccionar orden '+nro(s)+'"></label>'
-    +'<button class="t" data-act="open-orden" data-id="'+s.id+'"><span class="nro">N° '+nro(s)+'</span>'+esc(destT(s)||"Sin destino")+'</button>'
-    +'<div class="a">'+fechaChip(s.fecha)+chip("Sin hoja de ruta","warn")+(canWrite?'<button class="btn sm pri w" data-act="hr-emit" data-id="'+s.id+'">'+IC.file+'Emitir hoja de ruta</button>':"")
+  return'<article class="lc sel-able'+chCls(s)+(sel?" sel":"")+(UI.flashSal===s.id?" flash":"")+'"><label class="selbox" title="Seleccionar"><input type="checkbox" data-act="ord-sel" data-id="'+s.id+'"'+(sel?" checked":"")+' aria-label="Seleccionar orden '+nro(s)+'"></label>'
+    +'<button class="t" data-act="open-orden" data-id="'+s.id+'">'+chBadge(s)+'<span class="nro">N° '+nro(s)+'</span>'+esc(destT(s)||"Sin destino")+'</button>'
+    +'<div class="a">'+fechaChip(s.fecha)+chip("Sin hoja de ruta","warn")+cargaBtn(s)+(canWrite?'<button class="btn sm pri w" data-act="hr-emit" data-id="'+s.id+'">'+IC.file+'Emitir hoja de ruta</button>':"")
     +dots([{a:"open-orden",id:s.id,i:"edit",t:"Ver orden de carga"},{a:"edit-sal",id:s.id,i:"edit",t:"Editar orden"},{a:"dl-orden",id:s.id,i:"dl",t:"Imprimir orden de carga"},"-",{a:"anular",id:s.id,i:"pause",t:"Anular orden",dng:1,w:1},{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar orden",dng:1,w:1}])+'</div>'
-    +'<div class="m">'+canalTag(s.canal)+camP(s.camionId)+(s.acopladoId?'<span class="tag ac">+ acoplado '+esc((get("camiones",s.acopladoId)||{}).patente||"")+'</span>':"")+'<span><b>'+chofN(s.choferId)+'</b>'+(s.cobradorId?' · cobra '+chofN(s.cobradorId):"")+'</span>'+(s.portonId?'<span class="tag">'+esc(portT(s.portonId))+'</span>':"")+'<span>'+esc(rutaT(p))+'</span>'+(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b></span>':"")+'</div></article>'}
+    +'<div class="m">'+cargaChip(s)+gasChip(s)+camP(s.camionId)+(s.acopladoId?'<span class="tag ac">+ acoplado '+esc((get("camiones",s.acopladoId)||{}).patente||"")+'</span>':"")+'<span><b>'+chofN(s.choferId)+'</b>'+(s.cobradorId?' · cobra '+chofN(s.cobradorId):"")+'</span>'+(s.portonId?'<span class="tag">'+esc(portT(s.portonId))+'</span>':"")+'<span>'+esc(rutaT(p))+'</span>'+(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b></span>':"")+'</div>'+fechasRow(s)+'</article>'}
 VIEWS.ordenes=function(){
-  const f=today(),pc=porCargar(f),sh=ordSinHoja();UI.selOrd.forEach(id=>{if(!sh.some(s=>s.id===id))UI.selOrd.delete(id)});
+  const f=today(),pc0=porCargar(f),sh0=ordSinHoja(),sh=sh0.filter(canalOk);UI.selOrd.forEach(id=>{if(!sh.some(s=>s.id===id))UI.selOrd.delete(id)});
+  const pc=Object.assign({},pc0,{zPend:UI.canalF==="Sucursales"?[]:pc0.zPend,sPend:UI.canalF==="Preventa"?[]:pc0.sPend});pc.n=pc.zPend.length+pc.sPend.length;
   const hp=hojasPend().length,ns=UI.selOrd.size;
   let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Órdenes de carga"]),"Órdenes de carga",newOrden()+'<a class="btn w" href="#salidas">'+IC.list+'Consultar órdenes emitidas</a>',"orden");
   h+='<div class="sumrow"><span class="'+(sh.length?"hl":"")+'"><b>'+sh.length+'</b> sin hoja de ruta</span><span><b>'+pc.n+'</b> programados sin orden</span>'+(hp?'<a href="#hojas"><b>'+hp+'</b> '+(hp===1?"hoja de ruta en curso":"hojas de ruta en curso")+' ›</a>':"")+'</div>';
+  h+=canalSeg(sh0.concat(pc0.zPend.map(()=>({canal:"Preventa"})),pc0.sPend.map(()=>({canal:"Sucursales"}))));
   if(!depId())h+='<div class="banner">Elegí el <a href="#" data-act="cfg">punto de partida</a> (localidad del depósito) para que el sistema calcule los km de cada viaje.</div>';
   let L='<div><div class="secl">Órdenes emitidas · esperan hoja de ruta <span class="c">'+sh.length+'</span></div>';
   if(sh.length){
@@ -2427,9 +2667,9 @@ VIEWS.ordenes=function(){
   L+='<div class="secl" style="margin-top:18px">Programado sin orden de carga <span class="c">'+pc.n+'</span> <span class="mu" style="font-weight:500;text-transform:none;letter-spacing:0">· hoy y lo atrasado</span></div>';
   if(!pc.n)L+=emptyCard("orden","m-log","Todo lo programado ya tiene orden","Si sale algo fuera de programa, emití una orden nueva.",'<button class="btn pri" data-act="new-sal" data-v="Preventa">'+IC.truck+'Orden de preventa</button><button class="btn" data-act="new-sal" data-v="Sucursales">'+IC.store+'Orden de sucursales</button>');
   else{L+='<div class="lcs">';
-    pc.zPend.forEach(x=>{if(x.pz){const p=x.pz;L+='<article class="lc"><div class="ic">'+IC.truck+'</div><button class="t" data-act="pz-desp" data-id="'+p.id+'">'+esc(pzLabel(p))+'</button><div class="a">'+(x.st.k==="no"?chip("No cumplido · "+fDL(p.fecha),"bad"):chip("Hoy","info"))+'<button class="btn sm w" data-act="pz-desp" data-id="'+p.id+'">'+IC.truck+'Emitir orden</button>'+dots([{a:"pz-susp",id:p.id,i:"pause",t:"Hoy no sale",w:1}])+'</div><div class="m"><span class="tag pv">Preventa</span><span>'+esc((p.zonaIds||[]).map(zonaT).join(", "))+'</span></div></article>';return}
-      const z=x.z,st=x.st;L+='<article class="lc"><div class="ic">'+IC.truck+'</div><button class="t" data-act="zona-desp" data-id="'+z.id+'" data-f="'+f+'">'+esc(zonaT(z.id))+'</button><div class="a">'+(st.t==="No salió"?chip("No salió","bad"):chip("Hoy","info"))+'<button class="btn sm w" data-act="zona-desp" data-id="'+z.id+'" data-f="'+f+'">'+IC.truck+'Emitir orden</button>'+dots([{a:"zona-sin",id:z.id,f:f,i:"pause",t:"Hoy no sale",w:1}])+'</div><div class="m"><span class="tag pv">Preventa</span>'+(z.preventista?'<span>'+esc(z.preventista)+'</span>':"")+'</div></article>'});
-    pc.sPend.forEach(p=>{const late=p.fecha<f;L+='<article class="lc"><div class="ic">'+IC.store+'</div><button class="t" data-act="prog-desp" data-id="'+p.id+'">'+esc(sucT(p.sucursalId))+'</button><div class="a">'+(late?chip("No cumplido · "+fDL(p.fecha),"bad"):chip("Hoy","info"))+'<button class="btn sm w" data-act="prog-desp" data-id="'+p.id+'">'+IC.truck+'Emitir orden</button>'+dots([{a:"prog-susp",id:p.id,i:"pause",t:"Suspender envío",w:1},{a:"prog-del",id:p.id,i:"x",t:"Quitar del programa",dng:1,w:1}])+'</div><div class="m"><span class="tag sc">Sucursal</span>'+(p.rubro?'<span>'+esc(p.rubro)+'</span>':"")+'<span>programada '+fDL(p.fecha)+'</span></div></article>'});
+    pc.zPend.forEach(x=>{if(x.pz){const p=x.pz;L+='<article class="lc ch-pv"><div class="ic">'+IC.truck+'</div><button class="t" data-act="pz-desp" data-id="'+p.id+'">'+chBadge({canal:"Preventa"})+esc(pzLabel(p))+'</button><div class="a">'+(x.st.k==="no"?chip("No cumplido · "+fDL(p.fecha),"bad"):chip("Hoy","info"))+'<button class="btn sm w" data-act="pz-desp" data-id="'+p.id+'">'+IC.truck+'Emitir orden</button>'+dots([{a:"pz-susp",id:p.id,i:"pause",t:"Hoy no sale",w:1}])+'</div><div class="m"><span class="tag pv">Preventa</span><span>'+esc((p.zonaIds||[]).map(zonaT).join(", "))+'</span></div></article>';return}
+      const z=x.z,st=x.st;L+='<article class="lc ch-pv"><div class="ic">'+IC.truck+'</div><button class="t" data-act="zona-desp" data-id="'+z.id+'" data-f="'+f+'">'+chBadge({canal:"Preventa"})+esc(zonaT(z.id))+'</button><div class="a">'+(st.t==="No salió"?chip("No salió","bad"):chip("Hoy","info"))+'<button class="btn sm w" data-act="zona-desp" data-id="'+z.id+'" data-f="'+f+'">'+IC.truck+'Emitir orden</button>'+dots([{a:"zona-sin",id:z.id,f:f,i:"pause",t:"Hoy no sale",w:1}])+'</div><div class="m"><span class="tag pv">Preventa</span>'+(z.preventista?'<span>'+esc(z.preventista)+'</span>':"")+'</div></article>'});
+    pc.sPend.forEach(p=>{const late=p.fecha<f;L+='<article class="lc ch-sc"><div class="ic">'+IC.store+'</div><button class="t" data-act="prog-desp" data-id="'+p.id+'">'+chBadge({canal:"Sucursales"})+esc(sucT(p.sucursalId))+'</button><div class="a">'+(late?chip("No cumplido · "+fDL(p.fecha),"bad"):chip("Hoy","info"))+'<button class="btn sm w" data-act="prog-desp" data-id="'+p.id+'">'+IC.truck+'Emitir orden</button>'+dots([{a:"prog-susp",id:p.id,i:"pause",t:"Suspender envío",w:1},{a:"prog-del",id:p.id,i:"x",t:"Quitar del programa",dng:1,w:1}])+'</div><div class="m"><span class="tag sc">Sucursal</span>'+(p.rubro?'<span>'+esc(p.rubro)+'</span>':"")+'<span>programada '+fDL(p.fecha)+'</span></div></article>'});
     L+='</div>'}
   L+='</div>';
   const vv=[];S.camiones.filter(c=>c.estado!=="Baja").forEach(c=>{[["vtvVence","VTV"],["seguroVence","Seguro"]].forEach(([k,l])=>{if(c[k]&&daysTo(c[k])<=30)vv.push({d:c[k],t:plate(c.patente)+" "+l,act:"edit-cam",id:c.id})})});
@@ -2442,27 +2682,35 @@ VIEWS.ordenes=function(){
 
 /* ---- Hojas de ruta: las emitidas que falta completar, con su estado ---- */
 VIEWS.hojas=function(){
-  const all=hojasPend(),cnt={pend:0,carg:0,lista:0};all.forEach(s=>cnt[hojaEstado(s).k]++);
+  const all0=hojasPend(),all=all0.filter(canalOk),cnt={pend:0,carg:0,lista:0};all.forEach(s=>cnt[hojaEstado(s).k]++);
   const list=UI.hstat?all.filter(s=>hojaEstado(s).k===UI.hstat):all;
   let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Hojas de ruta"]),"Hojas de ruta",'<a class="btn w" href="#hojas-hist">'+IC.list+'Consultar hojas de ruta</a>',"sheet");
+  h+=canalSeg(all0);
   h+='<div class="hstats">'+[["","Todas",all.length,""],["pend","Pendientes de guías / facturas",cnt.pend,"warn"],["carg","Cargadas · sin grabar",cnt.carg,"info"],["lista","Grabadas · listas para Viajes",cnt.lista,"ok"]].map(([k,t,n,c])=>'<button class="hst'+(UI.hstat===k?" on":"")+(c?" h-"+(k):"")+'" data-act="hoja-stat" data-v="'+k+'"><b>'+n+'</b><span>'+t+'</span></button>').join("")+'</div>';
+  if(!all.length&&all0.length)return h+'<div class="emptycard" style="padding:18px">No hay hojas de '+esc(UI.canalF.toLowerCase())+' en curso. <a href="#" data-act="canal-f" data-v="">Ver todas</a></div>';
   if(!all.length)return h+emptyCard("sheet","m-hoja","No hay hojas de ruta en curso","Las hojas se emiten desde Órdenes de carga: tildás las órdenes y tocás «Emitir hoja de ruta». Las anteriores las ves en «Consultar hojas de ruta».",'<a class="btn pri" href="#ordenes">'+IC.truck+'Ir a órdenes de carga</a><a class="btn" href="#hojas-hist">Consultar hojas de ruta</a>');
   if(!list.length)return h+'<div class="emptycard" style="padding:18px">No hay hojas en este estado. <a href="#" data-act="hoja-stat" data-v="">Ver todas</a></div>';
   return h+'<div class="lcs">'+list.map(s=>{const p=plan(s),e=hojaEstado(s),pv=s.canal==="Preventa";
     const btn=e.k==="pend"?'<button class="btn sm pri w" data-act="docs-load" data-id="'+s.id+'">'+IC.up+(pv?"Cargar facturas":"Cargar guías")+'</button>':e.k==="carg"?'<button class="btn sm save on w" data-act="hoja-grabar" data-id="'+s.id+'">'+IC.save+'Grabar</button>':'<button class="btn sm pri w" data-act="hoja-ok" data-id="'+s.id+'">'+IC.truck+'Pasar a Viajes</button>';
-    return'<article class="lc hl-'+e.k+'"><div class="ic">'+IC.file+'</div><button class="t" data-act="open-hoja" data-id="'+s.id+'"><span class="nro">HR '+nro(s)+'</span>'+esc(destT(s)||"Sin destino")+'</button>'
-      +'<div class="a">'+hojaPill(s)+fechaChip(s.fecha)+(canWrite?btn:"")+'<button class="btn sm w" data-act="open-hoja" data-id="'+s.id+'">Abrir</button>'+dots([{a:"open-orden",id:s.id,i:"edit",t:"Ver orden de carga"},{a:"dl-hoja",id:s.id,i:"dl",t:"Descargar para imprimir"},{a:"hr-desemit",id:s.id,i:"pause",t:"Volver a órdenes de carga",d:"Deja la orden sin hoja de ruta",w:1},"-",{a:"anular",id:s.id,i:"pause",t:"Anular orden",dng:1,w:1},{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar hoja de ruta",d:"Borra la orden y sus zonas",dng:1,w:1}])+'</div>'
-      +'<div class="m">'+canalTag(s.canal)+camP(s.camionId)+'<span><b>'+chofN(s.choferId)+'</b></span>'+docsChip(s)+'<span>'+pl(p.stops.length,"parada","paradas")+'</span>'+(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b></span>':"")+'</div></article>'}).join("")+'</div>';
+    return'<article class="lc hl-'+e.k+chCls(s)+'"><div class="ic">'+(pv?IC.truck:IC.store)+'</div><button class="t" data-act="open-hoja" data-id="'+s.id+'">'+chBadge(s)+'<span class="nro">HR '+nro(s)+'</span>'+esc(destT(s)||"Sin destino")+'</button>'
+      +'<div class="a">'+hojaPill(s)+fechaChip(s.fecha)+cargaBtn(s)+(canWrite?btn:"")+'<button class="btn sm w" data-act="open-hoja" data-id="'+s.id+'">Abrir</button>'+dots([{a:"open-orden",id:s.id,i:"edit",t:"Ver orden de carga"},{a:"dl-hoja",id:s.id,i:"dl",t:"Descargar para imprimir"},{a:"hr-desemit",id:s.id,i:"pause",t:"Volver a órdenes de carga",d:"Deja la orden sin hoja de ruta",w:1},"-",{a:"anular",id:s.id,i:"pause",t:"Anular orden",dng:1,w:1},{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar hoja de ruta",d:"Borra la orden y sus zonas",dng:1,w:1}])+'</div>'
+      +'<div class="m">'+camP(s.camionId)+'<span><b>'+chofN(s.choferId)+'</b></span>'+docsChip(s)+cargaChip(s)+gasChip(s)+'<span>'+pl(p.stops.length,"parada","paradas")+'</span>'+(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b></span>':"")+'</div>'+fechasRow(s)+'</article>'}).join("")+'</div>';
 };
 
 /* ---- Viajes: solo los camiones listos para salir o en la ruta ---- */
 VIEWS.viajes=function(){
-  const act=S.salidas.filter(s=>s.estado==="Cargada"||s.estado==="En ruta").sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.nro||0)-(b.nro||0));
+  const act0=S.salidas.filter(s=>s.estado==="Cargada"||s.estado==="En ruta"),act=act0.filter(canalOk).sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.nro||0)-(b.nro||0));
   const lis=act.filter(s=>s.estado==="Cargada"),enV=act.filter(s=>s.estado==="En ruta"),volHoy=S.salidas.filter(s=>s.estado==="Finalizada"&&(s.fecha===today()||String(s.updatedAt||"").slice(0,10)===today())).length;
   let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Viajes"]),"Viajes",'<a class="btn w" href="#viajes-hist">'+IC.list+'Consultar viajes cerrados</a>',"trip");
   h+='<div class="sumrow"><span class="'+(lis.length?"hl":"")+'"><b>'+lis.length+'</b> listos para salir</span><span><b>'+enV.length+'</b> en viaje</span><span><b>'+volHoy+'</b> volvieron hoy</span><span><b>'+fN(Math.round(act.reduce((t,s)=>t+(plan(s).total||0),0)))+'</b> km previstos</span></div>';
+  h+=canalSeg(act0);
+  if(!act.length&&act0.length)return h+'<div class="emptycard" style="padding:18px">No hay viajes de '+esc(UI.canalF.toLowerCase())+' en este momento. <a href="#" data-act="canal-f" data-v="">Ver todos</a></div>';
   if(!act.length)return h+emptyCard("trip","m-viaje","No hay camiones en viaje ni esperando salir","Cuando grabás una hoja de ruta y la pasás a Viajes, el camión aparece acá. Al marcar el regreso, el viaje se cierra y pasa a «Consultar viajes cerrados».",'<a class="btn pri" href="#hojas">'+IC.file+'Ir a hojas de ruta</a><a class="btn" href="#viajes-hist">Consultar viajes cerrados</a>');
-  const sec=(t,arr,e)=>'<div><div class="secl">'+t+' <span class="c">'+arr.length+'</span></div>'+(arr.length?'<div class="lcs">'+arr.map(ordenCard).join("")+'</div>':'<div class="emptycard" style="padding:18px">'+e+'</div>')+'</div>';
+  /* agrupado por día: los listos por la fecha del viaje, los que están en la ruta por el día que salieron */
+  const dia=(s,enRuta)=>enRuta&&salidaDT(s)?String(salidaDT(s)).slice(0,10):s.fecha;
+  const porDia=(arr,enRuta)=>{const g={};arr.forEach(s=>{(g[dia(s,enRuta)]=g[dia(s,enRuta)]||[]).push(s)});
+    return Object.keys(g).sort().map(f=>{const d=daysTo(f);return'<div class="diah"><b>'+fDL(f)+'</b>'+(d===0?chip("Hoy","info"):d===-1?chip("Ayer","mute"):d<0?chip("hace "+(-d)+" días",enRuta&&d<-2?"warn":"mute"):"")+'<span class="c">'+pl(g[f].length,"camión","camiones")+'</span></div><div class="lcs">'+g[f].sort((a,b)=>String(salidaDT(a)||a.cargadaAt||"").localeCompare(String(salidaDT(b)||b.cargadaAt||""))||(a.nro||0)-(b.nro||0)).map(ordenCard).join("")+'</div>'}).join("")};
+  const sec=(t,arr,e)=>'<div><div class="secl">'+t+' <span class="c">'+arr.length+'</span></div>'+(arr.length?porDia(arr,arr[0].estado==="En ruta"):'<div class="emptycard" style="padding:18px">'+e+'</div>')+'</div>';
   return h+sec("Listos para salir",lis,"Ningún camión esperando salir.")+sec("En viaje",enV,"Ningún camión en la ruta en este momento.");
 };
 async function emitirHojas(ids){const now=new Date().toISOString();for(const id of ids)await C("salidas").doc(id).update({hojaEmitida:true,hojaEmitidaAt:now,updatedAt:now,updatedBy:uid})}
@@ -2480,6 +2728,294 @@ Object.assign(GACT,{
     await C("salidas").doc(id).update({hojaGrabadaAt:new Date().toISOString(),updatedAt:new Date().toISOString(),updatedBy:uid});toast("Hoja de ruta N° "+nro(s)+" grabada")},
   "hoja-salir":(el,id)=>{const s=get("salidas",id);const go=()=>{if(UI.draft&&UI.draft.sid===id)UI.draft=null;location.hash=s&&!hojaEmit(s)?"#ordenes":"#hojas"};
     if(s&&UI.draft&&UI.draft.sid===id&&dirty(s)){confirmBox("Salir sin grabar","Tenés cambios sin grabar en la hoja N° "+nro(s)+". Si salís ahora se pierden. Tocá «Cancelar» y después «Grabar» para guardarlos.","Salir sin grabar",async()=>go(),"Saliste sin grabar");return}go()}
+});
+
+/* ================= equipos de carga y tiempos de carga ================= */
+GRP.equipos="base";MOD.equipos="m-base";PARENT.equipos="base";
+const pad2=n=>String(n).padStart(2,"0");
+const dtLocal=d=>{const x=d||new Date();return x.getFullYear()+"-"+pad2(x.getMonth()+1)+"-"+pad2(x.getDate())+"T"+pad2(x.getHours())+":"+pad2(x.getMinutes())};
+const eqT=id=>{const e=get("equipos",id);return e?e.nombre:""};
+/** minutos de carga: de la emisión (largada) a «terminó la carga»; en curso = hasta ahora */
+const cargaMin=s=>{if(!s.cargaInicio||!s.cargaFin)return null;const m=Math.round((new Date(s.cargaFin)-new Date(s.cargaInicio))/6e4);return m>=0?m:null};
+const cargaCurso=s=>s.cargaInicio&&!s.cargaFin&&s.estado==="Programada"?Math.max(0,Math.round((Date.now()-new Date(s.cargaInicio))/6e4)):null;
+const fMin=m=>m==null||isNaN(m)?"—":m<60?m+" min":Math.floor(m/60)+" h "+pad2(m%60)+" min";
+const hhmm=v=>v?String(v).slice(11,16):"";
+function cargaChip(s){if(s.estado==="Anulada")return"";const e=s.equipoCargaId?eqT(s.equipoCargaId):"";
+  const cc=cargaCurso(s);if(cc!=null)return'<span class="tag carga on" title="Desde las '+hhmm(s.cargaInicio)+'">⏱ Cargando · '+fMin(cc)+(e?" · "+esc(e):"")+'</span>';
+  const m=cargaMin(s);if(m!=null)return'<span class="tag carga" title="'+hhmm(s.cargaInicio)+' a '+hhmm(s.cargaFin)+'">⏱ Cargó en '+fMin(m)+(e?" · "+esc(e):"")+'</span>';
+  return s.estado==="Programada"&&!s.cargaInicio?'<span class="tag">Carga sin iniciar</span>':s.equipoCargaId?'<span class="tag">⏱ Carga sin medir · '+esc(e)+'</span>':""}
+/** texto corto del tiempo de carga (para el paso 1 del flujo) */
+const cargaTxt=s=>{const cc=cargaCurso(s);if(cc!=null)return" · cargando hace "+fMin(cc);const m=cargaMin(s);return m!=null?" · cargó en "+fMin(m):""};
+/** tarjeta «Tiempo de carga» de la hoja de ruta: equipo, inicio, fin, duración y botones */
+function cargaKpi(s){if(s.estado==="Anulada")return"";const e=get("equipos",s.equipoCargaId),cc=cargaCurso(s),m=cargaMin(s);
+  const who=e?esc(e.nombre):"Sin equipo asignado",mem=e?(e.integranteIds||[]).map(persT).filter(Boolean).join(", "):"";
+  const v=cc!=null?'<span style="color:var(--c-base)">⏱ '+fMin(cc)+'</span>':m!=null?fMin(m):"—";
+  const sub=cc!=null?who+" · cargando desde las "+hhmm(s.cargaInicio):m!=null?who+" · de "+hhmm(s.cargaInicio)+" a "+hhmm(s.cargaFin):s.cargaInicio?who:who+" · sin largar";
+  return'<div class="kpi"'+(mem?' title="'+esc(mem)+'"':"")+'><span class="k">Tiempo de carga</span><span class="v">'+v+'</span><span class="s">'+sub+'</span>'+(cargaBtn(s)?'<span class="s" style="margin-top:6px">'+cargaBtn(s)+'</span>':"")+'</div>'}
+function cargaBtn(s){if(!canWrite||s.estado!=="Programada")return"";
+  if(!s.cargaInicio)return'<button class="btn sm w" data-act="carga-ini" data-id="'+s.id+'">⏱ Largar carga</button>';
+  if(!s.cargaFin)return'<button class="btn sm green w" data-act="carga-fin" data-id="'+s.id+'">'+IC.check+'Terminó la carga</button>';return""}
+
+/* ---- base de datos: equipos ---- */
+function formEquipo(e){
+  openForm({title:e?e.nombre:"Nuevo equipo de carga",color:"c-base",values:e||{estado:"Activo",integranteIds:[]},meta:metaOf(e),ok:e?"Equipo actualizado":"Equipo creado",
+    fields:[{k:"nombre",label:"Nombre del equipo",req:true,two:true,ph:"Equipo 1, Equipo Mañana…"},{k:"estado",label:"Estado",type:"select",blank:false,options:["Activo","Inactivo"]},{k:"integranteIds",label:"Integrantes",type:"checks",full:true},{k:"obs",label:"Observaciones",type:"textarea",full:true}],
+    after:()=>{const box=$("f_integranteIds"),cur=(e&&e.integranteIds)||[],P=S.personal.filter(x=>isActive(x)||cur.includes(x.id)).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre)));
+      box.innerHTML=P.length?checksHtml("integranteIds",[{group:"Cargadores",items:P.filter(x=>x.rol!=="Controlador").map(x=>[x.id,x.nombre,x.legajo||""])},{group:"Controladores",items:P.filter(x=>x.rol==="Controlador").map(x=>[x.id,x.nombre,x.legajo||""])}],cur):'<div class="empty">Primero cargá el personal de depósito en Base de datos › Personal de depósito.</div>'},
+    save:d=>write("equipos",e&&e.id,d),del:e&&(()=>del("equipos",e.id))});
+}
+VIEWS.equipos=function(){
+  const L=S.equipos.slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),undefined,{numeric:true})),m0=today().slice(0,8)+"01";
+  let h=ph(crumb(["Inicio","inicio"],["Base de datos","base"],["Equipos de carga"]),"Equipos de carga",'<button class="btn pri w" data-act="eq-new">'+IC.plus+'Nuevo equipo</button>',"worker");
+  h+='<p class="lead">Armá los equipos con el personal de depósito. En cada orden de carga elegís qué equipo carga: la carga arranca al emitir la orden y termina cuando tocás «Terminó la carga». Así se mide qué equipo carga más rápido.</p>';
+  if(!L.length)return h+emptyCard("worker","m-base","Todavía no hay equipos","Creá los equipos de carga con sus integrantes.",'<button class="btn pri" data-act="eq-new">'+IC.plus+'Nuevo equipo</button>');
+  return h+'<section class="pn"><div class="tw"><table class="wide"><thead><tr><th>Equipo</th><th>Integrantes</th><th class="num">Cargas del mes</th><th class="num">Promedio</th><th class="num">Más rápida</th><th>Estado</th></tr></thead><tbody>'
+    +L.map(e=>{const ss=S.salidas.filter(s=>s.equipoCargaId===e.id&&actSal(s)&&s.fecha>=m0),mm=ss.map(cargaMin).filter(x=>x!=null);
+      return'<tr class="ck" data-act="eq-edit" data-id="'+e.id+'"><td><b>'+esc(e.nombre)+'</b></td><td class="wrap">'+esc((e.integranteIds||[]).map(persT).filter(Boolean).join(", ")||"—")+'</td><td class="num mono">'+ss.length+'</td><td class="num mono"><b>'+(mm.length?fMin(Math.round(mm.reduce((t,x)=>t+x,0)/mm.length)):"—")+'</b></td><td class="num mono">'+(mm.length?fMin(Math.min(...mm)):"—")+'</td><td>'+chip(e.estado||"Activo",isActive(e)?"ok":"mute")+'</td></tr>'}).join("")+'</tbody></table></div></section>';
+};
+
+/* ---- informe y KPI de tiempos de carga ---- */
+INF.splice(INF.findIndex(r=>r.id==="deposito")+1,0,{id:"tiempos",cat:"Depósito",t:"Tiempos de carga",d:"Cuánto tarda cada equipo en cargar un camión: promedio, más rápida y más lenta",ill:"worker",f:["canal"],grp:[["equipo","Por equipo"],["controlador","Por controlador"],["porton","Por portón"],["camion","Por camión"],["detalle","Carga por carga"]],
+  run(F){const S1=salF(F).filter(s=>cargaMin(s)!=null),mode=F.grp||"equipo",mins=S1.map(cargaMin);
+    const avg=a=>a.length?Math.round(a.reduce((t,x)=>t+x,0)/a.length):null;
+    const kp=[["Cargas medidas",S1.length],["Tiempo promedio",fMin(avg(mins))],["La más rápida",mins.length?fMin(Math.min(...mins)):"—"],["La más lenta",mins.length?fMin(Math.max(...mins)):"—"],["Sin medir",salF(F).filter(s=>cargaMin(s)==null).length]];
+    if(mode==="detalle"){const rows=S1.sort((a,b)=>a.fecha.localeCompare(b.fecha)).map(s=>({n:nro(s),f:fDL(s.fecha),eq:eqT(s.equipoCargaId)||"(sin equipo)",cam:camLbl(s.camionId),ini:hhmm(s.cargaInicio),fin:hhmm(s.cargaFin),min:cargaMin(s),ctrl:persT(s.controladorId),por:s.portonId?portT(s.portonId):"",dest:destT(s)}));
+      return{kpis:kp,cols:[["N°","n","t"],["Fecha","f","t"],["Equipo","eq","t"],["Camión","cam","t"],["Inicio","ini","t"],["Fin","fin","t"],["Minutos","min","n"],["Controlador","ctrl","t"],["Portón","por","t"],["Destinos","dest","t"]],rows}}
+    const kf={equipo:s=>eqT(s.equipoCargaId)||"(sin equipo)",controlador:s=>persT(s.controladorId)||"(sin controlador)",porton:s=>s.portonId?portT(s.portonId):"(sin portón)",camion:s=>camLbl(s.camionId)}[mode];const by=groupBy(S1,kf);
+    const rows=Object.keys(by).map(k=>{const a=by[k].map(cargaMin);return{k,n:a.length,avg:avg(a),min:Math.min(...a),max:Math.max(...a),tot:Math.round(a.reduce((t,x)=>t+x,0)/6)/10}}).sort((a,b)=>a.avg-b.avg);
+    return{kpis:kp,cols:[[{equipo:"Equipo",controlador:"Controlador",porton:"Portón",camion:"Camión"}[mode],"k","t"],["Cargas","n","n"],["Promedio (min)","avg","n"],["Más rápida (min)","min","n"],["Más lenta (min)","max","n"],["Horas cargando","tot","d1"]],rows,chart:{lab:"k",val:"avg",t:"Minutos promedio por carga (menos es mejor)"}}}});
+KPIS.splice(KPIS.findIndex(k=>k.id==="guias3")+1,0,{id:"tcarga",a:"Distribución",t:"Tiempo promedio de carga",u:"min",dir:"down",meta:45,h:"De la emisión de la orden a «terminó la carga»",calc(F){const m=salF(F).map(cargaMin).filter(x=>x!=null);return m.length?m.reduce((t,x)=>t+x,0)/m.length:null}});
+{const kf0=kFmt;kFmt=(v,u)=>u==="min"?(v==null||!isFinite(v)?"—":fMin(Math.round(v))):kf0(v,u)}
+
+Object.assign(GACT,{
+  "eq-new":()=>{if(canWrite)formEquipo(null)},
+  "eq-edit":(el,id)=>{const e=get("equipos",id);if(e)formEquipo(e)},
+  "carga-ini":async(el,id)=>{if(!canWrite)return;await C("salidas").doc(id).update({cargaInicio:dtLocal(),cargaFin:null,updatedAt:new Date().toISOString(),updatedBy:uid});toast("Arrancó la carga · se está midiendo el tiempo")},
+  "carga-fin":async(el,id)=>{if(!canWrite)return;const s=get("salidas",id);const f=dtLocal();await C("salidas").doc(id).update({cargaFin:f,updatedAt:new Date().toISOString(),updatedBy:uid});toast("Carga terminada en "+fMin(Math.max(0,Math.round((new Date(f)-new Date(s.cargaInicio))/6e4)))+(s.equipoCargaId?" · "+eqT(s.equipoCargaId):""))}
+});
+/* el cronómetro de las cargas en curso se actualiza solo cada minuto */
+setInterval(()=>{const ae=document.activeElement;if(["ordenes","hojas","hoja","viajes"].includes(UI.route)&&$("ov").hidden&&!(ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))&&S.salidas.some(s=>cargaCurso(s)!=null))render()},60000);
+
+/* ================= armar equipos: tablero de asignación de cargadores ================= */
+const eqDe=pid=>S.equipos.find(e=>(e.integranteIds||[]).includes(pid));
+const eqStats=e=>{const ss=S.salidas.filter(s=>s.equipoCargaId===e.id&&actSal(s)&&s.fecha>=today().slice(0,8)+"01"),mm=ss.map(cargaMin).filter(x=>x!=null);return{n:ss.length,avg:mm.length?Math.round(mm.reduce((t,x)=>t+x,0)/mm.length):null,min:mm.length?Math.min(...mm):null,curso:S.salidas.filter(s=>s.equipoCargaId===e.id&&cargaCurso(s)!=null).length}};
+VIEWS.equipos=function(){
+  const E=S.equipos.slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),undefined,{numeric:true}));
+  const P=S.personal.filter(isActive).sort((a,b)=>(a.rol==="Controlador")-(b.rol==="Controlador")||String(a.nombre).localeCompare(String(b.nombre)));
+  const sin=P.filter(p=>p.rol!=="Controlador"&&!eqDe(p.id));
+  let h=ph(crumb(["Inicio","inicio"],["Base de datos","base"],["Equipos de carga"]),"Equipos de carga",'<button class="btn w" data-act="inf-open" data-v="tiempos">'+IC.list+'Ver tiempos de carga</button>'+(canWrite?'<button class="btn w" data-act="eq-persona">'+IC.plus+'Nueva persona</button><button class="btn pri w" data-act="eq-quick">'+IC.plus+'Nuevo equipo</button>':""),"worker");
+  h+='<div class="sumrow"><span><b>'+E.length+'</b> equipos</span><span><b>'+P.filter(p=>p.rol!=="Controlador").length+'</b> cargadores</span><span class="'+(sin.length?"hl":"")+'"><b>'+sin.length+'</b> sin equipo</span><span><b>'+P.filter(p=>p.rol==="Controlador").length+'</b> controladores</span></div>';
+  h+='<p class="lead">1 · Creá los equipos con «Nuevo equipo». 2 · En la lista de abajo elegí el equipo de cada persona: se guarda al instante. 3 · En cada orden de carga elegís el equipo: <b>al emitir la orden arranca el cronómetro</b> y se detiene con «Terminó la carga».</p>';
+  /* tarjetas de equipos */
+  h+=E.length?'<div class="eqgrid">'+E.map(e=>{const st=eqStats(e),mem=(e.integranteIds||[]).map(id=>get("personal",id)).filter(Boolean);
+    return'<section class="eqcard'+(isActive(e)?"":" off")+'"><div class="eqh"><b>'+esc(e.nombre)+'</b>'+(canWrite?'<span class="pa"><button class="btn sm ghost" data-act="eq-edit" data-id="'+e.id+'" aria-label="Editar '+esc(e.nombre)+'">'+IC.edit+'</button></span>':"")+'</div>'
+      +'<div class="eqk"><span><b>'+mem.length+'</b> integrantes</span><span><b>'+st.n+'</b> cargas del mes</span><span>promedio <b>'+fMin(st.avg)+'</b></span>'+(st.curso?'<span class="tag carga on">⏱ cargando ahora</span>':"")+'</div>'
+      +'<div class="eqm">'+(mem.length?mem.map(p=>'<span class="pchip'+(p.rol==="Controlador"?" ctrl":"")+'">'+esc(p.nombre)+(canWrite?'<button data-act="eq-quitar" data-id="'+e.id+'" data-v="'+p.id+'" aria-label="Sacar a '+esc(p.nombre)+' del equipo">×</button>':"")+'</span>').join(""):'<span class="mu">Sin integrantes: asignalos en la lista de abajo.</span>')+'</div></section>'}).join("")+'</div>'
+    :emptyCard("worker","m-base","Todavía no hay equipos","Creá el primer equipo y después asignale los cargadores desde la lista.",canWrite?'<button class="btn pri" data-act="eq-quick">'+IC.plus+'Nuevo equipo</button>':"");
+  /* lista de asignación */
+  const opt=pid=>{const cur=eqDe(pid);return'<select data-eqper="'+pid+'" aria-label="Equipo"'+(canWrite?"":" disabled")+'><option value="">— Sin equipo —</option>'+E.filter(e=>isActive(e)||e.id===(cur&&cur.id)).map(e=>'<option value="'+e.id+'"'+(cur&&cur.id===e.id?" selected":"")+'>'+esc(e.nombre)+'</option>').join("")+'</select>'};
+  h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-base)"></span>Asignar personas a los equipos</h2><span class="pa"><input class="q" id="eq_q" type="search" data-ui="q.personal" value="'+esc(UI.q.personal||"")+'" placeholder="Buscar persona…" aria-label="Buscar persona" style="min-width:200px"></span></div>'
+    +'<div class="tw"><table class="wide"><thead><tr><th>Persona</th><th>Rol</th><th>Equipo</th></tr></thead><tbody>'
+    +P.filter(p=>!UI.q.personal||normH(p.nombre).includes(normH(UI.q.personal))).map(p=>'<tr><td><b>'+esc(p.nombre)+'</b></td><td>'+chip(p.rol||"Cargador",p.rol==="Controlador"?"vio":"info")+'</td><td>'+(E.length?opt(p.id):'<span class="mu">Creá un equipo primero</span>')+'</td></tr>').join("")+'</tbody></table></div></section>';
+  return h;
+};
+async function asignarEquipo(pid,eid){const now=new Date().toISOString();
+  for(const e of S.equipos){const has=(e.integranteIds||[]).includes(pid);
+    if(has&&e.id!==eid)await C("equipos").doc(e.id).update({integranteIds:(e.integranteIds||[]).filter(x=>x!==pid),updatedAt:now,updatedBy:uid});
+    if(!has&&e.id===eid)await C("equipos").doc(e.id).update({integranteIds:(e.integranteIds||[]).concat([pid]),updatedAt:now,updatedBy:uid})}}
+document.addEventListener("change",async e=>{const pid=e.target&&e.target.dataset&&e.target.dataset.eqper;if(!pid||!canWrite)return;
+  try{await asignarEquipo(pid,e.target.value);toast(persT(pid)+(e.target.value?" → "+eqT(e.target.value):" quedó sin equipo"))}catch(x){toast(errMsg(x))}});
+function formEqQuick(){const n=S.equipos.length+1;
+  openForm({title:"Nuevo equipo de carga",color:"c-base",values:{nombre:"Equipo "+n,estado:"Activo"},ok:"Equipo creado · ahora asignale los cargadores",saveLabel:"Crear equipo",
+    fields:[{k:"nombre",label:"Nombre del equipo",req:true,full:true,ph:"Equipo 1, Equipo Mañana, Equipo Tarde…"}],
+    save:async d=>{if(S.equipos.some(e=>normH(e.nombre)===normH(d.nombre))){ferr("Ya hay un equipo con ese nombre.");return false}await write("equipos",null,{nombre:d.nombre,estado:"Activo",integranteIds:[]})}})}
+Object.assign(GACT,{
+  "eq-quick":()=>{if(canWrite)formEqQuick()},
+  "eq-quitar":async el=>{if(!canWrite)return;const e=get("equipos",el.dataset.id);if(!e)return;await C("equipos").doc(e.id).update({integranteIds:(e.integranteIds||[]).filter(x=>x!==el.dataset.v),updatedAt:new Date().toISOString(),updatedBy:uid});toast(persT(el.dataset.v)+" salió de "+e.nombre)}
+});
+/** alta manual de una persona del depósito desde Equipos de carga (y la mete directo en un equipo) */
+function formPersonaEq(){
+  openForm({title:"Nueva persona del depósito",color:"c-base",values:{rol:"Cargador",estado:"Activo"},ok:"Persona dada de alta",saveLabel:"Dar de alta",
+    fields:[{k:"nombre",label:"Apellido y nombre",req:true,full:true,ph:"Pérez Juan Carlos"},{k:"rol",label:"Rol",type:"seg",options:["Cargador","Controlador"],two:true},{k:"legajo",label:"Legajo"},{k:"telefono",label:"Teléfono",type:"tel"},
+      {k:"equipo",label:"Equipo",type:"select",blank:"Sin equipo por ahora",options:()=>S.equipos.filter(isActive).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),undefined,{numeric:true})).map(e=>[e.id,e.nombre+" · "+pl((e.integranteIds||[]).length,"integrante","integrantes")]),two:true}],
+    save:async d=>{const n=normH(d.nombre);if(S.personal.some(p=>normH(p.nombre)===n)){ferr("Ya hay una persona con ese nombre en el personal de depósito.");return false}
+      const eq=d.equipo;delete d.equipo;const id=await write("personal",null,Object.assign(d,{estado:"Activo"}));
+      if(eq){const e=get("equipos",eq);if(e)await C("equipos").doc(eq).update({integranteIds:(e.integranteIds||[]).concat([id]),updatedAt:new Date().toISOString(),updatedBy:uid})}
+      MF.ok=d.nombre+" dado de alta"+(eq?" en "+eqT(eq):"")}});
+}
+GACT["eq-persona"]=()=>{if(canWrite)formPersonaEq()};
+/* ================= caja chica por zona, odómetro de salida y costo / rentabilidad del viaje ================= */
+GRP.cajachica="base";MOD.cajachica="m-caja";PARENT.cajachica="base";
+const costCfg=()=>Object.assign({kmL:2.5,costoKm:0,jornal:0,conceptos:"Peajes, Viáticos, Comida, Gomería, Reparación, Lavado, Estacionamiento, Otros"},S.config.find(x=>x.id==="costos")||{});
+const conceptos=()=>String(costCfg().conceptos||"").split(",").map(x=>x.trim()).filter(Boolean);
+/* la caja chica se relaciona por CÓDIGO de zona / sucursal, así sirve aunque la zona todavía no esté cargada */
+const cod0=c=>String(c??"").trim().replace(/^0+(?=\d)/,"");
+const ccCods=c=>c.canal==="Preventa"?(c.zonaCods||(c.zonaIds||[]).map(z=>(get("zonas",z)||{}).codigo)).map(cod0).filter(Boolean):(c.sucCods||(c.sucursalIds||[]).map(z=>(get("sucursales",z)||{}).codigo)).map(cod0).filter(Boolean);
+const tripCods=s=>s.canal==="Preventa"?(s.zonaIds||[]).map(z=>cod0((get("zonas",z)||{}).codigo)).filter(Boolean):(s.sucursalIds||[]).map(z=>cod0((get("sucursales",z)||{}).codigo)).filter(Boolean);
+/** filas de caja chica que corresponden a un viaje: cubre sus zonas (o sucursales) empezando por la fila que abarca más */
+function cajaMatch(s){const canal=s.canal==="Preventa"?"Preventa":"Sucursales",want=new Set(tripCods(s));
+  const L=S.cajachica.filter(c=>isActive(c)&&c.canal===canal).map(c=>({c,k:ccCods(c)})).filter(x=>x.k.length&&x.k.every(z=>want.has(z))).sort((a,b)=>b.k.length-a.k.length||(Number(b.c.monto)||0)-(Number(a.c.monto)||0));
+  const out=[],cov=new Set();L.forEach(x=>{if(x.k.some(z=>cov.has(z)))return;out.push(x.c);x.k.forEach(z=>cov.add(z))});
+  if(!out.length){const g=S.cajachica.find(c=>isActive(c)&&c.canal===canal&&!ccCods(c).length);if(g)out.push(g)}
+  return out}
+const hayN=v=>v!=null&&v!=="";
+const cajaAsig=s=>hayN(s.cajaChica)?Number(s.cajaChica)||0:cajaMatch(s).reduce((t,c)=>t+(Number(c.monto)||0),0);
+const cajaGasto=s=>hayN(s.cajaDevuelto)?Math.max(0,cajaAsig(s)-(Number(s.cajaDevuelto)||0)):cajaAsig(s);
+/** último odómetro conocido del camión antes de la salida (gasoil o viajes anteriores) */
+function odoPrev(s){let m=0;const v=viajeGas(s);if(v&&v.km0)return v.km0;
+  S.gasoil.forEach(g=>{if(g.camionId===s.camionId&&g.fecha<=s.fecha)m=Math.max(m,Number(g.km)||0)});
+  S.salidas.forEach(x=>{if(x.id!==s.id&&x.camionId===s.camionId&&x.fecha<=s.fecha)m=Math.max(m,Number(x.kmRegreso)||0,Number(x.kmSalida)||0)});return m||null}
+/** valor que lleva el viaje: facturado (preventa) o importe de las guías (sucursales) */
+const valorViaje=s=>s.canal==="Preventa"?sum(cargasDe(s),c=>c.totalFac):sum(guiasDe(s),gImp);
+/** litros reales del viaje (cargas del tanque asignadas o cargados a mano al volver) */
+const litReal=s=>{if(s.litrosViaje!=null&&s.litrosViaje!=="")return Number(s.litrosViaje)||null;const v=viajeGas(s);return v&&v.l||null};
+/** gasoil estimado cuando no hay litros: km del viaje (reales o, si no hay odómetro, los previstos) ÷ km por litro × precio */
+function gasEstim(s){if(s.gasEstimado&&s.gasEstimado.litros)return s.gasEstimado;const kmL=Number(costCfg().kmL)||2.5,precio=Number(gasCfg().precio)||0;
+  const kmR=kmRealS(s)||Number(s.kmViaje)||null,km=kmR||kmPrevS(s)||0;if(!km)return null;const litros=Math.round(km/kmL*10)/10;
+  return{km:Math.round(km),kmReal:!!kmR,kmL,precio,litros,importe:Math.round(litros*precio)}}
+const gasEstTxt=e=>fN(e.km)+" km "+(e.kmReal?"recorridos":"previstos del viaje")+" ÷ "+String(e.kmL).replace(".",",")+" km/L = "+fL(e.litros)+" × "+fM(e.precio);
+/** costo del viaje, renglón por renglón */
+function costoViaje(s){const c=costCfg(),v=viajeGas(s),lit=litReal(s),ge=lit?null:gasEstim(s);
+  const gas=lit?(s.litrosViaje==null&&v&&v.imp!=null?v.imp:lit*(Number(gasCfg().precio)||0)):ge?ge.importe:0;
+  const kmR=kmRealS(s)||Number(s.kmViaje)||null,km=kmR||kmPrevS(s)||0,est=!kmR;
+  const L=[{t:"Gasoil"+(ge?" (estimado)":""),m:gas,d:lit?fL(lit):ge?"sin odómetro ni cargas: "+gasEstTxt(ge):"sin cargas de gasoil ni km para estimarlo"}];
+  const cm=cajaMatch(s);L.push({t:"Caja chica",m:cajaGasto(s),d:(hayN(s.cajaChica)?"entregada al salir"+(cm.length&&Number(s.cajaChica)!==cm.reduce((t,x)=>t+(Number(x.monto)||0),0)?" (la tabla dice "+fM(cm.reduce((t,x)=>t+(Number(x.monto)||0),0))+")":cm.length?" · "+cm.map(x=>x.nombre).join(" + "):""):cm.length?cm.map(x=>x.nombre).join(" + "):"sin caja chica para "+(s.canal==="Preventa"?"estas zonas":"estas sucursales"))+(hayN(s.cajaDevuelto)?" · devolvió "+fM(s.cajaDevuelto):"")});
+  if(Number(c.jornal)){const n=s.cobradorId?2:1;L.push({t:"Chofer"+(n>1?" y cobrador":""),m:Number(c.jornal)*n,d:fM(c.jornal)+" por persona y viaje"})}
+  if(Number(c.costoKm)&&km)L.push({t:"Desgaste y mantenimiento",m:Number(c.costoKm)*km,d:fN(Math.round(km))+" km × "+fM(c.costoKm)+(est?" · km previstos":"")});
+  (s.costos||[]).forEach(x=>L.push({t:x.concepto||"Otro",m:Number(x.monto)||0,d:x.obs||"",extra:1}));
+  const tot=L.reduce((t,x)=>t+(x.m||0),0),val=valorViaje(s),paradas=plan(s).stops.length;
+  return{L,tot,val,km,est,pct:val?tot*100/val:null,porKm:km?tot/km:null,porParada:paradas?tot/paradas:null,paradas}}
+const fPct=n=>n==null?"—":n.toLocaleString("es-AR",{maximumFractionDigits:1})+" %";
+
+/* ---- chips para las tarjetas de viajes ---- */
+function odoChip(s){if(!hayN(s.kmSalida))return"";return'<span class="tag" title="Odómetro al salir">Salió con <b>'+fN(s.kmSalida)+' km</b>'+(hayN(s.kmRegreso)?" · volvió con "+fN(s.kmRegreso):"")+'</span>'}
+function costoChip(s){if(!["Cargada","En ruta","Finalizada"].includes(s.estado))return"";const c=costoViaje(s);if(!c.tot)return"";
+  return'<button class="tag cost" data-act="costos" data-id="'+s.id+'" title="Ver el costo del viaje">Costo '+fM(c.tot)+(c.pct!=null?" · "+fPct(c.pct)+" de lo "+(s.canal==="Preventa"?"facturado":"despachado"):"")+'</button>'}
+
+/* ---- sección de la hoja de ruta: costo y rentabilidad ---- */
+function costoSec(s){if(s.estado==="Anulada")return"";const c=costoViaje(s),pv=s.canal==="Preventa";
+  return'<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-caja)"></span>Costo y rentabilidad del viaje</h2><span class="pa">'+(canWrite?'<button class="btn w" data-act="costos" data-id="'+s.id+'">'+IC.plus+'Caja chica y costos</button>':"")+'</span></div>'
+    +'<div class="kpis kpis-in"><div class="kpi"><span class="k">Odómetro al salir</span><span class="v" style="font-size:19px">'+(hayN(s.kmSalida)?fN(s.kmSalida)+" km":"—")+'</span><span class="s">'+(hayN(s.kmSalida)?(hayN(s.kmRegreso)?"volvió con "+fN(s.kmRegreso)+" km · "+fN(s.kmRegreso-s.kmSalida)+" km hechos":"salió"+(s.horaSalida?" a las "+s.horaSalida:"")+" · el km de regreso se carga al volver"):s.estado==="En ruta"||s.estado==="Finalizada"?"no se cargó · el gasoil se estima con los km del viaje":(odoPrev(s)?"último conocido: "+fN(odoPrev(s))+" km":"se carga al marcar la salida"))+'</span></div>'
+    +'<div class="kpi"><span class="k">Costo del viaje</span><span class="v" style="color:var(--c-caja)">'+fM(c.tot)+'</span><span class="s">'+(c.porKm?fM(c.porKm)+" por km"+(c.est?" (previsto)":""):"")+(c.porParada?" · "+fM(c.porParada)+" por "+(pv?"cliente":"parada"):"")+'</span></div>'
+    +'<div class="kpi"><span class="k">'+(pv?"Facturado que lleva":"Mercadería que lleva")+'</span><span class="v">'+(c.val?fM(c.val):"—")+'</span><span class="s">'+(c.val?"":pv?"cargá las facturas de la hoja":"cargá las guías de la hoja")+'</span></div>'
+    +'<div class="kpi"><span class="k">Costo sobre lo '+(pv?"facturado":"despachado")+'</span><span class="v">'+fPct(c.pct)+'</span><span class="s">'+(c.pct==null?"falta el valor de la carga":"cuanto más bajo, más rentable")+'</span></div></div>'
+    +'<div class="tw"><table class="wide"><thead><tr><th>Concepto</th><th>Detalle</th><th class="num">Importe</th></tr></thead><tbody>'
+    +c.L.map(x=>'<tr><td><b>'+esc(x.t)+'</b></td><td class="wrap">'+esc(x.d||"")+'</td><td class="num mono">'+fM(x.m)+'</td></tr>').join("")
+    +'</tbody><tfoot><tr><td><b>Total</b></td><td></td><td class="num mono"><b>'+fM(c.tot)+'</b></td></tr></tfoot></table></div></section>'}
+
+/* ---- salida: hora y odómetro ---- */
+function formSalio(s){const prev=odoPrev(s),cm=cajaMatch(s);
+  openForm({title:"Salida del viaje N° "+nro(s),color:"c-viaje",values:{horaSalida:s.horaSalida||nowHM(),kmSalida:hayN(s.kmSalida)?s.kmSalida:prev,cajaChica:hayN(s.cajaChica)?s.cajaChica:(cm.length?cajaAsig(s):null)},ok:"N° "+nro(s)+" en viaje",saveLabel:"Marcar salida",focus:"kmSalida",
+    fields:[{k:"horaSalida",label:"Hora de salida",type:"time",req:true},{k:"kmSalida",label:"Odómetro al salir (km)",type:"number",help:(prev?"Último odómetro conocido de "+esc(camLbl(s.camionId))+": "+fN(prev)+" km. ":"")+"Si no lo tenés, dejalo vacío: el gasoil se estima con los km del viaje"},
+      {k:"cajaChica",label:"Caja chica que se le entrega ($)",type:"number",full:true,help:cm.length?"Según la tabla: "+esc(cm.map(x=>x.nombre+" "+fM(x.monto)).join(" + ")):"No hay caja chica cargada para "+(s.canal==="Preventa"?"estas zonas":"estas sucursales")+" · la cargás en Base de datos › Caja chica"}],
+    save:async d=>{if(prev&&d.kmSalida!=null&&d.kmSalida<prev-5&&!MF.okBajo){MF.okBajo=1;ferr("El odómetro es menor que el último conocido ("+fN(prev)+" km). Revisalo; si está bien, tocá «Marcar salida» otra vez.");return false}
+      await C("salidas").doc(s.id).update({estado:"En ruta",horaSalida:d.horaSalida,salidaAt:today()+"T"+d.horaSalida,kmSalida:d.kmSalida,cajaChica:d.cajaChica,updatedAt:new Date().toISOString(),updatedBy:uid})}})}
+
+/* ---- caja chica y otros costos de un viaje ---- */
+function formCostos(s){let rows=(s.costos||[]).map(x=>Object.assign({},x));const cm=cajaMatch(s),cs=conceptos();
+  const draw=()=>{$("f_rows").innerHTML='<datalist id="dlCon">'+cs.map(x=>'<option value="'+esc(x)+'">').join("")+'</datalist>'
+    +(rows.length?'<div class="tw"><table class="wide"><thead><tr><th>Concepto</th><th class="num">Importe ($)</th><th>Detalle</th><th></th></tr></thead><tbody>'+rows.map((r,i)=>'<tr><td><input data-cr="'+i+'" data-k="concepto" list="dlCon" value="'+esc(r.concepto||"")+'" aria-label="Concepto"></td><td><input data-cr="'+i+'" data-k="monto" type="number" step="any" min="0" inputmode="decimal" value="'+esc(r.monto??"")+'" aria-label="Importe" style="text-align:right"></td><td><input data-cr="'+i+'" data-k="obs" value="'+esc(r.obs||"")+'" aria-label="Detalle"></td><td><button type="button" class="btn sm ghost icon" data-crx="'+i+'" aria-label="Quitar">'+IC.trash+'</button></td></tr>').join("")+'</tbody></table></div>':'<span class="mu">Sin otros costos. Sumá peajes, viáticos, gomería o lo que haga falta.</span>')
+    +'<div class="pa" style="margin-top:8px"><button type="button" class="btn sm" id="crAdd">'+IC.plus+'Agregar costo</button></div>';
+    $("crAdd").onclick=()=>{rows.push({concepto:"",monto:null,obs:""});draw();const q=$("f_rows").querySelectorAll('[data-k="concepto"]');q[q.length-1].focus()}};
+  openForm({title:"Costos del viaje N° "+nro(s),color:"c-caja",values:{cajaChica:hayN(s.cajaChica)?s.cajaChica:"",cajaDevuelto:hayN(s.cajaDevuelto)?s.cajaDevuelto:""},ok:"Costos del viaje guardados",saveLabel:"Guardar",
+    fields:[{k:"s1",type:"sec",label:"Caja chica"},{k:"cajaChica",label:"Entregada al chofer ($)",type:"number",ph:cm.length?String(cajaAsig(Object.assign({},s,{cajaChica:null}))):"",help:cm.length?"Vacío = la de la tabla: "+esc(cm.map(x=>x.nombre+" "+fM(x.monto)).join(" + ")):"No hay caja chica en la tabla para este viaje"},{k:"cajaDevuelto",label:"Devolvió al volver ($)",type:"number",help:"Lo que no gastó. El costo es lo entregado menos lo devuelto."},
+      {k:"s2",type:"sec",label:"Otros costos del viaje"},{k:"rows",type:"html",cls:"recbox"}],
+    after:()=>{draw();const box=$("f_rows");
+      box.addEventListener("input",e=>{const i=e.target.dataset.cr;if(i==null)return;const k=e.target.dataset.k;rows[i][k]=k==="monto"?(e.target.value===""?null:Number(e.target.value)):e.target.value});
+      box.addEventListener("click",e=>{const b=e.target.closest("[data-crx]");if(!b)return;rows.splice(Number(b.dataset.crx),1);draw()})},
+    save:async d=>{const L=rows.filter(r=>(r.concepto||"").trim()||r.monto).map(r=>({concepto:(r.concepto||"Otro").trim()||"Otro",monto:Number(r.monto)||0,obs:(r.obs||"").trim()}));
+      if(L.some(r=>!r.monto)){ferr("Falta el importe de algún costo.");return false}
+      await C("salidas").doc(s.id).update({cajaChica:d.cajaChica,cajaDevuelto:d.cajaDevuelto,costos:L,updatedAt:new Date().toISOString(),updatedBy:uid});
+      MF.ok="Costo del viaje: "+fM(costoViaje(Object.assign({},s,{cajaChica:d.cajaChica,cajaDevuelto:d.cajaDevuelto,costos:L})).tot)}})}
+
+/* ---- parámetros de costo ---- */
+function formCostCfg(){const c=costCfg();
+  openForm({title:"Parámetros de costo de los viajes",color:"c-caja",values:c,ok:"Parámetros guardados",saveLabel:"Guardar",
+    fields:[{k:"kmL",label:"Rendimiento para estimar el gasoil (km por litro)",type:"number",full:true,help:"Si un viaje se cierra sin odómetro ni litros, el gasoil se estima: km del viaje ÷ este valor × precio del litro. Por defecto 2,5 km/L."},{k:"jornal",label:"Jornal por viaje del chofer / cobrador ($)",type:"number",help:"Opcional. Se suma una vez por persona en cada viaje."},{k:"costoKm",label:"Desgaste y mantenimiento ($ por km)",type:"number",help:"Opcional: cubiertas, service, amortización…"},
+      {k:"conceptos",label:"Conceptos de costo para elegir",type:"textarea",full:true,help:"Separados por coma"}],
+    save:async d=>{await C("config").doc("costos").set(Object.assign({},d,{updatedAt:new Date().toISOString(),updatedBy:uid}))}})}
+
+/* ---- base de datos: caja chica por zona ---- */
+const zonaByCod=c=>S.zonas.find(z=>String(z.codigo).replace(/^0+/,"")===String(c).replace(/^0+/,""));
+const sucByCod=c=>S.sucursales.find(x=>String(x.codigo||"").replace(/^0+/,"")===String(c).replace(/^0+/,""));
+const ccDest=c=>{const k=ccCods(c);if(!k.length)return"Todo viaje de "+(c.canal||"—").toLowerCase();
+  return k.map(x=>{if(c.canal==="Preventa"){const z=zonaByCod(x);return z?zonaT(z.id):"Zona "+x+" (no está en Zonas)"}const s=sucByCod(x);return s?sucN(s):"Suc. "+x+" (no está en Sucursales)"}).join(", ")};
+const ccStats=c=>c.casos==null&&c.mediana==null?"":[c.casos!=null?pl(c.casos,"caso","casos"):"",c.mediana!=null?"mediana "+fM(c.mediana):"",c.promedio!=null?"promedio "+fM(c.promedio):"",c.maximo!=null?"máx. "+fM(c.maximo):""].filter(Boolean).join(" · ");
+VIEWS.cajachica=function(){const L=S.cajachica.slice().sort((a,b)=>String(a.canal).localeCompare(String(b.canal))||String(a.nombre).localeCompare(String(b.nombre),undefined,{numeric:true})),m0=ms(),c=costCfg();
+  let h=ph(crumb(["Inicio","inicio"],["Base de datos","base"],["Caja chica"]),"Caja chica por zona",'<button class="btn w" data-act="cc-cfg">'+IC.gear+'Parámetros de costo</button>'+(canWrite?dd(IC.plus+"Agregar",[{a:"cc-new",i:"edit",t:"Cargar a mano",d:"Una zona o ruta por vez"},{a:"cc-imp",i:"up",t:"Importar desde Excel",d:"Carga masiva: suma o actualiza"},"-",{a:"cc-tpl",i:"dl",t:"Descargar plantilla Excel"}],{btn:"pri",cls:"w"}):""),"cash");
+  h+='<p class="lead">La caja chica que se le da al chofer según la zona (o la sucursal). Al marcar la salida de un viaje se toma sola de esta tabla y entra en el <b>costo del viaje</b>, junto con el gasoil y los demás gastos.</p>';
+  h+='<div class="sumrow"><span><b>'+L.length+'</b> filas</span><span>Estimado de gasoil <b>'+String(Number(c.kmL)||2.5).replace(".",",")+' km/L</b></span><span><b>'+L.filter(x=>x.canal==="Preventa").length+'</b> de preventa</span><span><b>'+L.filter(x=>x.canal!=="Preventa").length+'</b> de sucursales</span><span>Jornal <b>'+(Number(c.jornal)?fM(c.jornal):"—")+'</b> · desgaste <b>'+(Number(c.costoKm)?fM(c.costoKm)+"/km":"—")+'</b></span></div>';
+  if(!L.length)return h+emptyCard("cash","m-caja","Todavía no hay caja chica cargada","Importá tu Excel de caja chica por zona o cargala a mano.",canWrite?'<button class="btn pri" data-act="cc-imp">'+IC.up+'Importar Excel</button><button class="btn" data-act="cc-new">'+IC.plus+'Cargar a mano</button>':"");
+  return h+'<section class="pn"><div class="tw"><table class="wide"><thead><tr><th>Zona / ruta</th><th>Canal</th><th>Corresponde a</th><th class="num">Caja chica</th><th class="num">Viajes del mes</th><th>Estado</th></tr></thead><tbody>'
+    +L.map(x=>{const n=S.salidas.filter(s=>actSal(s)&&s.fecha>=m0&&cajaMatch(s).some(y=>y.id===x.id)).length;
+      return'<tr class="ck" data-act="cc-edit" data-id="'+x.id+'"><td><b>'+esc(x.nombre)+'</b>'+(ccStats(x)||x.obs?'<div class="sub">'+esc([ccStats(x),x.obs].filter(Boolean).join(" · "))+'</div>':"")+'</td><td>'+chip(x.canal||"—",x.canal==="Preventa"?"info":"vio")+'</td><td class="wrap">'+esc(ccDest(x))+'</td><td class="num mono"><b>'+fM(x.monto)+'</b></td><td class="num mono">'+n+'</td><td>'+chip(x.estado||"Activo",isActive(x)?"ok":"mute")+'</td></tr>'}).join("")+'</tbody></table></div></section>'};
+function formCaja(x){const v=x?Object.assign({},x,{zonas:x.canal==="Preventa"?ccCods(x).join(", "):"",sucs:x.canal==="Preventa"?"":ccCods(x).join(", ")}):{canal:"Preventa",estado:"Activo"};
+  openForm({title:x?x.nombre:"Nueva caja chica",color:"c-caja",values:v,meta:metaOf(x),ok:x?"Caja chica actualizada":"Caja chica cargada",
+    fields:[{k:"nombre",label:"Zona o ruta",req:true,two:true,ph:"Zona 25 · Santiago"},{k:"canal",label:"Canal",type:"seg",options:["Preventa","Sucursales"]},{k:"monto",label:"Caja chica ($)",type:"number",req:true},
+      {k:"zonas",label:"Códigos de zona (preventa)",ph:"25, 26",help:"Si la ruta junta varias zonas, ponelas todas. Vacío = cualquier viaje del canal"},{k:"sucs",label:"Códigos de sucursal",ph:"02, 04",help:"Solo para sucursales"},
+      {k:"estado",label:"Estado",type:"select",blank:false,options:["Activo","Inactivo"]},{k:"obs",label:"Observaciones",type:"textarea",full:true}],
+    save:async d=>{const zs=(String(d.zonas||"").match(/\d+/g)||[]).map(cod0),ss=(String(d.sucs||"").match(/\d+/g)||[]).map(cod0);
+      delete d.zonas;delete d.sucs;Object.assign(d,{zonaCods:d.canal==="Preventa"?zs:[],sucCods:d.canal==="Preventa"?[]:ss,zonaIds:[],sucursalIds:[]});await write("cajachica",x&&x.id,d)},
+    del:x&&(()=>del("cajachica",x.id))})}
+/** lee el Excel de caja chica: busca la columna de zona/ruta/sucursal y la del importe */
+async function parseCajaXls(f){const wb=await readBook(f),out=[],nm=v=>typeof v==="number"?v:v===""||v==null?null:arNum(String(v).replace(/[$\s]/g,""));
+  const hojas=wb.SheetNames.map(sn=>{const A=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:""});let hd=null;
+    for(let i=0;i<Math.min(A.length,40)&&!hd;i++){const H=A[i].map(x=>normH(x));const f1=re=>H.findIndex(x=>re.test(x));
+      const z=f1(/^zona|^ruta|sucursal|destino|recorrido/),sug=f1(/sugerido|entregar|caja chica/),m=sug>=0?sug:f1(/^caja|monto|importe|valor|\$|pesos/);
+      if(z>=0&&m>=0)hd={i,z,m,sug:sug>=0,cc:f1(/canal|tipo/),cn:f1(/^nombre|descrip/),co:f1(/obs|nota/),cas:f1(/casos/),min:f1(/minimo/),med:f1(/mediana/),pro:f1(/promedio/),max:f1(/maximo/),H}}
+    return{A,hd}}).filter(h=>h.hd);
+  /* si hay una hoja con «sugerido / a entregar» se usa esa sola (las demás son resúmenes de gastos) */
+  const use=hojas.some(h=>h.hd.sug)?hojas.filter(h=>h.hd.sug).slice(0,1):hojas.slice(0,1);
+  use.forEach(({A,hd})=>{const known=[hd.z,hd.m,hd.cc,hd.cn,hd.co,hd.cas,hd.min,hd.med,hd.pro,hd.max];
+    A.slice(hd.i+1).forEach(r=>{const zt=String(r[hd.z]??"").trim(),monto=nm(r[hd.m]);if(!zt||!monto||zt.length>60)return;
+      const canTxt=hd.cc>=0?normH(r[hd.cc]):"",esSuc=/suc/.test(canTxt)||/suc/i.test(zt)&&!/zona/i.test(zt);
+      let cods=(zt.match(/\d+/g)||[]).map(cod0),warn="";
+      if(!cods.length){const s=esSuc?S.sucursales.find(x=>normH(zt).includes(normH(x.nombre))):S.zonas.find(x=>normH(zt).includes(normH(String(x.nombre||"").replace(/^Zona \d+\s*·\s*/,""))));if(s)cods=[cod0(s.codigo)]}
+      if(!cods.length)warn="Sin código: se aplica a cualquier viaje de "+(esSuc?"sucursales":"preventa");
+      else{const nf=cods.filter(c=>!(esSuc?sucByCod(c):zonaByCod(c)));if(nf.length)warn=(esSuc?"Sucursal ":"Zona ")+nf.join(", ")+" todavía no está cargada: se aplica sola cuando la cargues"}
+      const obs=[hd.co>=0?String(r[hd.co]||"").trim():""].concat(r.map((v,j)=>known.includes(j)||typeof v!=="string"||!v.trim()||/^[$\d.,\s-]+$/.test(v)?"":v.trim())).filter(Boolean).join(" · ");
+      const st=j=>j>=0?nm(r[j]):null;
+      out.push({nombre:(hd.cn>=0&&String(r[hd.cn]).trim())||zt,canal:esSuc?"Sucursales":"Preventa",monto:Math.round(monto*100)/100,zonaCods:esSuc?[]:cods,sucCods:esSuc?cods:[],obs:obs.replace(/^⚠\s*/,""),casos:st(hd.cas),minimo:st(hd.min),mediana:st(hd.med),promedio:st(hd.pro),maximo:st(hd.max),warn})})});
+  return out}
+function formCajaImp(){let rows=[];
+  const draw=()=>{const box=$("f_sum");if(!rows.length){box.innerHTML='<span class="mu">Subí el Excel de caja chica. Necesita una columna con la <b>zona o ruta</b> (por ejemplo «Zona 25» o «25-26») y otra con el <b>importe</b>. Si tiene una columna «Canal» con Sucursales, también la toma. <a href="#" data-act="cc-tpl">Bajar plantilla</a></span>';return}
+    rows.forEach(r=>{r.id="cc-"+slug(r.canal+"-"+(r.zonaCods.concat(r.sucCods).join("-")||r.nombre)).toLowerCase();r.upd=!!get("cajachica",r.id)});const ok=rows;
+    box.innerHTML='<div class="sumrow"><span><b>'+rows.length+'</b> zonas o rutas</span><span><b>'+ok.filter(r=>!r.upd).length+'</b> nuevas</span><span><b>'+ok.filter(r=>r.upd).length+'</b> se actualizan</span><span>Total <b>'+fM(sum(rows,r=>r.monto))+'</b></span>'+(rows.filter(r=>r.warn).length?'<span>'+rows.filter(r=>r.warn).length+' con aviso</span>':"")+'</div>'
+      +'<div class="tw"><table class="wide"><thead><tr><th>Zona / ruta</th><th>Canal</th><th class="num">A entregar</th><th>Histórico</th><th>Estado</th></tr></thead><tbody>'
+      +rows.map(r=>'<tr><td><b>'+esc(r.nombre)+'</b>'+(r.obs?'<div class="sub">'+esc(r.obs)+'</div>':"")+'</td><td>'+esc(r.canal)+'</td><td class="num mono"><b>'+fM(r.monto)+'</b></td><td class="sub">'+esc(ccStats(r)||"—")+'</td><td>'+chip(r.upd?"Actualiza":"Nueva",r.upd?"info":"ok")+(r.warn?'<div class="sub">'+esc(r.warn)+'</div>':"")+'</td></tr>').join("")+'</tbody></table></div>'};
+  openForm({title:"Importar caja chica (Excel)",color:"c-caja",ok:"Caja chica importada",saveLabel:"Importar",
+    fields:[{k:"archivo",label:"Excel de caja chica por zona",type:"file",accept:".xls,.xlsx,.csv",full:true},{k:"sum",type:"html",html:""}],
+    after:F=>{draw();F.elements.archivo.addEventListener("change",async()=>{const f=F.elements.archivo.files[0];if(!f)return;$("f_sum").innerHTML='<span class="mu">Leyendo…</span>';
+      try{rows=await parseCajaXls(f);if(!rows.length)throw 0;draw()}catch(e){rows=[];$("f_sum").innerHTML='<span style="color:var(--bad)">No encuentro las columnas de zona y de importe. Mandame el Excel y lo ajusto, o usá la plantilla.</span>'}})},
+    save:async()=>{const ok=rows;if(!ok.length){ferr("Elegí el Excel.");return false}const now=new Date().toISOString();
+      for(const r of ok)await C("cajachica").doc(r.id).set({nombre:r.nombre,canal:r.canal,monto:r.monto,zonaCods:r.zonaCods,sucCods:r.sucCods,zonaIds:[],sucursalIds:[],obs:r.obs,casos:r.casos,minimo:r.minimo,mediana:r.mediana,promedio:r.promedio,maximo:r.maximo,estado:"Activo",origen:"Excel",createdAt:(get("cajachica",r.id)||{}).createdAt||now,createdBy:uid,updatedAt:now,updatedBy:uid});
+      MF.ok=pl(ok.length,"fila de caja chica importada","filas de caja chica importadas")}})}
+async function cajaTpl(){if(!downloads){toast("La descarga no está disponible en esta vista");return}await loadXLSX();
+  const z=S.zonas.filter(isActive).slice(0,3).map(z=>["Zona "+z.codigo,"Preventa",15000,""]);
+  const ws=XLSX.utils.aoa_to_sheet([["Zona / ruta","Canal","Caja chica","Observaciones"]].concat(z.length?z:[["Zona 25","Preventa",15000,""]]).concat([["Zona 25-26","Preventa",25000,"Ruta que junta las dos zonas"],["Suc. 02","Sucursales",5000,""]]));ws["!cols"]=[{wch:16},{wch:12},{wch:12},{wch:34}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Caja chica");try{await downloads.save({filename:"plantilla-caja-chica.xlsx",data:new Blob([XLSX.write(wb,{bookType:"xlsx",type:"array"})])})}catch(e){}}
+
+/* ---- informe: costo y rentabilidad de los viajes ---- */
+INF.splice(INF.findIndex(r=>r.id==="ordenes")+1,0,{id:"costos",cat:"Operación",t:"Costo y rentabilidad de viajes",d:"Gasoil, caja chica y otros gastos de cada viaje contra lo que lleva",ill:"cash",f:["canal","cam","cho"],grp:[["detalle","Viaje por viaje"],["camion","Por camión"],["chofer","Por chofer"],["concepto","Por concepto"]],
+  run(F){const S1=salF(F).filter(s=>["Cargada","En ruta","Finalizada"].includes(s.estado)),mode=F.grp||"detalle",X=S1.map(s=>({s,c:costoViaje(s)}));
+    const T=sum(X,x=>x.c.tot),V=sum(X,x=>x.c.val),K=sum(X,x=>x.c.km);
+    const kp=[["Viajes",X.length],["Costo total",fM(T)],["Valor transportado",fM(V)],["Costo sobre valor",fPct(V?T*100/V:null)],["Costo por km",K?fM(T/K):"—"],["Caja chica",fM(sum(X,x=>cajaGasto(x.s)))]];
+    if(mode==="concepto"){const G={};X.forEach(x=>x.c.L.forEach(l=>{G[l.t]=(G[l.t]||0)+(l.m||0)}));const rows=Object.keys(G).map(k=>({k,m:G[k],p:T?Math.round(G[k]*1000/T)/10:null})).sort((a,b)=>b.m-a.m);
+      return{kpis:kp,cols:[["Concepto","k","t"],["Importe","m","m"],["% del costo","p","d1"]],rows,chart:{lab:"k",val:"m",t:"Costo por concepto"}}}
+    if(mode!=="detalle"){const kf=mode==="camion"?x=>camLbl(x.s.camionId):x=>chofT(x.s.choferId)||"(sin chofer)",by=groupBy(X,kf);
+      const rows=Object.keys(by).map(k=>{const a=by[k],t=sum(a,x=>x.c.tot),v=sum(a,x=>x.c.val),km=sum(a,x=>x.c.km);return{k,n:a.length,km:Math.round(km),gas:sum(a,x=>x.c.L[0].m),caja:sum(a,x=>cajaGasto(x.s)),tot:t,val:v,pct:v?Math.round(t*1000/v)/10:null,pkm:km?Math.round(t/km):null}}).sort((a,b)=>b.tot-a.tot);
+      return{kpis:kp,cols:[[mode==="camion"?"Camión":"Chofer","k","t"],["Viajes","n","n"],["Km","km","km"],["Gasoil","gas","m"],["Caja chica","caja","m"],["Costo total","tot","m"],["Valor","val","m"],["Costo / valor %","pct","d1"],["$ por km","pkm","m"]],rows,chart:{lab:"k",val:"tot",t:"Costo total"}}}
+    const rows=X.sort((a,b)=>a.s.fecha.localeCompare(b.s.fecha)||(a.s.nro||0)-(b.s.nro||0)).map(({s,c})=>({n:nro(s),f:fDL(s.fecha),canal:s.canal,cam:camLbl(s.camionId),cho:chofT(s.choferId),dest:destT(s),ks:hayN(s.kmSalida)?Number(s.kmSalida):null,km:Math.round(c.km),gas:c.L[0].m,caja:cajaGasto(s),otros:sum((s.costos||[]),x=>x.monto)+sum(c.L.filter(l=>/Chofer|Desgaste/.test(l.t)),l=>l.m),tot:c.tot,val:c.val,pct:c.pct!=null?Math.round(c.pct*10)/10:null,pkm:c.porKm?Math.round(c.porKm):null}));
+    return{kpis:kp,cols:[["N°","n","t"],["Fecha","f","t"],["Canal","canal","t"],["Camión","cam","t"],["Chofer","cho","t"],["Destinos","dest","t"],["Odómetro salida","ks","n"],["Km","km","km"],["Gasoil","gas","m"],["Caja chica","caja","m"],["Otros","otros","m"],["Costo total","tot","m"],["Valor","val","m"],["Costo / valor %","pct","d1"],["$ por km","pkm","m"]],rows,chart:{lab:"n",val:"tot",t:"Costo de cada viaje",noSort:true}}}});
+
+Object.assign(GACT,{
+  "salio":(el,id)=>{const s=get("salidas",id);if(s&&canWrite)formSalio(s);else if(!canWrite)toast("Acceso de solo lectura")},
+  "costos":(el,id)=>{const s=get("salidas",id);if(!s)return;if(canWrite)formCostos(s);else{UI.hojaId=id;location.hash="#hoja"}},
+  "cc-new":()=>{if(canWrite)formCaja(null)},
+  "cc-edit":(el,id)=>{const x=get("cajachica",id);if(x)formCaja(x)},
+  "cc-imp":()=>{if(canWrite)formCajaImp();else toast("Acceso de solo lectura")},
+  "cc-tpl":()=>cajaTpl(),
+  "cc-cfg":()=>{if(canWrite)formCostCfg()}
 });
 
 /* ================= render ================= */
@@ -2661,12 +3197,31 @@ function formPersonal(x){
     fields:[{k:"nombre",label:"Apellido y nombre",req:true,two:true},{k:"legajo",label:"Legajo"},{k:"rol",label:"Rol",type:"seg",options:["Controlador","Cargador"],two:true},{k:"estado",label:"Estado",type:"select",blank:false,options:["Activo","De licencia / vacaciones","Inactivo"]},{k:"telefono",label:"Teléfono",type:"tel"}],
     save:d=>write("personal",x&&x.id,d),del:x&&(()=>del("personal",x.id))});
 }
-function formRegreso(s){
-  openForm({title:"Regreso del viaje N° "+nro(s),color:"c-viaje",values:Object.assign({},s,{horaRegreso:s.horaRegreso||nowHM()}),ok:"Regreso registrado",saveLabel:"Registrar regreso",focus:"kmRegreso",
-    fields:[{k:"horaSalida",label:"Hora de salida",type:"time"},{k:"kmSalida",label:"Km odómetro al salir",type:"number"},{k:"x",type:"html",cls:"fsec",html:""},
-      {k:"horaRegreso",label:"Hora de regreso",type:"time",req:true},{k:"kmRegreso",label:"Km odómetro al volver",type:"number"}],
+/** regreso del viaje: km recorridos + litros cargados para ese viaje = rendimiento del camión */
+function formRegreso(s){const vg=viajeGas(s)||{},km0=s.kmSalida||vg.km0||null,C0=gasConsumo(),prom=camKml(s.camionId,C0);
+  openForm({title:"Regreso del viaje N° "+nro(s),color:"c-viaje",values:Object.assign({},s,{horaRegreso:s.horaRegreso||nowHM(),kmSalida:km0,litrosViaje:s.litrosViaje!=null?s.litrosViaje:(vg.l?Math.round(vg.l*10)/10:null)}),ok:"Regreso registrado",saveLabel:"Registrar regreso",focus:"kmRegreso",
+    fields:[{k:"horaSalida",label:"Hora de salida",type:"time"},{k:"kmSalida",label:"Km odómetro al salir",type:"number",help:vg.km0&&!s.kmSalida?"Tomado de la carga de gasoil":""},{k:"x",type:"html",cls:"fsec",html:"Regreso"},
+      {k:"horaRegreso",label:"Hora de regreso",type:"time",req:true},{k:"kmRegreso",label:"Km odómetro al volver",type:"number"},{k:"kmViaje",label:"o Km recorridos en el viaje",type:"number",help:"Si no tenés el odómetro, poné directamente los km que hizo"},
+      {k:"litrosViaje",label:"Litros de gasoil del viaje",type:"number",help:vg.n?pl(vg.n,"carga","cargas")+" del tanque asignadas a este viaje":"No hay cargas del tanque asignadas: si cargó, ponelos acá"},
+      {k:"rend",type:"html",cls:"recbox"}],
+    after:F=>{const box=$("f_rend"),num=n=>{const v=F.elements[n].value;return v===""?null:Number(v)};
+      const up=()=>{const a=num("kmSalida"),b=num("kmRegreso"),kv=num("kmViaje"),l=num("litrosViaje"),km=a!=null&&b!=null&&b>a?b-a:kv;
+        if(a!=null&&b!=null&&kv==null&&b>a)F.elements.kmViaje.placeholder=fN(b-a)+" (por odómetro)";
+        const ge=gasEstim(Object.assign({},s,{gasEstimado:null,kmRegreso:null,kmSalida:null,kmViaje:km||null}));
+        if(!km){box.innerHTML='<span class="mu">Poné el km al volver (o los km recorridos) y se calcula el rendimiento del camión.</span>'+(!l&&ge?'<span>Si lo cerrás sin odómetro ni litros, el gasoil se <b>estima</b>: '+esc(gasEstTxt(ge))+' ≈ <b>'+fM(ge.importe)+'</b></span>':"");return}
+        if(!l){box.innerHTML='<span><b>'+fN(km)+' km</b> recorridos</span><span class="mu">Sin litros cargados para el viaje: no se puede calcular el rendimiento.</span>'+(ge?'<span>Gasoil <b>estimado</b>: '+esc(gasEstTxt(ge))+' ≈ <b>'+fM(ge.importe)+'</b></span>':"");return}
+        const r=km/l,p=gasCfg().precio,dif=prom?Math.round((r/prom-1)*100):null;
+        box.innerHTML='<span>Rendimiento del viaje: <b style="font-size:20px">'+fKml(r)+' km/L</b> · '+fKml(l*100/km)+' L cada 100 km</span><span>'+fN(km)+' km · '+fL(l)+' · gasoil '+fM(l*p)+' ('+fM(l*p/km)+' por km)</span>'+(prom?'<span style="color:'+(dif<-15?"var(--bad)":dif>=0?"var(--k-up)":"var(--ink)")+'">'+(dif>=0?"▲ ":"▼ ")+Math.abs(dif)+'% '+(dif>=0?"mejor":"peor")+' que el promedio de este camión ('+fKml(prom)+' km/L)'+(dif<-15?" · revisar":"")+'</span>':"")};
+      ["kmSalida","kmRegreso","kmViaje","litrosViaje"].forEach(n=>F.elements[n].addEventListener("input",up));up()},
     save:async d=>{if(d.kmRegreso!=null&&d.kmSalida!=null&&d.kmRegreso<d.kmSalida){ferr("El km al volver no puede ser menor que el de salida.");return false}
-      await C("salidas").doc(s.id).update(Object.assign(d,{estado:"Finalizada",updatedAt:new Date().toISOString(),updatedBy:uid}))}});
+      delete d.x;delete d.rend;const km=d.kmRegreso!=null&&d.kmSalida!=null?d.kmRegreso-d.kmSalida:d.kmViaje;
+      if(d.kmRegreso==null&&d.kmSalida!=null&&d.kmViaje)d.kmRegreso=d.kmSalida+d.kmViaje;
+      d.kmViaje=km||null;d.rendKml=km&&d.litrosViaje?Math.round(km/d.litrosViaje*100)/100:null;
+      /* sin litros: se graba el gasoil estimado (km del viaje ÷ km/L × precio) para el costo del viaje */
+      const ge=d.litrosViaje?null:gasEstim(Object.assign({},s,d,{gasEstimado:null}));d.gasEstimado=ge;
+      d.regresoAt=today()+"T"+(d.horaRegreso||nowHM());if(!s.salidaAt&&d.horaSalida)d.salidaAt=s.fecha+"T"+d.horaSalida;
+      await C("salidas").doc(s.id).update(Object.assign(d,{estado:"Finalizada",updatedAt:new Date().toISOString(),updatedBy:uid}));
+      if(d.rendKml)MF.ok="Regreso registrado · rendimiento "+fKml(d.rendKml)+" km/L";else if(ge)MF.ok="Regreso registrado · gasoil estimado "+fL(ge.litros)+" ≈ "+fM(ge.importe)}});
 }
 
 /* ================= orden de carga ================= */
@@ -2703,10 +3258,11 @@ function formSal(s,pre){
   const sid=s&&s.id,fin=pre&&pre.estado==="Finalizada";
   if(!s&&!v.choferId&&v.camionId===undefined){}
   openForm({title:fin?"Marcar regreso · N° "+nro(s):s?"Orden de carga N° "+nro(s):"Nueva orden de carga",color:"c-log",values:v,meta:metaOf(s),focus:pre&&pre.focus,ok:fin?"Regreso registrado":s?"Orden actualizada":"Orden de carga emitida",
-    advOpen:false,advLabel:"Estado y observaciones",saveLabel:s?"Guardar":"Emitir orden de carga",
+    advOpen:false,advLabel:"Estado, tiempos de carga y observaciones",saveLabel:s?"Guardar":"Emitir orden de carga",
     fields:[{k:"canal",label:"Para",type:"seg",options:["Preventa","Sucursales"],two:true},{k:"fecha",label:"Fecha",type:"date",req:true},
       {k:"camionId",label:"Camión / chasis",type:"select",req:true,blank:"Elegí la unidad",options:()=>camOpts(false)},{k:"acopladoId",label:"Acoplado",type:"select",blank:"Sin acoplado",options:()=>camOpts(true)},{k:"choferId",label:"Chofer",type:"select",req:true,blank:"Elegí el chofer",options:()=>perOpts(["Chofer","Chofer y cobrador"])},
       {k:"cobradorId",label:"Cobrador",type:"select",blank:"Sin cobrador",options:()=>perOpts(["Cobrador","Chofer y cobrador"])},
+      {k:"equipoCargaId",label:"Equipo de carga",type:"select",req:!s&&S.equipos.some(isActive),blank:"Elegí el equipo que carga",two:true,options:()=>S.equipos.filter(e=>isActive(e)||e.id===v.equipoCargaId).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),undefined,{numeric:true})).map(e=>[e.id,e.nombre+" · "+pl((e.integranteIds||[]).length,"integrante","integrantes")]),help:"⏱ Al emitir la orden arranca el cronómetro de la carga · se tildan sus integrantes abajo"},
       {k:"origenLoc",label:"Origen",type:"rawselect",req:true,html:x=>locOpts(x||depId(),"Elegí el origen"),help:"Sale siempre del depósito del Parque Industrial"},{k:"destinoLoc",label:"Destino",type:"rawselect",html:x=>locOpts(x,"Sin destino fijo (solo las paradas)","suc"),help:"Adónde va el camión: última parada antes de volver"},{k:"regresoLoc",label:"Regreso (3er destino)",type:"rawselect",html:x=>locOpts(x||depId(),"Vuelve al origen"),help:"Dónde termina el viaje · por defecto el Parque Industrial"},
       {k:"destinos",label:"Sucursales",type:"checks",full:true,req:true,when:d=>d.canal==="Sucursales"},
       {k:"zonasSel",label:"Zonas (a quién corresponde)",type:"checks",full:true,help:"El responsable de cada zona sale de «Zonas de recorrido» del Parte diario. Si no la elegís acá, se suma sola al cargar el Excel en la hoja de ruta."},
@@ -2714,8 +3270,8 @@ function formSal(s,pre){
       {k:"rec",type:"html",cls:"recbox"},
       {k:"sd",type:"sec",label:"Carga en depósito"},
       {k:"portonId",label:"Portón de carga",type:"select",blank:"Elegí el portón",options:portOpts},{k:"controladorId",label:"Controlador",type:"select",blank:"Elegí el controlador",options:ctrlOpts,two:true},
-      {k:"equipoIds",label:"Equipo de carga",type:"checks",full:true},
-      {k:"estado",label:"Estado",type:"select",blank:false,adv:1,options:Object.keys(EST).map(k=>[k,EST[k][0]])},{k:"obs",label:"Observaciones",type:"textarea",two:true,adv:1}],
+            {k:"equipoIds",label:"Cargadores",type:"checks",full:true},
+      {k:"estado",label:"Estado",type:"select",blank:false,adv:1,options:Object.keys(EST).map(k=>[k,EST[k][0]])},{k:"cargaInicio",label:"Inicio de la carga",type:"datetime-local",adv:1},{k:"cargaFin",label:"Fin de la carga",type:"datetime-local",adv:1},{k:"obs",label:"Observaciones",type:"textarea",two:true,adv:1}],
     extra:s?'<button type="button" class="btn" id="fnov">'+IC.alert+'Novedad</button>':"",
     after:F=>{
       const box=$("f_destinos"),rec=$("f_rec"),eq=$("f_equipoIds"),gb=$("f_guiasBox"),gck={};
@@ -2725,6 +3281,7 @@ function formSal(s,pre){
         const it=z=>{const o=S.salidas.find(x=>x.id!==sid&&x.fecha===f&&actSal(x)&&(x.zonaIds||[]).includes(z.id));const r=zonaResp(z.id);return[z.id,zonaT(z.id),(r?r:"sin responsable en el Parte diario")+(o?" · ya va en N° "+nro(o):""),o?"al":r?"ok":""]};
         zb.innerHTML=checksHtml("zonasSel",[{group:"Zonas de preventa",items:zs.map(it)}],keep)};
       const curZ=()=>[...zb.querySelectorAll("input:checked")].map(i=>i.value);
+      F.elements.equipoCargaId.addEventListener("change",()=>{const e=get("equipos",F.elements.equipoCargaId.value);if(!e)return;eq.querySelectorAll('input[name="equipoIds"]').forEach(i=>i.checked=(e.integranteIds||[]).includes(i.value))});
       const drawG=()=>{const c=canalV();gb.hidden=c==="Preventa";if(c==="Preventa")return;const sucs=[...new Set(cur().map(x=>x.startsWith("ps:")?x.split(":")[1]:x.startsWith("p:")?(get("progsuc",x.slice(2))||{}).sucursalId:x.slice(2)).filter(Boolean))];gb.innerHTML=guiaPicker(sucs,sid,gck)};
       gb.addEventListener("change",e=>{if(e.target.name==="guia"){gck[e.target.value]=e.target.checked;drawG()}});
       const act=S.personal.filter(x=>isActive(x)||(v.equipoIds||[]).includes(x.id)).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre)));
@@ -2748,6 +3305,7 @@ function formSal(s,pre){
       const n=$("fnov");if(n)n.onclick=()=>{closeForm();formNov(null,{salidaId:s.id})};
     },
     save:async d=>{delete d.sd;if(d.canal!=="Preventa")d.destinos=expandDest(d.destinos);
+      if(!s&&!d.cargaInicio)d.cargaInicio=dtLocal();if(d.cargaInicio&&d.cargaFin&&d.cargaFin<d.cargaInicio){ferr("El fin de la carga no puede ser antes del inicio.");return false}
       d.guiaIds=d.canal==="Preventa"?[]:[...document.querySelectorAll('#f_guiasBox input[name="guia"]:checked')].map(i=>i.value);
       if(d.canal!=="Preventa")d.cobradorId="";d._zonas=d.canal==="Preventa"?(d.zonasSel||[]):[];delete d.zonasSel;if(!s&&pre&&pre.progZonId)d.progZonId=pre.progZonId;
       const nid=await saveSal(s,d);if(!s){UI.flashSal=nid;setTimeout(()=>{UI.flashSal=""},6000);MF.ok="Orden de carga emitida · quedó pendiente de hoja de ruta";if(UI.route!=="ordenes")location.hash="#ordenes"}},
@@ -3240,7 +3798,7 @@ async function act(a,el){
     case"prog-tab":UI.progTab=el.dataset.v;render();break;
     case"new-sal":formSal(null,{fecha:DAYR.includes(UI.route)?UI.fecha:today(),canal:el.dataset.v||"Preventa",origenLoc:depId()});break;
     case"edit-sal":formSal(get("salidas",id));break;
-    case"cargado":{if(!need())break;const s=get("salidas",id);await C("salidas").doc(id).update({estado:"Cargada",horaCarga:s.horaCarga||nowHM(),updatedAt:new Date().toISOString()});toast("N° "+nro(s)+" cargada");break}
+    case"cargado":{if(!need())break;const s=get("salidas",id);await C("salidas").doc(id).update({estado:"Cargada",horaCarga:s.horaCarga||nowHM(),cargadaAt:new Date().toISOString(),updatedAt:new Date().toISOString()});toast("N° "+nro(s)+" cargada");break}
     case"salio":{if(!need())break;const s=get("salidas",id);await C("salidas").doc(id).update({estado:"En ruta",horaSalida:s.horaSalida||nowHM(),updatedAt:new Date().toISOString()});toast("N° "+nro(s)+" en viaje");break}
     case"volvio":formRegreso(get("salidas",id));break;
     case"new-por":formPorton(null);break; case"edit-por":formPorton(get("portones",id));break;
@@ -3385,7 +3943,7 @@ function crearDownloads(){return{save:async({filename,data})=>{
   const keys=Object.keys(COLS);
   keys.forEach(k=>{let q=db.collection(COLS[k]);
     q=["salidas","novedades","progsuc","zonadia","cargas","progzon","guias","recepciones","gasoil","gascompras"].includes(k)?q.orderBy("fecha","desc").limit(k==="cargas"?300:1000):q.limit(1000);
-    q.onSnapshot(snap=>{S[k]=snap.docs.map(d=>Object.assign({id:d.id},d.data()));if(k==="cz")flattenCz();loaded[k]=true;if(!ready&&keys.every(x=>loaded[x]))ready=true;if(ready)schedule()},
+    q.onSnapshot(snap=>{S[k]=snap.docs.map(d=>Object.assign({id:d.id},d.data()));if(k==="cz")flattenCz();if(k==="gasoil"||k==="camiones")resolveGasCam();loaded[k]=true;if(!ready&&keys.every(x=>loaded[x]))ready=true;if(ready)schedule()},
       err=>{console.error(k,err);toast("Se perdió la conexión. Recargá la página.")})});
   setTimeout(()=>{if(!ready){ready=true;render()}},6000);
 })();
