@@ -576,6 +576,28 @@ button.tag.cost{cursor:pointer;font:inherit;font-size:inherit;border:1px solid c
 .chseg button.k-sc.on{background:var(--ch-sc);border-color:var(--ch-sc);color:#fff}
 .chseg button.k-pv:not(.on){border-color:color-mix(in srgb,var(--ch-pv) 45%,var(--line))}
 .chseg button.k-sc:not(.on){border-color:color-mix(in srgb,var(--ch-sc) 45%,var(--line))}
+
+/* satelital: planificado vs real */
+:root{--gp-plan:#2a78d6;--gp-real:#1f1f1c;--gp-fuera:#d03b3b;--gp-wp:#ffffff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--gp-plan:#5b9dea;--gp-real:#ecebe4;--gp-fuera:#f06a6a;--gp-wp:#1f1f1c}}
+:root[data-theme="dark"]{--gp-plan:#5b9dea;--gp-real:#ecebe4;--gp-fuera:#f06a6a;--gp-wp:#1f1f1c}
+.gpwrap{border:1px solid var(--line);border-radius:12px;padding:8px;margin-top:10px;background:color-mix(in srgb,var(--ink) 2%,var(--panel))}
+.gpsvg{width:100%;height:auto;display:block}
+.gp-plan{fill:none;stroke:var(--gp-plan);stroke-width:5;stroke-dasharray:2 8;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+.gp-real{fill:none;stroke:var(--gp-real);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.gp-fuera{fill:none;stroke:var(--gp-fuera);stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round}
+.gp-wp{fill:var(--gp-wp);stroke:var(--gp-plan);stroke-width:2.5}.gp-wp.o{fill:var(--gp-plan)}
+.gp-now{fill:color-mix(in srgb,var(--gp-fuera) 25%,transparent);stroke:none}.gp-now2{fill:var(--gp-real)}
+.gplg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted);padding:6px 4px 2px}.gplg span{display:inline-flex;align-items:center;gap:6px}
+.gplg .l{display:inline-block;width:22px;height:0;border-top:3px solid}.gplg .l.plan{border-top:4px dotted var(--gp-plan)}.gplg .l.real{border-color:var(--gp-real)}.gplg .l.fuera{border-color:var(--gp-fuera);border-top-width:4px}
+.gplg .d{width:10px;height:10px;border-radius:50%;background:var(--gp-real);box-shadow:0 0 0 4px color-mix(in srgb,var(--gp-fuera) 25%,transparent)}
+.gpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.gpcard{border:1px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;background:var(--panel)}.gpcard:hover{box-shadow:var(--shadow)}
+.gph{font-size:13.5px;margin-bottom:6px;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.gpf{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:12.5px;color:var(--muted);margin-top:4px}
+button.tag.gpst{cursor:pointer;font:inherit;font-size:inherit;border:1px solid color-mix(in srgb,var(--ok) 40%,var(--line));background:color-mix(in srgb,var(--ok) 10%,transparent);color:inherit}
+button.tag.gpst.bad{border-color:color-mix(in srgb,var(--bad) 45%,var(--line));background:color-mix(in srgb,var(--bad) 10%,transparent)}
+.ljraw{margin-top:8px;font-size:12px}.ljraw pre{white-space:pre-wrap;word-break:break-all;max-height:220px;overflow:auto;background:color-mix(in srgb,var(--ink) 4%,transparent);padding:8px;border-radius:8px}
 </style>
 <style>
 /* ===== celular: tablas como tarjetas, botones cómodos para el dedo, sin zoom al escribir ===== */
@@ -676,7 +698,7 @@ const TIPOS=["Observación","Rechazo total","Rechazo parcial","Rotura","Faltante
 const CAM_TIPOS=["Camión","Chasis c/cabina","Camión c/plataforma","Camión térmico","Furgón","Acoplado","Semirremolque","Utilitario","Otro"];
 const PUESTOS=["Chofer","Cobrador","Chofer y cobrador"];
 const ENTREGAS=["Pendiente","Entregado","Rechazo parcial","Rechazo total","Cerrado / ausente","Reprogramado"];
-const COLS={cajachica:"caja_chica",equipos:"equipos_carga",gasoil:"gasoil",gascompras:"gasoil_compras",recepciones:"recepciones",guias:"guias",portones:"portones",personal:"personal",progzon:"prog_zonas",camiones:"camiones",choferes:"choferes",zonas:"zonas",sucursales:"sucursales",salidas:"salidas",progsuc:"prog_sucursales",zonadia:"zona_dia",novedades:"novedades",cz:"clientes_zona",cargas:"cargas",config:"config"};
+const COLS={gps:"gps",gpsreq:"gps_req",cajachica:"caja_chica",equipos:"equipos_carga",gasoil:"gasoil",gascompras:"gasoil_compras",recepciones:"recepciones",guias:"guias",portones:"portones",personal:"personal",progzon:"prog_zonas",camiones:"camiones",choferes:"choferes",zonas:"zonas",sucursales:"sucursales",salidas:"salidas",progsuc:"prog_sucursales",zonadia:"zona_dia",novedades:"novedades",cz:"clientes_zona",cargas:"cargas",config:"config"};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pad=n=>String(n).padStart(2,"0");
@@ -705,7 +727,7 @@ const title=s=>String(s||"").toLowerCase().replace(/(^|[\s(\-/.])([a-záéíóú
 const pl=(n,s,p)=>n+" "+(n===1?s:p);
 
 /* ================= estado ================= */
-const S={cajachica:[],equipos:[],gasoil:[],gascompras:[],recepciones:[],guias:[],portones:[],personal:[],progzon:[],camiones:[],choferes:[],zonas:[],sucursales:[],salidas:[],progsuc:[],zonadia:[],novedades:[],cz:[],clientes:[],cargas:[],config:[]};
+const S={gps:[],gpsreq:[],cajachica:[],equipos:[],gasoil:[],gascompras:[],recepciones:[],guias:[],portones:[],personal:[],progzon:[],camiones:[],choferes:[],zonas:[],sucursales:[],salidas:[],progsuc:[],zonadia:[],novedades:[],cz:[],clientes:[],cargas:[],config:[]};
 const loaded={};
 const UI={route:"inicio",fecha:today(),semana:monday(today()),progTab:"pv",cargaId:null,hojaId:null,
   sal:{desde:addD(today(),-15),hasta:addD(today(),7),canal:"",estado:"",q:""},
@@ -981,6 +1003,7 @@ VIEWS.logistica=function(){
   
   +tile({act:"ver-nov",v:"todas",cls:"m-nov",ill:"alert",t:"Novedades de viaje",p:"Rechazos, roturas y faltantes de los repartos",meta:[S.novedades.filter(n=>n.estado!=="Resuelta").length+" sin resolver"]})
   +tile({href:"#gasoil",cls:"m-viaje",ill:"fuel",t:"Gasoil",p:"Cargas, tanque propio y consumo de cada camión",meta:[S.gasoil.filter(g=>g.fecha===f).length+" cargas hoy"]})
+  +tile({href:"#gps",cls:"m-viaje",ill:"trip",t:"Satelital",p:"LoJack: dónde está cada camión y su recorrido real vs el planificado",meta:[S.salidas.filter(s=>s.estado==="En ruta").length+" en viaje",ljOn()?"LoJack al día":"LoJack sin actualizar"]})
   +tile({href:"#salidas",cls:"m-hist",ill:"hist",t:"Historial",p:"Todas las órdenes y viajes anteriores"})
   +'</div>';
 };
@@ -1008,7 +1031,7 @@ function ordenCard(s){
     +'<div class="a">'+estChip(s)+'<button class="btn sm" data-act="open-orden" data-id="'+s.id+'">'+IC.edit+'Ver orden</button><button class="btn sm" data-act="open-hoja" data-id="'+s.id+'">'+IC.file+'Hoja</button>'+(anul?"":nextBtn(s))+menu+'</div>'
     +'<div class="m">'+camP(s.camionId)+(s.acopladoId?'<span class="tag ac">+ acoplado '+esc((get("camiones",s.acopladoId)||{}).patente||"")+'</span>':"")+'<span><b>'+chofN(s.choferId)+'</b>'+(s.cobradorId?' · cobra '+chofN(s.cobradorId):"")+'</span>'
     +(s.portonId?'<span class="tag">'+esc(portT(s.portonId))+'</span>':"")+'<span>'+esc(rutaT(p))+'</span><span>'+pl(p.stops.length,"parada","paradas")+'</span>'
-    +(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b> previstos</span>':"")+(kmR!=null?'<span>'+fKm(kmR)+' reales</span>':"")+odoChip(s)+gasChip(s)+cargaChip(s)+costoChip(s)
+    +(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b> previstos</span>':"")+(kmR!=null?'<span>'+fKm(kmR)+' reales</span>':"")+odoChip(s)+gpsChip(s)+gasChip(s)+cargaChip(s)+costoChip(s)
     +(pv&&!anul&&!cargasDe(s).length?chip("Falta cargar el Excel en la hoja","warn"):"")+(nn?novBtn(s,nn):"")+'</div>'+fechasRow(s)+'</article>';
 }
 VIEWS.ordenes=function(){
@@ -1210,7 +1233,7 @@ VIEWS.hoja=function(){
       +(nn.length?'<div class="list">'+nn.map(n=>'<div class="li" data-act="edit-nov" data-id="'+n.id+'" style="cursor:pointer"><div><div class="t">'+esc(n.sucursalId?sucT(n.sucursalId):"Sin sucursal")+' · '+esc(n.tipo)+(n.producto?' · '+esc(n.producto)+(n.cantidad?' ('+fN(n.cantidad)+')':""):"")+'</div><div class="d">'+esc(n.descripcion)+(n.origen==="WhatsApp"?'<span class="tag wa">WhatsApp</span>':"")+'</div></div><div class="r">'+chip(n.estado,novEstCls[n.estado]||"mute")+'</div></div>').join("")+'</div>'
         :'<div class="none">Sin observaciones todavía. Cuando los encargados manden su mensaje, pegalo acá.</div>')+'</section>'}
   if(!pv)h+=guiasHojaSec(s);else h+=pvResumen(s,p);
-  h+=costoSec(s);
+  h+=gpsSec(s)+costoSec(s);
   if(pv){
     h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-rut)"></span>Zonas de esta hoja</h2><button class="btn pri w" data-act="imp-hoja" data-id="'+s.id+'">'+IC.up+(cs.length?"Agregar Excel":"Cargar Excel de zonas")+'</button></div>';
     if(!cs.length&&!(s.zonaIds||[]).length)h+='<div class="pnb">'+emptyCard("excel","m-rut","Cargá el Excel de la zona","Subí uno o varios archivos de facturas por cliente (como «SANTIAGO ZONA 25»). La zona se detecta por el nombre del archivo y el sistema arma las paradas, las localidades y los km.",'<button class="btn pri" data-act="imp-hoja" data-id="'+s.id+'">'+IC.up+'Cargar Excel de zonas</button>')+'</div>';
@@ -2604,7 +2627,7 @@ const salidaDT=s=>s.salidaAt||(s.horaSalida&&["En ruta","Finalizada"].includes(s
 const regresoDT=s=>s.regresoAt||(s.horaRegreso&&s.estado==="Finalizada"?s.fecha+"T"+s.horaRegreso:"");
 /** etapas con fecha y hora, en orden */
 function etapas(s){const e=[["Orden",s.createdAt?dtF(s.createdAt):fDL(s.fecha)]];
-  if(s.cargaInicio)e.push(["Carga",dtF(s.cargaInicio)+(s.cargaFin?" a "+(String(s.cargaFin).slice(0,10)===String(s.cargaInicio).slice(0,10)?hmF(s.cargaFin):dtF(s.cargaFin)):" · en curso")]);
+  if(s.cargaInicio)e.push(["Carga",dtF(s.cargaInicio)+(s.cargaFin?" a "+(String(s.cargaFin).slice(0,10)===String(s.cargaInicio).slice(0,10)?hmF(s.cargaFin):dtF(s.cargaFin)):s.estado==="Programada"?" · en curso":" · sin fin marcado")]);
   if(s.hojaEmitidaAt)e.push(["Hoja de ruta",dtF(s.hojaEmitidaAt)]);
   if(s.cargadaAt)e.push(["Lista para salir",dtF(s.cargadaAt)]);
   if(salidaDT(s))e.push(["Salió",dtF(salidaDT(s))]);
@@ -2697,23 +2720,35 @@ VIEWS.hojas=function(){
       +'<div class="m">'+camP(s.camionId)+'<span><b>'+chofN(s.choferId)+'</b></span>'+docsChip(s)+cargaChip(s)+gasChip(s)+'<span>'+pl(p.stops.length,"parada","paradas")+'</span>'+(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b></span>':"")+'</div>'+fechasRow(s)+'</article>'}).join("")+'</div>';
 };
 
-/* ---- Viajes: solo los camiones listos para salir o en la ruta ---- */
-VIEWS.viajes=function(){
-  const act0=S.salidas.filter(s=>s.estado==="Cargada"||s.estado==="En ruta"),act=act0.filter(canalOk).sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.nro||0)-(b.nro||0));
-  const lis=act.filter(s=>s.estado==="Cargada"),enV=act.filter(s=>s.estado==="En ruta"),volHoy=S.salidas.filter(s=>s.estado==="Finalizada"&&(s.fecha===today()||String(s.updatedAt||"").slice(0,10)===today())).length;
-  let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Viajes"]),"Viajes",'<a class="btn w" href="#viajes-hist">'+IC.list+'Consultar viajes cerrados</a>',"trip");
-  h+='<div class="sumrow"><span class="'+(lis.length?"hl":"")+'"><b>'+lis.length+'</b> listos para salir</span><span><b>'+enV.length+'</b> en viaje</span><span><b>'+volHoy+'</b> volvieron hoy</span><span><b>'+fN(Math.round(act.reduce((t,s)=>t+(plan(s).total||0),0)))+'</b> km previstos</span></div>';
-  h+=canalSeg(act0);
-  if(!act.length&&act0.length)return h+'<div class="emptycard" style="padding:18px">No hay viajes de '+esc(UI.canalF.toLowerCase())+' en este momento. <a href="#" data-act="canal-f" data-v="">Ver todos</a></div>';
-  if(!act.length)return h+emptyCard("trip","m-viaje","No hay camiones en viaje ni esperando salir","Cuando grabás una hoja de ruta y la pasás a Viajes, el camión aparece acá. Al marcar el regreso, el viaje se cierra y pasa a «Consultar viajes cerrados».",'<a class="btn pri" href="#hojas">'+IC.file+'Ir a hojas de ruta</a><a class="btn" href="#viajes-hist">Consultar viajes cerrados</a>');
+/* ---- Viajes: todos los viajes (listos, en la ruta y los que volvieron) del período elegido ---- */
+UI.vj={desde:addD(today(),-6),hasta:today(),per:"7d",pd:addD(today(),-6),ph:today()};
+function vjPer(k){const t=today(),V=UI.vj;V.per=k;
+  if(k==="hoy"){V.desde=t;V.hasta=t}else if(k==="ayer"){V.desde=V.hasta=addD(t,-1)}else if(k==="7d"){V.desde=addD(t,-6);V.hasta=t}
+  else if(k==="mes"){V.desde=t.slice(0,8)+"01";V.hasta=t}else if(k==="mesant"){const d=new Date(+t.slice(0,4),+t.slice(5,7)-2,1),e=new Date(+t.slice(0,4),+t.slice(5,7)-1,0),f=x=>x.getFullYear()+"-"+pad2(x.getMonth()+1)+"-"+pad2(x.getDate());V.desde=f(d);V.hasta=f(e)}
+  else if(k==="todo"){V.desde="";V.hasta=""}V.pd=V.desde;V.ph=V.hasta}
+VIEWS.viajes=function(){const V=UI.vj,inR=f=>(!V.desde||f>=V.desde)&&(!V.hasta||f<=V.hasta);
+  const viajes=S.salidas.filter(s=>["Cargada","En ruta","Finalizada"].includes(s.estado));
+  /* el período se aplica a todos por la fecha del viaje; los que siguen abiertos fuera del período solo se avisan */
+  const all0=viajes.filter(s=>inR(s.fecha)),all=all0.filter(canalOk),fuera=viajes.filter(s=>s.estado!=="Finalizada"&&!inR(s.fecha)&&canalOk(s));
+  const lis=all.filter(s=>s.estado==="Cargada"),enV=all.filter(s=>s.estado==="En ruta"),vol=all.filter(s=>s.estado==="Finalizada");
+  let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Viajes"]),"Viajes",'<a class="btn w" href="#gps">'+IC.route+'Satelital</a>',"trip");
+  h+='<div class="flt vjflt"><label>Desde <input type="date" data-ui="vj.desde" value="'+esc(V.desde)+'"></label><label>Hasta <input type="date" data-ui="vj.hasta" value="'+esc(V.hasta)+'"></label>'
+    +[["hoy","Hoy"],["ayer","Ayer"],["7d","Últimos 7 días"],["mes","Este mes"],["mesant","Mes anterior"],["todo","Todos"]].map(([k,t])=>'<button class="btn sm '+(V.per===k&&V.desde===V.pd&&V.hasta===V.ph?"pri":"ghost")+'" data-act="vj-per" data-v="'+k+'">'+t+'</button>').join("")+'</div>';
+  h+='<div class="sumrow"><span class="'+(lis.length?"hl":"")+'"><b>'+lis.length+'</b> listos para salir</span><span><b>'+enV.length+'</b> en viaje</span><span><b>'+vol.length+'</b> volvieron'+(V.desde||V.hasta?" en el período":"")+'</span><span><b>'+fN(Math.round(all.reduce((t,s)=>t+(kmRealS(s)||Number(s.kmViaje)||(s.gps&&s.gps.km)||plan(s).total||0),0)))+'</b> km</span></div>';
+  h+=canalSeg(all0);
+  if(fuera.length)h+='<div class="banner">'+IC.alert+' Hay '+pl(fuera.length,"viaje sin cerrar","viajes sin cerrar")+' de otros días ('+esc([...new Set(fuera.map(s=>fD(s.fecha)))].sort().join(", "))+'). <a href="#" data-act="vj-per" data-v="todo">Ver todos</a></div>';
+  if(!all.length)return h+(all0.length?'<div class="emptycard" style="padding:18px">No hay viajes de '+esc(UI.canalF.toLowerCase())+' en estos días. <a href="#" data-act="canal-f" data-v="">Ver todos</a></div>'
+    :emptyCard("trip","m-viaje","No hay viajes en estos días","Elegí otro período arriba. Cuando grabás una hoja de ruta y la pasás a Viajes, el camión aparece acá.",'<button class="btn pri" data-act="vj-per" data-v="todo">Ver todos los viajes</button>'));
   /* agrupado por día: los listos por la fecha del viaje, los que están en la ruta por el día que salieron */
   const dia=(s,enRuta)=>enRuta&&salidaDT(s)?String(salidaDT(s)).slice(0,10):s.fecha;
-  const porDia=(arr,enRuta)=>{const g={};arr.forEach(s=>{(g[dia(s,enRuta)]=g[dia(s,enRuta)]||[]).push(s)});
-    return Object.keys(g).sort().map(f=>{const d=daysTo(f);return'<div class="diah"><b>'+fDL(f)+'</b>'+(d===0?chip("Hoy","info"):d===-1?chip("Ayer","mute"):d<0?chip("hace "+(-d)+" días",enRuta&&d<-2?"warn":"mute"):"")+'<span class="c">'+pl(g[f].length,"camión","camiones")+'</span></div><div class="lcs">'+g[f].sort((a,b)=>String(salidaDT(a)||a.cargadaAt||"").localeCompare(String(salidaDT(b)||b.cargadaAt||""))||(a.nro||0)-(b.nro||0)).map(ordenCard).join("")+'</div>'}).join("")};
-  const sec=(t,arr,e)=>'<div><div class="secl">'+t+' <span class="c">'+arr.length+'</span></div>'+(arr.length?porDia(arr,arr[0].estado==="En ruta"):'<div class="emptycard" style="padding:18px">'+e+'</div>')+'</div>';
-  return h+sec("Listos para salir",lis,"Ningún camión esperando salir.")+sec("En viaje",enV,"Ningún camión en la ruta en este momento.");
+  const porDia=(arr,enRuta,desc)=>{const g={};arr.forEach(s=>{(g[dia(s,enRuta)]=g[dia(s,enRuta)]||[]).push(s)});const ks=Object.keys(g).sort();if(desc)ks.reverse();
+    return ks.map(f=>{const d=daysTo(f);return'<div class="diah"><b>'+fDL(f)+'</b>'+(d===0?chip("Hoy","info"):d===-1?chip("Ayer","mute"):d<0?chip("hace "+(-d)+" días",enRuta&&d<-2?"warn":"mute"):"")+'<span class="c">'+pl(g[f].length,"camión","camiones")+'</span></div><div class="lcs">'+g[f].sort((a,b)=>String(salidaDT(a)||a.cargadaAt||"").localeCompare(String(salidaDT(b)||b.cargadaAt||""))||(a.nro||0)-(b.nro||0)).map(ordenCard).join("")+'</div>'}).join("")};
+  const sec=(t,arr,e,enRuta,desc)=>'<div><div class="secl">'+t+' <span class="c">'+arr.length+'</span></div>'+(arr.length?porDia(arr,enRuta,desc):'<div class="emptycard" style="padding:18px">'+e+'</div>')+'</div>';
+  return h+sec("Listos para salir",lis,"Ningún camión esperando salir.")+sec("En viaje",enV,"Ningún camión en la ruta en este momento.",true)
+    +(enV.length?ljVivo():"")
+    +sec("Volvieron",vol,"Ningún viaje cerrado en estos días.",false,true);
 };
-async function emitirHojas(ids){const now=new Date().toISOString();for(const id of ids)await C("salidas").doc(id).update({hojaEmitida:true,hojaEmitidaAt:now,updatedAt:now,updatedBy:uid})}
+GACT["vj-per"]=el=>{vjPer(el.dataset.v);render()};async function emitirHojas(ids){const now=new Date().toISOString();for(const id of ids)await C("salidas").doc(id).update({hojaEmitida:true,hojaEmitidaAt:now,updatedAt:now,updatedBy:uid})}
 Object.assign(GACT,{
   "ord-sel":(el,id)=>{UI.selOrd.has(id)?UI.selOrd.delete(id):UI.selOrd.add(id);render()},
   "ord-selall":()=>{const sh=ordSinHoja();if(UI.selOrd.size===sh.length)UI.selOrd.clear();else sh.forEach(s=>UI.selOrd.add(s.id));render()},
@@ -2909,7 +2944,9 @@ function formSalio(s){const prev=odoPrev(s),cm=cajaMatch(s);
     fields:[{k:"horaSalida",label:"Hora de salida",type:"time",req:true},{k:"kmSalida",label:"Odómetro al salir (km)",type:"number",help:(prev?"Último odómetro conocido de "+esc(camLbl(s.camionId))+": "+fN(prev)+" km. ":"")+"Si no lo tenés, dejalo vacío: el gasoil se estima con los km del viaje"},
       {k:"cajaChica",label:"Caja chica que se le entrega ($)",type:"number",full:true,help:cm.length?"Según la tabla: "+esc(cm.map(x=>x.nombre+" "+fM(x.monto)).join(" + ")):"No hay caja chica cargada para "+(s.canal==="Preventa"?"estas zonas":"estas sucursales")+" · la cargás en Base de datos › Caja chica"}],
     save:async d=>{if(prev&&d.kmSalida!=null&&d.kmSalida<prev-5&&!MF.okBajo){MF.okBajo=1;ferr("El odómetro es menor que el último conocido ("+fN(prev)+" km). Revisalo; si está bien, tocá «Marcar salida» otra vez.");return false}
-      await C("salidas").doc(s.id).update({estado:"En ruta",horaSalida:d.horaSalida,salidaAt:today()+"T"+d.horaSalida,kmSalida:d.kmSalida,cajaChica:d.cajaChica,updatedAt:new Date().toISOString(),updatedBy:uid})}})}
+      await C("salidas").doc(s.id).update({estado:"En ruta",horaSalida:d.horaSalida,salidaAt:today()+"T"+d.horaSalida,kmSalida:d.kmSalida,cajaChica:d.cajaChica,updatedAt:new Date().toISOString(),updatedBy:uid});
+      /* arranca solo el seguimiento satelital de la patente */
+      if(ljCfg().accountId){setTimeout(gpsReqSync,800);MF.ok="N° "+nro(s)+" en viaje · seguimiento LoJack activado"}}})}
 
 /* ---- caja chica y otros costos de un viaje ---- */
 function formCostos(s){let rows=(s.costos||[]).map(x=>Object.assign({},x));const cm=cajaMatch(s),cs=conceptos();
@@ -3017,6 +3054,155 @@ Object.assign(GACT,{
   "cc-tpl":()=>cajaTpl(),
   "cc-cfg":()=>{if(canWrite)formCostCfg()}
 });
+
+/* ================= satelital LoJack (Strix): posición de los camiones y recorrido real vs planificado =================
+   La página no habla con LoJack: un programa en la PC de la oficina consulta LoJack cada pocos minutos y deja los datos
+   en la base (colección gps). La página pide qué seguir en gps_req: un documento por viaje en ruta, con la ruta óptima. */
+GRP.gps="logistica";MOD.gps="m-viaje";PARENT.gps="logistica";
+const ljCfg=()=>Object.assign({usuario:"",accountId:"",umbral:3},S.config.find(x=>x.id==="lojack")||{});
+const flotaDoc=()=>S.gps.find(x=>x.id==="flota")||null;
+const gpsAt=()=>{const f=flotaDoc();return f&&f.at?Date.parse(f.at):0};
+/** el programa de la oficina actualizó hace menos de 30 minutos */
+const ljOn=()=>{const f=flotaDoc();return!!(f&&f.ok&&Date.now()-gpsAt()<30*6e4)};
+const ljThings=()=>((flotaDoc()||{}).things||[]);
+const npat=x=>String(x||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+/** equipo LoJack ↔ camión: primero lo fijado a mano, después por patente */
+function ljCam(t){const c=S.camiones.find(c=>c.ljThing===t.id);if(c)return c;
+  const txt=t.txt||npat(t.name+" "+t.plate);return S.camiones.find(c=>!c.ljThing&&npat(c.patente).length>=6&&txt.includes(npat(c.patente)))||null}
+const ljThingDe=camId=>{const c=get("camiones",camId);if(!c)return null;return ljThings().find(t=>t.id===c.ljThing)||ljThings().find(t=>ljCam(t)===c)||null};
+const P4=a=>a?{lat:a[0],lng:a[1],t:a[2]||null,v:a[3]}:null;
+
+/* ---- ruta óptima del viaje: los puntos de la hoja de ruta (el programa la calcula por calle) ---- */
+function rutaWps(s){const p=plan(s),L=LOC(),w=[];p.tramos.forEach((t,i)=>{if(i===0)w.push(L[t.from]);w.push(L[t.to])});
+  return w.filter(x=>x&&x.lat!=null).map(x=>[Math.round(+x.lat*1e5)/1e5,Math.round(+x.lng*1e5)/1e5])}
+const isoDe=v=>{const d=dtP(v);return d?d.toISOString():null};
+/** mantiene al día los pedidos de seguimiento (uno por viaje en ruta) */
+let _reqBusy=false;
+async function gpsReqSync(){if(!canWrite||_reqBusy||!ljCfg().accountId)return;_reqBusy=true;
+  try{const R={};S.gpsreq.forEach(r=>R[r.id]=r);
+    for(const s of S.salidas.filter(s=>s.estado==="En ruta")){const c=get("camiones",s.camionId)||{};
+      const want={salidaId:s.id,nro:nro(s),patente:c.patente||"",ljThing:c.ljThing||"",desde:isoDe(salidaDT(s)||s.cargadaAt||s.fecha+"T06:00"),hasta:null,wps:rutaWps(s)};
+      const cur=R[s.id],same=cur&&JSON.stringify([cur.patente,cur.ljThing,cur.desde,cur.hasta,cur.wps])===JSON.stringify([want.patente,want.ljThing,want.desde,want.hasta,want.wps]);
+      if(!same)await C("gpsreq").doc(s.id).set(Object.assign(want,{updatedAt:new Date().toISOString()}))}
+    for(const r of S.gpsreq){const s=get("salidas",r.id);
+      if(!s||s.estado==="Anulada"||s.estado==="Programada"||s.estado==="Cargada"){await C("gpsreq").doc(r.id).delete();continue}
+      if(s.estado==="Finalizada"&&!r.hasta)await C("gpsreq").doc(r.id).update({hasta:isoDe(regresoDT(s))||new Date().toISOString(),updatedAt:new Date().toISOString()})}
+    /* resumen del recorrido en el viaje (km GPS y desvíos), para informes y tarjetas */
+    for(const d of S.gps){if(d.id==="flota"||d.err)continue;const s=get("salidas",d.id),tr=s&&trailOf(s);if(!tr||!tr.a||!tr.pts.length)continue;
+      const g={sinPlan:tr.a.sinPlan,km:tr.a.km,pct:tr.a.pct,max:tr.a.max,n:tr.a.n,tramos:tr.a.tramos.length,at:d.at};
+      if(!s.gps||s.gps.at!==g.at)await C("salidas").doc(s.id).update({gps:g})}
+  }catch(e){}_reqBusy=false}
+
+/* ---- análisis: km por GPS y desvíos contra la ruta óptima ---- */
+function distSeg(p,a,b){const k=111.32,cx=Math.cos(p.lat*Math.PI/180),ax=(a.lng-p.lng)*k*cx,ay=(a.lat-p.lat)*k,bx=(b.lng-p.lng)*k*cx,by=(b.lat-p.lat)*k,dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy;
+  let t=l?-(ax*dx+ay*dy)/l:0;t=Math.max(0,Math.min(1,t));const x=ax+t*dx,y=ay+t*dy;return Math.sqrt(x*x+y*y)}
+const distLine=(p,L)=>{if(!L.length)return 0;if(L.length===1)return hav(p,L[0]);let m=Infinity;for(let i=1;i<L.length;i++){const d=distSeg(p,L[i-1],L[i]);if(d<m)m=d}return m};
+function ljAnalisis(pts,rp){const u=Number(ljCfg().umbral)||3,thr=rp.road?u:Math.max(u*4,12);let km=0;
+  for(let i=1;i<pts.length;i++){const d=hav(pts[i-1],pts[i]);if(d<80)km+=d}
+  const dev=pts.map(p=>distLine(p,rp.line)),fuera=dev.filter(d=>d>thr).length;
+  /* tramos fuera de ruta: puntos seguidos lejos del recorrido planificado */
+  const tr=[];let cur=null;dev.forEach((d,i)=>{if(d>thr){if(!cur)cur={i0:i,max:0};cur.i1=i;cur.max=Math.max(cur.max,d)}else if(cur){tr.push(cur);cur=null}});if(cur)tr.push(cur);
+  return{sinPlan:rp.line.length<2,km:Math.round(km*10)/10,n:pts.length,fuera,pct:pts.length?Math.round(fuera*1000/pts.length)/10:0,max:dev.length?Math.round(Math.max(...dev)*10)/10:0,dev,thr,tramos:tr.filter(t=>t.i1-t.i0>=2)}}
+/** recorrido de un viaje tal como lo dejó el programa (memorizado por actualización) */
+const _tr={};
+function trailOf(s){const d=S.gps.find(x=>x.id===s.id);if(!d)return null;const k=d.at+"|"+ljCfg().umbral;if(_tr[s.id]&&_tr[s.id].k===k)return _tr[s.id];
+  let o;if(d.err)o={err:d.err,code:d.code,raw:d.raw,at:Date.parse(d.at)};
+  else{const pts=(d.pts||[]).map(P4),rp={line:(d.ruta||[]).map(P4),wps:(d.wps||[]).map(P4),road:!!d.road};o={pts,rp,a:ljAnalisis(pts,rp),at:Date.parse(d.at),thing:d.thing,final:d.final}}
+  o.k=k;return _tr[s.id]=o}
+
+/* ---- dibujo: planificado (punteado) vs real (línea), sin mapas externos ---- */
+function ljSvg(rp,pts,a){const all=rp.line.concat(pts);if(!all.length)return"";
+  let la0=Infinity,la1=-Infinity,lo0=Infinity,lo1=-Infinity;all.forEach(p=>{la0=Math.min(la0,p.lat);la1=Math.max(la1,p.lat);lo0=Math.min(lo0,p.lng);lo1=Math.max(lo1,p.lng)});
+  const cx=Math.cos((la0+la1)/2*Math.PI/180),w=Math.max((lo1-lo0)*cx,0.01),h=Math.max(la1-la0,0.01),W=720,H=Math.round(Math.min(460,Math.max(240,W*h/w))),pad=18,sc=Math.min((W-2*pad)/w,(H-2*pad)/h);
+  const X=p=>(pad+((p.lng-lo0)*cx)*sc+((W-2*pad)-w*sc)/2).toFixed(1),Y=p=>(pad+(la1-p.lat)*sc+((H-2*pad)-h*sc)/2).toFixed(1),path=L=>L.map((p,i)=>(i?"L":"M")+X(p)+" "+Y(p)).join("");
+  let g='<path d="'+path(rp.line)+'" class="gp-plan"/>';
+  if(pts.length)g+='<path d="'+path(pts)+'" class="gp-real"/>';
+  (a?a.tramos:[]).forEach(t=>{g+='<path d="'+path(pts.slice(t.i0,t.i1+1))+'" class="gp-fuera"><title>Fuera de ruta · hasta '+fKmG(t.max)+' km del recorrido</title></path>'});
+  rp.wps.forEach((p,i)=>{g+='<circle cx="'+X(p)+'" cy="'+Y(p)+'" r="'+(i===0?6:4.5)+'" class="gp-wp'+(i===0?" o":"")+'"/>'});
+  if(pts.length){const l=pts[pts.length-1];g+='<circle cx="'+X(l)+'" cy="'+Y(l)+'" r="8" class="gp-now"/><circle cx="'+X(l)+'" cy="'+Y(l)+'" r="3" class="gp-now2"/>'}
+  return'<svg class="gpsvg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Recorrido planificado contra recorrido real">'+g+'</svg>'
+    +'<div class="gplg"><span><i class="l plan"></i>Ruta óptima'+(rp.road?"":" (en línea recta)")+'</span><span><i class="l real"></i>Real (GPS)</span><span><i class="l fuera"></i>Fuera de ruta</span><span><i class="d"></i>Última posición</span></div>'}
+const fKmG=n=>n==null?"—":Number(n).toLocaleString("es-AR",{maximumFractionDigits:1});
+const hace=ms=>{if(!ms)return"sin hora";const m=Math.round((Date.now()-ms)/6e4);return m<1?"recién":m<60?"hace "+m+" min":m<1440?"hace "+Math.floor(m/60)+" h "+pad2(m%60)+" min":dtF(new Date(ms).toISOString())};
+const gmPt=p=>"https://www.google.com/maps?q="+p.lat+","+p.lng;
+/** estado del programa de la oficina, en una línea */
+function ljEstado(){const f=flotaDoc();if(!f)return{ok:false,t:"El seguimiento todavía no arrancó: falta activar el programa de LoJack en la PC de la oficina."};
+  if(!f.ok)return{ok:false,t:"LoJack: "+(f.err||"error")+" · "+hace(gpsAt())};
+  if(Date.now()-gpsAt()>30*6e4)return{ok:false,t:"Última actualización de LoJack "+hace(gpsAt())+": revisá que la PC de la oficina esté prendida con la app de Claude abierta."};
+  return{ok:true,t:"LoJack actualizado "+hace(gpsAt())}}
+
+/** km de la ruta óptima: los de la hoja de ruta; si no hay, el largo de la ruta por calle */
+function kmOptimo(s,tr){const p=plan(s).total;if(p)return Math.round(p*10)/10;const L=tr&&tr.rp&&tr.rp.line;if(!L||L.length<2)return null;let k=0;for(let i=1;i<L.length;i++)k+=hav(L[i-1],L[i]);return Math.round(k)}
+/** comparación real vs óptima: km de más (o de menos) y porcentaje */
+function compKm(s,tr){const km=tr&&tr.a?tr.a.km:s.gps&&s.gps.km,op=kmOptimo(s,tr);if(km==null||!op)return null;const d=Math.round(km-op)||0;return{km,op:Math.round(op),d,pct:Math.round((km-op)*1000/op)/10||0}}
+const fDif=c=>Math.abs(c.pct)<1?"igual a la ruta óptima":fN(Math.abs(c.d))+" km ("+fKmG(Math.abs(c.pct))+"%) "+(c.d>0?"de más":"de menos");
+
+/* ---- chips y sección del viaje ---- */
+function gpsChip(s){const tr=trailOf(s),g=tr&&tr.a?{tramos:tr.a.tramos.length,km:tr.a.km,sinPlan:tr.a.sinPlan}:s.gps;if(!g)return"";
+  if(g.sinPlan)return'<button class="tag gpst" data-act="lj-ver" data-id="'+s.id+'" title="Recorrido satelital">📡 '+fKmG(g.km)+' km GPS · sin ruta planificada</button>';
+  const bad=g.tramos>0,c=compKm(s,tr);return'<button class="tag gpst'+(bad?" bad":"")+'" data-act="lj-ver" data-id="'+s.id+'" title="Recorrido satelital">📡 '+(bad?pl(g.tramos,"desvío","desvíos")+" de la ruta":"en ruta")+' · hizo '+fKmG(g.km)+' km'+(c&&s.estado==="Finalizada"?" vs "+fN(c.op)+" óptimos ("+(c.pct>0?"+":"")+fKmG(c.pct)+"%)":"")+'</button>'}
+function gpsSec(s){if(!["En ruta","Finalizada"].includes(s.estado)||!ljCfg().accountId)return"";const tr=trailOf(s),es=ljEstado();
+  let h='<section class="pn" id="gpsSec"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-viaje)"></span>Recorrido satelital · real vs ruta óptima</h2><span class="s">'+esc(es.t)+'</span></div>';
+  if(!tr)return h+'<div class="none">'+(s.estado==="En ruta"?"Seguimiento activado para "+esc(camLbl(s.camionId))+": el recorrido aparece en la próxima actualización de LoJack (cada 10 minutos).":s.gps?"Último control: "+fKmG(s.gps.km)+" km por GPS · "+(s.gps.tramos?pl(s.gps.tramos,"desvío","desvíos"):"sin desvíos")+".":"Este viaje no tiene recorrido satelital.")+'</div></section>';
+  if(tr.err)return h+'<div class="none" style="color:var(--bad)">'+esc(tr.err)+(tr.code==="map"?' <a href="#gps">Relacionalo en Satelital</a>':"")+'</div>'+(tr.raw?'<details class="ljraw"><summary>Respuesta de LoJack</summary><pre>'+esc(tr.raw)+'</pre></details>':"")+'</section>';
+  const a=tr.a,last=tr.pts[tr.pts.length-1],kmR=kmRealS(s)||Number(s.kmViaje)||null,c=compKm(s,tr),fin=s.estado==="Finalizada";
+  h+='<div class="kpis kpis-in"><div class="kpi"><span class="k">'+(fin?"Km que hizo (GPS)":"Km hechos hasta ahora")+'</span><span class="v">'+fKmG(a.km)+'</span><span class="s">'+(kmR?"odómetro "+fN(kmR)+" km":"según LoJack")+'</span></div>'
+    +'<div class="kpi"><span class="k">Ruta óptima</span><span class="v">'+(c?fN(c.op):"—")+'</span><span class="s">'+(c?(fin?'<b style="color:'+(c.pct>10?"var(--bad)":c.pct>3?"var(--warn)":"var(--ok)")+'">'+fDif(c)+'</b>':"le faltan "+fN(Math.max(0,Math.round(c.op-a.km)))+" km aprox."):"la hoja no tiene km previstos")+'</span></div>'
+    +(a.sinPlan?'<div class="kpi"><span class="k">Desvíos de la ruta</span><span class="v">—</span><span class="s">la hoja todavía no tiene paradas con ubicación para comparar</span></div>':'<div class="kpi"><span class="k">Desvíos de la ruta</span><span class="v" style="color:'+(a.tramos.length?"var(--bad)":"var(--ok)")+'">'+(a.tramos.length?a.tramos.length:"Ninguno")+'</span><span class="s">'+(a.tramos.length?"hasta "+fKmG(a.max)+" km de la ruta · "+fKmG(a.pct)+"% del tiempo":"siempre a menos de "+a.thr+" km de la ruta")+'</span></div>')
+    +'<div class="kpi"><span class="k">'+(s.estado==="En ruta"?"Última posición":"Llegada")+'</span><span class="v" style="font-size:17px">'+(last?hace(last.t):"—")+'</span><span class="s">'+(last?(last.v!=null?fN(Math.round(last.v))+" km/h · ":"")+'<a href="'+gmPt(last)+'" target="_blank" rel="noopener">ver en Google Maps</a>':"sin posiciones en el período")+'</span></div>'
+    +'<div class="kpi"><span class="k">Posiciones</span><span class="v">'+fN(a.n)+'</span><span class="s">'+esc(tr.thing||"")+' · '+hace(tr.at)+'</span></div></div>';
+  if(!tr.pts.length)return h+'<div class="none">LoJack no devolvió posiciones desde la salida'+(s.estado==="Finalizada"?" hasta el regreso":"")+'. Revisá que la hora de salida esté bien.</div></section>';
+  h+='<div class="gpwrap">'+ljSvg(tr.rp,tr.pts,a)+'</div>';
+  if(a.tramos.length)h+='<div class="tw"><table class="wide"><thead><tr><th>Desvío</th><th>Desde</th><th>Hasta</th><th class="num">Máx. distancia de la ruta</th><th></th></tr></thead><tbody>'+a.tramos.map((t,i)=>{const p0=tr.pts[t.i0],p1=tr.pts[t.i1];return'<tr><td><b>'+(i+1)+'</b></td><td>'+(p0.t?hmF(new Date(p0.t).toISOString()):"—")+'</td><td>'+(p1.t?hmF(new Date(p1.t).toISOString()):"—")+'</td><td class="num mono">'+fKmG(t.max)+' km</td><td><a href="'+gmPt(tr.pts[Math.round((t.i0+t.i1)/2)])+'" target="_blank" rel="noopener">ver lugar</a></td></tr>'}).join("")+'</tbody></table></div>';
+  if(s.estado==="Finalizada"&&!kmR&&a.km>0&&canWrite)h+='<div class="pa" style="margin-top:10px"><button class="btn w" data-act="lj-usarkm" data-id="'+s.id+'">Usar los '+fKmG(a.km)+' km del GPS como km del viaje</button></div>';
+  return h+'</section>'}
+/* mini mapas de los camiones en viaje, para el panel de Viajes */
+function ljVivo(){if(!ljCfg().accountId)return"";const act=S.salidas.filter(s=>s.estado==="En ruta"&&canalOk(s));if(!act.length)return"";const es=ljEstado();
+  return'<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-viaje)"></span>Seguimiento en vivo · LoJack</h2><span class="s">'+esc(es.t)+' · punteado: ruta óptima · línea llena: lo que va haciendo</span></div><div class="gpgrid">'
+    +act.map(s=>{const tr=trailOf(s),last=tr&&tr.pts&&tr.pts[tr.pts.length-1];
+      return'<div class="gpcard" data-act="lj-ver" data-id="'+s.id+'"><div class="gph">'+chBadge(s)+'<b>N° '+nro(s)+'</b> '+plate(camLbl(s.camionId))+'<span class="mu"> · '+esc(destT(s).slice(0,40))+'</span></div>'
+        +(!tr?'<div class="none">Seguimiento activado: aparece en la próxima actualización.</div>':tr.err?'<div class="none" style="color:var(--bad)">'+esc(tr.err)+'</div>':tr.pts.length?ljSvg(tr.rp,tr.pts,tr.a)+'<div class="gpf">'+gpsChip(s)+'<span>'+hace(last.t)+(last.v!=null?" · "+fN(Math.round(last.v))+" km/h":"")+'</span></div>':'<div class="none">Todavía sin posiciones desde la salida.</div>')+'</div>'}).join("")+'</div></section>'}
+
+/* ---- pantalla Satelital ---- */
+VIEWS.gps=function(){const c=ljCfg(),es=ljEstado(),TH=ljThings();
+  let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Satelital"]),"Satelital · LoJack",'<button class="btn" data-act="lj-cfg">'+IC.gear+'Configurar</button>',"trip");
+  h+='<p class="lead">Dónde está cada camión y por dónde fue en cada viaje, comparado con la ruta óptima de la hoja de ruta. Al marcar la salida de un viaje, el seguimiento de esa patente arranca solo.</p>';
+  h+='<div class="banner"'+(es.ok?"":' style="border-color:var(--warn)"')+'>'+(es.ok?IC.check:IC.alert)+' '+esc(es.t)+'</div>';
+  const f=flotaDoc();if(f&&!f.ok&&f.raw)h+='<details class="ljraw"><summary>Respuesta de LoJack</summary><pre>'+esc(f.raw)+'</pre></details>';
+  const act=S.salidas.filter(s=>s.estado==="En ruta").sort((a,b)=>String(salidaDT(a)).localeCompare(String(salidaDT(b))));
+  h+='<div class="sumrow"><span><b>'+TH.length+'</b> equipos en la cuenta</span><span><b>'+TH.filter(t=>ljCam(t)).length+'</b> relacionados con la flota</span><span><b>'+act.length+'</b> camiones en viaje</span></div>';
+  h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-viaje)"></span>Camiones en viaje</h2></div>'+(act.length?'<div class="tw"><table class="wide"><thead><tr><th>Viaje</th><th>Camión</th><th>Salió</th><th>Última posición</th><th class="num">Velocidad</th><th>Recorrido</th></tr></thead><tbody>'
+    +act.map(s=>{const t=ljThingDe(s.camionId),p=t&&P4(t.pos);return'<tr class="ck" data-act="lj-ver" data-id="'+s.id+'"><td>'+chBadge(s)+'<b>N° '+nro(s)+'</b><div class="sub">'+esc(destT(s))+'</div></td><td>'+plate(camLbl(s.camionId))+'</td><td>'+esc(dtF(salidaDT(s))||"—")+'</td><td>'+(!t?'<span class="mu">sin equipo LoJack</span>':p?hace(p.t)+' · <a href="'+gmPt(p)+'" target="_blank" rel="noopener">mapa</a>':'<span class="mu">sin datos</span>')+'</td><td class="num mono">'+(p&&p.v!=null?fN(p.v)+" km/h":"—")+'</td><td>'+(gpsChip(s)||'<span class="mu">en la próxima actualización</span>')+'</td></tr>'}).join("")+'</tbody></table></div>':'<div class="none">No hay camiones en viaje ahora.</div>')+'</section>';
+  if(!TH.length)return h;
+  const opt=t=>{const cur=ljCam(t);return'<select data-ljmap="'+esc(t.id)+'" aria-label="Camión de la flota"'+(canWrite?"":" disabled")+'><option value="">— Sin relacionar —</option>'+S.camiones.filter(c=>c.estado!=="Baja").sort((a,b)=>String(a.patente).localeCompare(String(b.patente))).map(c=>'<option value="'+c.id+'"'+(cur&&cur.id===c.id?" selected":"")+'>'+esc(c.patente)+(c.modelo?" · "+esc(c.modelo):"")+'</option>').join("")+'</select>'};
+  return h+'<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-base)"></span>Equipos de LoJack y camiones de la flota</h2><span class="s">Se relacionan solos por patente; si alguno no coincide, elegilo a mano</span></div><div class="tw"><table class="wide"><thead><tr><th>Equipo LoJack</th><th>Camión</th><th>Última posición</th></tr></thead><tbody>'
+    +TH.map(t=>{const p=P4(t.pos);return'<tr><td><b>'+esc(t.name)+'</b></td><td>'+opt(t)+'</td><td>'+(p?hace(p.t)+(p.v!=null?" · "+fN(p.v)+" km/h":"")+' · <a href="'+gmPt(p)+'" target="_blank" rel="noopener">mapa</a>':'<span class="mu">—</span>')+'</td></tr>'}).join("")+'</tbody></table></div></section>'};
+document.addEventListener("change",async e=>{const tid=e.target&&e.target.dataset&&e.target.dataset.ljmap;if(tid==null||!canWrite)return;const cid=e.target.value;
+  try{for(const c of S.camiones.filter(c=>c.ljThing===tid&&c.id!==cid))await C("camiones").doc(c.id).update({ljThing:null});
+    if(cid)await C("camiones").doc(cid).update({ljThing:tid});toast(cid?camLbl(cid)+" relacionado con LoJack":"Equipo sin relacionar");setTimeout(gpsReqSync,500)}catch(x){toast(errMsg(x))}});
+function formLjCfg(){const c=ljCfg();
+  openForm({title:"LoJack · configuración",color:"c-viaje",values:c,ok:"Configuración de LoJack guardada",saveLabel:"Guardar",
+    fields:[{k:"umbral",label:"Aviso de desvío (km fuera de la ruta óptima)",type:"number",full:true,help:"A partir de cuántos km de la ruta se marca como desvío. Por defecto 3."},{k:"usuario",label:"Usuario de la API",full:true},{k:"accountId",label:"Account ID",full:true,help:"La contraseña no se carga acá: queda guardada encriptada en la PC de la oficina que consulta LoJack."}],
+    save:async d=>{if(!canWrite){ferr("Acceso de solo lectura");return false}await C("config").doc("lojack").set(Object.assign({},c,d,{updatedAt:new Date().toISOString(),updatedBy:uid}))}})}
+Object.assign(GACT,{
+  "lj-cfg":()=>formLjCfg(),
+  "lj-ver":(el,id)=>{UI.hojaId=id;location.hash="#hoja";setTimeout(()=>{const x=$("gpsSec");if(x)x.scrollIntoView({behavior:"smooth",block:"start"})},300)},
+  "lj-usarkm":async(el,id)=>{const s=get("salidas",id),tr=s&&trailOf(s);if(!s||!tr||!tr.a||!canWrite)return;const km=Math.round(tr.a.km);const l=s.litrosViaje?Number(s.litrosViaje):null;
+    await C("salidas").doc(id).update({kmViaje:km,rendKml:l?Math.round(km/l*100)/100:null,gasEstimado:l?null:gasEstim(Object.assign({},s,{kmViaje:km,gasEstimado:null})),updatedAt:new Date().toISOString(),updatedBy:uid});toast("Km del viaje: "+fN(km)+" (GPS)")}
+});
+/* los pedidos de seguimiento se revisan solos; las pantallas se refrescan cuando llega una actualización */
+setInterval(()=>{gpsReqSync();if(["viajes","gps","hoja"].includes(UI.route)&&$("ov").hidden)render()},20000);
+
+/* ---- informe: ruta real (GPS) vs ruta óptima ---- */
+INF.splice(INF.findIndex(r=>r.id==="ordenes")+1,0,{id:"recorridos",cat:"Operación",t:"Recorridos GPS vs ruta óptima",d:"Cuántos km hizo cada viaje según LoJack contra los km de la ruta óptima, y sus desvíos",ill:"route",f:["canal","cam","cho"],grp:[["detalle","Viaje por viaje"],["camion","Por camión"],["chofer","Por chofer"]],
+  run(F){const X=salF(F).filter(s=>s.gps&&s.gps.km!=null&&["En ruta","Finalizada"].includes(s.estado)).map(s=>({s,c:compKm(s,trailOf(s))}));
+    const KM=sum(X,x=>x.s.gps.km),OP=sum(X.filter(x=>x.c),x=>x.c.op),KMc=sum(X.filter(x=>x.c),x=>x.s.gps.km);
+    const kp=[["Viajes con GPS",X.length],["Km hechos (GPS)",fN(Math.round(KM))],["Km de ruta óptima",fN(Math.round(OP))],["Km de más",OP?fN(Math.round(KMc-OP))+" ("+fKmG(Math.round((KMc-OP)*1000/OP)/10)+"%)":"—"],["Viajes con desvíos",X.filter(x=>x.s.gps.tramos).length]];
+    if(F.grp==="camion"||F.grp==="chofer"){const kf=F.grp==="camion"?x=>camLbl(x.s.camionId):x=>chofT(x.s.choferId)||"(sin chofer)",by=groupBy(X,kf);
+      const rows=Object.keys(by).map(k=>{const a=by[k],ac=a.filter(x=>x.c),km=sum(a,x=>x.s.gps.km),op=sum(ac,x=>x.c.op),kc=sum(ac,x=>x.s.gps.km);return{k,n:a.length,km:Math.round(km),op:Math.round(op),d:op?Math.round(kc-op):null,p:op?Math.round((kc-op)*1000/op)/10:null,dv:sum(a,x=>x.s.gps.tramos||0)}}).sort((a,b)=>(b.p||0)-(a.p||0));
+      return{kpis:kp,cols:[[F.grp==="camion"?"Camión":"Chofer","k","t"],["Viajes","n","n"],["Km GPS","km","km"],["Km óptimos","op","km"],["Diferencia km","d","n"],["Diferencia %","p","d1"],["Desvíos","dv","n"]],rows,chart:{lab:"k",val:"p",t:"% de km de más contra la ruta óptima"}}}
+    const rows=X.sort((a,b)=>a.s.fecha.localeCompare(b.s.fecha)||(a.s.nro||0)-(b.s.nro||0)).map(({s,c})=>({n:nro(s),f:fDL(s.fecha),canal:s.canal,cam:camLbl(s.camionId),cho:chofT(s.choferId),dest:destT(s),est:(EST[s.estado]||[s.estado])[0],op:c?c.op:null,km:Math.round(s.gps.km*10)/10,d:c?c.d:null,p:c?c.pct:null,dv:s.gps.tramos||0,mx:s.gps.max||null}));
+    return{kpis:kp,cols:[["N°","n","t"],["Fecha","f","t"],["Canal","canal","t"],["Camión","cam","t"],["Chofer","cho","t"],["Destinos","dest","t"],["Estado","est","t"],["Km óptimos","op","km"],["Km GPS","km","d1"],["Diferencia km","d","n"],["Diferencia %","p","d1"],["Desvíos","dv","n"],["Máx. desvío km","mx","d1"]],rows,chart:{lab:"n",val:"p",t:"% de km de más por viaje",noSort:true}}}});
 
 /* ================= render ================= */
 let rT=null,pendingRender=false;
@@ -3798,7 +3984,7 @@ async function act(a,el){
     case"prog-tab":UI.progTab=el.dataset.v;render();break;
     case"new-sal":formSal(null,{fecha:DAYR.includes(UI.route)?UI.fecha:today(),canal:el.dataset.v||"Preventa",origenLoc:depId()});break;
     case"edit-sal":formSal(get("salidas",id));break;
-    case"cargado":{if(!need())break;const s=get("salidas",id);await C("salidas").doc(id).update({estado:"Cargada",horaCarga:s.horaCarga||nowHM(),cargadaAt:new Date().toISOString(),updatedAt:new Date().toISOString()});toast("N° "+nro(s)+" cargada");break}
+    case"cargado":{if(!need())break;const s=get("salidas",id);await C("salidas").doc(id).update({estado:"Cargada",horaCarga:s.horaCarga||nowHM(),cargaFin:s.cargaFin||(s.cargaInicio?dtLocal():null),cargadaAt:new Date().toISOString(),updatedAt:new Date().toISOString()});toast("N° "+nro(s)+" cargada");break}
     case"salio":{if(!need())break;const s=get("salidas",id);await C("salidas").doc(id).update({estado:"En ruta",horaSalida:s.horaSalida||nowHM(),updatedAt:new Date().toISOString()});toast("N° "+nro(s)+" en viaje");break}
     case"volvio":formRegreso(get("salidas",id));break;
     case"new-por":formPorton(null);break; case"edit-por":formPorton(get("portones",id));break;
