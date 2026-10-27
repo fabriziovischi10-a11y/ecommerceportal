@@ -4100,9 +4100,12 @@ const esObj=v=>v!==null&&typeof v==="object"&&!Array.isArray(v)&&Object.getProto
 // update() fusiona los objetos anidados campo por campo (como hacía la base de Claude), en vez de reemplazarlos enteros.
 function caminos(obj,pre,out){Object.keys(obj).forEach(k=>{const v=obj[k],p=pre.concat(k);
   if(esObj(v)&&Object.keys(v).length)caminos(v,p,out);else if(!(esObj(v)&&pre.length))out.push(new firebase.firestore.FieldPath(...p),v)});return out}
+// Firestore no acepta listas dentro de listas (ej. puntos [lat,lng] del satelital): se guardan como {__arr:[...]} y se desarman al leer.
+const fsEnc=v=>Array.isArray(v)?v.map(x=>Array.isArray(x)?{__arr:fsEnc(x)}:fsEnc(x)):esObj(v)?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,fsEnc(x)])):v;
+const fsDec=v=>Array.isArray(v)?v.map(fsDec):(v&&typeof v==="object"&&!(v instanceof Date)&&Object.getPrototypeOf(v)===Object.prototype)?(Object.keys(v).length===1&&Array.isArray(v.__arr)?fsDec(v.__arr):Object.fromEntries(Object.entries(v).map(([k,x])=>[k,fsDec(x)]))):v;
 function envolverDoc(ref){return{id:ref.id,ref,
-  set:d=>ref.set(d),get:()=>ref.get(),delete:()=>ref.delete(),onSnapshot:(...a)=>ref.onSnapshot(...a),
-  update:d=>{const a=caminos(d,[],[]);return a.length?ref.update(...a):Promise.resolve()}}}
+  set:d=>ref.set(fsEnc(d)),get:()=>ref.get(),delete:()=>ref.delete(),onSnapshot:(...a)=>ref.onSnapshot(...a),
+  update:d=>{const a=caminos(fsEnc(d),[],[]);return a.length?ref.update(...a):Promise.resolve()}}}
 function envolverCol(col){return{
   doc:id=>envolverDoc(id?col.doc(id):col.doc()),
   orderBy:(...a)=>col.orderBy(...a),limit:n=>col.limit(n),where:(...a)=>col.where(...a),onSnapshot:(...a)=>col.onSnapshot(...a),get:()=>col.get(),
@@ -4114,7 +4117,10 @@ async function conectarFirebase(){
   const modular=app._delegate.container.getProvider("firestore").getImmediate({identifier:FIRESTORE_DATABASE_ID});
   const fs=new firebase.firestore.Firestore(app,modular);
   try{fs.settings({experimentalAutoDetectLongPolling:true,ignoreUndefinedProperties:true,merge:true})}catch(e){}
-  return{collection:c=>envolverCol(fs.collection(RAIZ+c)),doc:p=>envolverDoc(fs.doc(RAIZ+p))};
+  const api={collection:c=>envolverCol(fs.collection(RAIZ+c)),doc:p=>envolverDoc(fs.doc(RAIZ+p))};
+  // para el programa de LoJack de la PC de la oficina: leer pedidos y guardar posiciones con el mismo formato que la base de Claude
+  window.HR={leer:async c=>(await fs.collection(RAIZ+c).get()).docs.map(d=>Object.assign({id:d.id},fsDec(d.data()))),guardar:(c,id,obj)=>envolverDoc(fs.doc(RAIZ+c+"/"+id)).set(obj)};
+  return api;
 }
 function crearDownloads(){return{save:async({filename,data})=>{
   const blob=data instanceof Blob?data:new Blob([data],{type:/\.html?$/i.test(filename)?"text/html;charset=utf-8":/\.csv$/i.test(filename)?"text/csv;charset=utf-8":"application/octet-stream"});
@@ -4129,7 +4135,7 @@ function crearDownloads(){return{save:async({filename,data})=>{
   const keys=Object.keys(COLS);
   keys.forEach(k=>{let q=db.collection(COLS[k]);
     q=["salidas","novedades","progsuc","zonadia","cargas","progzon","guias","recepciones","gasoil","gascompras"].includes(k)?q.orderBy("fecha","desc").limit(k==="cargas"?300:1000):q.limit(1000);
-    q.onSnapshot(snap=>{S[k]=snap.docs.map(d=>Object.assign({id:d.id},d.data()));if(k==="cz")flattenCz();if(k==="gasoil"||k==="camiones")resolveGasCam();loaded[k]=true;if(!ready&&keys.every(x=>loaded[x]))ready=true;if(ready)schedule()},
+    q.onSnapshot(snap=>{S[k]=snap.docs.map(d=>Object.assign({id:d.id},fsDec(d.data())));if(k==="cz")flattenCz();if(k==="gasoil"||k==="camiones")resolveGasCam();loaded[k]=true;if(!ready&&keys.every(x=>loaded[x]))ready=true;if(ready)schedule()},
       err=>{console.error(k,err);toast("Se perdió la conexión. Recargá la página.")})});
   setTimeout(()=>{if(!ready){ready=true;render()}},6000);
 })();
