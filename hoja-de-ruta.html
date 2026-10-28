@@ -16,6 +16,18 @@
 @media (max-width:520px){.brand .logo{height:34px}}
 .sp-img{width:min(440px,82vw);height:auto;opacity:0;animation:rise .5s ease-out .15s forwards}
 .sp-sub{font-family:Montserrat,Figtree,sans-serif;font-size:clamp(20px,5vw,30px);letter-spacing:.22em;margin-top:6px}
+/* barra de arriba en pantallas medianas: que entre todo sin barra de desplazamiento horizontal */
+@media (min-width:981px) and (max-width:1320px){
+  .top-in{gap:10px}
+  .tabs{min-width:0;flex:0 1 auto;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs a{padding:0 8px;gap:6px}
+  .top .right{flex:none}
+  .top .right .hide-sm{display:none}
+}
+@media (min-width:981px) and (max-width:1220px){.tabs .dot{display:none}}
+@media (min-width:981px) and (max-width:1120px){.brand .logo{height:34px}.tabs a{padding:0 6px;font-size:13.5px}}
+html,body{overflow-x:hidden}
 </style>
 <style>
 /* Layout: white top bar with color-coded module tabs; home = sunny animated road banner + gradient module tiles; each module carries its own color (logística azul, programación violeta, rutas verde agua, novedades naranja, base de datos frambuesa) over a soft grey workspace. */
