@@ -598,6 +598,12 @@ button.tag.cost{cursor:pointer;font:inherit;font-size:inherit;border:1px solid c
 button.tag.gpst{cursor:pointer;font:inherit;font-size:inherit;border:1px solid color-mix(in srgb,var(--ok) 40%,var(--line));background:color-mix(in srgb,var(--ok) 10%,transparent);color:inherit}
 button.tag.gpst.bad{border-color:color-mix(in srgb,var(--bad) 45%,var(--line));background:color-mix(in srgb,var(--bad) 10%,transparent)}
 .ljraw{margin-top:8px;font-size:12px}.ljraw pre{white-space:pre-wrap;word-break:break-all;max-height:220px;overflow:auto;background:color-mix(in srgb,var(--ink) 4%,transparent);padding:8px;border-radius:8px}
+.reslink{display:flex;flex-direction:column;gap:8px;margin-top:12px;padding:14px;border:1px solid var(--line,#ddd);border-radius:12px}
+.reslink .k{font-weight:700}
+.reslink input{width:100%;font-family:"JetBrains Mono",monospace;font-size:13px;padding:8px 10px;border-radius:8px}
+.reslink .a{display:flex;flex-wrap:wrap;gap:8px}
+.reslink .s{font-size:13px;opacity:.75}
+@media print{.reslink,.flt{display:none!important}}
 </style>
 <style>
 /* ===== celular: tablas como tarjetas, botones cómodos para el dedo, sin zoom al escribir ===== */
@@ -1031,7 +1037,7 @@ function ordenCard(s){
     +'<div class="a">'+estChip(s)+'<button class="btn sm" data-act="open-orden" data-id="'+s.id+'">'+IC.edit+'Ver orden</button><button class="btn sm" data-act="open-hoja" data-id="'+s.id+'">'+IC.file+'Hoja</button>'+(anul?"":nextBtn(s))+menu+'</div>'
     +'<div class="m">'+camP(s.camionId)+(s.acopladoId?'<span class="tag ac">+ acoplado '+esc((get("camiones",s.acopladoId)||{}).patente||"")+'</span>':"")+'<span><b>'+chofN(s.choferId)+'</b>'+(s.cobradorId?' · cobra '+chofN(s.cobradorId):"")+'</span>'
     +(s.portonId?'<span class="tag">'+esc(portT(s.portonId))+'</span>':"")+'<span>'+esc(rutaT(p))+'</span><span>'+pl(p.stops.length,"parada","paradas")+'</span>'
-    +(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b> previstos</span>':"")+(kmR!=null?'<span>'+fKm(kmR)+' reales</span>':"")+odoChip(s)+gpsChip(s)+gasChip(s)+cargaChip(s)+costoChip(s)
+    +(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b> previstos</span>':"")+(kmR!=null?'<span>'+fKm(kmR)+' reales</span>':"")+odoChip(s)+gpsChip(s)+gasChip(s)+cargaChip(s)+ctrlChip(s)+costoChip(s)
     +(pv&&!anul&&!cargasDe(s).length?chip("Falta cargar el Excel en la hoja","warn"):"")+(nn?novBtn(s,nn):"")+'</div>'+fechasRow(s)+'</article>';
 }
 VIEWS.ordenes=function(){
@@ -1227,7 +1233,7 @@ VIEWS.hoja=function(){
   h+='<div class="kpis"><div class="kpi"><span class="k">Km del recorrido</span><span class="v" style="color:var(--c-rut)">'+(p.total?(p.exact?"":"≈ ")+fKm(p.total):"—")+'</span><span class="s">'+(p.total?(kmR!=null?"Reales: "+fKm(kmR):"calculados solos por ruta"):"cargá "+(pv?"el Excel":"las sucursales")+" y el origen")+'</span></div>'
     +'<div class="kpi"><span class="k">Destino</span><span class="v" style="font-size:19px">'+esc(p.dest?locName(p.dest):p.locs.length?locName(p.locs[p.locs.length-1].loc):"—")+'</span><span class="s">'+(s.canal==="Preventa"?pl(p.locs.length,"localidad","localidades"):pl(p.locs.length,"sucursal","sucursales"))+' · vuelve a '+esc(locName(p.destino))+'</span></div>'
     +'<div class="kpi"><span class="k">'+(pv?"Clientes":"Envíos")+'</span><span class="v">'+p.stops.length+'</span><span class="s">'+(pv?fM(p.stops.reduce((t,r)=>t+(Number(r.total)||0),0))+" facturado":esc(s.remitos||""))+'</span></div>'
-    +'<div class="kpi"><span class="k">Portón de carga</span><span class="v" style="font-size:19px">'+esc(portT(s.portonId))+'</span><span class="s">'+(s.controladorId?"Controló "+esc(persT(s.controladorId)):"Sin controlador")+'</span></div>'+cargaKpi(s)+gasKpi(s)+'</div>';
+    +'<div class="kpi"><span class="k">Portón de carga</span><span class="v" style="font-size:19px">'+esc(portT(s.portonId))+'</span><span class="s">'+(s.controladorId?"Controló "+esc(persT(s.controladorId)):"Sin controlador")+'</span></div>'+cargaKpi(s)+ctrlKpi(s)+gasKpi(s)+'</div>';
   if(!pv){const nn=S.novedades.filter(n=>n.salidaId===s.id).sort((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||""));
     h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-nov)"></span>Observaciones de las sucursales</h2><span class="pa">'+(nn.length?'<button class="btn" data-act="ver-nov" data-id="'+s.id+'" data-v="Sucursales">Ver en Novedades ›</button>':"")+'<button class="btn wa w" data-act="wa" data-id="'+s.id+'">'+IC.chat+'Cargar mensaje de WhatsApp</button></span></div>'
       +(nn.length?'<div class="list">'+nn.map(n=>'<div class="li" data-act="edit-nov" data-id="'+n.id+'" style="cursor:pointer"><div><div class="t">'+esc(n.sucursalId?sucT(n.sucursalId):"Sin sucursal")+' · '+esc(n.tipo)+(n.producto?' · '+esc(n.producto)+(n.cantidad?' ('+fN(n.cantidad)+')':""):"")+'</div><div class="d">'+esc(n.descripcion)+(n.origen==="WhatsApp"?'<span class="tag wa">WhatsApp</span>':"")+'</div></div><div class="r">'+chip(n.estado,novEstCls[n.estado]||"mute")+'</div></div>').join("")+'</div>'
@@ -2608,7 +2614,7 @@ function formDocs(s){const pv=s.canal==="Preventa";
         box.innerHTML='<span>Encontré <b>'+pl(gu.length,"planilla de guías","planillas de guías")+'</b> y <b>'+pl(fa.length,"planilla de facturas","planillas de facturas")+'</b>. Cargalas por separado:</span><span class="pa"><button type="button" class="btn sm pri" id="dG">Cargar las guías</button>'+(pv?'<button type="button" class="btn sm" id="dF">Cargar las facturas</button>':"")+'</span>';
         $("dG").onclick=()=>{closeForm();formImpGuias(s,gu)};const b=$("dF");if(b)b.onclick=()=>{closeForm();formImportHoja(s,fa)}})}});
 }
-async function pasarViajes(s){await C("salidas").doc(s.id).update({estado:"Cargada",horaCarga:s.horaCarga||nowHM(),cargaFin:s.cargaFin||(s.cargaInicio?dtLocal():null),cargadaAt:new Date().toISOString(),hojaLista:true,updatedAt:new Date().toISOString(),updatedBy:uid});
+async function pasarViajes(s){await C("salidas").doc(s.id).update({estado:"Cargada",horaCarga:s.horaCarga||nowHM(),cargaFin:s.cargaFin||(s.cargaInicio?dtLocal():null),ctrlFin:s.ctrlFin||(s.ctrlInicio?dtLocal():null),cargadaAt:new Date().toISOString(),hojaLista:true,updatedAt:new Date().toISOString(),updatedBy:uid});
   UI.fecha=s.fecha;UI.flashSal=s.id;setTimeout(()=>{UI.flashSal=""},5000);location.hash="#viajes";toast("Hoja N° "+nro(s)+" lista · el camión quedó en Viajes, listo para salir")}
 Object.assign(GACT,{
   "docs-load":(el,id)=>{const s=get("salidas",id);if(s&&canWrite)formDocs(s)},
@@ -2673,7 +2679,7 @@ function ordPendCard(s){const p=plan(s),sel=UI.selOrd.has(s.id);
     +'<button class="t" data-act="open-orden" data-id="'+s.id+'">'+chBadge(s)+'<span class="nro">N° '+nro(s)+'</span>'+esc(destT(s)||"Sin destino")+'</button>'
     +'<div class="a">'+fechaChip(s.fecha)+chip("Sin hoja de ruta","warn")+cargaBtn(s)+(canWrite?'<button class="btn sm pri w" data-act="hr-emit" data-id="'+s.id+'">'+IC.file+'Emitir hoja de ruta</button>':"")
     +dots([{a:"open-orden",id:s.id,i:"edit",t:"Ver orden de carga"},{a:"edit-sal",id:s.id,i:"edit",t:"Editar orden"},{a:"dl-orden",id:s.id,i:"dl",t:"Imprimir orden de carga"},"-",{a:"anular",id:s.id,i:"pause",t:"Anular orden",dng:1,w:1},{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar orden",dng:1,w:1}])+'</div>'
-    +'<div class="m">'+cargaChip(s)+gasChip(s)+camP(s.camionId)+(s.acopladoId?'<span class="tag ac">+ acoplado '+esc((get("camiones",s.acopladoId)||{}).patente||"")+'</span>':"")+'<span><b>'+chofN(s.choferId)+'</b>'+(s.cobradorId?' · cobra '+chofN(s.cobradorId):"")+'</span>'+(s.portonId?'<span class="tag">'+esc(portT(s.portonId))+'</span>':"")+'<span>'+esc(rutaT(p))+'</span>'+(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b></span>':"")+'</div>'+fechasRow(s)+'</article>'}
+    +'<div class="m">'+cargaChip(s)+ctrlChip(s)+gasChip(s)+camP(s.camionId)+(s.acopladoId?'<span class="tag ac">+ acoplado '+esc((get("camiones",s.acopladoId)||{}).patente||"")+'</span>':"")+'<span><b>'+chofN(s.choferId)+'</b>'+(s.cobradorId?' · cobra '+chofN(s.cobradorId):"")+'</span>'+(s.portonId?'<span class="tag">'+esc(portT(s.portonId))+'</span>':"")+'<span>'+esc(rutaT(p))+'</span>'+(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b></span>':"")+'</div>'+fechasRow(s)+'</article>'}
 VIEWS.ordenes=function(){
   const f=today(),pc0=porCargar(f),sh0=ordSinHoja(),sh=sh0.filter(canalOk);UI.selOrd.forEach(id=>{if(!sh.some(s=>s.id===id))UI.selOrd.delete(id)});
   const pc=Object.assign({},pc0,{zPend:UI.canalF==="Sucursales"?[]:pc0.zPend,sPend:UI.canalF==="Preventa"?[]:pc0.sPend});pc.n=pc.zPend.length+pc.sPend.length;
@@ -2717,7 +2723,7 @@ VIEWS.hojas=function(){
     const btn=e.k==="pend"?'<button class="btn sm pri w" data-act="docs-load" data-id="'+s.id+'">'+IC.up+(pv?"Cargar facturas":"Cargar guías")+'</button>':e.k==="carg"?'<button class="btn sm save on w" data-act="hoja-grabar" data-id="'+s.id+'">'+IC.save+'Grabar</button>':'<button class="btn sm pri w" data-act="hoja-ok" data-id="'+s.id+'">'+IC.truck+'Pasar a Viajes</button>';
     return'<article class="lc hl-'+e.k+chCls(s)+'"><div class="ic">'+(pv?IC.truck:IC.store)+'</div><button class="t" data-act="open-hoja" data-id="'+s.id+'">'+chBadge(s)+'<span class="nro">HR '+nro(s)+'</span>'+esc(destT(s)||"Sin destino")+'</button>'
       +'<div class="a">'+hojaPill(s)+fechaChip(s.fecha)+cargaBtn(s)+(canWrite?btn:"")+'<button class="btn sm w" data-act="open-hoja" data-id="'+s.id+'">Abrir</button>'+dots([{a:"open-orden",id:s.id,i:"edit",t:"Ver orden de carga"},{a:"dl-hoja",id:s.id,i:"dl",t:"Descargar para imprimir"},{a:"hr-desemit",id:s.id,i:"pause",t:"Volver a órdenes de carga",d:"Deja la orden sin hoja de ruta",w:1},"-",{a:"anular",id:s.id,i:"pause",t:"Anular orden",dng:1,w:1},{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar hoja de ruta",d:"Borra la orden y sus zonas",dng:1,w:1}])+'</div>'
-      +'<div class="m">'+camP(s.camionId)+'<span><b>'+chofN(s.choferId)+'</b></span>'+docsChip(s)+cargaChip(s)+gasChip(s)+'<span>'+pl(p.stops.length,"parada","paradas")+'</span>'+(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b></span>':"")+'</div>'+fechasRow(s)+'</article>'}).join("")+'</div>';
+      +'<div class="m">'+camP(s.camionId)+'<span><b>'+chofN(s.choferId)+'</b></span>'+docsChip(s)+cargaChip(s)+ctrlChip(s)+gasChip(s)+'<span>'+pl(p.stops.length,"parada","paradas")+'</span>'+(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b></span>':"")+'</div>'+fechasRow(s)+'</article>'}).join("")+'</div>';
 };
 
 /* ---- Viajes: todos los viajes (listos, en la ruta y los que volvieron) del período elegido ---- */
@@ -2731,7 +2737,7 @@ VIEWS.viajes=function(){const V=UI.vj,inR=f=>(!V.desde||f>=V.desde)&&(!V.hasta||
   /* el período se aplica a todos por la fecha del viaje; los que siguen abiertos fuera del período solo se avisan */
   const all0=viajes.filter(s=>inR(s.fecha)),all=all0.filter(canalOk),fuera=viajes.filter(s=>s.estado!=="Finalizada"&&!inR(s.fecha)&&canalOk(s));
   const lis=all.filter(s=>s.estado==="Cargada"),enV=all.filter(s=>s.estado==="En ruta"),vol=all.filter(s=>s.estado==="Finalizada");
-  let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Viajes"]),"Viajes",'<a class="btn w" href="#gps">'+IC.route+'Satelital</a>',"trip");
+  let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Viajes"]),"Viajes",'<button class="btn pri w" data-act="res-open">'+IC.file+'Resumen para despacho</button><a class="btn w" href="#gps">'+IC.route+'Satelital</a>',"trip");
   h+='<div class="flt vjflt"><label>Desde <input type="date" data-ui="vj.desde" value="'+esc(V.desde)+'"></label><label>Hasta <input type="date" data-ui="vj.hasta" value="'+esc(V.hasta)+'"></label>'
     +[["hoy","Hoy"],["ayer","Ayer"],["7d","Últimos 7 días"],["mes","Este mes"],["mesant","Mes anterior"],["todo","Todos"]].map(([k,t])=>'<button class="btn sm '+(V.per===k&&V.desde===V.pd&&V.hasta===V.ph?"pri":"ghost")+'" data-act="vj-per" data-v="'+k+'">'+t+'</button>').join("")+'</div>';
   h+='<div class="sumrow"><span class="'+(lis.length?"hl":"")+'"><b>'+lis.length+'</b> listos para salir</span><span><b>'+enV.length+'</b> en viaje</span><span><b>'+vol.length+'</b> volvieron'+(V.desde||V.hasta?" en el período":"")+'</span><span><b>'+fN(Math.round(all.reduce((t,s)=>t+(kmRealS(s)||Number(s.kmViaje)||(s.gps&&s.gps.km)||plan(s).total||0),0)))+'</b> km</span></div>';
@@ -2810,15 +2816,17 @@ VIEWS.equipos=function(){
 };
 
 /* ---- informe y KPI de tiempos de carga ---- */
-INF.splice(INF.findIndex(r=>r.id==="deposito")+1,0,{id:"tiempos",cat:"Depósito",t:"Tiempos de carga",d:"Cuánto tarda cada equipo en cargar un camión: promedio, más rápida y más lenta",ill:"worker",f:["canal"],grp:[["equipo","Por equipo"],["controlador","Por controlador"],["porton","Por portón"],["camion","Por camión"],["detalle","Carga por carga"]],
-  run(F){const S1=salF(F).filter(s=>cargaMin(s)!=null),mode=F.grp||"equipo",mins=S1.map(cargaMin);
-    const avg=a=>a.length?Math.round(a.reduce((t,x)=>t+x,0)/a.length):null;
-    const kp=[["Cargas medidas",S1.length],["Tiempo promedio",fMin(avg(mins))],["La más rápida",mins.length?fMin(Math.min(...mins)):"—"],["La más lenta",mins.length?fMin(Math.max(...mins)):"—"],["Sin medir",salF(F).filter(s=>cargaMin(s)==null).length]];
-    if(mode==="detalle"){const rows=S1.sort((a,b)=>a.fecha.localeCompare(b.fecha)).map(s=>({n:nro(s),f:fDL(s.fecha),eq:eqT(s.equipoCargaId)||"(sin equipo)",cam:camLbl(s.camionId),ini:hhmm(s.cargaInicio),fin:hhmm(s.cargaFin),min:cargaMin(s),ctrl:persT(s.controladorId),por:s.portonId?portT(s.portonId):"",dest:destT(s)}));
-      return{kpis:kp,cols:[["N°","n","t"],["Fecha","f","t"],["Equipo","eq","t"],["Camión","cam","t"],["Inicio","ini","t"],["Fin","fin","t"],["Minutos","min","n"],["Controlador","ctrl","t"],["Portón","por","t"],["Destinos","dest","t"]],rows}}
+INF.splice(INF.findIndex(r=>r.id==="deposito")+1,0,{id:"tiempos",cat:"Depósito",t:"Tiempos de carga y control",d:"Cuánto tarda cada equipo en cargar y cada controlador en controlar un camión: promedio, más rápida y más lenta",ill:"worker",f:["canal"],grp:[["equipo","Equipos de carga"],["controlador","Controladores"],["porton","Por portón"],["camion","Por camión"],["detalle","Orden por orden"]],
+  run(F){const mode=F.grp||"equipo",ctl=mode==="controlador",fm=ctl?ctrlMin:cargaMin,S0=salF(F),S1=S0.filter(s=>fm(s)!=null),mins=S1.map(fm);
+    const avg=a=>a.length?Math.round(a.reduce((t,x)=>t+x,0)/a.length):null,mc=S0.map(ctrlMin).filter(x=>x!=null),mq=S0.map(cargaMin).filter(x=>x!=null);
+    const kp=mode==="detalle"?[["Órdenes",S0.length],["Carga promedio",fMin(avg(mq))],["Control promedio",fMin(avg(mc))],["Cargas sin medir",S0.length-mq.length],["Controles sin medir",S0.length-mc.length]]
+      :[[ctl?"Controles medidos":"Cargas medidas",S1.length],["Tiempo promedio",fMin(avg(mins))],["La más rápida",mins.length?fMin(Math.min(...mins)):"—"],["La más lenta",mins.length?fMin(Math.max(...mins)):"—"],["Sin medir",S0.length-S1.length]];
+    if(mode==="detalle"){const rows=S0.filter(s=>cargaMin(s)!=null||ctrlMin(s)!=null).sort((a,b)=>a.fecha.localeCompare(b.fecha)).map(s=>({n:nro(s),f:fDL(s.fecha),eq:eqT(s.equipoCargaId)||"(sin equipo)",cam:camLbl(s.camionId),ini:hhmm(s.cargaInicio),fin:hhmm(s.cargaFin),min:cargaMin(s),ctrl:persT(s.controladorId),cini:hhmm(s.ctrlInicio),cfin:hhmm(s.ctrlFin),cmin:ctrlMin(s),por:s.portonId?portT(s.portonId):"",dest:destT(s)}));
+      return{kpis:kp,cols:[["N°","n","t"],["Fecha","f","t"],["Camión","cam","t"],["Equipo","eq","t"],["Carga inicio","ini","t"],["Carga fin","fin","t"],["Carga (min)","min","n"],["Controlador","ctrl","t"],["Control inicio","cini","t"],["Control fin","cfin","t"],["Control (min)","cmin","n"],["Portón","por","t"],["Destinos","dest","t"]],rows}}
     const kf={equipo:s=>eqT(s.equipoCargaId)||"(sin equipo)",controlador:s=>persT(s.controladorId)||"(sin controlador)",porton:s=>s.portonId?portT(s.portonId):"(sin portón)",camion:s=>camLbl(s.camionId)}[mode];const by=groupBy(S1,kf);
-    const rows=Object.keys(by).map(k=>{const a=by[k].map(cargaMin);return{k,n:a.length,avg:avg(a),min:Math.min(...a),max:Math.max(...a),tot:Math.round(a.reduce((t,x)=>t+x,0)/6)/10}}).sort((a,b)=>a.avg-b.avg);
-    return{kpis:kp,cols:[[{equipo:"Equipo",controlador:"Controlador",porton:"Portón",camion:"Camión"}[mode],"k","t"],["Cargas","n","n"],["Promedio (min)","avg","n"],["Más rápida (min)","min","n"],["Más lenta (min)","max","n"],["Horas cargando","tot","d1"]],rows,chart:{lab:"k",val:"avg",t:"Minutos promedio por carga (menos es mejor)"}}}});
+    const rows=Object.keys(by).map(k=>{const a=by[k].map(fm);return{k,n:a.length,avg:avg(a),min:Math.min(...a),max:Math.max(...a),tot:Math.round(a.reduce((t,x)=>t+x,0)/6)/10}}).sort((a,b)=>a.avg-b.avg);
+    const w=ctl?"control":"carga";
+    return{kpis:kp,cols:[[{equipo:"Equipo",controlador:"Controlador",porton:"Portón",camion:"Camión"}[mode],"k","t"],[ctl?"Controles":"Cargas","n","n"],["Promedio (min)","avg","n"],["Más rápida (min)","min","n"],["Más lenta (min)","max","n"],[ctl?"Horas controlando":"Horas cargando","tot","d1"]],rows,chart:{lab:"k",val:"avg",t:"Minutos promedio por "+w+" (menos es mejor)"}}}});
 KPIS.splice(KPIS.findIndex(k=>k.id==="guias3")+1,0,{id:"tcarga",a:"Distribución",t:"Tiempo promedio de carga",u:"min",dir:"down",meta:45,h:"De la emisión de la orden a «terminó la carga»",calc(F){const m=salF(F).map(cargaMin).filter(x=>x!=null);return m.length?m.reduce((t,x)=>t+x,0)/m.length:null}});
 {const kf0=kFmt;kFmt=(v,u)=>u==="min"?(v==null||!isFinite(v)?"—":fMin(Math.round(v))):kf0(v,u)}
 
@@ -2829,7 +2837,7 @@ Object.assign(GACT,{
   "carga-fin":async(el,id)=>{if(!canWrite)return;const s=get("salidas",id);const f=dtLocal();await C("salidas").doc(id).update({cargaFin:f,updatedAt:new Date().toISOString(),updatedBy:uid});toast("Carga terminada en "+fMin(Math.max(0,Math.round((new Date(f)-new Date(s.cargaInicio))/6e4)))+(s.equipoCargaId?" · "+eqT(s.equipoCargaId):""))}
 });
 /* el cronómetro de las cargas en curso se actualiza solo cada minuto */
-setInterval(()=>{const ae=document.activeElement;if(["ordenes","hojas","hoja","viajes"].includes(UI.route)&&$("ov").hidden&&!(ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))&&S.salidas.some(s=>cargaCurso(s)!=null))render()},60000);
+setInterval(()=>{const ae=document.activeElement;if(["ordenes","hojas","hoja","viajes"].includes(UI.route)&&$("ov").hidden&&!(ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))&&S.salidas.some(s=>cargaCurso(s)!=null||ctrlCurso(s)!=null))render()},60000);
 
 /* ================= armar equipos: tablero de asignación de cargadores ================= */
 const eqDe=pid=>S.equipos.find(e=>(e.integranteIds||[]).includes(pid));
@@ -3204,6 +3212,67 @@ INF.splice(INF.findIndex(r=>r.id==="ordenes")+1,0,{id:"recorridos",cat:"Operaci�
     const rows=X.sort((a,b)=>a.s.fecha.localeCompare(b.s.fecha)||(a.s.nro||0)-(b.s.nro||0)).map(({s,c})=>({n:nro(s),f:fDL(s.fecha),canal:s.canal,cam:camLbl(s.camionId),cho:chofT(s.choferId),dest:destT(s),est:(EST[s.estado]||[s.estado])[0],op:c?c.op:null,km:Math.round(s.gps.km*10)/10,d:c?c.d:null,p:c?c.pct:null,dv:s.gps.tramos||0,mx:s.gps.max||null}));
     return{kpis:kp,cols:[["N°","n","t"],["Fecha","f","t"],["Canal","canal","t"],["Camión","cam","t"],["Chofer","cho","t"],["Destinos","dest","t"],["Estado","est","t"],["Km óptimos","op","km"],["Km GPS","km","d1"],["Diferencia km","d","n"],["Diferencia %","p","d1"],["Desvíos","dv","n"],["Máx. desvío km","mx","d1"]],rows,chart:{lab:"n",val:"p",t:"% de km de más por viaje",noSort:true}}}});
 
+/* ================= tiempo del controlador ================= */
+/** minutos de control: de la asignación del controlador a «terminó el control»; en curso = hasta ahora */
+const ctrlMin=s=>{if(!s.ctrlInicio||!s.ctrlFin)return null;const m=Math.round((new Date(s.ctrlFin)-new Date(s.ctrlInicio))/6e4);return m>=0?m:null};
+const ctrlCurso=s=>s.controladorId&&s.ctrlInicio&&!s.ctrlFin&&s.estado==="Programada"?Math.max(0,Math.round((Date.now()-new Date(s.ctrlInicio))/6e4)):null;
+function ctrlChip(s){if(s.estado==="Anulada"||!s.controladorId)return"";const c=persT(s.controladorId);
+  const cc=ctrlCurso(s);if(cc!=null)return'<span class="tag carga on" title="Desde las '+hhmm(s.ctrlInicio)+'">🔍 Controlando · '+fMin(cc)+" · "+esc(c)+'</span>';
+  const m=ctrlMin(s);return m!=null?'<span class="tag carga" title="'+hhmm(s.ctrlInicio)+' a '+hhmm(s.ctrlFin)+'">🔍 Controló en '+fMin(m)+" · "+esc(c)+'</span>':""}
+/** tarjeta «Tiempo de control» de la hoja de ruta */
+function ctrlKpi(s){if(s.estado==="Anulada")return"";const who=s.controladorId?esc(persT(s.controladorId)):"Sin controlador asignado",cc=ctrlCurso(s),m=ctrlMin(s);
+  const v=cc!=null?'<span style="color:var(--c-base)">🔍 '+fMin(cc)+'</span>':m!=null?fMin(m):"—";
+  const sub=cc!=null?who+" · controlando desde las "+hhmm(s.ctrlInicio):m!=null?who+" · de "+hhmm(s.ctrlInicio)+" a "+hhmm(s.ctrlFin):s.controladorId&&!s.ctrlInicio?who+" · sin largar":who;
+  let b="";if(canWrite&&s.estado==="Programada"&&s.controladorId)b=!s.ctrlInicio?'<button class="btn sm w" data-act="ctrl-ini" data-id="'+s.id+'">🔍 Largar control</button>':!s.ctrlFin?'<button class="btn sm green w" data-act="ctrl-fin" data-id="'+s.id+'">'+IC.check+'Terminó el control</button>':"";
+  return'<div class="kpi"><span class="k">Tiempo de control</span><span class="v">'+v+'</span><span class="s">'+sub+'</span>'+(b?'<span class="s" style="margin-top:6px">'+b+'</span>':"")+'</div>'}
+/** al grabar la orden: si se asigna (o cambia) el controlador arranca su cronómetro */
+function ctrlAlGrabar(prev,d){const pc=prev?prev.controladorId||"":"";
+  if(!d.controladorId){d.ctrlInicio="";d.ctrlFin="";return}
+  if(d.controladorId!==pc&&(!prev||(d.ctrlInicio||"")===(prev.ctrlInicio||""))){d.ctrlInicio=dtLocal();d.ctrlFin=""}
+  if(d.ctrlInicio&&d.ctrlFin&&d.ctrlFin<d.ctrlInicio)return"El fin del control no puede ser antes del inicio."}
+Object.assign(GACT,{
+  "ctrl-ini":async(el,id)=>{if(!canWrite)return;await C("salidas").doc(id).update({ctrlInicio:dtLocal(),ctrlFin:null,updatedAt:new Date().toISOString(),updatedBy:uid});toast("Arrancó el control · se está midiendo el tiempo")},
+  "ctrl-fin":async(el,id)=>{if(!canWrite)return;const s=get("salidas",id),f=dtLocal();await C("salidas").doc(id).update({ctrlFin:f,updatedAt:new Date().toISOString(),updatedBy:uid});toast("Control terminado en "+fMin(Math.max(0,Math.round((new Date(f)-new Date(s.ctrlInicio))/6e4)))+" · "+persT(s.controladorId))}
+});
+
+/* ================= resumen de viajes para despacho ================= */
+GRP.resumen="logistica";MOD.resumen="m-viaje";PARENT.resumen="viajes";
+const APP_URL="https://fabriziovischi10-a11y.github.io/ecommerceportal/hoja-de-ruta.html";
+UI.res=UI.res||{desde:today(),hasta:today()};
+/** #resumen/2026-10-28 o #resumen/2026-10-01/2026-10-07 */
+function resHash(r){const m=/^resumen\/(\d{4}-\d{2}-\d{2})(?:\/(\d{4}-\d{2}-\d{2}))?$/.exec(r||"");if(!m)return r;UI.res={desde:m[1],hasta:m[2]||m[1]};return"resumen"}
+const resLink=()=>APP_URL+"#resumen/"+UI.res.desde+(UI.res.hasta!==UI.res.desde?"/"+UI.res.hasta:"");
+const resRng=()=>UI.res.desde===UI.res.hasta?fDL(UI.res.desde):fDL(UI.res.desde)+" al "+fDL(UI.res.hasta);
+function resFilas(){const R=UI.res;
+  return S.salidas.filter(s=>actSal(s)&&s.fecha>=R.desde&&s.fecha<=R.hasta).sort((a,b)=>a.fecha.localeCompare(b.fecha)||String(a.canal).localeCompare(String(b.canal))||(a.nro||0)-(b.nro||0)).map(s=>{
+    const pv=s.canal==="Preventa",cam=get("camiones",s.camionId),ac=get("camiones",s.acopladoId);
+    const zon=pv?(s.zonaIds||[]).map(zonaT).join(", "):[...new Set((s.sucursalIds||[]).map(id=>(get("sucursales",id)||{}).zonaId).filter(Boolean))].map(zonaT).join(", ");
+    const dest=pv?(s.destinoLoc?locName(s.destinoLoc):(s.zonaIds||[]).length?[...new Set((s.zonaIds||[]).map(z=>(get("zonas",z)||{}).nombre).filter(Boolean).map(n=>n.replace(/^Zona \d+\s*·\s*/,"")))].join(", "):""):(s.sucursalIds||[]).map(sucT).join(", ");
+    return{s,n:nro(s),f:fDL(s.fecha),c:s.canal,pat:(cam?cam.patente:"—")+(ac?" + "+ac.patente:""),cho:chofT(s.choferId)||"—",cob:pv?(chofT(s.cobradorId)||"Sin cobrador"):"No corresponde",ctrl:persT(s.controladorId)||"Sin controlador",dest:dest||"—",zona:zon||"—",est:(EST[s.estado]||[s.estado])[0]}})}
+function resTexto(F){const L=["*Resumen de viajes · "+resRng()+"*",pl(F.length,"viaje","viajes"),""];
+  F.forEach(r=>L.push("*N° "+r.n+"* · "+r.c+(UI.res.desde!==UI.res.hasta?" · "+r.f:""),"Patente: "+r.pat,"Chofer: "+r.cho+(r.c==="Preventa"?" · Cobrador: "+r.cob:""),"Controlador: "+r.ctrl,"Destino: "+r.dest,"Zona: "+r.zona,""));
+  L.push("Ver en el sistema: "+resLink());return L.join("\n")}
+VIEWS.resumen=function(){const F=resFilas(),R=UI.res,txt=resTexto(F);
+  let h=ph(crumb(["Inicio","inicio"],["Viajes","viajes"],["Resumen para despacho"]),"Resumen de viajes",'<button class="btn" data-act="res-print">'+IC.file+'Imprimir</button>',"truck");
+  h+='<section class="pn"><div class="flt"><label>Desde <input type="date" data-ui="res.desde" value="'+R.desde+'"></label><label>Hasta <input type="date" data-ui="res.hasta" value="'+R.hasta+'"></label>'
+    +'<button class="btn sm" data-act="res-hoy">Hoy</button></div>'
+    +'<div class="reslink"><span class="k">Link para mandar a despacho</span><input id="resUrl" readonly value="'+esc(resLink())+'" aria-label="Link del resumen">'
+    +'<div class="a"><button class="btn pri" data-act="res-copy">Copiar link</button><a class="btn green" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(txt)+'">Mandar por WhatsApp</a><button class="btn" data-act="res-copytxt">Copiar resumen como texto</button></div>'
+    +'<span class="s">El link abre este resumen con las mismas fechas en la página del sistema. El mensaje de WhatsApp lleva el resumen completo escrito.</span></div></section>';
+  if(!F.length)return h+emptyCard("truck","m-log","No hay viajes del "+resRng(),"Elegí otras fechas.","");
+  const by=groupBy(F,r=>r.c);
+  return h+Object.keys(by).map(c=>{const zc=by[c].some(r=>r.zona!=="—");return'<section class="pn"><div class="pnh"><h2>'+chBadge({canal:c})+esc(c)+' · '+pl(by[c].length,"viaje","viajes")+'</h2><span class="s">'+resRng()+'</span></div><div class="tw"><table class="wide"><thead><tr><th>N°</th>'+(R.desde!==R.hasta?"<th>Fecha</th>":"")+'<th>Patente</th><th>Chofer</th>'+(c==="Preventa"?"<th>Cobrador</th>":"")+'<th>Controlador</th><th>Destino</th>'+(zc?"<th>Zona</th>":"")+'<th>Estado</th></tr></thead><tbody>'
+    +by[c].map(r=>'<tr class="ck" data-act="res-hoja" data-id="'+r.s.id+'"><td class="mono"><b>'+esc(r.n)+'</b></td>'+(R.desde!==R.hasta?'<td>'+esc(r.f)+'</td>':"")+'<td class="mono"><b>'+esc(r.pat)+'</b></td><td>'+esc(r.cho)+'</td>'+(c==="Preventa"?'<td>'+esc(r.cob)+'</td>':"")+'<td>'+esc(r.ctrl)+'</td><td class="wrap">'+esc(r.dest)+'</td>'+(zc?'<td class="wrap">'+esc(r.zona)+'</td>':"")+'<td>'+estChip(r.s)+'</td></tr>').join("")+'</tbody></table></div></section>'}).join("")};
+async function copiar(t,ok){try{await navigator.clipboard.writeText(t);toast(ok)}catch(e){const x=$("resUrl");if(x){x.value=t;x.focus();x.select();try{document.execCommand("copy");toast(ok)}catch(_){toast("Seleccioná el texto y copialo a mano")}}}}
+Object.assign(GACT,{
+  "res-open":()=>{const v=UI.vj||{};UI.res={desde:v.desde||today(),hasta:v.hasta||v.desde||today()};location.hash="#resumen/"+UI.res.desde+(UI.res.hasta!==UI.res.desde?"/"+UI.res.hasta:"")},
+  "res-hoy":()=>{UI.res={desde:today(),hasta:today()};location.hash="#resumen/"+today()},
+  "res-copy":()=>copiar(resLink(),"Link copiado · pegalo en WhatsApp o mail"),
+  "res-copytxt":()=>{const t=resTexto(resFilas());copiar(t,"Resumen copiado");const x=$("resUrl");if(x)setTimeout(()=>{x.value=resLink()},1500)},
+  "res-hoja":(el,id)=>{UI.hojaFrom="viajes";UI.hojaId=id;location.hash="#hoja"},
+  "res-print":()=>print()
+});
+
 /* ================= render ================= */
 let rT=null,pendingRender=false;
 function schedule(){clearTimeout(rT);rT=setTimeout(render,25)}
@@ -3457,7 +3526,7 @@ function formSal(s,pre){
       {k:"sd",type:"sec",label:"Carga en depósito"},
       {k:"portonId",label:"Portón de carga",type:"select",blank:"Elegí el portón",options:portOpts},{k:"controladorId",label:"Controlador",type:"select",blank:"Elegí el controlador",options:ctrlOpts,two:true},
             {k:"equipoIds",label:"Cargadores",type:"checks",full:true},
-      {k:"estado",label:"Estado",type:"select",blank:false,adv:1,options:Object.keys(EST).map(k=>[k,EST[k][0]])},{k:"cargaInicio",label:"Inicio de la carga",type:"datetime-local",adv:1},{k:"cargaFin",label:"Fin de la carga",type:"datetime-local",adv:1},{k:"obs",label:"Observaciones",type:"textarea",two:true,adv:1}],
+      {k:"estado",label:"Estado",type:"select",blank:false,adv:1,options:Object.keys(EST).map(k=>[k,EST[k][0]])},{k:"cargaInicio",label:"Inicio de la carga",type:"datetime-local",adv:1},{k:"cargaFin",label:"Fin de la carga",type:"datetime-local",adv:1},{k:"ctrlInicio",label:"Inicio del control",type:"datetime-local",adv:1},{k:"ctrlFin",label:"Fin del control",type:"datetime-local",adv:1},{k:"obs",label:"Observaciones",type:"textarea",two:true,adv:1}],
     extra:s?'<button type="button" class="btn" id="fnov">'+IC.alert+'Novedad</button>':"",
     after:F=>{
       const box=$("f_destinos"),rec=$("f_rec"),eq=$("f_equipoIds"),gb=$("f_guiasBox"),gck={};
@@ -3492,6 +3561,7 @@ function formSal(s,pre){
     },
     save:async d=>{delete d.sd;if(d.canal!=="Preventa")d.destinos=expandDest(d.destinos);
       if(!s&&!d.cargaInicio)d.cargaInicio=dtLocal();if(d.cargaInicio&&d.cargaFin&&d.cargaFin<d.cargaInicio){ferr("El fin de la carga no puede ser antes del inicio.");return false}
+      {const e=ctrlAlGrabar(s,d);if(e){ferr(e);return false}}
       d.guiaIds=d.canal==="Preventa"?[]:[...document.querySelectorAll('#f_guiasBox input[name="guia"]:checked')].map(i=>i.value);
       if(d.canal!=="Preventa")d.cobradorId="";d._zonas=d.canal==="Preventa"?(d.zonasSel||[]):[];delete d.zonasSel;if(!s&&pre&&pre.progZonId)d.progZonId=pre.progZonId;
       const nid=await saveSal(s,d);if(!s){UI.flashSal=nid;setTimeout(()=>{UI.flashSal=""},6000);MF.ok="Orden de carga emitida · quedó pendiente de hoja de ruta";if(UI.route!=="ordenes")location.hash="#ordenes"}},
@@ -3984,7 +4054,7 @@ async function act(a,el){
     case"prog-tab":UI.progTab=el.dataset.v;render();break;
     case"new-sal":formSal(null,{fecha:DAYR.includes(UI.route)?UI.fecha:today(),canal:el.dataset.v||"Preventa",origenLoc:depId()});break;
     case"edit-sal":formSal(get("salidas",id));break;
-    case"cargado":{if(!need())break;const s=get("salidas",id);await C("salidas").doc(id).update({estado:"Cargada",horaCarga:s.horaCarga||nowHM(),cargaFin:s.cargaFin||(s.cargaInicio?dtLocal():null),cargadaAt:new Date().toISOString(),updatedAt:new Date().toISOString()});toast("N° "+nro(s)+" cargada");break}
+    case"cargado":{if(!need())break;const s=get("salidas",id);await C("salidas").doc(id).update({estado:"Cargada",horaCarga:s.horaCarga||nowHM(),cargaFin:s.cargaFin||(s.cargaInicio?dtLocal():null),ctrlFin:s.ctrlFin||(s.ctrlInicio?dtLocal():null),cargadaAt:new Date().toISOString(),updatedAt:new Date().toISOString()});toast("N° "+nro(s)+" cargada");break}
     case"salio":{if(!need())break;const s=get("salidas",id);await C("salidas").doc(id).update({estado:"En ruta",horaSalida:s.horaSalida||nowHM(),updatedAt:new Date().toISOString()});toast("N° "+nro(s)+" en viaje");break}
     case"volvio":formRegreso(get("salidas",id));break;
     case"new-por":formPorton(null);break; case"edit-por":formPorton(get("portones",id));break;
@@ -4074,9 +4144,9 @@ $("main").addEventListener("change",e=>{const t=e.target;
 $("main").addEventListener("toggle",e=>{if(e.target.classList&&e.target.classList.contains("det"))UI.detOpen=e.target.open},true);
 $("main").addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.target.dataset.posloc||e.target.dataset.poscli||e.target.dataset.hfld))e.target.blur()});
 $("main").addEventListener("focusout",e=>{if(e.target.dataset&&(e.target.dataset.cli||e.target.dataset.posloc||e.target.dataset.poscli||e.target.dataset.hfld)&&pendingRender){pendingRender=false;setTimeout(render,0)}});
-function route(){closeMenus();if(UI.route==="hoja"&&UI.draft){const s=get("salidas",UI.draft.sid);if(s&&dirty(s))toast("Quedaron cambios sin grabar en la hoja N° "+nro(s)+". Volvé a la hoja y tocá Grabar.")}const r=(location.hash||"").slice(1);if(UI.route==="novedades"&&r!=="novedades")UI.nov.sal="";UI.route=VIEWS[r]?r:"inicio";const m=$("main");m.classList.add("enter");clearTimeout(render.et);render.et=null;render();window.scrollTo(0,0)}
+function route(){closeMenus();if(UI.route==="hoja"&&UI.draft){const s=get("salidas",UI.draft.sid);if(s&&dirty(s))toast("Quedaron cambios sin grabar en la hoja N° "+nro(s)+". Volvé a la hoja y tocá Grabar.")}const r=resHash((location.hash||"").slice(1));if(UI.route==="novedades"&&r!=="novedades")UI.nov.sal="";UI.route=VIEWS[r]?r:"inicio";const m=$("main");m.classList.add("enter");clearTimeout(render.et);render.et=null;render();window.scrollTo(0,0)}
 window.addEventListener("hashchange",route);
-UI.route=VIEWS[(location.hash||"").slice(1)]?(location.hash||"").slice(1):"inicio";
+{const r0=resHash((location.hash||"").slice(1));UI.route=VIEWS[r0]?r0:"inicio"}
 $("main").classList.add("enter");
 topBar();
 
