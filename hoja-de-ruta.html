@@ -616,6 +616,21 @@ button.tag.gpst.bad{border-color:color-mix(in srgb,var(--bad) 45%,var(--line));b
 .reslink .a{display:flex;flex-wrap:wrap;gap:8px}
 .reslink .s{font-size:13px;opacity:.75}
 @media print{.reslink,.flt{display:none!important}}
+.cie-go{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px}.cie-go>div{display:flex;flex-direction:column;gap:4px}.cie-go .s{font-size:13px;opacity:.8}
+.modal.mwide{max-width:min(1100px,96vw);width:96vw}
+.cie-dia{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px;margin-bottom:8px;cursor:pointer}
+.cie-dia.ok{opacity:.85}
+.cie-dia .d{display:flex;flex-direction:column;flex:1;min-width:0}
+.cie-dia .d small{opacity:.75}
+.cie-dia .st{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.cie-dia input{width:20px;height:20px;flex:none}
+.cie-acc{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.cie-res .pn{margin-bottom:12px}
+.cie-h3{font-size:14px;margin:14px 0 6px}
+.cie-det{border:1px solid var(--line,#ddd);border-radius:12px;padding:8px 12px;margin-bottom:10px}
+.cie-det>summary{font-weight:700;cursor:pointer;padding:6px 0}
+.cie-list,.cie-res{grid-column:1/-1;min-width:0}
+.tag.carga.pausa{background:color-mix(in srgb,var(--k-warn) 10%,transparent);border-color:var(--k-warn);font-weight:700}
 </style>
 <style>
 /* ===== celular: tablas como tarjetas, botones cómodos para el dedo, sin zoom al escribir ===== */
@@ -716,7 +731,7 @@ const TIPOS=["Observación","Rechazo total","Rechazo parcial","Rotura","Faltante
 const CAM_TIPOS=["Camión","Chasis c/cabina","Camión c/plataforma","Camión térmico","Furgón","Acoplado","Semirremolque","Utilitario","Otro"];
 const PUESTOS=["Chofer","Cobrador","Chofer y cobrador"];
 const ENTREGAS=["Pendiente","Entregado","Rechazo parcial","Rechazo total","Cerrado / ausente","Reprogramado"];
-const COLS={gps:"gps",gpsreq:"gps_req",cajachica:"caja_chica",equipos:"equipos_carga",gasoil:"gasoil",gascompras:"gasoil_compras",recepciones:"recepciones",guias:"guias",portones:"portones",personal:"personal",progzon:"prog_zonas",camiones:"camiones",choferes:"choferes",zonas:"zonas",sucursales:"sucursales",salidas:"salidas",progsuc:"prog_sucursales",zonadia:"zona_dia",novedades:"novedades",cz:"clientes_zona",cargas:"cargas",config:"config"};
+const COLS={cierres:"cierres",gps:"gps",gpsreq:"gps_req",cajachica:"caja_chica",equipos:"equipos_carga",gasoil:"gasoil",gascompras:"gasoil_compras",recepciones:"recepciones",guias:"guias",portones:"portones",personal:"personal",progzon:"prog_zonas",camiones:"camiones",choferes:"choferes",zonas:"zonas",sucursales:"sucursales",salidas:"salidas",progsuc:"prog_sucursales",zonadia:"zona_dia",novedades:"novedades",cz:"clientes_zona",cargas:"cargas",config:"config"};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pad=n=>String(n).padStart(2,"0");
@@ -745,7 +760,7 @@ const title=s=>String(s||"").toLowerCase().replace(/(^|[\s(\-/.])([a-záéíóú
 const pl=(n,s,p)=>n+" "+(n===1?s:p);
 
 /* ================= estado ================= */
-const S={gps:[],gpsreq:[],cajachica:[],equipos:[],gasoil:[],gascompras:[],recepciones:[],guias:[],portones:[],personal:[],progzon:[],camiones:[],choferes:[],zonas:[],sucursales:[],salidas:[],progsuc:[],zonadia:[],novedades:[],cz:[],clientes:[],cargas:[],config:[]};
+const S={cierres:[],gps:[],gpsreq:[],cajachica:[],equipos:[],gasoil:[],gascompras:[],recepciones:[],guias:[],portones:[],personal:[],progzon:[],camiones:[],choferes:[],zonas:[],sucursales:[],salidas:[],progsuc:[],zonadia:[],novedades:[],cz:[],clientes:[],cargas:[],config:[]};
 const loaded={};
 const UI={route:"inicio",fecha:today(),semana:monday(today()),progTab:"pv",cargaId:null,hojaId:null,
   sal:{desde:addD(today(),-15),hasta:addD(today(),7),canal:"",estado:"",q:""},
@@ -780,6 +795,8 @@ const plate=p=>p?'<span class="pat">'+esc(p)+'</span>':'<span class="mu">—</sp
 const camP=id=>{const c=get("camiones",id);return c?plate(c.patente):'<span class="mu">—</span>'};
 const chofN=id=>{const c=get("choferes",id);return c?esc(c.nombre):'<span class="mu">—</span>'};
 const chofT=id=>{const c=get("choferes",id);return c?c.nombre:""};
+/** ayudante del viaje: de la base de choferes/cobradores o escrito a mano */
+const ayuT=s=>(s&&(chofT(s.ayudanteId)||s.ayudanteNom))||"";
 const zonaT=id=>{const z=get("zonas",id);return z?((z.codigo?"Zona "+z.codigo:"")+(z.nombre&&z.nombre!=="Zona "+z.codigo?" · "+z.nombre.replace(/^Zona \d+\s*·\s*/,""):"")):"(zona eliminada)"};
 const sucN=s=>s?(s.codigo?"Suc. "+s.codigo+" · ":"")+s.nombre:"(sucursal eliminada)";
 const sucT=id=>sucN(get("sucursales",id));
@@ -1047,7 +1064,7 @@ function ordenCard(s){
   return'<article class="lc '+estCls(s)+chCls(s)+(anul?" anul":"")+(UI.flashSal===s.id?" flash":"")+'" id="oc_'+s.id+'"><div class="ic">'+(pv?IC.truck:IC.store)+'</div>'
     +'<button class="t" data-act="open-hoja" data-id="'+s.id+'">'+chBadge(s)+'<span class="nro">N° '+nro(s)+'</span>'+esc(destT(s)||"Sin destino")+'</button>'
     +'<div class="a">'+estChip(s)+'<button class="btn sm" data-act="open-orden" data-id="'+s.id+'">'+IC.edit+'Ver orden</button><button class="btn sm" data-act="open-hoja" data-id="'+s.id+'">'+IC.file+'Hoja</button>'+(anul?"":nextBtn(s))+menu+'</div>'
-    +'<div class="m">'+camP(s.camionId)+(s.acopladoId?'<span class="tag ac">+ acoplado '+esc((get("camiones",s.acopladoId)||{}).patente||"")+'</span>':"")+'<span><b>'+chofN(s.choferId)+'</b>'+(s.cobradorId?' · cobra '+chofN(s.cobradorId):"")+'</span>'
+    +'<div class="m">'+camP(s.camionId)+(s.acopladoId?'<span class="tag ac">+ acoplado '+esc((get("camiones",s.acopladoId)||{}).patente||"")+'</span>':"")+'<span><b>'+chofN(s.choferId)+'</b>'+(s.cobradorId?' · cobra '+chofN(s.cobradorId):"")+(ayuT(s)?' · ayuda '+esc(ayuT(s)):"")+'</span>'
     +(s.portonId?'<span class="tag">'+esc(portT(s.portonId))+'</span>':"")+'<span>'+esc(rutaT(p))+'</span><span>'+pl(p.stops.length,"parada","paradas")+'</span>'
     +(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b> previstos</span>':"")+(kmR!=null?'<span>'+fKm(kmR)+' reales</span>':"")+odoChip(s)+gpsChip(s)+gasChip(s)+cargaChip(s)+ctrlChip(s)+costoChip(s)
     +(pv&&!anul&&!cargasDe(s).length?chip("Falta cargar el Excel en la hoja","warn"):"")+(nn?novBtn(s,nn):"")+'</div>'+fechasRow(s)+'</article>';
@@ -1177,7 +1194,7 @@ function hojaInner(s){
     rows+='<tr class="r"><td><span class="p-n">'+r.n+'</span></td><td><b>'+esc(r.cliente)+'</b><div class="sub mono">'+esc(r.cod)+'</div></td><td>'+esc(r.dir||"—")+(r.horario?'<div class="sub">'+esc(r.horario)+'</div>':"")+'</td><td class="mono">'+(r.fact.length?esc(r.fact.join(" ")):"—")+'</td><td class="num">'+(r.total!=null?fM(r.total):"")+'</td><td class="firma"></td></tr>'});
   return pHead("HOJA DE RUTA",s,fLarga(s.fecha)+" · "+(pv?"Preventa":"Sucursales"))
    +'<div class="p-grid">'+pBox("Camión",pPat(cam.patente),esc(cam.modelo||"")+(acop?" · acoplado "+esc(acop.patente):""),"#1f4a9b")
-   +pBox("Chofer",esc(ch.nombre||"—"),ch.legajo?"Legajo "+esc(ch.legajo):"","#e0261c")
+   +pBox("Chofer",esc(ch.nombre||"—"),[ch.legajo?"Legajo "+esc(ch.legajo):"",ayuT(s)?"Ayudante: "+esc(ayuT(s)):""].filter(Boolean).join(" · "),"#e0261c")
    +(pv?pBox("Cobrador",esc(co?co.nombre:"Sin cobrador"),co&&co.legajo?"Legajo "+esc(co.legajo):"","#6f42d6"):pBox("Equipo de carga",esc(equipoT(s)||"—"),"","#6f42d6"))
    +pBox("Portón de carga",esc(portT(s.portonId)),s.controladorId?"Controló: "+esc(persT(s.controladorId)):"","#2b8a3e")+'</div>'
    +'<div class="p-grid">'+pBox("Origen",esc(locName(p.origen)),"","#0b8f7c")+pBox("Destino",esc(p.dest?locName(p.dest):"—"),"","#0b8f7c")+pBox("Regreso",esc(locName(p.destino)),"3er destino","#0b8f7c")
@@ -1199,7 +1216,7 @@ function ordenInner(s){
   return pHead("ORDEN DE CARGA",s,fLarga(s.fecha)+" · "+(pv?"Preventa":"Sucursales")+" · "+e[0])
    +'<h3>Unidad y personal</h3><div class="p-grid">'+pBox("Camión",pPat(cam.patente),esc([cam.modelo,cam.tipo].filter(Boolean).join(" · ")),"#1f4a9b")
    +pBox("Acoplado",acop?pPat(acop.patente):"Sin acoplado",acop?esc(acop.modelo||""):"","#1f4a9b")
-   +pBox("Chofer",esc(ch.nombre||"—"),ch.legajo?"Legajo "+esc(ch.legajo):"","#e0261c")
+   +pBox("Chofer",esc(ch.nombre||"—"),[ch.legajo?"Legajo "+esc(ch.legajo):"",ayuT(s)?"Ayudante: "+esc(ayuT(s)):""].filter(Boolean).join(" · "),"#e0261c")
    +(pv?pBox("Cobrador",esc(co?co.nombre:"Sin cobrador"),co&&co.legajo?"Legajo "+esc(co.legajo):"","#e0261c"):pBox("Cobrador","No corresponde","sucursales: solo chofer","#e0261c"))+'</div>'
    +'<h3>Recorrido</h3><div class="p-grid">'+pBox("Origen",esc(p.origen?locFull(p.origen):"Sin origen"),"","#0b8f7c")+pBox("Destino",esc(p.dest?locFull(p.dest):"—"),p.dest?"":"sin destino fijo","#0b8f7c")+pBox("Regreso (3er destino)",esc(locFull(p.destino)),"","#0b8f7c")
    +pBox("Km previstos",p.total?(p.exact?"":"≈ ")+fKm(p.total):"—",pl(p.stops.length,"parada","paradas")+" · "+(s.canal==="Preventa"?pl(p.locs.length,"localidad","localidades"):pl(p.locs.length,"sucursal","sucursales")),"#0b8f7c")+'</div>'
@@ -1238,7 +1255,7 @@ VIEWS.hoja=function(){
   h+=flujoBar(s,dz)+'<section class="pn fechas-pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-hoja)"></span>Fechas y horas</h2></div>'+fechasRow(s)+'</section>';
   h+='<section class="pn"><div class="doc-grid">'
     +'<div><small>Camión</small><b>'+camP(s.camionId)+'</b><div class="sub">'+esc(cam.modelo||"")+(acop?' · acoplado '+esc(acop.patente):"")+'</div></div>'
-    +'<div><small>Chofer'+(pv?" · cobrador":"")+'</small><b>'+chofN(s.choferId)+'</b>'+(pv?'<div class="sub">'+(s.cobradorId?chofN(s.cobradorId):"Sin cobrador")+'</div>':"")+'</div>'
+    +'<div><small>Chofer'+(pv?" · cobrador":"")+'</small><b>'+chofN(s.choferId)+'</b>'+(pv?'<div class="sub">'+(s.cobradorId?chofN(s.cobradorId):"Sin cobrador")+'</div>':"")+(ayuT(s)?'<div class="sub">Ayudante: '+esc(ayuT(s))+'</div>':"")+'</div>'
     +'<div><small>Origen</small><b>'+esc(p.origen?locName(p.origen):"Sin origen")+'</b><div class="sub">de la orden de carga</div></div>'
     +'<div><small>Destino → regreso</small><b>'+esc((p.dest?locName(p.dest)+" → ":"")+locName(p.destino))+'</b><div class="sub">'+(p.dest?"destino y 3er destino":"regreso")+' de la orden · <a href="#" data-act="open-orden" data-id="'+s.id+'">ver orden</a></div></div></div></section>';
   const kmR=s.kmRegreso&&s.kmSalida?s.kmRegreso-s.kmSalida:null;
@@ -1306,7 +1323,7 @@ const _cajaOld=function(){
 /* ---- historial ---- */
 VIEWS.salidas=function(){
   const F=UI.sal,q=F.q.trim().toLowerCase();
-  const list=S.salidas.filter(s=>(!F.desde||s.fecha>=F.desde)&&(!F.hasta||s.fecha<=F.hasta)&&(!F.canal||s.canal===F.canal)&&(!F.estado||s.estado===F.estado)&&(!q||[nro(s),destT(s),(get("camiones",s.camionId)||{}).patente,chofT(s.choferId),chofT(s.cobradorId)].join(" ").toLowerCase().includes(q))).sort((a,b)=>b.fecha.localeCompare(a.fecha)||(b.nro||0)-(a.nro||0));
+  const list=S.salidas.filter(s=>(!F.desde||s.fecha>=F.desde)&&(!F.hasta||s.fecha<=F.hasta)&&(!F.canal||s.canal===F.canal)&&(!F.estado||s.estado===F.estado)&&(!q||[nro(s),destT(s),(get("camiones",s.camionId)||{}).patente,chofT(s.choferId),chofT(s.cobradorId),ayuT(s)].join(" ").toLowerCase().includes(q))).sort((a,b)=>b.fecha.localeCompare(a.fecha)||(b.nro||0)-(a.nro||0));
   return ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Historial"]),"Historial de órdenes y viajes",dots([{a:"export-sal",i:"dl",t:"Exportar a Excel (CSV)"}]),"hist")
   +'<div class="flt"><input class="q" id="s_q" type="search" data-ui="sal.q" value="'+esc(F.q)+'" placeholder="Buscar N°, patente, chofer, zona…" aria-label="Buscar"><select id="s_canal" data-ui="sal.canal" aria-label="Canal">'+opts([["","Preventa y sucursales"],"Preventa","Sucursales"],F.canal)+'</select><select id="s_estado" data-ui="sal.estado" aria-label="Estado">'+opts([["","Todos los estados"]].concat(Object.keys(EST).map(k=>[k,EST[k][0]])),F.estado)+'</select><label>Desde <input type="date" id="s_desde" data-ui="sal.desde" value="'+F.desde+'"></label><label>Hasta <input type="date" id="s_hasta" data-ui="sal.hasta" value="'+F.hasta+'"></label></div>'
   +'<section class="pn"><div class="pnh"><h2>'+pl(list.length,"orden","órdenes")+'</h2></div>'+(list.length?'<div class="tw"><table class="wide"><thead><tr><th>N°</th><th>Fecha</th><th>Destinos</th><th>Camión</th><th>Chofer · cobrador</th><th class="num">Km prev.</th><th class="num">Km reales</th><th>Estado</th></tr></thead><tbody>'
@@ -1441,8 +1458,8 @@ VIEWS.personal=function(){
   const list=S.personal.filter(x=>match("personal",[x.nombre,x.legajo,x.rol])).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre)));
   return ph(crumb(["Inicio","inicio"],["Base de datos","base"],["Personal de depósito"]),"Personal de depósito",addMenu("new-pers","integrante","personal"),"worker")+qbox("personal","Buscar nombre, legajo o rol…")
   +'<section class="pn"><div class="pnh"><h2>'+pl(S.personal.filter(x=>x.rol==="Controlador").length,"controlador","controladores")+' · '+pl(S.personal.filter(x=>x.rol!=="Controlador").length,"cargador","cargadores")+'</h2><span class="s">Controladores y equipo de carga de cada orden</span></div>'
-  +(list.length?'<div class="tw"><table class="wide"><thead><tr><th>Legajo</th><th>Nombre</th><th>Rol</th><th>Teléfono</th><th class="num">Cargas del mes</th><th>Estado</th></tr></thead><tbody>'
-    +list.map(x=>'<tr class="ck" data-act="edit-pers" data-id="'+x.id+'"><td class="mono">'+esc(x.legajo||"—")+'</td><td><b>'+esc(x.nombre)+'</b></td><td>'+chip(x.rol||"Cargador",x.rol==="Controlador"?"vio":"info")+'</td><td class="mono">'+esc(x.telefono||"—")+'</td><td class="num mono">'+S.salidas.filter(s=>(s.controladorId===x.id||(s.equipoIds||[]).includes(x.id))&&s.fecha>=ms()&&actSal(s)).length+'</td><td>'+chip(x.estado||"Activo",isActive(x)?"ok":"mute")+'</td></tr>').join("")+'</tbody></table></div>'
+  +(list.length?'<div class="tw"><table class="wide"><thead><tr><th>Legajo</th><th>Nombre</th><th>Rol</th><th>Teléfono</th><th class="num">Cargas del mes</th><th class="num">Tiempo promedio</th><th class="num">Más rápida</th><th>Estado</th></tr></thead><tbody>'
+    +list.map(x=>{const T=persTiempos(x,ms());return'<tr class="ck" data-act="edit-pers" data-id="'+x.id+'"><td class="mono">'+esc(x.legajo||"—")+'</td><td><b>'+esc(x.nombre)+'</b></td><td>'+chip(x.rol||"Cargador",x.rol==="Controlador"?"vio":"info")+'</td><td class="mono">'+esc(x.telefono||"—")+'</td><td class="num mono">'+T.n+'</td><td class="num mono" title="'+(x.rol==="Controlador"?"Tiempo de control":"Tiempo de carga")+' · '+T.m+' medidas"><b>'+fMin(T.avg)+'</b></td><td class="num mono">'+fMin(T.min)+'</td><td>'+chip(x.estado||"Activo",isActive(x)?"ok":"mute")+'</td></tr>'}).join("")+'</tbody></table></div><p class="mu" style="padding:8px 4px 0;font-size:13px">Controladores: tiempo de control · cargadores: tiempo de carga. Mes en curso, sin las pausas. El detalle está en Informes › Tiempos de carga y control.</p>'
     :'<div class="none">Todavía no hay personal de depósito. Agregalo a mano o importalo desde Excel.</div>')+'</section>';
 };
 
@@ -2230,7 +2247,7 @@ const inP=(f,F)=>!!f&&(!F.desde||f>=F.desde)&&(!F.hasta||f<=F.hasta);
 const kmRealS=s=>s.kmRegreso&&s.kmSalida&&s.kmRegreso>s.kmSalida?s.kmRegreso-s.kmSalida:null;
 const kmPrevS=s=>s.kmPrevisto!=null?Number(s.kmPrevisto)||0:(plan(s).total||0);
 const camLbl=id=>{const c=get("camiones",id);return c?c.patente:"(sin camión)"};
-const salF=F=>S.salidas.filter(s=>actSal(s)&&inP(s.fecha,F)&&(!F.canal||s.canal===F.canal)&&(!F.cam||s.camionId===F.cam||s.acopladoId===F.cam)&&(!F.cho||s.choferId===F.cho||s.cobradorId===F.cho)&&(!F.suc||(s.sucursalIds||[]).includes(F.suc)));
+const salF=F=>S.salidas.filter(s=>actSal(s)&&inP(s.fecha,F)&&(!F.canal||s.canal===F.canal)&&(!F.cam||s.camionId===F.cam||s.acopladoId===F.cam)&&(!F.cho||s.choferId===F.cho||s.cobradorId===F.cho||s.ayudanteId===F.cho)&&(!F.suc||(s.sucursalIds||[]).includes(F.suc)));
 const sum=(a,f)=>a.reduce((t,x)=>t+(Number(f(x))||0),0);
 const pct=(a,b)=>b?Math.round(a*100/b)+"%":"—";
 const mesL=m=>{const[y,mm]=m.split("-");return MESES[+mm-1].slice(0,3)+" "+y};
@@ -2252,9 +2269,9 @@ const INF=[
    return{kpis:[["Órdenes de carga",sum(rows,r=>r.ord)],["Km previstos",fN(Math.round(sum(rows,r=>r.kmp)))],["Clientes visitados",fN(sum(rows,r=>r.cli))],["Facturado preventa",fM(sum(rows,r=>r.fac))],["Guías despachadas",fN(sum(rows,r=>r.gui))],["Novedades",sum(rows,r=>r.nov)],["Pallets recibidos",fN(sum(rows,r=>r.pal))],["Gasoil",fL(sum(rows,r=>r.lit))+" · "+fM(sum(rows,r=>r.gas))]],
     cols:[["Período","perL","t"],["Órdenes","ord","n"],["Preventa","pv","n"],["Sucursales","sc","n"],["Km previstos","kmp","km"],["Km reales","kmr","km"],["Clientes","cli","n"],["Facturado","fac","m"],["Guías","gui","n"],["Unidades","uni","n"],["Novedades","nov","n"],["Recepciones","rec","n"],["Pallets","pal","n"],["Litros gasoil","lit","n"],["$ gasoil","gas","m"],["Rendimiento km/L","kml","d2"]],rows,chart:{lab:"perL",val:"ord",t:"Órdenes por "+(mode==="mes"?"mes":"día"),noSort:true}}}},
  {id:"ordenes",cat:"Operación",t:"Órdenes y viajes",d:"Detalle de cada orden: camión, chofer, destinos, estado y km",ill:"orden",f:["canal","cam","cho","suc"],
-  run(F){const rows=salF(F).sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.nro||0)-(b.nro||0)).map(s=>({nro:nro(s),fecha:fDL(s.fecha),canal:s.canal,cam:camLbl(s.camionId)+(s.acopladoId?" + "+camLbl(s.acopladoId):""),cho:chofT(s.choferId),cob:chofT(s.cobradorId),dest:destT(s),est:(EST[s.estado]||[s.estado])[0],kmp:Math.round(kmPrevS(s)),kmr:kmRealS(s),por:s.portonId?portT(s.portonId):"",ctrl:persT(s.controladorId),lit:s.litrosViaje!=null?s.litrosViaje:((viajeGas(s)||{}).l||null),gas:(viajeGas(s)||{}).imp||null,kml:s.rendKml||null}));
+  run(F){const rows=salF(F).sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.nro||0)-(b.nro||0)).map(s=>({nro:nro(s),fecha:fDL(s.fecha),canal:s.canal,cam:camLbl(s.camionId)+(s.acopladoId?" + "+camLbl(s.acopladoId):""),cho:chofT(s.choferId),cob:chofT(s.cobradorId),ayu:ayuT(s),dest:destT(s),qmin:cargaMin(s),cmin:ctrlMin(s),est:(EST[s.estado]||[s.estado])[0],kmp:Math.round(kmPrevS(s)),kmr:kmRealS(s),por:s.portonId?portT(s.portonId):"",ctrl:persT(s.controladorId),lit:s.litrosViaje!=null?s.litrosViaje:((viajeGas(s)||{}).l||null),gas:(viajeGas(s)||{}).imp||null,kml:s.rendKml||null}));
    return{kpis:[["Órdenes",rows.length],["Preventa",rows.filter(r=>r.canal==="Preventa").length],["Sucursales",rows.filter(r=>r.canal!=="Preventa").length],["Km previstos",fN(sum(rows,r=>r.kmp))],["Km reales",fN(sum(rows,r=>r.kmr))]],
-    cols:[["N°","nro","t"],["Fecha","fecha","t"],["Canal","canal","t"],["Camión","cam","t"],["Chofer","cho","t"],["Cobrador","cob","t"],["Destinos","dest","t"],["Estado","est","t"],["Km prev.","kmp","km"],["Km reales","kmr","km"],["Portón","por","t"],["Controlador","ctrl","t"],["Litros gasoil","lit","n"],["$ gasoil","gas","m"],["Rendimiento km/L","kml","d2"]],rows}}},
+    cols:[["N°","nro","t"],["Fecha","fecha","t"],["Canal","canal","t"],["Camión","cam","t"],["Chofer","cho","t"],["Cobrador","cob","t"],["Ayudante","ayu","t"],["Destinos","dest","t"],["Estado","est","t"],["Km prev.","kmp","km"],["Km reales","kmr","km"],["Portón","por","t"],["Controlador","ctrl","t"],["Carga (min)","qmin","n"],["Control (min)","cmin","n"],["Litros gasoil","lit","n"],["$ gasoil","gas","m"],["Rendimiento km/L","kml","d2"]],rows}}},
  {id:"camiones",cat:"Operación",t:"Por camión",d:"Viajes, km, gasoil, consumo y novedades de cada unidad",ill:"truck",f:["canal","cam"],
   run(F){const S1=salF(F),C=gasConsumo(),G=S.gasoil.filter(g=>inP(g.fecha,F)&&(!F.cam||g.camionId===F.cam));
    const ids=[...new Set(S1.map(s=>s.camionId).concat(S1.map(s=>s.acopladoId)).concat(G.map(g=>g.camionId)).filter(Boolean))];
@@ -2262,13 +2279,13 @@ const INF=[
      return{cam:camLbl(id),tipo:(get("camiones",id)||{}).tipo||"",via:ss.length,dias:new Set(ss.map(s=>s.fecha)).size,kmp:Math.round(sum(ss,kmPrevS)),kmr:sum(ss,kmRealS),lit:sum(gg,g=>g.litros),gas:sum(gg,gasImp),kml:l?Math.round(k/l*100)/100:null,nov:S.novedades.filter(n=>ss.some(s=>s.id===n.salidaId)).length}}).sort((a,b)=>b.via-a.via||b.lit-a.lit);
    return{kpis:[["Unidades usadas",rows.filter(r=>r.via).length],["Viajes",sum(rows,r=>r.via)],["Km previstos",fN(sum(rows,r=>r.kmp))],["Litros",fL(sum(rows,r=>r.lit))],["$ gasoil",fM(sum(rows,r=>r.gas))]],
     cols:[["Camión","cam","t"],["Tipo","tipo","t"],["Viajes","via","n"],["Días","dias","n"],["Km previstos","kmp","km"],["Km reales","kmr","km"],["Litros gasoil","lit","n"],["$ gasoil","gas","m"],["km/L","kml","d2"],["Novedades","nov","n"]],rows,chart:{lab:"cam",val:"via",t:"Viajes por camión"}}}},
- {id:"personal",cat:"Operación",t:"Choferes y cobradores",d:"Viajes de cada persona, km, novedades y rechazos",ill:"driver",f:["canal","cho"],
+ {id:"personal",cat:"Operación",t:"Choferes, cobradores y ayudantes",d:"Viajes de cada persona (como chofer, cobrador o ayudante), km, novedades y rechazos",ill:"driver",f:["canal","cho"],
   run(F){const S1=salF(F),N=S.novedades.filter(n=>inP(n.fecha,F)&&(!F.canal||n.canal===F.canal));
-   const ids=[...new Set(S1.flatMap(s=>[s.choferId,s.cobradorId]).filter(Boolean))].filter(id=>!F.cho||id===F.cho);
-   const rows=ids.map(id=>{const ch=S1.filter(s=>s.choferId===id),co=S1.filter(s=>s.cobradorId===id),nn=N.filter(n=>n.choferId===id||[...ch,...co].some(s=>s.id===n.salidaId));
-     return{per:chofT(id),leg:(get("choferes",id)||{}).legajo||"",pue:(get("choferes",id)||{}).puesto||"",ch:ch.length,co:co.length,kmp:Math.round(sum(ch,kmPrevS)),kmr:sum(ch,kmRealS),nov:nn.length,rec:nn.filter(n=>/Rechazo/.test(n.tipo)).length,dias:new Set([...ch,...co].map(s=>s.fecha)).size}}).sort((a,b)=>(b.ch+b.co)-(a.ch+a.co));
-   return{kpis:[["Personas",rows.length],["Viajes como chofer",sum(rows,r=>r.ch)],["Viajes como cobrador",sum(rows,r=>r.co)],["Novedades",sum(rows,r=>r.nov)]],
-    cols:[["Persona","per","t"],["Legajo","leg","t"],["Puesto","pue","t"],["Viajes chofer","ch","n"],["Viajes cobrador","co","n"],["Días trabajados","dias","n"],["Km manejados","kmp","km"],["Km reales","kmr","km"],["Novedades","nov","n"],["Rechazos","rec","n"]],rows,chart:{lab:"per",val:"ch",t:"Viajes como chofer"}}}},
+   const ayK=s=>s.ayudanteId||(s.ayudanteNom?"m:"+s.ayudanteNom.trim().toLowerCase():"");const ids=[...new Set(S1.flatMap(s=>[s.choferId,s.cobradorId,ayK(s)]).filter(Boolean))].filter(id=>!F.cho||id===F.cho);
+   const rows=ids.map(id=>{const ch=S1.filter(s=>s.choferId===id),co=S1.filter(s=>s.cobradorId===id),ay=S1.filter(s=>ayK(s)===id),nn=N.filter(n=>n.choferId===id||[...ch,...co,...ay].some(s=>s.id===n.salidaId)),man=id.startsWith("m:");
+     return{per:man?ay[0].ayudanteNom:chofT(id),leg:(get("choferes",id)||{}).legajo||"",pue:man?"Ayudante (a mano)":(get("choferes",id)||{}).puesto||"",ch:ch.length,co:co.length,ay:ay.length,kmp:Math.round(sum(ch,kmPrevS)),kmr:sum(ch,kmRealS),nov:nn.length,rec:nn.filter(n=>/Rechazo/.test(n.tipo)).length,dias:new Set([...ch,...co,...ay].map(s=>s.fecha)).size}}).sort((a,b)=>(b.ch+b.co+b.ay)-(a.ch+a.co+a.ay));
+   return{kpis:[["Personas",rows.length],["Viajes como chofer",sum(rows,r=>r.ch)],["Viajes como cobrador",sum(rows,r=>r.co)],["Viajes como ayudante",sum(rows,r=>r.ay)],["Novedades",sum(rows,r=>r.nov)]],
+    cols:[["Persona","per","t"],["Legajo","leg","t"],["Puesto","pue","t"],["Viajes chofer","ch","n"],["Viajes cobrador","co","n"],["Viajes ayudante","ay","n"],["Días trabajados","dias","n"],["Km manejados","kmp","km"],["Km reales","kmr","km"],["Novedades","nov","n"],["Rechazos","rec","n"]],rows,chart:{lab:"per",val:"ch",t:"Viajes como chofer"}}}},
  {id:"programa",cat:"Operación",t:"Cumplimiento de la programación",d:"Zonas de preventa y programa semanal de sucursales: cumplido, no cumplido, pendiente",ill:"cal",f:["canal","suc"],
   run(F){const rows=[];
    if(F.canal!=="Sucursales"&&!F.suc)S.progzon.filter(p=>inP(p.fecha,F)).forEach(p=>{const st=pzStatus(p);rows.push({fecha:p.fecha,fechaL:fDL(p.fecha),tipo:"Preventa",dest:pzLabel(p),det:(p.zonaIds||[]).map(zonaT).join(", "),est:st.t,k:st.k,ord:st.sal?nro(st.sal):""})});
@@ -2626,7 +2643,7 @@ function formDocs(s){const pv=s.canal==="Preventa";
         box.innerHTML='<span>Encontré <b>'+pl(gu.length,"planilla de guías","planillas de guías")+'</b> y <b>'+pl(fa.length,"planilla de facturas","planillas de facturas")+'</b>. Cargalas por separado:</span><span class="pa"><button type="button" class="btn sm pri" id="dG">Cargar las guías</button>'+(pv?'<button type="button" class="btn sm" id="dF">Cargar las facturas</button>':"")+'</span>';
         $("dG").onclick=()=>{closeForm();formImpGuias(s,gu)};const b=$("dF");if(b)b.onclick=()=>{closeForm();formImportHoja(s,fa)}})}});
 }
-async function pasarViajes(s){await C("salidas").doc(s.id).update({estado:"Cargada",horaCarga:s.horaCarga||nowHM(),cargaFin:s.cargaFin||(s.cargaInicio?dtLocal():null),ctrlFin:s.ctrlFin||(s.ctrlInicio?dtLocal():null),cargadaAt:new Date().toISOString(),hojaLista:true,updatedAt:new Date().toISOString(),updatedBy:uid});
+async function pasarViajes(s){await C("salidas").doc(s.id).update({estado:"Cargada",horaCarga:s.horaCarga||nowHM(),cargaFin:s.cargaFin||(s.cargaInicio?dtLocal():null),ctrlFin:s.ctrlFin||(s.ctrlInicio?(s.cargaFin||dtLocal()):null),pausas:pausasCerradas(s),cargadaAt:new Date().toISOString(),hojaLista:true,updatedAt:new Date().toISOString(),updatedBy:uid});
   UI.fecha=s.fecha;UI.flashSal=s.id;setTimeout(()=>{UI.flashSal=""},5000);location.hash="#viajes";toast("Hoja N° "+nro(s)+" lista · el camión quedó en Viajes, listo para salir")}
 Object.assign(GACT,{
   "docs-load":(el,id)=>{const s=get("salidas",id);if(s&&canWrite)formDocs(s)},
@@ -2691,7 +2708,7 @@ function ordPendCard(s){const p=plan(s),sel=UI.selOrd.has(s.id);
     +'<button class="t" data-act="open-orden" data-id="'+s.id+'">'+chBadge(s)+'<span class="nro">N° '+nro(s)+'</span>'+esc(destT(s)||"Sin destino")+'</button>'
     +'<div class="a">'+fechaChip(s.fecha)+chip("Sin hoja de ruta","warn")+cargaBtn(s)+(canWrite?'<button class="btn sm pri w" data-act="hr-emit" data-id="'+s.id+'">'+IC.file+'Emitir hoja de ruta</button>':"")
     +dots([{a:"open-orden",id:s.id,i:"edit",t:"Ver orden de carga"},{a:"edit-sal",id:s.id,i:"edit",t:"Editar orden"},{a:"dl-orden",id:s.id,i:"dl",t:"Imprimir orden de carga"},"-",{a:"anular",id:s.id,i:"pause",t:"Anular orden",dng:1,w:1},{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar orden",dng:1,w:1}])+'</div>'
-    +'<div class="m">'+cargaChip(s)+ctrlChip(s)+gasChip(s)+camP(s.camionId)+(s.acopladoId?'<span class="tag ac">+ acoplado '+esc((get("camiones",s.acopladoId)||{}).patente||"")+'</span>':"")+'<span><b>'+chofN(s.choferId)+'</b>'+(s.cobradorId?' · cobra '+chofN(s.cobradorId):"")+'</span>'+(s.portonId?'<span class="tag">'+esc(portT(s.portonId))+'</span>':"")+'<span>'+esc(rutaT(p))+'</span>'+(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b></span>':"")+'</div>'+fechasRow(s)+'</article>'}
+    +'<div class="m">'+cargaChip(s)+ctrlChip(s)+gasChip(s)+camP(s.camionId)+(s.acopladoId?'<span class="tag ac">+ acoplado '+esc((get("camiones",s.acopladoId)||{}).patente||"")+'</span>':"")+'<span><b>'+chofN(s.choferId)+'</b>'+(s.cobradorId?' · cobra '+chofN(s.cobradorId):"")+(ayuT(s)?' · ayuda '+esc(ayuT(s)):"")+'</span>'+(s.portonId?'<span class="tag">'+esc(portT(s.portonId))+'</span>':"")+'<span>'+esc(rutaT(p))+'</span>'+(p.total?'<span><b>'+(p.exact?"":"≈ ")+fKm(p.total)+'</b></span>':"")+'</div>'+fechasRow(s)+'</article>'}
 VIEWS.ordenes=function(){
   const f=today(),pc0=porCargar(f),sh0=ordSinHoja(),sh=sh0.filter(canalOk);UI.selOrd.forEach(id=>{if(!sh.some(s=>s.id===id))UI.selOrd.delete(id)});
   const pc=Object.assign({},pc0,{zPend:UI.canalF==="Sucursales"?[]:pc0.zPend,sPend:UI.canalF==="Preventa"?[]:pc0.sPend});pc.n=pc.zPend.length+pc.sPend.length;
@@ -2749,7 +2766,7 @@ VIEWS.viajes=function(){const V=UI.vj,inR=f=>(!V.desde||f>=V.desde)&&(!V.hasta||
   /* el período se aplica a todos por la fecha del viaje; los que siguen abiertos fuera del período solo se avisan */
   const all0=viajes.filter(s=>inR(s.fecha)),all=all0.filter(canalOk),fuera=viajes.filter(s=>s.estado!=="Finalizada"&&!inR(s.fecha)&&canalOk(s));
   const lis=all.filter(s=>s.estado==="Cargada"),enV=all.filter(s=>s.estado==="En ruta"),vol=all.filter(s=>s.estado==="Finalizada");
-  let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Viajes"]),"Viajes",'<button class="btn pri w" data-act="res-open">'+IC.file+'Resumen para despacho</button><a class="btn w" href="#gps">'+IC.route+'Satelital</a>',"trip");
+  let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Viajes"]),"Viajes",'<button class="btn pri w" data-act="cie-open">'+IC.check+'Cierre del día</button><button class="btn w" data-act="res-open">'+IC.file+'Resumen para despacho</button><a class="btn w" href="#gps">'+IC.route+'Satelital</a>',"trip");
   h+='<div class="flt vjflt"><label>Desde <input type="date" data-ui="vj.desde" value="'+esc(V.desde)+'"></label><label>Hasta <input type="date" data-ui="vj.hasta" value="'+esc(V.hasta)+'"></label>'
     +[["hoy","Hoy"],["ayer","Ayer"],["7d","Últimos 7 días"],["mes","Este mes"],["mesant","Mes anterior"],["todo","Todos"]].map(([k,t])=>'<button class="btn sm '+(V.per===k&&V.desde===V.pd&&V.hasta===V.ph?"pri":"ghost")+'" data-act="vj-per" data-v="'+k+'">'+t+'</button>').join("")+'</div>';
   h+='<div class="sumrow"><span class="'+(lis.length?"hl":"")+'"><b>'+lis.length+'</b> listos para salir</span><span><b>'+enV.length+'</b> en viaje</span><span><b>'+vol.length+'</b> volvieron'+(V.desde||V.hasta?" en el período":"")+'</span><span><b>'+fN(Math.round(all.reduce((t,s)=>t+(kmRealS(s)||Number(s.kmViaje)||(s.gps&&s.gps.km)||plan(s).total||0),0)))+'</b> km</span></div>';
@@ -2788,13 +2805,19 @@ GRP.equipos="base";MOD.equipos="m-base";PARENT.equipos="base";
 const pad2=n=>String(n).padStart(2,"0");
 const dtLocal=d=>{const x=d||new Date();return x.getFullYear()+"-"+pad2(x.getMonth()+1)+"-"+pad2(x.getDate())+"T"+pad2(x.getHours())+":"+pad2(x.getMinutes())};
 const eqT=id=>{const e=get("equipos",id);return e?e.nombre:""};
-/** minutos de carga: de la emisión (largada) a «terminó la carga»; en curso = hasta ahora */
-const cargaMin=s=>{if(!s.cargaInicio||!s.cargaFin)return null;const m=Math.round((new Date(s.cargaFin)-new Date(s.cargaInicio))/6e4);return m>=0?m:null};
-const cargaCurso=s=>s.cargaInicio&&!s.cargaFin&&s.estado==="Programada"?Math.max(0,Math.round((Date.now()-new Date(s.cargaInicio))/6e4)):null;
+/** pausas de la carga ([{ini,fin}]): las comparten carga y control, y se descuentan de los dos tiempos */
+const enPausa=s=>(s.pausas||[]).some(p=>!p.fin);
+const pausaMin=(s,a,b)=>{const B=b?+new Date(b):Date.now();return(s.pausas||[]).reduce((t,p)=>t+Math.max(0,Math.min(p.fin?+new Date(p.fin):Date.now(),B)-Math.max(+new Date(p.ini),+new Date(a))),0)/6e4};
+const pausasCerradas=s=>(s.pausas||[]).map(p=>p.fin?p:Object.assign({},p,{fin:new Date().toISOString()}));
+const tramoMin=(s,a,b)=>Math.round(((b?+new Date(b):Date.now())-new Date(a))/6e4-pausaMin(s,a,b));
+/** minutos de carga: de la emisión (largada) a «terminó la carga», sin las pausas; en curso = hasta ahora */
+const cargaMin=s=>{if(!s.cargaInicio||!s.cargaFin)return null;const m=tramoMin(s,s.cargaInicio,s.cargaFin);return m>=0?m:null};
+const cargaCurso=s=>s.cargaInicio&&!s.cargaFin&&s.estado==="Programada"?Math.max(0,tramoMin(s,s.cargaInicio)):null;
 const fMin=m=>m==null||isNaN(m)?"—":m<60?m+" min":Math.floor(m/60)+" h "+pad2(m%60)+" min";
 const hhmm=v=>v?String(v).slice(11,16):"";
 function cargaChip(s){if(s.estado==="Anulada")return"";const e=s.equipoCargaId?eqT(s.equipoCargaId):"";
-  const cc=cargaCurso(s);if(cc!=null)return'<span class="tag carga on" title="Desde las '+hhmm(s.cargaInicio)+'">⏱ Cargando · '+fMin(cc)+(e?" · "+esc(e):"")+'</span>';
+  const cc=cargaCurso(s);if(cc!=null&&enPausa(s))return'<span class="tag carga pausa">⏸ Carga en pausa · '+fMin(cc)+(e?" · "+esc(e):"")+'</span>';
+  if(cc!=null)return'<span class="tag carga on" title="Desde las '+hhmm(s.cargaInicio)+'">⏱ Cargando · '+fMin(cc)+(e?" · "+esc(e):"")+'</span>';
   const m=cargaMin(s);if(m!=null)return'<span class="tag carga" title="'+hhmm(s.cargaInicio)+' a '+hhmm(s.cargaFin)+'">⏱ Cargó en '+fMin(m)+(e?" · "+esc(e):"")+'</span>';
   return s.estado==="Programada"&&!s.cargaInicio?'<span class="tag">Carga sin iniciar</span>':s.equipoCargaId?'<span class="tag">⏱ Carga sin medir · '+esc(e)+'</span>':""}
 /** texto corto del tiempo de carga (para el paso 1 del flujo) */
@@ -2802,12 +2825,17 @@ const cargaTxt=s=>{const cc=cargaCurso(s);if(cc!=null)return" · cargando hace "
 /** tarjeta «Tiempo de carga» de la hoja de ruta: equipo, inicio, fin, duración y botones */
 function cargaKpi(s){if(s.estado==="Anulada")return"";const e=get("equipos",s.equipoCargaId),cc=cargaCurso(s),m=cargaMin(s);
   const who=e?esc(e.nombre):"Sin equipo asignado",mem=e?(e.integranteIds||[]).map(persT).filter(Boolean).join(", "):"";
-  const v=cc!=null?'<span style="color:var(--c-base)">⏱ '+fMin(cc)+'</span>':m!=null?fMin(m):"—";
-  const sub=cc!=null?who+" · cargando desde las "+hhmm(s.cargaInicio):m!=null?who+" · de "+hhmm(s.cargaInicio)+" a "+hhmm(s.cargaFin):s.cargaInicio?who:who+" · sin largar";
+  const pz=s.cargaInicio?Math.round(pausaMin(s,s.cargaInicio,s.cargaFin)):0,pzT=pz?" · "+fMin(pz)+" en pausa":"";
+  const v=cc!=null?'<span style="color:var(--c-base)">'+(enPausa(s)?"⏸ ":"⏱ ")+fMin(cc)+'</span>':m!=null?fMin(m):"—";
+  const sub=cc!=null?who+(enPausa(s)?" · EN PAUSA desde las "+hhmm(dtLocal(new Date((s.pausas||[]).find(p=>!p.fin).ini))):" · cargando desde las "+hhmm(s.cargaInicio))+pzT:m!=null?who+" · de "+hhmm(s.cargaInicio)+" a "+hhmm(s.cargaFin)+pzT:s.cargaInicio?who:who+" · sin largar";
   return'<div class="kpi"'+(mem?' title="'+esc(mem)+'"':"")+'><span class="k">Tiempo de carga</span><span class="v">'+v+'</span><span class="s">'+sub+'</span>'+(cargaBtn(s)?'<span class="s" style="margin-top:6px">'+cargaBtn(s)+'</span>':"")+'</div>'}
+/** botones de la carga: largar, pausar / reanudar y terminar (manejan también el control) */
 function cargaBtn(s){if(!canWrite||s.estado!=="Programada")return"";
   if(!s.cargaInicio)return'<button class="btn sm w" data-act="carga-ini" data-id="'+s.id+'">⏱ Largar carga</button>';
-  if(!s.cargaFin)return'<button class="btn sm green w" data-act="carga-fin" data-id="'+s.id+'">'+IC.check+'Terminó la carga</button>';return""}
+  if(!s.cargaFin)return(enPausa(s)?'<button class="btn sm pri w" data-act="carga-reanudar" data-id="'+s.id+'">▶ Reanudar</button>':'<button class="btn sm w" data-act="carga-pausa" data-id="'+s.id+'">⏸ Pausar</button>')
+    +'<button class="btn sm green w" data-act="carga-fin" data-id="'+s.id+'">'+IC.check+'Terminó la carga</button>';return""}
+/** el control va atado a la carga: mismo inicio, mismas pausas, mismo fin */
+const ctrlSync=(s,ini)=>s.controladorId&&!s.ctrlFin?{ctrlInicio:s.ctrlInicio||ini||s.cargaInicio||null}:{};
 
 /* ---- base de datos: equipos ---- */
 function formEquipo(e){
@@ -2828,25 +2856,39 @@ VIEWS.equipos=function(){
 };
 
 /* ---- informe y KPI de tiempos de carga ---- */
-INF.splice(INF.findIndex(r=>r.id==="deposito")+1,0,{id:"tiempos",cat:"Depósito",t:"Tiempos de carga y control",d:"Cuánto tarda cada equipo en cargar y cada controlador en controlar un camión: promedio, más rápida y más lenta",ill:"worker",f:["canal"],grp:[["equipo","Equipos de carga"],["controlador","Controladores"],["porton","Por portón"],["camion","Por camión"],["detalle","Orden por orden"]],
+/** cargadores de la orden: los tildados o, si no hay, los integrantes del equipo (sin controladores) */
+const cargadoresDe=s=>((s.equipoIds||[]).length?s.equipoIds:((get("equipos",s.equipoCargaId)||{}).integranteIds||[])).filter(p=>(get("personal",p)||{}).rol!=="Controlador");
+const pausaS=s=>s.cargaInicio&&(s.pausas||[]).length?Math.round(pausaMin(s,s.cargaInicio,s.cargaFin)):0;
+/** tiempos de una persona de depósito desde una fecha: control si es controlador, carga si es cargador */
+function persTiempos(x,desde){const ctl=x.rol==="Controlador",ss=S.salidas.filter(s=>actSal(s)&&s.fecha>=desde&&(ctl?s.controladorId===x.id:cargadoresDe(s).includes(x.id))),a=ss.map(ctl?ctrlMin:cargaMin).filter(v=>v!=null);
+  return{n:ss.length,m:a.length,avg:a.length?Math.round(a.reduce((t,v)=>t+v,0)/a.length):null,min:a.length?Math.min(...a):null}}
+INF.splice(INF.findIndex(r=>r.id==="deposito")+1,0,{id:"tiempos",cat:"Depósito",t:"Tiempos de carga y control",d:"Cuánto tarda cada equipo, cada cargador y cada controlador en cargar un camión: promedio, más rápida, más lenta y tiempo en pausa",ill:"worker",f:["canal"],grp:[["equipo","Equipos de carga"],["cargador","Por cargador"],["controlador","Controladores"],["dia","Por día"],["porton","Por portón"],["camion","Por camión"],["detalle","Orden por orden"]],
   run(F){const mode=F.grp||"equipo",ctl=mode==="controlador",fm=ctl?ctrlMin:cargaMin,S0=salF(F),S1=S0.filter(s=>fm(s)!=null),mins=S1.map(fm);
-    const avg=a=>a.length?Math.round(a.reduce((t,x)=>t+x,0)/a.length):null,mc=S0.map(ctrlMin).filter(x=>x!=null),mq=S0.map(cargaMin).filter(x=>x!=null);
-    const kp=mode==="detalle"?[["Órdenes",S0.length],["Carga promedio",fMin(avg(mq))],["Control promedio",fMin(avg(mc))],["Cargas sin medir",S0.length-mq.length],["Controles sin medir",S0.length-mc.length]]
-      :[[ctl?"Controles medidos":"Cargas medidas",S1.length],["Tiempo promedio",fMin(avg(mins))],["La más rápida",mins.length?fMin(Math.min(...mins)):"—"],["La más lenta",mins.length?fMin(Math.max(...mins)):"—"],["Sin medir",S0.length-S1.length]];
-    if(mode==="detalle"){const rows=S0.filter(s=>cargaMin(s)!=null||ctrlMin(s)!=null).sort((a,b)=>a.fecha.localeCompare(b.fecha)).map(s=>({n:nro(s),f:fDL(s.fecha),eq:eqT(s.equipoCargaId)||"(sin equipo)",cam:camLbl(s.camionId),ini:hhmm(s.cargaInicio),fin:hhmm(s.cargaFin),min:cargaMin(s),ctrl:persT(s.controladorId),cini:hhmm(s.ctrlInicio),cfin:hhmm(s.ctrlFin),cmin:ctrlMin(s),por:s.portonId?portT(s.portonId):"",dest:destT(s)}));
-      return{kpis:kp,cols:[["N°","n","t"],["Fecha","f","t"],["Camión","cam","t"],["Equipo","eq","t"],["Carga inicio","ini","t"],["Carga fin","fin","t"],["Carga (min)","min","n"],["Controlador","ctrl","t"],["Control inicio","cini","t"],["Control fin","cfin","t"],["Control (min)","cmin","n"],["Portón","por","t"],["Destinos","dest","t"]],rows}}
-    const kf={equipo:s=>eqT(s.equipoCargaId)||"(sin equipo)",controlador:s=>persT(s.controladorId)||"(sin controlador)",porton:s=>s.portonId?portT(s.portonId):"(sin portón)",camion:s=>camLbl(s.camionId)}[mode];const by=groupBy(S1,kf);
-    const rows=Object.keys(by).map(k=>{const a=by[k].map(fm);return{k,n:a.length,avg:avg(a),min:Math.min(...a),max:Math.max(...a),tot:Math.round(a.reduce((t,x)=>t+x,0)/6)/10}}).sort((a,b)=>a.avg-b.avg);
+    const avg=a=>a.length?Math.round(a.reduce((t,x)=>t+x,0)/a.length):null,mc=S0.map(ctrlMin).filter(x=>x!=null),mq=S0.map(cargaMin).filter(x=>x!=null),pzT=sum(S0,pausaS);
+    const kp=mode==="detalle"||mode==="dia"?[["Órdenes",S0.length],["Carga promedio",fMin(avg(mq))],["Control promedio",fMin(avg(mc))],["Tiempo en pausa",fMin(pzT)],["Cargas sin medir",S0.length-mq.length]]
+      :[[ctl?"Controles medidos":"Cargas medidas",S1.length],["Tiempo promedio",fMin(avg(mins))],["La más rápida",mins.length?fMin(Math.min(...mins)):"—"],["La más lenta",mins.length?fMin(Math.max(...mins)):"—"],["Tiempo en pausa",fMin(pzT)],["Sin medir",S0.length-S1.length]];
+    if(mode==="detalle"){const rows=S0.filter(s=>cargaMin(s)!=null||ctrlMin(s)!=null).sort((a,b)=>a.fecha.localeCompare(b.fecha)).map(s=>({n:nro(s),f:fDL(s.fecha),eq:eqT(s.equipoCargaId)||"(sin equipo)",cgs:cargadoresDe(s).map(persT).filter(Boolean).join(", "),cam:camLbl(s.camionId),ini:hhmm(s.cargaInicio),fin:hhmm(s.cargaFin),np:(s.pausas||[]).length||"",pz:pausaS(s)||"",min:cargaMin(s),ctrl:persT(s.controladorId),cmin:ctrlMin(s),por:s.portonId?portT(s.portonId):"",dest:destT(s)}));
+      return{kpis:kp,cols:[["N°","n","t"],["Fecha","f","t"],["Camión","cam","t"],["Equipo","eq","t"],["Cargadores","cgs","t"],["Inicio","ini","t"],["Fin","fin","t"],["Pausas","np","n"],["En pausa (min)","pz","n"],["Carga (min)","min","n"],["Controlador","ctrl","t"],["Control (min)","cmin","n"],["Portón","por","t"],["Destinos","dest","t"]],rows}}
+    if(mode==="dia"){const by=groupBy(S0,s=>s.fecha);const rows=Object.keys(by).sort().map(k=>{const a=by[k],q=a.map(cargaMin).filter(x=>x!=null),c=a.map(ctrlMin).filter(x=>x!=null);return{k:fDL(k),ord:a.length,n:q.length,avg:avg(q),min:q.length?Math.min(...q):null,max:q.length?Math.max(...q):null,cavg:avg(c),pz:sum(a,pausaS),tot:Math.round(sum(q,x=>x)/6)/10}});
+      return{kpis:kp,cols:[["Día","k","t"],["Órdenes","ord","n"],["Cargas medidas","n","n"],["Carga promedio (min)","avg","n"],["Más rápida (min)","min","n"],["Más lenta (min)","max","n"],["Control promedio (min)","cavg","n"],["En pausa (min)","pz","n"],["Horas cargando","tot","d1"]],rows,chart:{lab:"k",val:"avg",t:"Minutos promedio de carga por día",noSort:true}}}
+    let by={};if(mode==="cargador")S1.forEach(s=>cargadoresDe(s).forEach(p=>{const k=persT(p)||"(eliminado)";(by[k]=by[k]||[]).push(s)}));
+    else by=groupBy(S1,{equipo:s=>eqT(s.equipoCargaId)||"(sin equipo)",controlador:s=>persT(s.controladorId)||"(sin controlador)",porton:s=>s.portonId?portT(s.portonId):"(sin portón)",camion:s=>camLbl(s.camionId)}[mode]);
+    const rows=Object.keys(by).map(k=>{const a=by[k].map(fm);return{k,n:a.length,avg:avg(a),min:Math.min(...a),max:Math.max(...a),pz:sum(by[k],pausaS),tot:Math.round(a.reduce((t,x)=>t+x,0)/6)/10}}).sort((a,b)=>a.avg-b.avg);
     const w=ctl?"control":"carga";
-    return{kpis:kp,cols:[[{equipo:"Equipo",controlador:"Controlador",porton:"Portón",camion:"Camión"}[mode],"k","t"],[ctl?"Controles":"Cargas","n","n"],["Promedio (min)","avg","n"],["Más rápida (min)","min","n"],["Más lenta (min)","max","n"],[ctl?"Horas controlando":"Horas cargando","tot","d1"]],rows,chart:{lab:"k",val:"avg",t:"Minutos promedio por "+w+" (menos es mejor)"}}}});
+    return{kpis:kp,cols:[[{equipo:"Equipo",cargador:"Cargador",controlador:"Controlador",porton:"Portón",camion:"Camión"}[mode],"k","t"],[ctl?"Controles":"Cargas","n","n"],["Promedio (min)","avg","n"],["Más rápida (min)","min","n"],["Más lenta (min)","max","n"],["En pausa (min)","pz","n"],[ctl?"Horas controlando":"Horas cargando","tot","d1"]],rows,chart:{lab:"k",val:"avg",t:"Minutos promedio por "+w+" (menos es mejor)"}}}});
+KPIS.splice(KPIS.findIndex(k=>k.id==="guias3")+1,0,{id:"tctrl",a:"Distribución",t:"Tiempo promedio de control",u:"min",dir:"down",meta:45,h:"Del inicio de la carga a «terminó la carga», sin las pausas, medido por controlador",calc(F){const m=salF(F).map(ctrlMin).filter(x=>x!=null);return m.length?m.reduce((t,x)=>t+x,0)/m.length:null}});
 KPIS.splice(KPIS.findIndex(k=>k.id==="guias3")+1,0,{id:"tcarga",a:"Distribución",t:"Tiempo promedio de carga",u:"min",dir:"down",meta:45,h:"De la emisión de la orden a «terminó la carga»",calc(F){const m=salF(F).map(cargaMin).filter(x=>x!=null);return m.length?m.reduce((t,x)=>t+x,0)/m.length:null}});
 {const kf0=kFmt;kFmt=(v,u)=>u==="min"?(v==null||!isFinite(v)?"—":fMin(Math.round(v))):kf0(v,u)}
 
 Object.assign(GACT,{
   "eq-new":()=>{if(canWrite)formEquipo(null)},
   "eq-edit":(el,id)=>{const e=get("equipos",id);if(e)formEquipo(e)},
-  "carga-ini":async(el,id)=>{if(!canWrite)return;await C("salidas").doc(id).update({cargaInicio:dtLocal(),cargaFin:null,updatedAt:new Date().toISOString(),updatedBy:uid});toast("Arrancó la carga · se está midiendo el tiempo")},
-  "carga-fin":async(el,id)=>{if(!canWrite)return;const s=get("salidas",id);const f=dtLocal();await C("salidas").doc(id).update({cargaFin:f,updatedAt:new Date().toISOString(),updatedBy:uid});toast("Carga terminada en "+fMin(Math.max(0,Math.round((new Date(f)-new Date(s.cargaInicio))/6e4)))+(s.equipoCargaId?" · "+eqT(s.equipoCargaId):""))}
+  "carga-ini":async(el,id)=>{if(!canWrite)return;const s=get("salidas",id),f=dtLocal();await C("salidas").doc(id).update(Object.assign({cargaInicio:f,cargaFin:null,pausas:[]},s.controladorId?{ctrlInicio:f,ctrlFin:null}:{},{updatedAt:new Date().toISOString(),updatedBy:uid}));toast("Arrancó la carga"+(s.controladorId?" y el control":"")+" · se está midiendo el tiempo")},
+  "carga-pausa":async(el,id)=>{if(!canWrite)return;const s=get("salidas",id);if(!s||enPausa(s))return;await C("salidas").doc(id).update(Object.assign({pausas:(s.pausas||[]).concat([{ini:new Date().toISOString(),fin:null}])},ctrlSync(s),{updatedAt:new Date().toISOString(),updatedBy:uid}));toast("Carga"+(s.controladorId?" y control":"")+" en pausa · el tiempo no corre")},
+  "carga-reanudar":async(el,id)=>{if(!canWrite)return;const s=get("salidas",id);if(!s||!enPausa(s))return;const P=pausasCerradas(s),p=P[P.length-1];await C("salidas").doc(id).update({pausas:P,updatedAt:new Date().toISOString(),updatedBy:uid});toast("Se reanudó la carga · estuvo "+fMin(Math.round((new Date(p.fin)-new Date(p.ini))/6e4))+" en pausa")},
+  "carga-fin":async(el,id)=>{if(!canWrite)return;const s=get("salidas",id);const f=dtLocal(),P=pausasCerradas(s),x=Object.assign({},s,{pausas:P,cargaFin:f}),c=ctrlSync(s);
+    await C("salidas").doc(id).update(Object.assign({cargaFin:f,pausas:P},c,c.ctrlInicio?{ctrlFin:f}:{},{updatedAt:new Date().toISOString(),updatedBy:uid}));
+    toast("Carga terminada en "+fMin(Math.max(0,tramoMin(x,s.cargaInicio,f)))+(s.equipoCargaId?" · "+eqT(s.equipoCargaId):"")+(c.ctrlInicio?" · control terminado":""))}
 });
 /* el cronómetro de las cargas en curso se actualiza solo cada minuto */
 setInterval(()=>{const ae=document.activeElement;if(["ordenes","hojas","hoja","viajes"].includes(UI.route)&&$("ov").hidden&&!(ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))&&S.salidas.some(s=>cargaCurso(s)!=null||ctrlCurso(s)!=null))render()},60000);
@@ -2935,7 +2977,7 @@ function costoViaje(s){const c=costCfg(),v=viajeGas(s),lit=litReal(s),ge=lit?nul
   const kmR=kmRealS(s)||Number(s.kmViaje)||null,km=kmR||kmPrevS(s)||0,est=!kmR;
   const L=[{t:"Gasoil"+(ge?" (estimado)":""),m:gas,d:lit?fL(lit):ge?"sin odómetro ni cargas: "+gasEstTxt(ge):"sin cargas de gasoil ni km para estimarlo"}];
   const cm=cajaMatch(s);L.push({t:"Caja chica",m:cajaGasto(s),d:(hayN(s.cajaChica)?"entregada al salir"+(cm.length&&Number(s.cajaChica)!==cm.reduce((t,x)=>t+(Number(x.monto)||0),0)?" (la tabla dice "+fM(cm.reduce((t,x)=>t+(Number(x.monto)||0),0))+")":cm.length?" · "+cm.map(x=>x.nombre).join(" + "):""):cm.length?cm.map(x=>x.nombre).join(" + "):"sin caja chica para "+(s.canal==="Preventa"?"estas zonas":"estas sucursales"))+(hayN(s.cajaDevuelto)?" · devolvió "+fM(s.cajaDevuelto):"")});
-  if(Number(c.jornal)){const n=s.cobradorId?2:1;L.push({t:"Chofer"+(n>1?" y cobrador":""),m:Number(c.jornal)*n,d:fM(c.jornal)+" por persona y viaje"})}
+  if(Number(c.jornal)){const n=1+(s.cobradorId?1:0)+(ayuT(s)?1:0);L.push({t:["Chofer",s.cobradorId?"cobrador":"",ayuT(s)?"ayudante":""].filter(Boolean).join(", ").replace(/, ([^,]*)$/," y $1"),m:Number(c.jornal)*n,d:fM(c.jornal)+" por persona y viaje"})}
   if(Number(c.costoKm)&&km)L.push({t:"Desgaste y mantenimiento",m:Number(c.costoKm)*km,d:fN(Math.round(km))+" km × "+fM(c.costoKm)+(est?" · km previstos":"")});
   (s.costos||[]).forEach(x=>L.push({t:x.concepto||"Otro",m:Number(x.monto)||0,d:x.obs||"",extra:1}));
   const tot=L.reduce((t,x)=>t+(x.m||0),0),val=valorViaje(s),paradas=plan(s).stops.length;
@@ -3225,66 +3267,204 @@ INF.splice(INF.findIndex(r=>r.id==="ordenes")+1,0,{id:"recorridos",cat:"Operaci�
     return{kpis:kp,cols:[["N°","n","t"],["Fecha","f","t"],["Canal","canal","t"],["Camión","cam","t"],["Chofer","cho","t"],["Destinos","dest","t"],["Estado","est","t"],["Km óptimos","op","km"],["Km GPS","km","d1"],["Diferencia km","d","n"],["Diferencia %","p","d1"],["Desvíos","dv","n"],["Máx. desvío km","mx","d1"]],rows,chart:{lab:"n",val:"p",t:"% de km de más por viaje",noSort:true}}}});
 
 /* ================= tiempo del controlador ================= */
-/** minutos de control: de la asignación del controlador a «terminó el control»; en curso = hasta ahora */
-const ctrlMin=s=>{if(!s.ctrlInicio||!s.ctrlFin)return null;const m=Math.round((new Date(s.ctrlFin)-new Date(s.ctrlInicio))/6e4);return m>=0?m:null};
-const ctrlCurso=s=>s.controladorId&&s.ctrlInicio&&!s.ctrlFin&&s.estado==="Programada"?Math.max(0,Math.round((Date.now()-new Date(s.ctrlInicio))/6e4)):null;
+/** minutos de control: arranca, se pausa y termina junto con la carga; sin las pausas */
+const ctrlMin=s=>{if(!s.ctrlInicio||!s.ctrlFin)return null;const m=tramoMin(s,s.ctrlInicio,s.ctrlFin);return m>=0?m:null};
+const ctrlCurso=s=>s.controladorId&&s.ctrlInicio&&!s.ctrlFin&&s.estado==="Programada"?Math.max(0,tramoMin(s,s.ctrlInicio)):null;
 function ctrlChip(s){if(s.estado==="Anulada"||!s.controladorId)return"";const c=persT(s.controladorId);
-  const cc=ctrlCurso(s);if(cc!=null)return'<span class="tag carga on" title="Desde las '+hhmm(s.ctrlInicio)+'">🔍 Controlando · '+fMin(cc)+" · "+esc(c)+'</span>';
+  const cc=ctrlCurso(s);if(cc!=null&&enPausa(s))return'<span class="tag carga pausa">⏸ Control en pausa · '+fMin(cc)+" · "+esc(c)+'</span>';
+  if(cc!=null)return'<span class="tag carga on" title="Desde las '+hhmm(s.ctrlInicio)+'">🔍 Controlando · '+fMin(cc)+" · "+esc(c)+'</span>';
   const m=ctrlMin(s);return m!=null?'<span class="tag carga" title="'+hhmm(s.ctrlInicio)+' a '+hhmm(s.ctrlFin)+'">🔍 Controló en '+fMin(m)+" · "+esc(c)+'</span>':""}
 /** tarjeta «Tiempo de control» de la hoja de ruta */
 function ctrlKpi(s){if(s.estado==="Anulada")return"";const who=s.controladorId?esc(persT(s.controladorId)):"Sin controlador asignado",cc=ctrlCurso(s),m=ctrlMin(s);
-  const v=cc!=null?'<span style="color:var(--c-base)">🔍 '+fMin(cc)+'</span>':m!=null?fMin(m):"—";
-  const sub=cc!=null?who+" · controlando desde las "+hhmm(s.ctrlInicio):m!=null?who+" · de "+hhmm(s.ctrlInicio)+" a "+hhmm(s.ctrlFin):s.controladorId&&!s.ctrlInicio?who+" · sin largar":who;
-  let b="";if(canWrite&&s.estado==="Programada"&&s.controladorId)b=!s.ctrlInicio?'<button class="btn sm w" data-act="ctrl-ini" data-id="'+s.id+'">🔍 Largar control</button>':!s.ctrlFin?'<button class="btn sm green w" data-act="ctrl-fin" data-id="'+s.id+'">'+IC.check+'Terminó el control</button>':"";
+  const v=cc!=null?'<span style="color:var(--c-base)">'+(enPausa(s)?"⏸ ":"🔍 ")+fMin(cc)+'</span>':m!=null?fMin(m):"—";
+  const sub=cc!=null?who+(enPausa(s)?" · en pausa con la carga":" · controlando desde las "+hhmm(s.ctrlInicio)):m!=null?who+" · de "+hhmm(s.ctrlInicio)+" a "+hhmm(s.ctrlFin):s.controladorId&&!s.ctrlInicio?who+" · arranca con la carga":who;
+  let b="";if(canWrite&&s.estado==="Programada"&&s.controladorId&&!s.ctrlFin)b=!s.ctrlInicio&&s.cargaInicio&&!s.cargaFin?'<button class="btn sm w" data-act="ctrl-ini" data-id="'+s.id+'">🔍 Sumar el control a la carga</button>':'<span class="mu">Se pausa y termina junto con la carga</span>';
   return'<div class="kpi"><span class="k">Tiempo de control</span><span class="v">'+v+'</span><span class="s">'+sub+'</span>'+(b?'<span class="s" style="margin-top:6px">'+b+'</span>':"")+'</div>'}
-/** al grabar la orden: si se asigna (o cambia) el controlador arranca su cronómetro */
+/** al grabar la orden: el control toma el mismo inicio (y fin) que la carga */
 function ctrlAlGrabar(prev,d){const pc=prev?prev.controladorId||"":"";
   if(!d.controladorId){d.ctrlInicio="";d.ctrlFin="";return}
-  if(d.controladorId!==pc&&(!prev||(d.ctrlInicio||"")===(prev.ctrlInicio||""))){d.ctrlInicio=dtLocal();d.ctrlFin=""}
+  const ci=d.cargaInicio||(prev&&prev.cargaInicio)||"",cf=d.cargaFin||(prev&&prev.cargaFin)||"";
+  if(d.controladorId!==pc&&(!prev||(d.ctrlInicio||"")===(prev.ctrlInicio||""))){d.ctrlInicio=ci||dtLocal();d.ctrlFin=cf}
   if(d.ctrlInicio&&d.ctrlFin&&d.ctrlFin<d.ctrlInicio)return"El fin del control no puede ser antes del inicio."}
 Object.assign(GACT,{
-  "ctrl-ini":async(el,id)=>{if(!canWrite)return;await C("salidas").doc(id).update({ctrlInicio:dtLocal(),ctrlFin:null,updatedAt:new Date().toISOString(),updatedBy:uid});toast("Arrancó el control · se está midiendo el tiempo")},
-  "ctrl-fin":async(el,id)=>{if(!canWrite)return;const s=get("salidas",id),f=dtLocal();await C("salidas").doc(id).update({ctrlFin:f,updatedAt:new Date().toISOString(),updatedBy:uid});toast("Control terminado en "+fMin(Math.max(0,Math.round((new Date(f)-new Date(s.ctrlInicio))/6e4)))+" · "+persT(s.controladorId))}
+  "ctrl-ini":async(el,id)=>{if(!canWrite)return;const s=get("salidas",id);if(!s.cargaInicio)return GACT["carga-ini"](el,id);await C("salidas").doc(id).update({ctrlInicio:s.cargaInicio,ctrlFin:null,updatedAt:new Date().toISOString(),updatedBy:uid});toast("El control quedó atado a la carga · mismo inicio")},
+  "ctrl-fin":(el,id)=>GACT["carga-fin"](el,id)
 });
 
 /* ================= resumen de viajes para despacho ================= */
 GRP.resumen="logistica";MOD.resumen="m-viaje";PARENT.resumen="viajes";
 const APP_URL="https://fabriziovischi10-a11y.github.io/ecommerceportal/hoja-de-ruta.html";
-UI.res=UI.res||{desde:today(),hasta:today()};
-/** #resumen/2026-10-28 o #resumen/2026-10-01/2026-10-07 */
-function resHash(r){const m=/^resumen\/(\d{4}-\d{2}-\d{2})(?:\/(\d{4}-\d{2}-\d{2}))?$/.exec(r||"");if(!m)return r;UI.res={desde:m[1],hasta:m[2]||m[1]};return"resumen"}
-const resLink=()=>APP_URL+"#resumen/"+UI.res.desde+(UI.res.hasta!==UI.res.desde?"/"+UI.res.hasta:"");
+UI.res=UI.res||{desde:today(),hasta:today(),canal:""};
+/** #resumen/2026-10-28 · #resumen/2026-10-01/2026-10-07 · con /Preventa o /Sucursales al final */
+function resHash(r){const m=/^resumen\/(\d{4}-\d{2}-\d{2})(?:\/(\d{4}-\d{2}-\d{2}))?(?:\/(Preventa|Sucursales))?$/.exec(r||"");if(!m)return r;UI.res={desde:m[1],hasta:m[2]||m[1],canal:m[3]||""};return"resumen"}
+const resPath=()=>"#resumen/"+UI.res.desde+(UI.res.hasta!==UI.res.desde?"/"+UI.res.hasta:"")+(UI.res.canal?"/"+UI.res.canal:"");
+const resLink=()=>APP_URL+resPath();
 const resRng=()=>UI.res.desde===UI.res.hasta?fDL(UI.res.desde):fDL(UI.res.desde)+" al "+fDL(UI.res.hasta);
 function resFilas(){const R=UI.res;
-  return S.salidas.filter(s=>actSal(s)&&s.fecha>=R.desde&&s.fecha<=R.hasta).sort((a,b)=>a.fecha.localeCompare(b.fecha)||String(a.canal).localeCompare(String(b.canal))||(a.nro||0)-(b.nro||0)).map(s=>{
+  return S.salidas.filter(s=>actSal(s)&&s.fecha>=R.desde&&s.fecha<=R.hasta&&(!R.canal||s.canal===R.canal)).sort((a,b)=>a.fecha.localeCompare(b.fecha)||String(a.canal).localeCompare(String(b.canal))||(a.nro||0)-(b.nro||0)).map(s=>{
     const pv=s.canal==="Preventa",cam=get("camiones",s.camionId),ac=get("camiones",s.acopladoId);
     const zon=pv?(s.zonaIds||[]).map(zonaT).join(", "):[...new Set((s.sucursalIds||[]).map(id=>(get("sucursales",id)||{}).zonaId).filter(Boolean))].map(zonaT).join(", ");
     const dest=pv?(s.destinoLoc?locName(s.destinoLoc):(s.zonaIds||[]).length?[...new Set((s.zonaIds||[]).map(z=>(get("zonas",z)||{}).nombre).filter(Boolean).map(n=>n.replace(/^Zona \d+\s*·\s*/,"")))].join(", "):""):(s.sucursalIds||[]).map(sucT).join(", ");
-    return{s,n:nro(s),f:fDL(s.fecha),c:s.canal,pat:(cam?cam.patente:"—")+(ac?" + "+ac.patente:""),cho:chofT(s.choferId)||"—",cob:pv?(chofT(s.cobradorId)||"Sin cobrador"):"No corresponde",ctrl:persT(s.controladorId)||"Sin controlador",dest:dest||"—",zona:zon||"—",est:(EST[s.estado]||[s.estado])[0]}})}
-function resTexto(F){const L=["*Resumen de viajes · "+resRng()+"*",pl(F.length,"viaje","viajes"),""];
-  F.forEach(r=>L.push("*N° "+r.n+"* · "+r.c+(UI.res.desde!==UI.res.hasta?" · "+r.f:""),"Patente: "+r.pat,"Chofer: "+r.cho+(r.c==="Preventa"?" · Cobrador: "+r.cob:""),"Controlador: "+r.ctrl,"Destino: "+r.dest,"Zona: "+r.zona,""));
+    return{s,n:nro(s),f:fDL(s.fecha),c:s.canal,pat:(cam?cam.patente:"—")+(ac?" + "+ac.patente:""),cho:chofT(s.choferId)||"—",cob:pv?(chofT(s.cobradorId)||"Sin cobrador"):"No corresponde",ayu:ayuT(s)||"Sin ayudante",ctrl:persT(s.controladorId)||"Sin controlador",dest:dest||"—",zona:zon||"—",est:(EST[s.estado]||[s.estado])[0]}})}
+function resTexto(F){const L=["*Resumen de viajes"+(UI.res.canal?" · "+UI.res.canal:"")+" · "+resRng()+"*",pl(F.length,"viaje","viajes"),""];
+  F.forEach(r=>L.push("*N° "+r.n+"* · "+r.c+(UI.res.desde!==UI.res.hasta?" · "+r.f:""),"Patente: "+r.pat,"Chofer: "+r.cho,...(r.c==="Preventa"?["Cobrador: "+r.cob]:[]),"Ayudante: "+r.ayu,"Controlador: "+r.ctrl,"Destino: "+r.dest,"Zona: "+r.zona,""));
   L.push("Ver en el sistema: "+resLink());return L.join("\n")}
 VIEWS.resumen=function(){const F=resFilas(),R=UI.res,txt=resTexto(F);
   let h=ph(crumb(["Inicio","inicio"],["Viajes","viajes"],["Resumen para despacho"]),"Resumen de viajes",'<button class="btn" data-act="res-print">'+IC.file+'Imprimir</button>',"truck");
   h+='<section class="pn"><div class="flt"><label>Desde <input type="date" data-ui="res.desde" value="'+R.desde+'"></label><label>Hasta <input type="date" data-ui="res.hasta" value="'+R.hasta+'"></label>'
-    +'<button class="btn sm" data-act="res-hoy">Hoy</button></div>'
+    +'<button class="btn sm" data-act="res-hoy">Hoy</button><span class="sg res-canal" role="radiogroup" aria-label="Qué viajes">'+[["","Las dos"],["Preventa","Solo preventa"],["Sucursales","Solo sucursales"]].map(([v,l])=>'<label><input type="radio" name="rescanal" data-act="res-canal" data-v="'+v+'"'+((R.canal||"")===v?" checked":"")+'>'+l+'</label>').join("")+'</span></div>'
     +'<div class="reslink"><span class="k">Link para mandar a despacho</span><input id="resUrl" readonly value="'+esc(resLink())+'" aria-label="Link del resumen">'
     +'<div class="a"><button class="btn pri" data-act="res-copy">Copiar link</button><a class="btn green" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(txt)+'">Mandar por WhatsApp</a><button class="btn" data-act="res-copytxt">Copiar resumen como texto</button></div>'
     +'<span class="s">El link abre este resumen con las mismas fechas en la página del sistema. El mensaje de WhatsApp lleva el resumen completo escrito.</span></div></section>';
-  if(!F.length)return h+emptyCard("truck","m-log","No hay viajes del "+resRng(),"Elegí otras fechas.","");
+  if(!F.length)return h+emptyCard("truck","m-log","No hay viajes"+(R.canal?" de "+R.canal.toLowerCase():"")+" del "+resRng(),"Elegí otras fechas"+(R.canal?" o «Las dos»":"")+".","");
   const by=groupBy(F,r=>r.c);
-  return h+Object.keys(by).map(c=>{const zc=by[c].some(r=>r.zona!=="—");return'<section class="pn"><div class="pnh"><h2>'+chBadge({canal:c})+esc(c)+' · '+pl(by[c].length,"viaje","viajes")+'</h2><span class="s">'+resRng()+'</span></div><div class="tw"><table class="wide"><thead><tr><th>N°</th>'+(R.desde!==R.hasta?"<th>Fecha</th>":"")+'<th>Patente</th><th>Chofer</th>'+(c==="Preventa"?"<th>Cobrador</th>":"")+'<th>Controlador</th><th>Destino</th>'+(zc?"<th>Zona</th>":"")+'<th>Estado</th></tr></thead><tbody>'
-    +by[c].map(r=>'<tr class="ck" data-act="res-hoja" data-id="'+r.s.id+'"><td class="mono"><b>'+esc(r.n)+'</b></td>'+(R.desde!==R.hasta?'<td>'+esc(r.f)+'</td>':"")+'<td class="mono"><b>'+esc(r.pat)+'</b></td><td>'+esc(r.cho)+'</td>'+(c==="Preventa"?'<td>'+esc(r.cob)+'</td>':"")+'<td>'+esc(r.ctrl)+'</td><td class="wrap">'+esc(r.dest)+'</td>'+(zc?'<td class="wrap">'+esc(r.zona)+'</td>':"")+'<td>'+estChip(r.s)+'</td></tr>').join("")+'</tbody></table></div></section>'}).join("")};
+  return h+Object.keys(by).map(c=>{const zc=by[c].some(r=>r.zona!=="—"),ac=true;return'<section class="pn"><div class="pnh"><h2>'+chBadge({canal:c})+esc(c)+' · '+pl(by[c].length,"viaje","viajes")+'</h2><span class="s">'+resRng()+'</span></div><div class="tw"><table class="wide"><thead><tr><th>N°</th>'+(R.desde!==R.hasta?"<th>Fecha</th>":"")+'<th>Patente</th><th>Chofer</th>'+(c==="Preventa"?"<th>Cobrador</th>":"")+(ac?"<th>Ayudante</th>":"")+'<th>Controlador</th><th>Destino</th>'+(zc?"<th>Zona</th>":"")+'<th>Estado</th></tr></thead><tbody>'
+    +by[c].map(r=>'<tr class="ck" data-act="res-hoja" data-id="'+r.s.id+'"><td class="mono"><b>'+esc(r.n)+'</b></td>'+(R.desde!==R.hasta?'<td>'+esc(r.f)+'</td>':"")+'<td class="mono"><b>'+esc(r.pat)+'</b></td><td>'+esc(r.cho)+'</td>'+(c==="Preventa"?'<td>'+esc(r.cob)+'</td>':"")+(ac?'<td>'+esc(r.ayu||"—")+'</td>':"")+'<td>'+esc(r.ctrl)+'</td><td class="wrap">'+esc(r.dest)+'</td>'+(zc?'<td class="wrap">'+esc(r.zona)+'</td>':"")+'<td>'+estChip(r.s)+'</td></tr>').join("")+'</tbody></table></div></section>'}).join("")};
 async function copiar(t,ok){try{await navigator.clipboard.writeText(t);toast(ok)}catch(e){const x=$("resUrl");if(x){x.value=t;x.focus();x.select();try{document.execCommand("copy");toast(ok)}catch(_){toast("Seleccioná el texto y copialo a mano")}}}}
 Object.assign(GACT,{
-  "res-open":()=>{const v=UI.vj||{};UI.res={desde:v.desde||today(),hasta:v.hasta||v.desde||today()};location.hash="#resumen/"+UI.res.desde+(UI.res.hasta!==UI.res.desde?"/"+UI.res.hasta:"")},
-  "res-hoy":()=>{UI.res={desde:today(),hasta:today()};location.hash="#resumen/"+today()},
+  "res-open":()=>{const v=UI.vj||{};UI.res={desde:v.desde||today(),hasta:v.hasta||v.desde||today(),canal:(UI.res||{}).canal||""};location.hash=resPath()},
+  "res-hoy":()=>{UI.res=Object.assign({},UI.res,{desde:today(),hasta:today()});location.hash=resPath()},
+  "res-canal":el=>{UI.res=Object.assign({},UI.res,{canal:el.dataset.v||""});location.hash=resPath()},
   "res-copy":()=>copiar(resLink(),"Link copiado · pegalo en WhatsApp o mail"),
   "res-copytxt":()=>{const t=resTexto(resFilas());copiar(t,"Resumen copiado");const x=$("resUrl");if(x)setTimeout(()=>{x.value=resLink()},1500)},
   "res-hoja":(el,id)=>{UI.hojaFrom="viajes";UI.hojaId=id;location.hash="#hoja"},
   "res-print":()=>print()
 });
 
+/* ================= cierre del día: resumen + camiones disponibles para el día siguiente ================= */
+GRP.cierre="logistica";MOD.cierre="m-viaje";PARENT.cierre="viajes";
+UI.cie=UI.cie||{fecha:today()};
+/** el día siguiente de trabajo (se saltea el domingo) */
+const diaSig=f=>{let d=addD(f,1);if(wd(d)===0)d=addD(d,1);return d};
+const avgM=a=>a.length?Math.round(a.reduce((t,x)=>t+x,0)/a.length):null;
+/** estado de cada camión para la fecha t: libre, ya asignado, todavía en viaje, en taller o con papeles vencidos */
+function camDispo(t){
+  return S.camiones.filter(c=>c.estado!=="Baja").sort((a,b)=>String(a.patente).localeCompare(String(b.patente))).map(c=>{
+    const usa=s=>actSal(s)&&(s.camionId===c.id||s.acopladoId===c.id);
+    const enV=S.salidas.find(s=>usa(s)&&s.estado==="En ruta"&&s.fecha<t),asig=S.salidas.filter(s=>usa(s)&&s.fecha===t&&s.estado!=="Anulada");
+    const venc=[c.vtvVence&&c.vtvVence<t?"VTV vencida "+fD(c.vtvVence):"",c.seguroVence&&c.seguroVence<t?"seguro vencido "+fD(c.seguroVence):""].filter(Boolean);
+    let st="ok",txt="Disponible";
+    if(c.estado==="En taller"){st="taller";txt="En taller"}
+    else if(venc.length){st="venc";txt=venc.join(" · ")}
+    else if(enV){st="viaje";txt="Todavía en viaje · N° "+nro(enV)+" del "+fD(enV.fecha)+" sin regreso"}
+    else if(asig.length){st="asig";txt="Ya tiene orden · N° "+asig.map(nro).join(", ")}
+    const ch=S.choferes.find(x=>x.camionId===c.id&&isActive(x));
+    return{id:c.id,pat:c.patente,tipo:c.tipo||"",mod:c.modelo||"",acop:isAcop(c),st,txt,cho:ch?ch.nombre:""}}).sort((a,b)=>(a.st!=="ok")-(b.st!=="ok"))}
+/** resumen del día f (en vivo, desde las órdenes) */
+function cieCalc(f){
+  const D=S.salidas.filter(s=>actSal(s)&&s.fecha===f),pv=D.filter(s=>s.canal==="Preventa"),sc=D.filter(s=>s.canal!=="Preventa");
+  const cnt=k=>D.filter(s=>s.estado===k).length,mq=D.map(cargaMin).filter(x=>x!=null),mc=D.map(ctrlMin).filter(x=>x!=null);
+  const grp=(fk,fm,fks)=>{const by={};D.forEach(s=>{const m=fm(s);if(m==null)return;(fks?fks(s):[fk(s)]).forEach(k=>(by[k]=by[k]||[]).push(m))});return Object.keys(by).map(k=>({k,n:by[k].length,avg:avgM(by[k]),min:Math.min(...by[k]),max:Math.max(...by[k])})).sort((a,b)=>a.avg-b.avg)};
+  const km=Math.round(D.reduce((t,s)=>t+(kmRealS(s)||Number(s.kmViaje)||(s.gps&&s.gps.km)||plan(s).total||0),0));
+  const sig=diaSig(f),cams=camDispo(sig);
+  return{fecha:f,viajes:D.length,preventa:pv.length,sucursales:sc.length,programadas:cnt("Programada"),cargadas:cnt("Cargada"),enRuta:cnt("En ruta"),finalizadas:cnt("Finalizada"),km,
+    paradas:D.reduce((t,s)=>t+plan(s).stops.length,0),camiones:new Set(D.map(s=>s.camionId).filter(Boolean)).size,nov:S.novedades.filter(n=>n.fecha===f).length,
+    carga:{n:mq.length,sin:D.length-mq.length,avg:avgM(mq),min:mq.length?Math.min(...mq):null,max:mq.length?Math.max(...mq):null},
+    control:{n:mc.length,sin:D.filter(s=>s.controladorId).length-mc.length,avg:avgM(mc),min:mc.length?Math.min(...mc):null,max:mc.length?Math.max(...mc):null},
+    equipos:grp(s=>eqT(s.equipoCargaId)||"(sin equipo)",cargaMin),controladores:grp(s=>persT(s.controladorId)||"(sin controlador)",ctrlMin),
+    detalle:D.sort((a,b)=>(a.nro||0)-(b.nro||0)).map(s=>({n:nro(s),c:s.canal,pat:camLbl(s.camionId),cho:chofT(s.choferId)||"",dest:destT(s),est:(EST[s.estado]||[s.estado])[0],carga:cargaMin(s),control:ctrlMin(s)})),
+    personas:cieGente(D),cargadores:grp(null,cargaMin,s=>((s.equipoIds||[]).length?s.equipoIds:((get("equipos",s.equipoCargaId)||{}).integranteIds||[])).filter(id=>(get("personal",id)||{}).rol!=="Controlador").map(id=>persT(id)||"(sin nombre)")),
+    sig,cams,disp:cams.filter(c=>c.st==="ok"&&!c.acop).length,dispAc:cams.filter(c=>c.st==="ok"&&c.acop).length}}
+/** choferes, cobradores y ayudantes que salieron (viajes en ruta o que ya volvieron) */
+function cieGente(D){const by={};D.filter(s=>["En ruta","Finalizada"].includes(s.estado)).forEach(s=>[[s.choferId,"Chofer"],[s.cobradorId,"Cobrador"],[s.ayudanteId||(s.ayudanteNom?"m:"+s.ayudanteNom.toLowerCase():""),"Ayudante"]].forEach(([id,r])=>{if(!id)return;const k=by[id]=by[id]||{n:(id.startsWith("m:")?s.ayudanteNom:chofT(id))||"(sin nombre)",roles:new Set(),v:0,pat:new Set()};k.roles.add(r);k.v++;k.pat.add(camLbl(s.camionId))}));
+  const L=Object.values(by).map(x=>({n:x.n,rol:[...x.roles].join(" y "),v:x.v,pat:[...x.pat].join(", ")})).sort((a,b)=>a.n.localeCompare(b.n));
+  return{total:L.length,choferes:L.filter(x=>/Chofer/.test(x.rol)).length,cobradores:L.filter(x=>/Cobrador/.test(x.rol)).length,ayudantes:L.filter(x=>/Ayudante/.test(x.rol)).length,lista:L}}
+const cieDoc=f=>S.cierres.find(c=>c.id===f);
+function cieTexto(R){const L=["*Cierre del día "+fDL(R.fecha)+"*","",
+  "*Viajes:* "+R.viajes+" ("+R.preventa+" preventa · "+R.sucursales+" sucursales)","Volvieron "+R.finalizadas+" · en viaje "+R.enRuta+" · listos sin salir "+R.cargadas+" · sin cargar "+R.programadas,"Km: "+fN(R.km)+" · camiones usados: "+R.camiones,"Gente que salió: "+((R.personas||{}).total||0)+" ("+((R.personas||{}).choferes||0)+" choferes · "+((R.personas||{}).cobradores||0)+" cobradores"+((R.personas||{}).ayudantes?" · "+R.personas.ayudantes+" ayudantes":"")+")","",
+  "*Tiempo de carga:* promedio "+fMin(R.carga.avg)+(R.carga.n?" (más rápida "+fMin(R.carga.min)+", más lenta "+fMin(R.carga.max)+")":"")+" · "+R.carga.n+" medidas",
+  ...R.equipos.map(e=>"  "+e.k+": "+fMin(e.avg)+" ("+e.n+")"),
+  ...((R.cargadores||[]).length?["  Por cargador:",...R.cargadores.map(e=>"    "+e.k+": "+fMin(e.avg)+" ("+e.n+")")]:[]),
+  "*Tiempo de control:* promedio "+fMin(R.control.avg)+" · "+R.control.n+" medidos",
+  ...R.controladores.map(e=>"  "+e.k+": "+fMin(e.avg)+" ("+e.n+")"),"",
+  "*Camiones disponibles para el "+fDL(R.sig)+":* "+R.disp];
+  R.cams.filter(c=>!c.acop).forEach(c=>L.push((c.st==="ok"?"✅ ":"⛔ ")+c.pat+(c.st==="ok"?(c.cho?" · "+c.cho:""):" · "+c.txt)));
+  const ac=R.cams.filter(c=>c.acop);if(ac.length){L.push("Acoplados:");ac.forEach(c=>L.push((c.st==="ok"?"✅ ":"⛔ ")+c.pat+(c.st==="ok"?"":" · "+c.txt)))}
+  L.push("","Ver en el sistema: "+APP_URL+"#cierre/"+R.fecha);return L.join("\n")}
+function cieResumenHtml(R,live){
+  const k=(t,v,s)=>'<div class="kpi"><span class="k">'+t+'</span><span class="v">'+v+'</span>'+(s?'<span class="s">'+s+'</span>':"")+'</div>';
+  const tbl=(tit,rows,w)=>rows.length?'<div class="tw"><table class="wide"><thead><tr><th>'+tit+'</th><th class="num">'+w+'</th><th class="num">Promedio</th><th class="num">Más rápida</th><th class="num">Más lenta</th></tr></thead><tbody>'+rows.map(r=>'<tr><td><b>'+esc(r.k)+'</b></td><td class="num mono">'+r.n+'</td><td class="num mono"><b>'+fMin(r.avg)+'</b></td><td class="num mono">'+fMin(r.min)+'</td><td class="num mono">'+fMin(r.max)+'</td></tr>').join("")+'</tbody></table></div>':'<div class="empty">Sin tiempos medidos este día.</div>';
+  let h='<section class="pn"><div class="pnh"><h2>Viajes del '+fDL(R.fecha)+'</h2></div><div class="kpis">'
+    +k("Viajes",R.viajes,R.preventa+" preventa · "+R.sucursales+" sucursales")+k("Volvieron",R.finalizadas,R.enRuta+" en viaje · "+R.cargadas+" listos sin salir"+(R.programadas?" · "+R.programadas+" sin cargar":""))
+    +k("Km del día",fN(R.km),R.camiones+" camiones · "+R.paradas+" paradas")+k("Novedades",R.nov,"")+'</div></section>';
+  const G=R.personas||{total:0,choferes:0,cobradores:0,lista:[]};
+  h+='<section class="pn"><div class="pnh"><h2>Gente que salió · '+G.total+'</h2><span class="s">'+G.choferes+' choferes · '+G.cobradores+' cobradores'+(G.ayudantes?' · '+G.ayudantes+' ayudantes':"")+'</span></div>'
+    +(G.lista.length?'<div class="tw"><table class="wide"><thead><tr><th>Persona</th><th>Salió como</th><th class="num">Viajes</th><th>Camión</th></tr></thead><tbody>'+G.lista.map(x=>'<tr><td><b>'+esc(x.n)+'</b></td><td>'+esc(x.rol)+'</td><td class="num mono">'+x.v+'</td><td class="mono">'+esc(x.pat)+'</td></tr>').join("")+'</tbody></table></div>':'<div class="empty">Nadie salió todavía ese día (ningún viaje marcado como salido).</div>')+'</section>';
+  h+='<section class="pn"><div class="pnh"><h2>Tiempos de carga</h2><span class="s">'+R.carga.n+' medidas'+(R.carga.sin?" · "+R.carga.sin+" sin medir":"")+'</span></div><div class="kpis">'+k("Promedio",fMin(R.carga.avg))+k("Más rápida",fMin(R.carga.min))+k("Más lenta",fMin(R.carga.max))+'</div>'+'<h3 class="cie-h3">Por equipo</h3>'+tbl("Equipo",R.equipos,"Cargas")+'<h3 class="cie-h3">Por cargador</h3>'+tbl("Cargador",R.cargadores||[],"Cargas")+'</section>';
+  h+='<section class="pn"><div class="pnh"><h2>Tiempos de control</h2><span class="s">'+R.control.n+' medidos'+(R.control.sin>0?" · "+R.control.sin+" sin medir":"")+'</span></div><div class="kpis">'+k("Promedio",fMin(R.control.avg))+k("Más rápido",fMin(R.control.min))+k("Más lento",fMin(R.control.max))+'</div>'+tbl("Controlador",R.controladores,"Controles")+'</section>';
+  const row=c=>'<tr class="cd-'+c.st+'"><td class="mono"><b>'+esc(c.pat)+'</b></td><td>'+esc([c.tipo,c.mod].filter(Boolean).join(" · "))+'</td><td>'+esc(c.cho||"—")+'</td><td>'+(c.st==="ok"?chip("Disponible","ok"):chip(c.txt,c.st==="asig"?"info":c.st==="viaje"?"warn":"bad"))+'</td></tr>';
+  const cm=R.cams.filter(c=>!c.acop),ac=R.cams.filter(c=>c.acop);
+  h+='<section class="pn"><div class="pnh"><h2>Camiones disponibles para el '+fDL(R.sig)+'</h2><span class="s"><b>'+R.disp+'</b> de '+cm.length+' camiones'+(ac.length?' · '+R.dispAc+' de '+ac.length+' acoplados':"")+(live?"":" · al momento del cierre")+'</span></div>'
+    +(R.cams.length?'<div class="tw"><table class="wide"><thead><tr><th>Patente</th><th>Unidad</th><th>Chofer habitual</th><th>Estado</th></tr></thead><tbody>'+cm.map(row).join("")+(ac.length?'<tr><td colspan="4" class="diah">Acoplados</td></tr>'+ac.map(row).join(""):"")+'</tbody></table></div>':'<div class="empty">No hay camiones cargados en Base de datos › Flota.</div>')+'</section>';
+  if(R.detalle.length)h+='<section class="pn"><div class="pnh"><h2>Viaje por viaje</h2></div><div class="tw"><table class="wide"><thead><tr><th>N°</th><th>Canal</th><th>Patente</th><th>Chofer</th><th>Destino</th><th>Estado</th><th class="num">Carga</th><th class="num">Control</th></tr></thead><tbody>'
+    +R.detalle.map(d=>'<tr><td class="mono"><b>'+esc(d.n)+'</b></td><td>'+chBadge({canal:d.c})+'</td><td class="mono">'+esc(d.pat)+'</td><td>'+esc(d.cho)+'</td><td class="wrap">'+esc(d.dest)+'</td><td>'+esc(d.est)+'</td><td class="num mono">'+fMin(d.carga)+'</td><td class="num mono">'+fMin(d.control)+'</td></tr>').join("")+'</tbody></table></div></section>';
+  return h}
+VIEWS.cierre=function(){const f=UI.cie.fecha,doc=cieDoc(f),live=cieCalc(f),R=UI.cie.vivo||!doc?live:doc.res;
+  let h=ph(crumb(["Inicio","inicio"],["Viajes","viajes"],["Cierre del día"]),"Cierre del día",'<button class="btn" data-act="res-print">'+IC.file+'Imprimir</button>',"truck");
+  h+='<div class="flt"><label>Día <input type="date" data-ui="cie.fecha" value="'+f+'"></label><button class="btn sm ghost" data-act="cie-dia" data-v="'+addD(today(),-1)+'">Ayer</button><button class="btn sm ghost" data-act="cie-dia" data-v="'+today()+'">Hoy</button></div>';
+  const abiertos=S.salidas.filter(s=>s.fecha===f&&["Programada","Cargada","En ruta"].includes(s.estado)).length,curso=S.salidas.filter(s=>s.fecha===f&&(cargaCurso(s)!=null||ctrlCurso(s)!=null)).length;
+  if(doc)h+='<div class="banner ok">'+IC.check+' Día cerrado el '+fD(doc.cerradoAt.slice(0,10))+' a las '+doc.cerradoAt.slice(11,16)+(UI.cie.vivo?" · mostrando los datos actuales":"")+'. '
+    +(canWrite?'<a href="#" data-act="cie-cerrar">Volver a cerrar con los datos de ahora</a> · ':"")+'<a href="#" data-act="cie-vivo">'+(UI.cie.vivo?"Ver lo grabado al cerrar":"Ver datos actuales")+'</a></div>';
+  else h+='<section class="pn cie-go"><div><b>El '+fDL(f)+' todavía no está cerrado.</b><span class="s">'+(abiertos||curso?[abiertos?pl(abiertos,"viaje sigue abierto","viajes siguen abiertos")+" (sin regreso marcado)":"",curso?pl(curso,"cronómetro sigue","cronómetros siguen")+" corriendo":""].filter(Boolean).join(" · ")+". Podés cerrar igual: queda grabado como estaba.":"Todo en orden para cerrar.")+'</span></div>'
+    +(canWrite?'<button class="btn pri" data-act="cie-cerrar">'+IC.check+'Cerrar el día</button>':"")+'</section>';
+  h+='<div class="reslink"><span class="k">Mandar el cierre</span><div class="a"><a class="btn green" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(cieTexto(R))+'">Mandar por WhatsApp</a><button class="btn" data-act="cie-copy">Copiar como texto</button><button class="btn" data-act="cie-link">Copiar link</button></div><input id="resUrl" readonly value="'+esc(APP_URL+"#cierre/"+f)+'" aria-label="Link del cierre"></div>';
+  h+=cieResumenHtml(R,R===live);
+  const hist=S.cierres.slice().sort((a,b)=>b.id.localeCompare(a.id)).slice(0,30);
+  if(hist.length)h+='<section class="pn"><div class="pnh"><h2>Días cerrados</h2></div><div class="tw"><table class="wide"><thead><tr><th>Día</th><th class="num">Viajes</th><th class="num">Km</th><th class="num">Carga prom.</th><th class="num">Control prom.</th><th class="num">Camiones disp. día sig.</th><th>Cerrado</th></tr></thead><tbody>'
+    +hist.map(c=>'<tr class="ck" data-act="cie-dia" data-v="'+c.id+'"><td><b>'+fDL(c.id)+'</b></td><td class="num mono">'+c.res.viajes+'</td><td class="num mono">'+fN(c.res.km)+'</td><td class="num mono">'+fMin(c.res.carga.avg)+'</td><td class="num mono">'+fMin(c.res.control.avg)+'</td><td class="num mono"><b>'+c.res.disp+'</b> para el '+fD(c.res.sig)+'</td><td>'+c.cerradoAt.slice(11,16)+'</td></tr>').join("")+'</tbody></table></div></section>';
+  return h};
+/** #cierre/2026-10-28 abre ese día */
+{const rh0=resHash;resHash=r=>{const m=/^cierre\/(\d{4}-\d{2}-\d{2})$/.exec(r||"");if(m){UI.cie={fecha:m[1]};return"cierre"}return rh0(r)}}
+/* ---- ventana 1: elegir qué días cerrar ---- */
+function cieVentana(){const t=today(),dias=[...new Set(S.salidas.filter(s=>actSal(s)&&s.fecha<=t&&s.fecha>=addD(t,-30)).map(s=>s.fecha).concat([t]))].sort().reverse().slice(0,15);
+  const fila=f=>{const d=cieDoc(f),n=S.salidas.filter(s=>actSal(s)&&s.fecha===f).length,ab=S.salidas.filter(s=>s.fecha===f&&["Programada","Cargada","En ruta"].includes(s.estado)).length;
+    return'<label class="cie-dia'+(d?" ok":"")+'"><input type="checkbox" name="cdia" value="'+f+'"'+(!d&&n?" checked":"")+'><span class="d"><b>'+fDL(f)+(f===t?" · hoy":"")+'</b><small>'+pl(n,"viaje","viajes")+(ab?" · "+ab+" sin cerrar el viaje":"")+'</small></span>'
+      +(d?'<span class="st">'+chip("Cerrado "+d.cerradoAt.slice(11,16),"ok")+'<button type="button" class="btn sm" data-act="cie-ver" data-v="'+f+'">Ver resumen</button></span>':'<span class="st">'+chip("Sin cerrar","warn")+'</span>')+'</label>'};
+  openForm({title:"Cierre del día",color:"c-log",wide:true,saveLabel:"Cerrar los días tildados",ok:"Días cerrados",fields:[{k:"m",type:"html",cls:"cie-list",full:true}],
+    after:()=>{$("f_m").innerHTML='<p class="lead" style="margin:0 0 10px">Tildá los días que querés cerrar. Al cerrar se graba el resumen (viajes, gente, camiones disponibles para el día siguiente y tiempos de carga) y se abre en otra ventana. Un día ya cerrado se puede volver a cerrar para actualizarlo.</p>'+dias.map(fila).join("")},
+    save:async()=>{const sel=[...document.querySelectorAll('input[name="cdia"]:checked')].map(i=>i.value).sort();if(!sel.length){ferr("Tildá al menos un día.");return false}
+      for(const f of sel){const R=cieCalc(f);await C("cierres").doc(f).set({fecha:f,res:JSON.parse(JSON.stringify(R)),cerradoAt:dtLocal(),cerradoBy:uid,updatedAt:new Date().toISOString()})}
+      MF.ok=sel.length>1?pl(sel.length,"día cerrado","días cerrados"):"Día cerrado";setTimeout(()=>cieResultado(sel,true),60)}})}
+/* ---- ventana 2: el resumen de los días cerrados ---- */
+function cieResultado(dias,recien){const RR=dias.map(f=>{const d=cieDoc(f);return d?d.res:cieCalc(f)});UI.cieRes=dias;
+  const tot=k=>RR.reduce((t,R)=>t+(Number(R[k])||0),0),last=RR[RR.length-1];
+  let h='<div class="cie-acc"><a class="btn green" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(RR.map(cieTexto).join("\n\n———\n\n"))+'">Mandar por WhatsApp</a><button type="button" class="btn" data-act="cie-copyres">Copiar como texto</button></div>';
+  if(RR.length>1)h+='<section class="pn"><div class="pnh"><h2>Totales de '+pl(RR.length,"día","días")+'</h2></div><div class="kpis">'
+    +[["Viajes",tot("viajes"),tot("preventa")+" preventa · "+tot("sucursales")+" sucursales"],["Km",fN(tot("km")),""],["Gente que salió",RR.reduce((t,R)=>t+((R.personas||{}).total||0),0),"suma de cada día"],["Carga promedio",fMin(avgM(RR.map(R=>R.carga.avg).filter(x=>x!=null))),""],["Camiones libres para el "+fD(last.sig),last.disp,"del último día cerrado"]].map(x=>'<div class="kpi"><span class="k">'+x[0]+'</span><span class="v">'+x[1]+'</span>'+(x[2]?'<span class="s">'+x[2]+'</span>':"")+'</div>').join("")+'</div></section>';
+  h+=RR.map((R,i)=>(RR.length>1?'<details class="cie-det"'+(i===RR.length-1?" open":"")+'><summary>'+fDL(R.fecha)+' · '+pl(R.viajes,"viaje","viajes")+' · '+R.disp+' camiones libres para el '+fD(R.sig)+'</summary>':"")+cieResumenHtml(R,false)+(RR.length>1?'</details>':"")).join("");
+  openForm({title:(recien?"Día cerrado · ":"Resumen · ")+(dias.length>1?fD(dias[0])+" al "+fD(dias[dias.length-1]):fDL(dias[0])),color:"c-log",wide:true,noSave:true,fields:[{k:"m",type:"html",cls:"cie-res",full:true}],
+    extra:'<button type="button" class="btn" data-act="cie-open">Volver a la lista de días</button>',after:()=>{$("f_m").innerHTML=h}})}
+Object.assign(GACT,{
+  "cie-open":()=>cieVentana(),
+  "cie-ver":el=>cieResultado([el.dataset.v],false),
+  "cie-copyres":()=>copiar((UI.cieRes||[]).map(f=>{const d=cieDoc(f);return cieTexto(d?d.res:cieCalc(f))}).join("\n\n———\n\n"),"Resumen copiado"),
+  "cie-dia":(el)=>{UI.cie={fecha:el.dataset.v};if(UI.route!=="cierre")location.hash="#cierre";else render()},
+  "cie-vivo":()=>{UI.cie.vivo=!UI.cie.vivo;render()},
+  "cie-cerrar":async()=>{if(!canWrite)return;const f=UI.cie.fecha,R=cieCalc(f);
+    await C("cierres").doc(f).set({fecha:f,res:JSON.parse(JSON.stringify(R)),cerradoAt:dtLocal(),cerradoBy:uid,updatedAt:new Date().toISOString()});UI.cie.vivo=false;
+    toast("Día cerrado · "+pl(R.viajes,"viaje","viajes")+" · "+R.disp+" camiones disponibles para el "+fD(R.sig))},
+  "cie-copy":()=>{const f=UI.cie.fecha,d=cieDoc(f);copiar(cieTexto(UI.cie.vivo||!d?cieCalc(f):d.res),"Cierre copiado");const x=$("resUrl");if(x)setTimeout(()=>{x.value=APP_URL+"#cierre/"+f},1500)},
+  "cie-link":()=>copiar(APP_URL+"#cierre/"+UI.cie.fecha,"Link copiado")
+});
+
+/* ---- informes: uso de la flota y cierres del día ---- */
+/** días hábiles (lunes a sábado) del período, sin pasar de hoy */
+const diasHab=F=>{const L=[],h=F.hasta&&F.hasta<today()?F.hasta:today();for(let d=F.desde||today(),i=0;d<=h&&i<800;d=addD(d,1),i++)if(P(d).getDay()!==0)L.push(d);return L};
+INF.splice(INF.findIndex(r=>r.id==="camiones")+1,0,{id:"flota",cat:"Operación",t:"Uso de la flota",d:"Qué unidades se usaron, cuántos días, qué porcentaje de la flota salió cada día y cuáles quedaron paradas",ill:"truck",f:["canal","cam"],grp:[["camion","Por unidad"],["dia","Por día"]],
+  run(F){const S1=salF(F),H=diasHab(F),U=S.camiones.filter(c=>c.estado!=="Baja"&&(!F.cam||c.id===F.cam)),cam=U.filter(c=>!isAcop(c)),usa=(s,id)=>s.camionId===id||s.acopladoId===id;
+   const usados=new Set(S1.flatMap(s=>[s.camionId,s.acopladoId]).filter(Boolean)),prom=H.length?Math.round(H.reduce((t,d)=>t+new Set(S1.filter(s=>s.fecha===d).map(s=>s.camionId)).size,0)/H.length*10)/10:0;
+   const kp=[["Flota activa",cam.length+" camiones · "+(U.length-cam.length)+" acoplados"],["Días hábiles",H.length],["Camiones por día (promedio)",prom],["Uso promedio",pct(prom,cam.length)],["Sin usar en el período",U.filter(c=>!usados.has(c.id)).length]];
+   if(F.grp==="dia"){const rows=H.map(d=>{const a=S1.filter(s=>s.fecha===d),c=new Set(a.map(s=>s.camionId).filter(Boolean)),ac=new Set(a.map(s=>s.acopladoId).filter(Boolean));return{k:fDL(d),via:a.length,cam:c.size,ac:ac.size,flo:cam.length,pc:pct(c.size,cam.length),par:Math.max(0,cam.length-c.size),kmp:Math.round(sum(a,kmPrevS))}});
+     return{kpis:kp,cols:[["Día","k","t"],["Viajes","via","n"],["Camiones usados","cam","n"],["Acoplados usados","ac","n"],["Flota activa","flo","n"],["% de la flota","pc","t"],["Camiones parados","par","n"],["Km previstos","kmp","km"]],rows,chart:{lab:"k",val:"cam",t:"Camiones usados por día",noSort:true}}}
+   const rows=U.map(c=>{const a=S1.filter(s=>usa(s,c.id)),dd=new Set(a.map(s=>s.fecha)),ult=a.map(s=>s.fecha).sort().pop()||"";
+     return{k:c.patente,tipo:c.tipo||"",est:c.estado||"Disponible",via:a.length,dias:dd.size,pc:pct(dd.size,H.length),kmp:Math.round(sum(a,kmPrevS)),kmr:sum(a,kmRealS),ult:ult?fDL(ult):"Sin uso",sin:ult?Math.max(0,diasHab({desde:addD(ult,1),hasta:F.hasta}).length):H.length}}).sort((a,b)=>b.dias-a.dias||b.via-a.via);
+   return{kpis:kp,cols:[["Unidad","k","t"],["Tipo","tipo","t"],["Estado hoy","est","t"],["Viajes","via","n"],["Días usada","dias","n"],["% de días hábiles","pc","t"],["Km previstos","kmp","km"],["Km reales","kmr","km"],["Último viaje","ult","t"],["Días hábiles sin salir","sin","n"]],rows,chart:{lab:"k",val:"dias",t:"Días usada en el período"}}}});
+INF.splice(INF.findIndex(r=>r.id==="resumen")+1,0,{id:"cierres",cat:"General",t:"Cierres del día",d:"Lo que quedó grabado en cada cierre: viajes, gente que salió, tiempos de carga y control y camiones disponibles",ill:"cal",f:[],
+  run(F){const L=S.cierres.filter(c=>c.res&&inP(c.id,F)).sort((a,b)=>a.id.localeCompare(b.id)),R=L.map(c=>c.res);
+   const rows=L.map(c=>{const r=c.res,g=r.personas||{};return{k:fDL(c.id),via:r.viajes,pv:r.preventa,sc:r.sucursales,km:r.km,cam:r.camiones,gen:g.total||0,cho:g.choferes||0,cob:g.cobradores||0,ayu:g.ayudantes||0,car:r.carga.avg,ctl:r.control.avg,disp:r.disp,sig:fD(r.sig),hs:String(c.cerradoAt||"").slice(11,16)}});
+   const av=a=>{a=a.filter(x=>x!=null);return a.length?Math.round(a.reduce((t,x)=>t+x,0)/a.length):null};
+   return{kpis:[["Días cerrados",L.length],["Viajes",sum(R,r=>r.viajes)],["Km",fN(sum(R,r=>r.km))],["Carga promedio",fMin(av(R.map(r=>r.carga.avg)))],["Control promedio",fMin(av(R.map(r=>r.control.avg)))],["Camiones libres (promedio)",L.length?Math.round(sum(R,r=>r.disp)/L.length*10)/10:"—"]],
+    cols:[["Día","k","t"],["Viajes","via","n"],["Preventa","pv","n"],["Sucursales","sc","n"],["Km","km","km"],["Camiones usados","cam","n"],["Gente que salió","gen","n"],["Choferes","cho","n"],["Cobradores","cob","n"],["Ayudantes","ayu","n"],["Carga promedio (min)","car","n"],["Control promedio (min)","ctl","n"],["Camiones libres","disp","n"],["Para el","sig","t"],["Cerrado a las","hs","t"]],rows,chart:{lab:"k",val:"via",t:"Viajes por día cerrado",noSort:true}}}});
 /* ================= render ================= */
 let rT=null,pendingRender=false;
 function schedule(){clearTimeout(rT);rT=setTimeout(render,25)}
@@ -3360,7 +3540,7 @@ function readForm(F,fields){const o={};fields.forEach(f=>{if(["sec","html","file
 let MF=null;
 function openForm(cfg){
   MF=cfg;const F=$("mF");$("mT").textContent=cfg.title;
-  document.querySelector(".modal").style.setProperty("--mc","var(--"+(cfg.color||"c-log")+")");
+  document.querySelector(".modal").style.setProperty("--mc","var(--"+(cfg.color||"c-log")+")");document.querySelector(".modal").classList.toggle("mwide",!!cfg.wide);
   const V=cfg.values||{},adv=cfg.fields.filter(f=>f.adv);
   F.innerHTML=cfg.fields.filter(f=>!f.adv).map(f=>fh(f,V[f.k])).join("")
     +(adv.length?'<details class="adv"'+(cfg.advOpen?" open":"")+'><summary>'+(cfg.advLabel||"Más datos")+'</summary><div class="adv-in">'+adv.map(f=>fh(f,V[f.k])).join("")+'</div></details>':"")
@@ -3523,12 +3703,15 @@ function formSal(s,pre){
   const v=s?Object.assign({},s,pre||{}):Object.assign({fecha:today(),canal:"Preventa",estado:"Programada",origenLoc:depId()},pre||{});
   const initDest=v.destinos||(v.sucPick?v.sucPick.map(x=>"pick:"+x):v.canal==="Preventa"?(v.zonaIds||[]):(v.progIds||[]).map(p=>"p:"+p));
   const sid=s&&s.id,fin=pre&&pre.estado==="Finalizada";
+  if(v.ayudanteNom&&!v.ayudanteId)v.ayudanteId="_mano";
   if(!s&&!v.choferId&&v.camionId===undefined){}
   openForm({title:fin?"Marcar regreso · N° "+nro(s):s?"Orden de carga N° "+nro(s):"Nueva orden de carga",color:"c-log",values:v,meta:metaOf(s),focus:pre&&pre.focus,ok:fin?"Regreso registrado":s?"Orden actualizada":"Orden de carga emitida",
     advOpen:false,advLabel:"Estado, tiempos de carga y observaciones",saveLabel:s?"Guardar":"Emitir orden de carga",
     fields:[{k:"canal",label:"Para",type:"seg",options:["Preventa","Sucursales"],two:true},{k:"fecha",label:"Fecha",type:"date",req:true},
       {k:"camionId",label:"Camión / chasis",type:"select",req:true,blank:"Elegí la unidad",options:()=>camOpts(false)},{k:"acopladoId",label:"Acoplado",type:"select",blank:"Sin acoplado",options:()=>camOpts(true)},{k:"choferId",label:"Chofer",type:"select",req:true,blank:"Elegí el chofer",options:()=>perOpts(["Chofer","Chofer y cobrador"])},
       {k:"cobradorId",label:"Cobrador",type:"select",blank:"Sin cobrador",options:()=>perOpts(["Cobrador","Chofer y cobrador"])},
+      {k:"ayudanteId",label:"Ayudante",type:"select",blank:"Sin ayudante",options:()=>perOpts().concat([["_mano","✍ Otro · escribir el nombre a mano"]]),help:"Se elige de choferes y cobradores, o se escribe a mano"},
+      {k:"ayudanteNom",label:"Nombre del ayudante",ph:"Nombre y apellido"},
       {k:"equipoCargaId",label:"Equipo de carga",type:"select",req:!s&&S.equipos.some(isActive),blank:"Elegí el equipo que carga",two:true,options:()=>S.equipos.filter(e=>isActive(e)||e.id===v.equipoCargaId).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),undefined,{numeric:true})).map(e=>[e.id,e.nombre+" · "+pl((e.integranteIds||[]).length,"integrante","integrantes")]),help:"⏱ Al emitir la orden arranca el cronómetro de la carga · se tildan sus integrantes abajo"},
       {k:"origenLoc",label:"Origen",type:"rawselect",req:true,html:x=>locOpts(x||depId(),"Elegí el origen"),help:"Sale siempre del depósito del Parque Industrial"},{k:"destinoLoc",label:"Destino",type:"rawselect",html:x=>locOpts(x,"Sin destino fijo (solo las paradas)","suc"),help:"Adónde va el camión: última parada antes de volver"},{k:"regresoLoc",label:"Regreso (3er destino)",type:"rawselect",html:x=>locOpts(x||depId(),"Vuelve al origen"),help:"Dónde termina el viaje · por defecto el Parque Industrial"},
       {k:"destinos",label:"Sucursales",type:"checks",full:true,req:true,when:d=>d.canal==="Sucursales"},
@@ -3569,9 +3752,13 @@ function formSal(s,pre){
       F.elements.fecha.addEventListener("change",()=>rebuild());
       F.querySelectorAll('input[name="canal"]').forEach(r=>r.addEventListener("change",()=>rebuild([])));
       F.elements.camionId.addEventListener("change",()=>{if(!F.elements.choferId.value){const ch=S.choferes.find(c=>c.camionId===F.elements.camionId.value&&isActive(c));if(ch)F.elements.choferId.value=ch.id}});
+      const ayu=()=>{const m=F.elements.ayudanteId.value==="_mano";F.querySelector('[data-f="ayudanteNom"]').hidden=!m;if(m&&!F.elements.ayudanteNom.value)F.elements.ayudanteNom.focus()};
+      F.elements.ayudanteId.addEventListener("change",ayu);F.querySelector('[data-f="ayudanteNom"]').hidden=F.elements.ayudanteId.value!=="_mano";
       const n=$("fnov");if(n)n.onclick=()=>{closeForm();formNov(null,{salidaId:s.id})};
     },
-    save:async d=>{delete d.sd;if(d.canal!=="Preventa")d.destinos=expandDest(d.destinos);
+    save:async d=>{delete d.sd;
+      if(d.ayudanteId==="_mano"){d.ayudanteNom=String(d.ayudanteNom||"").trim();d.ayudanteId="";if(!d.ayudanteNom){ferr("Escribí el nombre del ayudante o elegí «Sin ayudante».");return false}}else d.ayudanteNom="";
+      if(d.ayudanteId&&(d.ayudanteId===d.choferId||d.ayudanteId===d.cobradorId)){ferr("El ayudante no puede ser el mismo que el chofer o el cobrador.");return false}if(d.canal!=="Preventa")d.destinos=expandDest(d.destinos);
       if(!s&&!d.cargaInicio)d.cargaInicio=dtLocal();if(d.cargaInicio&&d.cargaFin&&d.cargaFin<d.cargaInicio){ferr("El fin de la carga no puede ser antes del inicio.");return false}
       {const e=ctrlAlGrabar(s,d);if(e){ferr(e);return false}}
       d.guiaIds=d.canal==="Preventa"?[]:[...document.querySelectorAll('#f_guiasBox input[name="guia"]:checked')].map(i=>i.value);
@@ -4066,7 +4253,7 @@ async function act(a,el){
     case"prog-tab":UI.progTab=el.dataset.v;render();break;
     case"new-sal":formSal(null,{fecha:DAYR.includes(UI.route)?UI.fecha:today(),canal:el.dataset.v||"Preventa",origenLoc:depId()});break;
     case"edit-sal":formSal(get("salidas",id));break;
-    case"cargado":{if(!need())break;const s=get("salidas",id);await C("salidas").doc(id).update({estado:"Cargada",horaCarga:s.horaCarga||nowHM(),cargaFin:s.cargaFin||(s.cargaInicio?dtLocal():null),ctrlFin:s.ctrlFin||(s.ctrlInicio?dtLocal():null),cargadaAt:new Date().toISOString(),updatedAt:new Date().toISOString()});toast("N° "+nro(s)+" cargada");break}
+    case"cargado":{if(!need())break;const s=get("salidas",id);await C("salidas").doc(id).update({estado:"Cargada",horaCarga:s.horaCarga||nowHM(),cargaFin:s.cargaFin||(s.cargaInicio?dtLocal():null),ctrlFin:s.ctrlFin||(s.ctrlInicio?(s.cargaFin||dtLocal()):null),pausas:pausasCerradas(s),cargadaAt:new Date().toISOString(),updatedAt:new Date().toISOString()});toast("N° "+nro(s)+" cargada");break}
     case"salio":{if(!need())break;const s=get("salidas",id);await C("salidas").doc(id).update({estado:"En ruta",horaSalida:s.horaSalida||nowHM(),updatedAt:new Date().toISOString()});toast("N° "+nro(s)+" en viaje");break}
     case"volvio":formRegreso(get("salidas",id));break;
     case"new-por":formPorton(null);break; case"edit-por":formPorton(get("portones",id));break;
@@ -4125,7 +4312,7 @@ document.addEventListener("click",e=>{
   const ddb=e.target.closest("[data-dd]");
   if(ddb){e.preventDefault();const m=ddb.nextElementSibling,open=m.hidden;closeMenus();if(open){m.hidden=false;ddb.setAttribute("aria-expanded","true");if(m.getBoundingClientRect().left<8)m.classList.add("l");const f=m.querySelector("button,a");if(f)f.focus({preventScroll:true})}return}
   if(!e.target.closest(".menu")||e.target.closest(".menu>button,.menu>a"))closeMenus();
-  const el=e.target.closest("[data-act]");if(!el||el.closest("#mF"))return;
+  const el=e.target.closest("[data-act]");if(!el||(el.closest("#mF")&&!/^cie-/.test(el.dataset.act)))return;
   if(el.tagName==="A"&&el.dataset.act!=="cfg")return;
   e.preventDefault();act(el.dataset.act,el);
 });
