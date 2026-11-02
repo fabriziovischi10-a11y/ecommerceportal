@@ -655,6 +655,20 @@ button.tag.gpst.bad{border-color:color-mix(in srgb,var(--bad) 45%,var(--line));b
 .cie-det>summary{font-weight:700;cursor:pointer;padding:6px 0}
 .cie-list,.cie-res{grid-column:1/-1;min-width:0}
 .tag.carga.pausa{background:color-mix(in srgb,var(--k-warn) 10%,transparent);border-color:var(--k-warn);font-weight:700}
+
+/* tiempos de carga */
+.tcvivo{border-left:4px solid var(--c-base)}
+.tc-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--bad);margin-right:8px;animation:tcp 1.4s infinite}
+@keyframes tcp{0%,100%{opacity:1}50%{opacity:.3}}
+.tcv{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:10px;padding:0 16px 16px}
+.tcv-i{border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;background:var(--panel)}
+.tcv-h{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.tcv-m{font:700 22px/1.2 "JetBrains Mono",monospace;margin:4px 0}
+.tcbar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-bottom:6px}.tcbar i{display:block;height:100%;border-radius:3px}
+.tcpod{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:10px;margin:0 0 16px}
+.tcpod-i{border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;gap:2px}
+.tcpod-i.bad{border-left-color:var(--bad)}.tcpod-i small{color:var(--muted);font-size:12px}.tcpod-i b{font-size:16px}.tcpod-i span{font-size:13px;color:var(--muted)}
+.tcord td{white-space:nowrap}.tcord td.wrap{white-space:normal;min-width:180px}
 </style>
 <style>
 /* ===== celular: tablas como tarjetas, botones cómodos para el dedo, sin zoom al escribir ===== */
@@ -2399,7 +2413,7 @@ function infChart(R){const c=R.chart;if(!c||!R.rows.length)return"";let rows=R.r
 function infTable(R,limit){const rows=limit?R.rows.slice(0,limit):R.rows;
   return'<div class="tw"><table class="wide"><thead><tr>'+R.cols.map(c=>'<th'+(c[2]!=="t"?' class="num"':"")+'>'+esc(c[0])+'</th>').join("")+'</tr></thead><tbody>'
     +rows.map(r=>'<tr>'+R.cols.map((c,i)=>'<td'+(c[2]!=="t"?' class="num mono"':i===0?"":' class="wrap"')+'>'+(i===0?"<b>":"")+esc(fmtCell(r[c[1]],c[2]))+(i===0?"</b>":"")+'</td>').join("")+'</tr>').join("")
-    +'</tbody>'+(R.rows.length>1?'<tfoot><tr>'+R.cols.map((c,i)=>'<td'+(c[2]!=="t"?' class="num mono"':"")+'><b>'+(i===0?"Total":["n","m","km"].includes(c[2])&&!/^(%|km\/L|\$ por|\$\/L|Km desde dep|Novedades por|Odómetro|Sucursales|Camiones|Días|Proveedores|Guías$|Recepciones$)/.test(c[0])?esc(fmtCell(sum(R.rows,x=>x[c[1]]),c[2])):"")+'</b></td>').join("")+'</tr></tfoot>':"")+'</table></div>'
+    +'</tbody>'+(R.rows.length>1?'<tfoot><tr>'+R.cols.map((c,i)=>'<td'+(c[2]!=="t"?' class="num mono"':"")+'><b>'+(i===0?"Total":["n","m","km"].includes(c[2])&&!/^(%|km\/L|\$ por|\$\/L|Km desde dep|Km por|Novedades por|Odómetro|Sucursales|Camiones|Días|Proveedores|Guías$|Recepciones$)/.test(c[0])?esc(fmtCell(sum(R.rows,x=>x[c[1]]),c[2])):"")+'</b></td>').join("")+'</tr></tfoot>':"")+'</table></div>'
     +(limit&&R.rows.length>limit?'<div class="none">Mostrando '+limit+' de '+R.rows.length+' filas. El Excel trae todas.</div>':"")}
 
 /* ---- vistas ---- */
@@ -3767,6 +3781,182 @@ INF.splice(INF.findIndex(r=>r.id==="resumen")+1,0,{id:"cierres",cat:"General",t:
    const av=a=>{a=a.filter(x=>x!=null);return a.length?Math.round(a.reduce((t,x)=>t+x,0)/a.length):null};
    return{kpis:[["Días cerrados",L.length],["Viajes",sum(R,r=>r.viajes)],["Km",fN(sum(R,r=>r.km))],["Carga promedio",fMin(av(R.map(r=>r.carga.avg)))],["Control promedio",fMin(av(R.map(r=>r.control.avg)))],["Camiones libres (promedio)",L.length?Math.round(sum(R,r=>r.disp)/L.length*10)/10:"—"]],
     cols:[["Día","k","t"],["Viajes","via","n"],["Preventa","pv","n"],["Sucursales","sc","n"],["Km","km","km"],["Camiones usados","cam","n"],["Gente que salió","gen","n"],["Choferes","cho","n"],["Cobradores","cob","n"],["Ayudantes","ayu","n"],["Carga promedio (min)","car","n"],["Control promedio (min)","ctl","n"],["Camiones libres","disp","n"],["Para el","sig","t"],["Cerrado a las","hs","t"]],rows,chart:{lab:"k",val:"via",t:"Viajes por día cerrado",noSort:true}}}});
+/* ================= tiempos de carga: tablero, cargadores, equipos, horarios y orden por orden ================= */
+GRP.tcarga="logistica";MOD.tcarga="m-base";PARENT.tcarga="logistica";
+UI.tc={tab:"tablero",desde:addD(today(),-29),hasta:"",canal:"",eq:"",ordF:""};
+const TC_TABS=[["tablero","Tablero"],["cargadores","Cargadores"],["equipos","Equipos"],["horarios","Horarios y portones"],["ordenes","Orden por orden"]];
+/** meta de minutos por carga (la misma del KPI «Tiempo promedio de carga») */
+const tcMeta=()=>{const k=KPIS.find(k=>k.id==="tcarga"),m=k&&kMeta(k);return m>0?m:45};
+const tcF=()=>({desde:UI.tc.desde,hasta:UI.tc.hasta||today(),canal:UI.tc.canal});
+const tcBase=F=>salF(F||tcF()).filter(s=>!UI.tc.eq||s.equipoCargaId===UI.tc.eq);
+const tcPer=()=>(UI.tc.desde?fDL(UI.tc.desde):"el inicio")+" al "+fDL(UI.tc.hasta||today());
+const avgN=a=>a.length?Math.round(a.reduce((t,x)=>t+x,0)/a.length):null;
+const medN=a=>{if(!a.length)return null;const b=a.slice().sort((x,y)=>x-y),i=b.length>>1;return b.length%2?b[i]:Math.round((b[i-1]+b[i])/2)};
+/** unidades despachadas por orden (de las guías), para medir unidades por minuto */
+const tcUniMap=()=>{const o={};S.guias.forEach(g=>{if(g.salidaId)o[g.salidaId]=(o[g.salidaId]||0)+(Number(gUnid(g))||0)});return o};
+/** sin medir: tiene equipo o cargadores, ya no está cargando y no tiene los dos tiempos */
+const tcSinMedir=s=>cargaMin(s)==null&&cargaCurso(s)==null&&(s.equipoCargaId||(s.equipoIds||[]).length)&&s.estado!=="Programada";
+function tcStats(A,U){const M=A.map(cargaMin).filter(x=>x!=null),meta=tcMeta(),mu=U?A.filter(s=>cargaMin(s)&&U[s.id]):[];
+  return{n:M.length,avg:avgN(M),med:medN(M),min:M.length?Math.min(...M):null,max:M.length?Math.max(...M):null,ok:M.length?Math.round(M.filter(x=>x<=meta).length*100/M.length):null,
+    pz:sum(A,pausaS),hs:Math.round(sum(M,x=>x)/6)/10,dias:new Set(A.filter(s=>cargaMin(s)!=null).map(s=>s.fecha)).size,upm:mu.length?Math.round(sum(mu,s=>U[s.id])/sum(mu,cargaMin)*10)/10:null}}
+const tcMinChip=m=>{if(m==null)return'<span class="mu">—</span>';const meta=tcMeta();return chip(fMin(m),m<=meta?"ok":m<=meta*1.33?"warn":"bad")};
+const tcOkChip=v=>v==null?"":chip(v+"% en meta",v>=80?"ok":v>=60?"warn":"bad");
+/** diferencia contra el promedio general: negativo = más rápido */
+const tcVs=(a,g)=>{if(a==null||!g)return"";const p=Math.round((a-g)*100/g);return p===0?'<span class="mu">igual al promedio</span>':'<b style="color:var(--'+(p<0?"ok":"bad")+')">'+(p<0?"▼ ":"▲ ")+Math.abs(p)+'% '+(p<0?"más rápido":"más lento")+'</b>'};
+function tChart(rows,t,type,unit,keep){if(!rows.length||!rows.some(x=>x.v))return'<div class="none">Sin datos en el período.</div>';
+  return vizHtml({cols:[["","l","t"],[t,"v",unit||"n"]],rows,chart:{lab:"l",val:"v",t,noSort:keep||type==="columnas"||type==="linea",def:type}},type)}
+/** serie diaria (o mensual si el período es largo) del promedio de carga */
+function tcSerie(A){const M=A.filter(s=>cargaMin(s)!=null),by=groupBy(M,s=>s.fecha),d0=UI.tc.desde||(M.map(s=>s.fecha).sort()[0]||today()),d1=UI.tc.hasta||today(),n=Math.round((P(d1)-P(d0))/864e5);
+  if(n>=0&&n<=62){const o=[];for(let d=d0;d<=d1;d=addD(d,1))if(by[d])o.push({l:fD(d),v:avgN(by[d].map(cargaMin))});return o}
+  const bm=groupBy(M,s=>s.fecha.slice(0,7));return Object.keys(bm).sort().map(k=>({l:mesL(k),v:avgN(bm[k].map(cargaMin))}))}
+/** resumen por cargador (los integrantes tildados de cada orden, sin controladores) */
+function tcCargadores(A,U){const by={};A.forEach(s=>cargadoresDe(s).forEach(p=>(by[p]=by[p]||[]).push(s)));
+  return Object.keys(by).map(id=>{const a=by[id],st=tcStats(a,U),ult=a.map(s=>s.fecha).sort().pop();return Object.assign(st,{id,k:persT(id)||"(eliminado)",a,ord:a.length,ult})}).filter(r=>r.n).sort((x,y)=>x.avg-y.avg)}
+function tcEquipos(A,U){const by=groupBy(A.filter(s=>s.equipoCargaId),s=>s.equipoCargaId);
+  return Object.keys(by).map(id=>Object.assign(tcStats(by[id],U),{id,k:eqT(id)||"(eliminado)",a:by[id]})).filter(r=>r.n).sort((x,y)=>x.avg-y.avg)}
+
+/* ---- cargas en curso: siempre arriba ---- */
+function tcVivo(){const A=S.salidas.filter(s=>cargaCurso(s)!=null),L=A.filter(s=>cargaCurso(s)<=720).sort((a,b)=>cargaCurso(b)-cargaCurso(a)),V=A.filter(s=>cargaCurso(s)>720),meta=tcMeta();
+  const olv=V.length?'<div class="banner">'+IC.alert+' <span><b>'+pl(V.length,"carga quedó abierta","cargas quedaron abiertas")+' hace más de 12 horas</b> (se olvidaron de tocar «Terminó la carga»): '+V.map(s=>'<a href="#" data-act="tc-hoja" data-id="'+s.id+'">'+esc(camLbl(s.camionId))+' · N° '+nro(s)+' del '+fD(s.fecha)+'</a>').join(" · ")+'</span></div>':"";
+  if(!L.length)return olv;
+  return olv+'<section class="pn tcvivo"><div class="pnh"><h2><span class="tc-dot"></span>Cargando ahora</h2><span class="s">'+pl(L.length,"camión","camiones")+' · meta '+fMin(meta)+' · se actualiza cada minuto</span></div><div class="tcv">'
+    +L.map(s=>{const m=cargaCurso(s),p=enPausa(s),c=p?"warn":m>meta?"bad":m>meta*.8?"warn":"ok";
+      return'<div class="tcv-i ck" data-act="tc-hoja" data-id="'+s.id+'"><div class="tcv-h"><b>'+esc(camLbl(s.camionId))+'</b><span class="mu">N° '+nro(s)+'</span></div><div class="tcv-m" style="color:var(--'+c+')">'+(p?"⏸ ":"⏱ ")+fMin(m)+'</div>'
+        +'<div class="tcbar"><i style="width:'+Math.min(100,Math.round(m*100/meta))+'%;background:var(--'+c+')"></i></div><div class="sub">'+esc(eqT(s.equipoCargaId)||"Sin equipo")+(s.portonId?" · "+esc(portT(s.portonId)):"")+' · desde las '+hhmm(s.cargaInicio)+(p?" · <b>EN PAUSA</b>":m>meta?" · <b>pasó la meta</b>":"")+'</div></div>'}).join("")+'</div></section>'}
+
+/* ---- tablero ---- */
+function tcTablero(){const A=tcBase(),U=tcUniMap(),st=tcStats(A,U),meta=tcMeta();
+  const pp=prevPer(tcF()),PA=tcBase(Object.assign({},tcF(),pp)),ps=tcStats(PA);
+  if(!st.n)return'<div class="none">No hay cargas medidas en el período. Las cargas se miden con «Largar carga» y «Terminó la carga» en la hoja de ruta.</div>';
+  const dl=(a,b,menos)=>a==null||!b?'<span class="mu">sin datos del período anterior</span>':a===b?'<span class="mu">igual que el período anterior</span>':((a<b)===!!menos?'<b style="color:var(--ok)">':'<b style="color:var(--bad)">')+(a<b?"▼ ":"▲ ")+Math.abs(Math.round((a-b)*100/b))+'%</b> <span class="mu">vs período anterior</span>';
+  const sm=A.filter(tcSinMedir).length,cg=tcCargadores(A,U),eqs=tcEquipos(A,U);
+  let h='<div class="kpis"><div class="kpi"><span class="k">Tiempo promedio de carga</span><span class="v" style="color:var(--'+(st.avg<=meta?"ok":"bad")+')">'+fMin(st.avg)+'</span><span class="s">'+dl(st.avg,ps.avg,true)+'</span></div>'
+    +'<div class="kpi ck" data-act="tc-meta" style="cursor:pointer"><span class="k">Dentro de la meta ('+fMin(meta)+')</span><span class="v">'+st.ok+'%</span><span class="s">'+dl(st.ok,ps.ok)+' · <u>cambiar meta</u></span></div>'
+    +'<div class="kpi"><span class="k">Cargas medidas</span><span class="v">'+fN(st.n)+'</span><span class="s">'+dl(st.n,ps.n)+' · mediana '+fMin(st.med)+'</span></div>'
+    +'<div class="kpi"><span class="k">Horas cargando</span><span class="v">'+fN(st.hs)+' h</span><span class="s">'+fMin(st.pz)+' en pausa · más rápida '+fMin(st.min)+' · más lenta '+fMin(st.max)+'</span></div>'
+    +'<div class="kpi ck" data-act="tc-ord" data-v="sin" style="cursor:pointer"><span class="k">Cargas sin medir</span><span class="v" style="color:var(--'+(sm?"warn":"ok")+')">'+sm+'</span><span class="s">'+(sm?"se olvidaron de largar o terminar la carga · ver":"todas las cargas tienen tiempo 👍")+'</span></div></div>';
+  if(cg.length>1){const best=cg.filter(r=>r.n>=3)[0]||cg[0],slow=cg.filter(r=>r.n>=3).pop()||cg[cg.length-1];
+    h+='<div class="tcpod"><div class="tcpod-i ok ck" data-act="tc-car" data-id="'+best.id+'"><small>Cargador más rápido</small><b>'+esc(best.k)+'</b><span>'+fMin(best.avg)+' promedio · '+pl(best.n,"carga","cargas")+'</span></div>'
+      +(eqs.length?'<div class="tcpod-i ok"><small>Equipo más rápido</small><b>'+esc(eqs[0].k)+'</b><span>'+fMin(eqs[0].avg)+' promedio · '+pl(eqs[0].n,"carga","cargas")+'</span></div>':"")
+      +'<div class="tcpod-i bad ck" data-act="tc-car" data-id="'+slow.id+'"><small>Cargador más lento</small><b>'+esc(slow.k)+'</b><span>'+fMin(slow.avg)+' promedio · '+pl(slow.n,"carga","cargas")+'</span></div>'
+      +(eqs.length>1?'<div class="tcpod-i bad"><small>Equipo más lento</small><b>'+esc(eqs[eqs.length-1].k)+'</b><span>'+fMin(eqs[eqs.length-1].avg)+' promedio · '+pl(eqs[eqs.length-1].n,"carga","cargas")+'</span></div>':"")+'</div>'}
+  const M=A.map(cargaMin).filter(x=>x!=null),rg=[[0,20,"Menos de 20 min"],[20,30,"20 a 30"],[30,45,"30 a 45"],[45,60,"45 a 60"],[60,90,"1 h a 1 h 30"],[90,1e9,"Más de 1 h 30"]].map(([a,b,l])=>({l,v:M.filter(x=>x>=a&&x<b).length}));
+  const lentas=A.filter(s=>cargaMin(s)!=null).sort((a,b)=>cargaMin(b)-cargaMin(a)).slice(0,6);
+  h+='<div class="rgrid">'+rCard("Minutos promedio por día",tcPer()+" · la meta es "+fMin(meta),tChart(tcSerie(A),"Minutos","columnas"),"var(--c-base)")
+    +rCard("¿Cuánto tardan las cargas?","cantidad de cargas según su duración",tChart(rg,"Cargas","columnas"),"var(--c-base)")
+    +rCard("Promedio por equipo","minutos por carga · menos es mejor",tChart(eqs.map(r=>({l:r.k,v:r.avg})),"Minutos","barras","n",true),"var(--c-base)")
+    +rCard("Promedio por cargador","minutos por carga · menos es mejor",tChart(cg.slice(0,15).map(r=>({l:r.k,v:r.avg})),"Minutos","barras","n",true),"var(--c-base)")
+    +rCard("Las cargas más lentas","para ver qué pasó",'<table class="wide" style="min-width:0"><tbody>'+lentas.map(s=>'<tr class="ck" data-act="tc-hoja" data-id="'+s.id+'"><td class="mono">'+fD(s.fecha)+'</td><td><b>'+esc(camLbl(s.camionId))+'</b><div class="sub">'+esc(eqT(s.equipoCargaId)||"Sin equipo")+'</div></td><td>'+tcMinChip(cargaMin(s))+((s.pausas||[]).length?'<div class="sub">'+pl(s.pausas.length,"pausa","pausas")+' · '+fMin(pausaS(s))+'</div>':"")+'</td></tr>').join("")+'</tbody></table>',"var(--bad)")
+    +rCard("Promedio por día de la semana","¿qué días se carga más lento?",tChart([1,2,3,4,5,6].map(i=>({l:DOW[i],v:avgN(A.filter(s=>cargaMin(s)!=null&&new Date(P(s.fecha)).getDay()===i).map(cargaMin))||0})),"Minutos","columnas"),"var(--c-base)")+'</div>';
+  return h}
+
+/* ---- cargadores ---- */
+function tcCargTab(){const A=tcBase(),U=tcUniMap(),L=tcCargadores(A,U),g=tcStats(A).avg,meta=tcMeta(),hayU=L.some(r=>r.upm);
+  const sin=S.personal.filter(p=>p.rol!=="Controlador"&&isActive(p)&&!L.some(r=>r.id===p.id));
+  if(!L.length)return'<div class="none">No hay cargas medidas en el período.</div>';
+  return'<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-base)"></span>'+pl(L.length,"cargador","cargadores")+'</h2><span class="s">'+tcPer()+' · promedio general '+fMin(g)+' · tocá uno para ver su detalle</span></div><div class="tw"><table class="wide"><thead><tr><th>#</th><th>Cargador</th><th class="num">Cargas</th><th class="num">Días</th><th class="num">Promedio</th><th>Contra el promedio</th><th class="num">Mediana</th><th class="num">Más rápida</th><th class="num">Más lenta</th><th>Meta ('+fMin(meta)+')</th><th class="num">En pausa</th><th class="num">Horas cargando</th>'+(hayU?'<th class="num">Unid. por min</th>':"")+'<th>Última carga</th></tr></thead><tbody>'
+    +L.map((r,i)=>'<tr class="ck" data-act="tc-car" data-id="'+r.id+'"><td class="mono mu">'+(i+1)+'</td><td><b>'+esc(r.k)+'</b>'+(r.n<3?'<div class="sub">pocas cargas para comparar</div>':"")+'</td><td class="num mono">'+r.n+'</td><td class="num mono">'+r.dias+'</td><td class="num">'+tcMinChip(r.avg)+'</td><td>'+tcVs(r.avg,g)+'</td><td class="num mono">'+fMin(r.med)+'</td><td class="num mono">'+fMin(r.min)+'</td><td class="num mono">'+fMin(r.max)+'</td><td>'+tcOkChip(r.ok)+'</td><td class="num mono">'+(r.pz?fMin(r.pz):"—")+'</td><td class="num mono">'+fN(r.hs)+' h</td>'+(hayU?'<td class="num mono">'+(r.upm!=null?fN(r.upm):"—")+'</td>':"")+'<td class="mono">'+fD(r.ult)+'</td></tr>').join("")+'</tbody></table></div>'
+    +(sin.length?'<div class="pnb mu" style="font-size:13px">Sin cargas medidas en el período: '+sin.map(p=>esc(p.nombre)).join(", ")+'</div>':"")+'</section>'
+    +'<div class="rgrid">'+rCard("Promedio por cargador","minutos por carga · menos es mejor",tChart(L.map(r=>({l:r.k,v:r.avg})),"Minutos","barras","n",true),"var(--c-base)")
+    +rCard("Horas cargando por cargador","cuánto trabajó cada uno en las cargas",tChart(L.slice().sort((a,b)=>b.hs-a.hs).map(r=>({l:r.k,v:r.hs})),"Horas","barras","d1"),"var(--c-base)")+'</div>'}
+/** detalle de un cargador */
+function verCargador(id){const A=tcBase(),U=tcUniMap(),a=A.filter(s=>cargadoresDe(s).includes(id)),st=tcStats(a,U),g=tcStats(A).avg,x=get("personal",id)||{};
+  const M=a.filter(s=>cargaMin(s)!=null),by=groupBy(M,s=>s.fecha),ev=Object.keys(by).sort().map(d=>({l:fD(d),v:avgN(by[d].map(cargaMin))}));
+  const comp={};M.forEach(s=>cargadoresDe(s).filter(p=>p!==id).forEach(p=>{(comp[p]=comp[p]||[]).push(cargaMin(s))}));const cp=Object.keys(comp).map(p=>({k:persT(p)||"(eliminado)",n:comp[p].length,avg:avgN(comp[p])})).sort((a,b)=>b.n-a.n).slice(0,8);
+  openForm({title:x.nombre||persT(id)||"Cargador",color:"c-base",noSave:true,wide:true,fields:[{k:"cg",type:"html",cls:"gdet"}],after:()=>{$("f_cg").innerHTML=
+    '<div class="rdk" style="margin-bottom:12px"><div><small>Promedio ('+tcPer()+')</small><b>'+fMin(st.avg)+'</b><span>'+tcVs(st.avg,g)+'</span></div><div><small>Cargas</small><b>'+st.n+'</b><span>'+pl(st.dias,"día","días")+' · '+fN(st.hs)+' h cargando</span></div><div><small>Dentro de la meta</small><b>'+(st.ok!=null?st.ok+"%":"—")+'</b><span>meta '+fMin(tcMeta())+'</span></div><div><small>Más rápida / más lenta</small><b>'+fMin(st.min)+'</b><span>la más lenta '+fMin(st.max)+'</span></div></div>'
+    +'<div class="secl">Minutos promedio por día</div>'+tChart(ev,"Minutos","columnas")
+    +(cp.length?'<div class="secl" style="margin-top:12px">Con quién carga</div><div class="tw"><table class="wide" style="min-width:0"><thead><tr><th>Compañero</th><th class="num">Cargas juntos</th><th class="num">Promedio juntos</th></tr></thead><tbody>'+cp.map(c=>'<tr><td>'+esc(c.k)+'</td><td class="num mono">'+c.n+'</td><td class="num">'+tcMinChip(c.avg)+'</td></tr>').join("")+'</tbody></table></div>':"")
+    +'<div class="secl" style="margin-top:12px">Sus cargas</div><div class="tw"><table class="wide" style="min-width:0"><thead><tr><th>Fecha</th><th>N°</th><th>Camión</th><th>Equipo</th><th>Horario</th><th class="num">Carga</th></tr></thead><tbody>'+(a.slice().sort((p,q)=>(q.fecha+(q.cargaInicio||"")).localeCompare(p.fecha+(p.cargaInicio||""))).map(s=>'<tr><td class="mono">'+fDL(s.fecha)+'</td><td class="mono">'+nro(s)+'</td><td>'+esc(camLbl(s.camionId))+'</td><td>'+esc(eqT(s.equipoCargaId)||"—")+'</td><td class="mono">'+(s.cargaInicio?hhmm(s.cargaInicio)+" a "+(hhmm(s.cargaFin)||"…"):"—")+'</td><td class="num">'+tcMinChip(cargaMin(s))+'</td></tr>').join("")||'<tr><td class="mu">Sin cargas en el período</td></tr>')+'</tbody></table></div>'}})}
+
+/* ---- equipos ---- */
+function tcEqTab(){const A=tcBase(),U=tcUniMap(),L=tcEquipos(A,U),g=tcStats(A).avg;
+  if(!L.length)return'<div class="none">No hay cargas medidas con equipo en el período.</div>';
+  return'<div class="rgrid">'+L.map((r,i)=>{const e=get("equipos",r.id)||{},mem=(e.integranteIds||[]).filter(p=>(get("personal",p)||{}).rol!=="Controlador").map(persT).filter(Boolean);
+    return'<section class="pn rdep" style="--dc:var(--'+(i===0&&L.length>1?"ok":i===L.length-1&&L.length>1?"bad":"c-base")+')"><div class="pnh"><h2>'+(i===0&&L.length>1?"🏆 ":"")+esc(r.k)+'</h2><span class="s">'+esc(mem.join(", ")||"Sin integrantes")+'</span></div><div class="pnb">'
+      +'<div class="rdk"><div><small>Promedio</small><b>'+fMin(r.avg)+'</b><span>'+tcVs(r.avg,g)+'</span></div><div><small>Cargas</small><b>'+r.n+'</b><span>'+pl(r.dias,"día","días")+'</span></div><div><small>En meta</small><b>'+r.ok+'%</b><span>meta '+fMin(tcMeta())+'</span></div><div><small>Horas cargando</small><b>'+fN(r.hs)+'</b><span>'+(r.pz?fMin(r.pz)+" en pausa":"sin pausas")+'</span></div></div>'
+      +'<div class="secl" style="margin:12px 0 4px">Minutos promedio por día</div>'+tChart(tcSerie(r.a),"Minutos","columnas")
+      +'<div class="secl" style="margin:12px 0 4px">Últimas cargas</div><table class="wide" style="min-width:0"><tbody>'+r.a.filter(s=>cargaMin(s)!=null).sort((p,q)=>(q.fecha+(q.cargaInicio||"")).localeCompare(p.fecha+(p.cargaInicio||""))).slice(0,5).map(s=>'<tr class="ck" data-act="tc-hoja" data-id="'+s.id+'"><td class="mono">'+fD(s.fecha)+'</td><td>'+esc(camLbl(s.camionId))+'</td><td class="mono">'+hhmm(s.cargaInicio)+' a '+hhmm(s.cargaFin)+'</td><td class="num">'+tcMinChip(cargaMin(s))+'</td></tr>').join("")+'</tbody></table></div></section>'}).join("")+'</div>'}
+
+/* ---- horarios, portones, canal y camión ---- */
+function tcHorTab(){const A=tcBase(),M=A.filter(s=>cargaMin(s)!=null);if(!M.length)return'<div class="none">No hay cargas medidas en el período.</div>';
+  const hr=s=>+String(s.cargaInicio).slice(11,13),hs=M.map(hr),h0=Math.min(...hs),h1=Math.max(...hs),H=Array.from({length:h1-h0+1},(_,i)=>h0+i);
+  const grp=kf=>{const by=groupBy(M,kf);return Object.keys(by).map(k=>({l:k,v:avgN(by[k].map(cargaMin)),n:by[k].length})).sort((a,b)=>a.v-b.v)};
+  const por=grp(s=>s.portonId?portT(s.portonId):"(sin portón)"),can=grp(s=>s.canal||"—"),cam=grp(s=>camLbl(s.camionId));
+  const tb=(L,t)=>'<table class="wide" style="min-width:0"><thead><tr><th>'+t+'</th><th class="num">Cargas</th><th class="num">Promedio</th></tr></thead><tbody>'+L.map(r=>'<tr><td>'+esc(r.l)+'</td><td class="num mono">'+r.n+'</td><td class="num">'+tcMinChip(r.v)+'</td></tr>').join("")+'</tbody></table>';
+  return'<div class="rgrid">'+rCard("Cargas según la hora en que arrancan","cuántos camiones se cargan en cada hora",tChart(H.map(k=>({l:k+" h",v:hs.filter(x=>x===k).length})),"Cargas","columnas"),"var(--c-base)")
+    +rCard("Minutos promedio según la hora","¿a qué hora se carga más lento?",tChart(H.map(k=>({l:k+" h",v:avgN(M.filter(s=>hr(s)===k).map(cargaMin))||0})),"Minutos","columnas"),"var(--c-base)")
+    +rCard("Por portón","minutos promedio",tChart(por.map(r=>({l:r.l,v:r.v})),"Minutos","barras","n",true)+tb(por,"Portón"),"var(--c-base)")
+    +rCard("Preventa y sucursales","minutos promedio por canal",tb(can,"Canal"),"var(--c-base)")
+    +rCard("Por camión","minutos promedio · el tamaño del camión pesa",tChart(cam.slice(0,15).map(r=>({l:r.l,v:r.v})),"Minutos","barras","n",true),"var(--c-base)")+'</div>'}
+
+/* ---- orden por orden ---- */
+function tcOrdTab(){const A=tcBase(),meta=tcMeta(),f=UI.tc.ordF;
+  const flt={fuera:s=>cargaMin(s)>meta,pausa:s=>(s.pausas||[]).length>0,sin:tcSinMedir,"":s=>cargaMin(s)!=null||tcSinMedir(s)||cargaCurso(s)!=null};
+  const cnt=k=>A.filter(flt[k]).length,L=A.filter(flt[f]||flt[""]).sort((a,b)=>(b.fecha+(b.cargaInicio||"")).localeCompare(a.fecha+(a.cargaInicio||"")));
+  let h='<div class="flt"><div class="seg2">'+[["","Todas"],["fuera","Fuera de la meta"],["pausa","Con pausas"],["sin","Sin medir"]].map(([k,t])=>'<button class="'+(f===k?"on":"")+'" data-act="tc-ord" data-v="'+k+'">'+t+(cnt(k)?'<span class="cnt">'+cnt(k)+'</span>':"")+'</button>').join("")+'</div></div>';
+  if(!L.length)return h+'<div class="none">No hay órdenes con este filtro.</div>';
+  return h+'<section class="pn"><div class="tw"><table class="wide tcord"><thead><tr><th>Fecha</th><th>N°</th><th>Camión</th><th>Equipo</th><th>Cargadores</th><th>Inicio</th><th>Fin</th><th class="num">Pausas</th><th class="num">Carga</th><th>Controlador</th><th class="num">Control</th><th>Portón</th><th>Destinos</th></tr></thead><tbody>'
+    +L.map(s=>{const cc=cargaCurso(s);return'<tr class="ck" data-act="tc-hoja" data-id="'+s.id+'"><td class="mono">'+fD(s.fecha)+'</td><td class="mono">'+nro(s)+'</td><td><b>'+esc(camLbl(s.camionId))+'</b></td><td>'+esc(eqT(s.equipoCargaId)||"—")+'</td><td class="wrap">'+esc(cargadoresDe(s).map(persT).filter(Boolean).join(", ")||"—")+'</td><td class="mono">'+(hhmm(s.cargaInicio)||"—")+'</td><td class="mono">'+(hhmm(s.cargaFin)||"—")+'</td><td class="num mono">'+((s.pausas||[]).length?s.pausas.length+" · "+fMin(pausaS(s)):"—")+'</td><td class="num">'+(cc!=null?chip("cargando "+fMin(cc),"info"):tcSinMedir(s)?chip("sin medir","warn"):tcMinChip(cargaMin(s)))+'</td><td>'+esc(persT(s.controladorId)||"—")+'</td><td class="num mono">'+fMin(ctrlMin(s))+'</td><td>'+esc(s.portonId?portT(s.portonId):"—")+'</td><td class="wrap">'+esc(destT(s))+'</td></tr>'}).join("")+'</tbody></table></div></section>'}
+
+/* ---- informe imprimible ---- */
+function tcPdf(){const A=tcBase(),U=tcUniMap(),st=tcStats(A,U),cg=tcCargadores(A,U),eqs=tcEquipos(A,U),meta=tcMeta(),t="Tiempos de carga"+(UI.tc.eq?" · "+eqT(UI.tc.eq):"")+(UI.tc.canal?" · "+UI.tc.canal:"");
+  const head='<header class="p-head">'+P_LOGO+'<div class="p-wm"><b>PORTAL</b><i>DISTRIBUIDORA</i></div><div class="p-doc"><small>INFORME</small><b style="font-size:18px">'+esc(t)+'</b><span>'+esc(tcPer())+'</span></div></header><div class="p-stripe"><i></i><i></i><i></i></div>';
+  const tb=(cols,rows)=>'<table class="p-t"><thead><tr>'+cols.map(c=>'<th'+(c[1]?' style="text-align:right"':"")+'>'+c[0]+'</th>').join("")+'</tr></thead><tbody>'+rows.map(r=>'<tr class="r">'+r.map((v,i)=>'<td'+(cols[i][1]?' style="text-align:right"':"")+'>'+v+'</td>').join("")+'</tr>').join("")+'</tbody></table>';
+  const ch=(tt,rows,ty,keep)=>'<h3>'+esc(tt)+'</h3><div style="margin:4px 0 12px;break-inside:avoid">'+tChart(rows,tt,ty,"n",keep)+'</div>';
+  const M=A.filter(s=>cargaMin(s)!=null).sort((a,b)=>a.fecha.localeCompare(b.fecha)||String(a.cargaInicio).localeCompare(String(b.cargaInicio)));
+  const inner=head+'<div class="p-tot">'+[["Promedio",fMin(st.avg)],["En meta ("+meta+" min)",st.ok!=null?st.ok+"%":"—"],["Cargas medidas",fN(st.n)],["Más rápida",fMin(st.min)],["Más lenta",fMin(st.max)],["Sin medir",String(A.filter(tcSinMedir).length)]].map(([l,v],i)=>pK(l,esc(v),["#1f4a9b","#2b8a3e","#6f42d6","#0b8f7c","#e0261c","#f08c00"][i])).join("")+'</div>'+VZ_PRINT
+    +ch("Minutos promedio por día",tcSerie(A),"columnas")+ch("Promedio por equipo (minutos)",eqs.map(r=>({l:r.k,v:r.avg})),"barras",true)
+    +'<h3>Por cargador</h3>'+tb([["#"],["Cargador"],["Cargas",1],["Promedio",1],["Mediana",1],["Más rápida",1],["Más lenta",1],["En meta",1],["En pausa",1],["Horas",1]],cg.map((r,i)=>[i+1,esc(r.k),r.n,fMin(r.avg),fMin(r.med),fMin(r.min),fMin(r.max),r.ok+"%",r.pz?fMin(r.pz):"—",fN(r.hs)]))
+    +'<h3>Por equipo</h3>'+tb([["Equipo"],["Cargas",1],["Promedio",1],["Más rápida",1],["Más lenta",1],["En meta",1],["Horas",1]],eqs.map(r=>[esc(r.k),r.n,fMin(r.avg),fMin(r.min),fMin(r.max),r.ok+"%",fN(r.hs)]))
+    +'<h3>Orden por orden</h3>'+tb([["Fecha"],["N°"],["Camión"],["Equipo"],["Cargadores"],["Inicio"],["Fin"],["Pausa",1],["Carga",1]],M.map(s=>[fD(s.fecha),nro(s),esc(camLbl(s.camionId)),esc(eqT(s.equipoCargaId)||""),esc(cargadoresDe(s).map(persT).filter(Boolean).join(", ")),hhmm(s.cargaInicio),hhmm(s.cargaFin),pausaS(s)?fMin(pausaS(s)):"",(cargaMin(s)>meta?"<b>":"")+fMin(cargaMin(s))+(cargaMin(s)>meta?"</b>":"")]))
+    +'<footer class="p-foot"><span>Portal Distribuidora · TMS · '+esc(t)+'</span><span>Impreso el '+new Date().toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"})+'</span></footer>';
+  return dlDoc((t+" "+(UI.tc.desde||"")+" a "+(UI.tc.hasta||today())).replace(/[\\/:*?"<>|·]+/g,"-").replace(/\s+/g," ")+".html","Informe · "+t,inner)}
+
+/* ---- la pantalla ---- */
+VIEWS.tcarga=function(){const F=UI.tc;
+  let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Tiempos de carga"]),"Tiempos de carga",'<button class="btn w" data-act="tc-pdf">'+IC.file+'Informe PDF</button><a class="btn w" href="#equipos">Equipos</a>',"worker");
+  h+=tcVivo();
+  h+='<div class="seg2 rtabs" role="tablist">'+TC_TABS.map(([k,t])=>'<button role="tab" class="'+(F.tab===k?"on":"")+'" data-act="tc-tab" data-v="'+k+'">'+t+(k==="ordenes"&&tcBase().filter(tcSinMedir).length?'<span class="cnt">'+tcBase().filter(tcSinMedir).length+'</span>':"")+'</button>').join("")+'</div>';
+  h+='<div class="flt"><div class="seg2">'+[["hoy","Hoy"],["7","7 días"],["30","30 días"],["mes","Este mes"],["mesant","Mes anterior"],["todo","Todo"]].map(([k,t])=>'<button data-act="tc-rango" data-v="'+k+'">'+t+'</button>').join("")+'</div>'
+    +'<select data-ui="tc.canal" aria-label="Canal">'+opts([["","Preventa y sucursales"],"Preventa","Sucursales"],F.canal)+'</select>'
+    +(F.tab==="equipos"?"":'<select data-ui="tc.eq" aria-label="Equipo">'+opts([["","Todos los equipos"]].concat(S.equipos.map(e=>[e.id,e.nombre])),F.eq)+'</select>')
+    +'<label>Desde <input type="date" data-ui="tc.desde" value="'+F.desde+'"></label><label>Hasta <input type="date" data-ui="tc.hasta" value="'+F.hasta+'"></label></div>';
+  return h+(F.tab==="cargadores"?tcCargTab():F.tab==="equipos"?tcEqTab():F.tab==="horarios"?tcHorTab():F.tab==="ordenes"?tcOrdTab():tcTablero())};
+Object.assign(GACT,{
+  "tc-tab":el=>{UI.tc.tab=el.dataset.v;render();scrollTo(0,0)},
+  "tc-ord":el=>{UI.tc.ordF=el.dataset.v;UI.tc.tab="ordenes";render()},
+  "tc-car":(el,id)=>verCargador(id),
+  "tc-hoja":(el,id)=>{UI.hojaId=id;location.hash="#hoja"},
+  "tc-pdf":()=>tcPdf(),
+  "tc-rango":el=>{const k=el.dataset.v,t=today(),m0=t.slice(0,8)+"01";
+    if(k==="hoy"){UI.tc.desde=t;UI.tc.hasta=""}else if(k==="7"){UI.tc.desde=addD(t,-6);UI.tc.hasta=""}else if(k==="30"){UI.tc.desde=addD(t,-29);UI.tc.hasta=""}else if(k==="mes"){UI.tc.desde=m0;UI.tc.hasta=""}
+    else if(k==="mesant"){const h=addD(m0,-1);UI.tc.desde=h.slice(0,8)+"01";UI.tc.hasta=h}else{UI.tc.desde="";UI.tc.hasta=""}render()},
+  "tc-meta":()=>{if(!canWrite)return;openForm({title:"Meta de tiempo de carga",color:"c-base",values:{m:tcMeta()},ok:"Meta guardada",saveLabel:"Guardar",fields:[{k:"m",label:"Minutos por carga",type:"number",req:true,full:true,help:"Las cargas que tardan más que esto se marcan en rojo. Es la misma meta del KPI «Tiempo promedio de carga»."}],
+    save:async d=>{const c=kpiCfg();await C("config").doc("kpis").set(Object.assign({ocultos:c.ocultos||[]},{metas:Object.assign({},c.metas||{},{tcarga:Number(d.m)}),updatedAt:new Date().toISOString(),updatedBy:uid}))}})}
+});
+/* acceso desde Logística y desde Equipos de carga */
+{const lg=VIEWS.logistica;VIEWS.logistica=function(){const h=lg(),f=today(),M=S.salidas.filter(s=>s.fecha===f&&cargaMin(s)!=null).map(cargaMin),cc=S.salidas.filter(s=>cargaCurso(s)!=null&&cargaCurso(s)<=720).length;
+  return h.replace(/<\/div>\s*$/,tile({href:"#tcarga",cls:"m-base",ill:"worker",t:"Tiempos de carga",p:"Cuánto tarda cada cargador y cada equipo, en vivo y por período",meta:[cc?cc+" cargando ahora":pl(M.length,"carga hoy","cargas hoy"),M.length?"promedio "+fMin(avgN(M)):"sin cargas medidas hoy"]})+"</div>")}}
+{const ev=VIEWS.equipos;VIEWS.equipos=function(){return ev().replace('<p class="lead">','<div class="banner">'+IC.list+' <span>¿Querés ver quién carga más rápido? <a href="#tcarga"><b>Abrí Tiempos de carga</b></a>: tablero, ranking de cargadores, equipos, horarios y orden por orden.</span></div><p class="lead">')}}
+/* el cronómetro de «Cargando ahora» también corre en esta pantalla */
+setInterval(()=>{const ae=document.activeElement;if(UI.route==="tcarga"&&$("ov").hidden&&!(ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))&&S.salidas.some(s=>cargaCurso(s)!=null))render()},60000);
+
+/* ================= informe: km reales por chofer ================= */
+/** km reales de un viaje: GPS (LoJack) si hay, si no el odómetro, si no los km cargados a mano */
+const kmRealV=s=>s.gps&&s.gps.km!=null?{km:Math.round(s.gps.km),f:"GPS"}:kmRealS(s)!=null?{km:kmRealS(s),f:"Odómetro"}:Number(s.kmViaje)?{km:Math.round(Number(s.kmViaje)),f:"Cargado a mano"}:null;
+INF.splice(INF.findIndex(r=>r.id==="personal")+1,0,{id:"kmchofer",cat:"Operación",t:"Km reales por chofer",d:"Cuántos km hizo realmente cada chofer (GPS de LoJack u odómetro) contra los km de la ruta armada. La diferencia se calcula solo con los viajes que tienen km reales",ill:"driver",f:["canal","cam","cho"],grp:[["chofer","Por chofer"],["mes","Por chofer y mes"],["camion","Por chofer y camión"],["detalle","Viaje por viaje"]],
+  run(F){const X=salF(F).filter(s=>s.choferId&&(!F.cho||s.choferId===F.cho)&&["En ruta","Finalizada"].includes(s.estado)).map(s=>({s,r:kmRealV(s),p:Math.round(kmPrevS(s))}));
+    const R=X.filter(x=>x.r),kr=sum(R,x=>x.r.km),kpR=sum(R.filter(x=>x.p),x=>x.p),krP=sum(R.filter(x=>x.p),x=>x.r.km);
+    const kp=[["Choferes",new Set(X.map(x=>x.s.choferId)).size],["Viajes",X.length],["Km reales",fN(kr)],["Km de la ruta armada",fN(sum(X,x=>x.p))],["Km de más",kpR?fN(krP-kpR)+" ("+fKmG(Math.round((krP-kpR)*1000/kpR)/10)+"%)":"—"],["Viajes sin km real",X.length-R.length]];
+    if(F.grp==="detalle"){const rows=X.sort((a,b)=>a.s.fecha.localeCompare(b.s.fecha)||(a.s.nro||0)-(b.s.nro||0)).map(({s,r,p})=>({n:nro(s),f:fDL(s.fecha),cho:chofT(s.choferId),cam:camLbl(s.camionId),dest:destT(s),est:(EST[s.estado]||[s.estado])[0],p,gps:s.gps&&s.gps.km!=null?Math.round(s.gps.km):null,odo:kmRealS(s),km:r?r.km:null,fu:r?r.f:"Sin dato",d:r&&p?r.km-p:null,pc:r&&p?Math.round((r.km-p)*1000/p)/10:null}));
+      return{kpis:kp,cols:[["N°","n","t"],["Fecha","f","t"],["Chofer","cho","t"],["Camión","cam","t"],["Destinos","dest","t"],["Estado","est","t"],["Km ruta armada","p","km"],["Km GPS","gps","km"],["Km odómetro","odo","km"],["Km reales","km","km"],["Fuente","fu","t"],["Diferencia km","d","n"],["Diferencia %","pc","d1"]],rows,chart:{lab:"n",val:"km",t:"Km reales por viaje",noSort:true}}}
+    const kf={chofer:x=>chofT(x.s.choferId)||"(sin chofer)",mes:x=>(chofT(x.s.choferId)||"(sin chofer)")+" · "+mesL(x.s.fecha.slice(0,7)),camion:x=>(chofT(x.s.choferId)||"(sin chofer)")+" · "+camLbl(x.s.camionId)}[F.grp||"chofer"]||(x=>chofT(x.s.choferId));
+    const by=groupBy(X,kf);
+    const rows=Object.keys(by).map(k=>{const a=by[k],r=a.filter(x=>x.r),rp=r.filter(x=>x.p),km=sum(r,x=>x.r.km),pp=sum(rp,x=>x.p),dias=new Set(r.map(x=>x.s.fecha)).size,c=get("choferes",a[0].s.choferId)||{};
+      return{k,leg:c.legajo||"",n:a.length,dias,km,gps:sum(a,x=>x.s.gps&&x.s.gps.km!=null?Math.round(x.s.gps.km):0),odo:sum(a,x=>kmRealS(x.s)||0),p:sum(a,x=>x.p),d:pp?sum(rp,x=>x.r.km)-pp:null,pc:pp?Math.round((sum(rp,x=>x.r.km)-pp)*1000/pp)/10:null,kv:r.length?Math.round(km/r.length):null,kd:dias?Math.round(km/dias):null,sin:a.length-r.length,_s:a[0].s.fecha}}).sort((a,b)=>F.grp==="mes"?a.k.split(" · ")[0].localeCompare(b.k.split(" · ")[0])||a._s.localeCompare(b._s):b.km-a.km);
+    return{kpis:kp,cols:[[{chofer:"Chofer",mes:"Chofer y mes",camion:"Chofer y camión"}[F.grp||"chofer"],"k","t"],["Legajo","leg","t"],["Viajes","n","n"],["Días","dias","n"],["Km reales","km","km"],["Km GPS","gps","km"],["Km odómetro","odo","km"],["Km ruta armada","p","km"],["Diferencia km","d","n"],["Diferencia %","pc","d1"],["Km por viaje","kv","km"],["Km por día","kd","km"],["Viajes sin km real","sin","n"]],rows,chart:{lab:"k",val:"km",t:"Km reales",noSort:F.grp==="mes"}}}});
+
 /* ================= render ================= */
 let rT=null,pendingRender=false;
 function schedule(){clearTimeout(rT);rT=setTimeout(render,25)}
