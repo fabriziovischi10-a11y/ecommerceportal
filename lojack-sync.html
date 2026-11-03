@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LoJack · sincronización TMS</title>
+<style>
+:root{--bg:#f4f6fb;--tx:#1b2333;--mu:#5c6880;--ok:#15803d;--er:#b91c1c;--card:#fff;--bd:#dfe4ee}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1420;--tx:#e6eaf2;--mu:#98a3b8;--ok:#4ade80;--er:#f87171;--card:#171e2d;--bd:#283247}}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,sans-serif;padding:24px 16px}
+main{max-width:640px;margin:0 auto;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:20px}
+h1{font-size:18px;margin:0 0 4px}p{margin:6px 0;color:var(--mu)}
+#estado{font-weight:600;color:var(--mu)}#estado.ok{color:var(--ok)}#estado.er{color:var(--er)}
+pre{background:var(--bg);border-radius:8px;padding:10px;font-size:12px;max-height:280px;overflow:auto;white-space:pre-wrap}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<main>
+<h1>LoJack → TMS (Firebase)</h1>
+<p>Página liviana para la tarea de LoJack de la PC de la oficina. No carga el TMS: solo lee los pedidos y guarda lo que cambió.</p>
+<p id="estado">Conectando…</p>
+<pre id="log"></pre>
+</main>
+<script>
+/* Misma base y mismo formato que hoja-de-ruta.html (versión GitHub). */
+const firebaseConfig={apiKey:"AIzaSyCLP890Q5hyuqSs82vyF0rk9VhEg0pBlCA",authDomain:"ecommerce-e7ab2.firebaseapp.com",projectId:"ecommerce-e7ab2",storageBucket:"ecommerce-e7ab2.firebasestorage.app",messagingSenderId:"237845351422",appId:"1:237845351422:web:6350a5c3e103b088cf4eaf"};
+const RAIZ="hojaruta/datos/";
+const esObj=v=>v!==null&&typeof v==="object"&&!Array.isArray(v)&&Object.getPrototypeOf(v)===Object.prototype;
+const fsEnc=v=>Array.isArray(v)?v.map(x=>Array.isArray(x)?{__arr:fsEnc(x)}:fsEnc(x)):esObj(v)?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,fsEnc(x)])):v;
+const fsDec=v=>Array.isArray(v)?v.map(fsDec):(v&&typeof v==="object"&&!(v instanceof Date)&&Object.getPrototypeOf(v)===Object.prototype)?(Object.keys(v).length===1&&Array.isArray(v.__arr)?fsDec(v.__arr):Object.fromEntries(Object.entries(v).map(([k,x])=>[k,fsDec(x)]))):v;
+const $=id=>document.getElementById(id);
+const log=t=>{$("log").textContent+=new Date().toLocaleTimeString()+"  "+t+"\n"};
+const estado=(t,c)=>{$("estado").textContent=t;$("estado").className=c||""};
+// huella del recorrido sin la hora de consulta: si no cambió, no se vuelve a escribir
+const huella=o=>{const s=JSON.stringify(Object.assign({},o,{at:null}));let h=5381;for(let i=0;i<s.length;i++)h=(h*33+s.charCodeAt(i))|0;return(h>>>0).toString(36)+"."+s.length};
+
+let fs,idx={gps:{},mapas:{}},idxSucio=false,idxTimer=null;
+async function guardarIndice(){if(!idxSucio)return;idxSucio=false;
+  await fs.doc(RAIZ+"gps_idx/estado").set({gps:idx.gps,mapas:Object.keys(idx.mapas),at:new Date().toISOString()})}
+const marcarIndice=()=>{idxSucio=true;clearTimeout(idxTimer);idxTimer=setTimeout(()=>guardarIndice().catch(e=>log("índice: "+e.message)),1500)};
+
+async function conectar(){
+  firebase.initializeApp(firebaseConfig);
+  await firebase.auth().signInAnonymously();
+  const app=firebase.app();
+  const modular=app._delegate.container.getProvider("firestore").getImmediate({identifier:"default"});
+  fs=new firebase.firestore.Firestore(app,modular);
+  // un solo documento con el estado de todo lo guardado (en vez de leer las colecciones gps y mapas enteras)
+  const d=await fs.doc(RAIZ+"gps_idx/estado").get();
+  if(d.exists){const v=d.data();idx.gps=v.gps||{};(v.mapas||[]).forEach(k=>idx.mapas[k]=1)}
+  else{log("Primera vez: armando el índice…");
+    (await fs.collection(RAIZ+"mapas").get()).docs.forEach(x=>idx.mapas[x.id]=1);
+    (await fs.collection(RAIZ+"gps").get()).docs.forEach(x=>{const v=fsDec(x.data());idx.gps[x.id]={h:huella(v),final:!!v.final,hasta:v.hasta||null}});
+    idxSucio=true;await guardarIndice()}
+}
+
+window.HR={
+  listo:null,
+  // pedidos que todavía necesitan consulta: los viajes ya cerrados con su recorrido final guardado se saltean
+  async pedidos(){const r=await HR.leer("gps_req");
+    return r.filter(p=>{const g=idx.gps[p.id];return!(g&&g.final&&p.hasta&&g.hasta===p.hasta)})},
+  // leer("mapas") y leer("gps") devuelven solo los ids desde el índice (sin bajar los datos)
+  async leer(c){
+    if(c==="mapas")return Object.keys(idx.mapas).map(id=>({id}));
+    if(c==="gps")return Object.entries(idx.gps).map(([id,g])=>Object.assign({id},g));
+    return(await fs.collection(RAIZ+c).get()).docs.map(d=>Object.assign({id:d.id},fsDec(d.data())))},
+  faltanMapas(ids){return ids.filter(id=>!idx.mapas[id])},
+  async guardar(c,id,obj){
+    if(c==="mapas"){if(idx.mapas[id])return"ya estaba";
+      await fs.doc(RAIZ+"mapas/"+id).set(fsEnc(obj));idx.mapas[id]=1;marcarIndice();return"guardado"}
+    if(c==="gps"&&id!=="flota"){const h=huella(obj),g=idx.gps[id];
+      if(g&&g.h===h)return"sin cambios";
+      await fs.doc(RAIZ+"gps/"+id).set(fsEnc(obj));idx.gps[id]={h,final:!!obj.final,hasta:obj.hasta||null};marcarIndice();return"guardado"}
+    await fs.doc(RAIZ+c+"/"+id).set(fsEnc(obj));return"guardado"},
+  // llamar al final de cada corrida
+  async terminar(){clearTimeout(idxTimer);await guardarIndice();estado("Corrida terminada "+new Date().toLocaleTimeString(),"ok");return"ok"}
+};
+HR.listo=conectar().then(()=>{estado("Conectado. Listo para la tarea de LoJack.","ok");log("Índice: "+Object.keys(idx.gps).length+" recorridos, "+Object.keys(idx.mapas).length+" mapas")})
+  .catch(e=>{estado("Error: "+e.message,"er");log(e.message);throw e});
+</script>
+</body>
+</html>
