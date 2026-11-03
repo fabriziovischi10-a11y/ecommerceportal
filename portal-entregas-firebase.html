@@ -17,6 +17,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
+<!-- Mapa de la flota LoJack (Leaflet + OpenStreetMap) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
 <!-- Firebase (compat, para poder usar la misma sintaxis de siempre) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -964,6 +967,209 @@ function useDbCollectionLive(db, path, limitN = 300) {
   return [data, loading];
 }
 
+/* ------------------------------------------------------------------ */
+/*  Flota LoJack (Strix)                                                */
+/* ------------------------------------------------------------------ */
+/* La función de Firebase "sincronizarFlotaStrix" lee la API de Strix cada minuto y deja
+   el estado de todos los vehículos en flota/actual: { actualizado, error, vehiculos: { PATENTE: {...} } }. */
+
+/** "ah 568-ia" -> "AH568IA" (mismo criterio que la función de Firebase). */
+function normalizarPatente(p) {
+  return String(p || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+function useFlota(db) {
+  const [flota, setFlota] = useState(null); // null = cargando / sin datos todavía
+  useEffect(() => {
+    if (!db) return;
+    const unsub = db.doc("flota/actual").onSnapshot(
+      (snap) => setFlota(snap.exists ? snap.data() : { vehiculos: {} }),
+      () => setFlota({ vehiculos: {}, error: "Sin permiso para leer flota/actual" })
+    );
+    return () => unsub();
+  }, [db]);
+  return flota;
+}
+
+/** Estado de un vehículo para mostrar: en marcha, detenido con motor encendido, apagado o sin señal. */
+const ESTADOS_FLOTA = {
+  marcha: { leyenda: "En marcha", color: "#1D7A5A", soft: "#DDF1E8" },
+  ralenti: { leyenda: "Motor encendido detenido", color: "#93650A", soft: "#FDF0CC" },
+  apagado: { leyenda: "Apagados", color: "#293B72", soft: "#E3E7F3" },
+  sin_senal: { leyenda: "Sin señal", color: "#566079", soft: "#E6E9F0" },
+};
+
+function estadoVehiculo(v) {
+  const min = v.senal ? (Date.now() - new Date(v.senal).getTime()) / 60000 : Infinity;
+  if (min > 30) return { id: "sin_senal", label: "Sin señal reciente", ...ESTADOS_FLOTA.sin_senal };
+  if (v.enMovimiento || v.velocidad >= 7) return { id: "marcha", label: `En marcha · ${v.velocidad} km/h`, ...ESTADOS_FLOTA.marcha };
+  if (v.motorEncendido) return { id: "ralenti", label: "Detenido con motor encendido", ...ESTADOS_FLOTA.ralenti };
+  return { id: "apagado", label: "Detenido · motor apagado", ...ESTADOS_FLOTA.apagado };
+}
+
+function haceCuanto(iso) {
+  if (!iso) return "sin datos";
+  const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (min < 1) return "hace instantes";
+  if (min < 60) return `hace ${min} min`;
+  if (min < 48 * 60) return `hace ${Math.round(min / 60)} h`;
+  return `hace ${Math.round(min / 1440)} días`;
+}
+
+/** Mapa (Leaflet) con un punto por vehículo, coloreado según su estado. */
+function MapaFlota({ vehiculos, seleccion, onSeleccionar }) {
+  const contRef = useRef(null);
+  const mapaRef = useRef(null);
+  const capaRef = useRef(null);
+  const encuadradoRef = useRef(false);
+
+  useEffect(() => {
+    if (!window.L || !contRef.current || mapaRef.current) return;
+    const mapa = L.map(contRef.current, { zoomControl: true, attributionControl: true });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap",
+    }).addTo(mapa);
+    mapa.setView([-26.82, -65.21], 12);
+    capaRef.current = L.layerGroup().addTo(mapa);
+    mapaRef.current = mapa;
+    return () => { mapa.remove(); mapaRef.current = null; };
+  }, []);
+
+  useEffect(() => {
+    const mapa = mapaRef.current;
+    if (!mapa) return;
+    capaRef.current.clearLayers();
+    const conPos = vehiculos.filter((v) => v.lat != null && v.lng != null);
+    conPos.forEach((v) => {
+      const e = estadoVehiculo(v);
+      const sel = seleccion === v.patente;
+      const m = L.circleMarker([v.lat, v.lng], {
+        radius: sel ? 11 : 8, color: "#fff", weight: 2, fillColor: e.color, fillOpacity: 0.95,
+      }).addTo(capaRef.current);
+      m.bindTooltip(`<b>${v.patente}</b>${v.chofer ? " · " + v.chofer : ""}<br>${e.label}`, { direction: "top", offset: [0, -6] });
+      m.on("click", () => onSeleccionar && onSeleccionar(v.patente));
+    });
+    if (!encuadradoRef.current && conPos.length) {
+      mapa.fitBounds(L.latLngBounds(conPos.map((v) => [v.lat, v.lng])), { padding: [30, 30], maxZoom: 14 });
+      encuadradoRef.current = true;
+    }
+  }, [vehiculos, seleccion]);
+
+  useEffect(() => {
+    const v = vehiculos.find((x) => x.patente === seleccion);
+    if (mapaRef.current && v && v.lat != null) mapaRef.current.panTo([v.lat, v.lng]);
+  }, [seleccion]);
+
+  if (!window.L) {
+    return <p className="text-xs" style={{ color: "var(--slate)" }}>No se pudo cargar el mapa. Revisá la conexión y recargá la página.</p>;
+  }
+  return <div ref={contRef} className="de-mapa-flota" style={{ height: 380, borderRadius: 14, overflow: "hidden", border: "1px solid var(--line)", zIndex: 0 }} />;
+}
+
+/** Tarjeta "Flota LoJack": mapa + lista de vehículos con su estado, en vivo. */
+function FlotaLojack({ db, choferes, ubicaciones, vehiculosPortal }) {
+  const flota = useFlota(db);
+  const [seleccion, setSeleccion] = useState(null);
+  const [, setTick] = useState(0);
+  // Refresca los "hace X min" aunque no lleguen datos nuevos.
+  useEffect(() => { const i = setInterval(() => setTick((t) => t + 1), 30000); return () => clearInterval(i); }, []);
+
+  // Qué chofer usa hoy cada patente (según el vehículo que eligió al entrar a "Soy chofer").
+  const choferPorPatente = {};
+  const hoy = fechaLocalHoy();
+  Object.entries(ubicaciones || {}).forEach(([choferId, u]) => {
+    if (!u || u.fecha !== hoy || !u.vehiculoId) return;
+    const vp = (vehiculosPortal || []).find((x) => x.id === u.vehiculoId);
+    const ch = choferes.find((c) => c.id === choferId);
+    if (vp && ch) choferPorPatente[normalizarPatente(vp.patente)] = ch.nombre;
+  });
+
+  const orden = { marcha: 0, ralenti: 1, apagado: 2, sin_senal: 3 };
+  const lista = Object.values((flota && flota.vehiculos) || {})
+    .map((v) => ({ ...v, chofer: choferPorPatente[v.patente] || null }))
+    .sort((a, b) => (orden[estadoVehiculo(a).id] - orden[estadoVehiculo(b).id]) || a.patente.localeCompare(b.patente));
+
+  const cuenta = lista.reduce((acc, v) => { const id = estadoVehiculo(v).id; acc[id] = (acc[id] || 0) + 1; return acc; }, {});
+  const desactualizado = flota && flota.actualizado && (Date.now() - new Date(flota.actualizado).getTime()) > 10 * 60000;
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-1">
+        <p className="de-display font-semibold">Flota LoJack</p>
+        {flota && flota.actualizado && (
+          <span className="text-xs font-semibold flex items-center gap-1.5" style={{ color: desactualizado ? "var(--danger)" : "var(--teal)" }}>
+            <span className="w-2 h-2 rounded-full" style={{ background: desactualizado ? "var(--danger)" : "var(--teal)" }} />
+            {desactualizado ? `Sin actualizar ${haceCuanto(flota.actualizado)}` : "En vivo"}
+          </span>
+        )}
+      </div>
+      <p className="text-xs mb-3" style={{ color: "var(--slate)" }}>
+        Posición tomada del equipo satelital de cada vehículo (no depende del celular del chofer). Se actualiza sola cada minuto.
+      </p>
+
+      {flota && flota.error && (
+        <div className="mb-3 p-3 rounded-xl text-xs" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>
+          ⚠️ Problema con LoJack: <b>{flota.error}</b>{flota.errorEn ? ` (${haceCuanto(flota.errorEn)})` : ""}
+        </div>
+      )}
+
+      {flota === null ? (
+        <div className="flex justify-center py-10"><Loader2 className="animate-spin" size={22} style={{ color: "var(--route)" }} /></div>
+      ) : lista.length === 0 ? (
+        <EmptyState icon={Truck} title="Todavía no llegaron datos de LoJack" subtitle="Aparecen solos cuando la función de Firebase 'sincronizarFlotaStrix' está publicada y funcionando." />
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {Object.entries(ESTADOS_FLOTA).map(([id, e]) => (
+              <span key={id} className="text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5" style={{ background: e.soft, color: e.color }}>
+                <span className="w-2 h-2 rounded-full" style={{ background: e.color }} /> {e.leyenda}: {cuenta[id] || 0}
+              </span>
+            ))}
+          </div>
+
+          <MapaFlota vehiculos={lista} seleccion={seleccion} onSeleccionar={setSeleccion} />
+
+          <div className="space-y-2 mt-4">
+            {lista.map((v) => {
+              const e = estadoVehiculo(v);
+              const sel = seleccion === v.patente;
+              return (
+                <div key={v.patente}
+                  onClick={() => setSeleccion(v.patente)}
+                  className="flex items-center justify-between gap-2 p-3 rounded-xl cursor-pointer"
+                  style={{ background: sel ? e.soft : "var(--paper)", outline: sel ? `2px solid ${e.color}` : "none" }}>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: e.color, color: "white" }}>
+                      <Truck size={16} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm truncate">
+                        <span className="de-mono">{v.patente}</span>
+                        {v.chofer && <span style={{ color: "var(--slate)", fontWeight: 500 }}> · {v.chofer}</span>}
+                      </p>
+                      <p className="text-xs truncate" style={{ color: "var(--slate)" }}>
+                        {e.label} · {haceCuanto(v.senal)}{v.kmHoy != null ? ` · ${formatKm(v.kmHoy)} hoy` : ""}
+                      </p>
+                      <p className="text-[11px] truncate" style={{ color: "var(--slate)" }}>{[v.marca, v.modelo].filter(Boolean).join(" ")}</p>
+                    </div>
+                  </div>
+                  {v.lat != null && (
+                    <a href={`https://www.google.com/maps?q=${v.lat},${v.lng}`} target="_blank" rel="noreferrer"
+                      onClick={(ev) => ev.stopPropagation()}
+                      className="de-focus shrink-0 p-2 rounded-lg" style={{ color: e.color }} title="Abrir en Google Maps">
+                      <MapPin size={16} />
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </Card>
+  );
+}
 
 
 function Badge({ estado }) {
@@ -1277,11 +1483,11 @@ function AdminContenido({ t, db, choferes, setChoferes, zonas, setZonas, factura
     <>
       {t === "resumen" && <ResumenTab choferes={choferes} zonas={zonas} facturas={facturas} />}
       {t === "choferes" && <ChoferesTab choferes={choferes} setChoferes={setChoferes} zonas={zonas} />}
-      {t === "vehiculos" && <VehiculosTab vehiculos={vehiculos} setVehiculos={setVehiculos} />}
+      {t === "vehiculos" && <VehiculosTab db={db} vehiculos={vehiculos} setVehiculos={setVehiculos} />}
       {t === "clientes" && <ClientesTab clientes={clientes} setClientes={setClientes} zonas={zonas} setZonas={setZonas} />}
       {t === "facturas" && <FacturasTab facturas={facturas} setFacturas={setFacturas} zonas={zonas} setZonas={setZonas} clientes={clientes} setClientes={setClientes} />}
       {t === "seguimiento" && <SeguimientoTab facturas={facturas} setFacturas={setFacturas} zonas={zonas} choferes={choferes} />}
-      {t === "mapa" && <MapaVivoTab db={db} choferes={choferes} zonas={zonas} facturas={facturas} />}
+      {t === "mapa" && <MapaVivoTab db={db} choferes={choferes} zonas={zonas} facturas={facturas} vehiculos={vehiculos} />}
       {t === "combustible" && <CombustibleTab combustible={combustible} choferes={choferes} vehiculos={vehiculos} />}
       {t === "historial" && <HistorialTab db={db} historialDias={historialDias} />}
       {t === "costos" && <CostosTab db={db} facturas={facturas} combustible={combustible} historialDias={historialDias} />}
@@ -1480,9 +1686,18 @@ function ChoferesTab({ choferes, setChoferes, zonas }) {
   );
 }
 
-function VehiculosTab({ vehiculos, setVehiculos }) {
+function VehiculosTab({ db, vehiculos, setVehiculos }) {
   const [text, setText] = useState("");
   const [aEliminar, setAEliminar] = useState(null);
+  const flota = useFlota(db);
+  const lojack = (flota && flota.vehiculos) || {};
+  const patentesPortal = new Set(vehiculos.map((v) => normalizarPatente(v.patente)));
+  const faltantes = Object.values(lojack).filter((v) => !patentesPortal.has(v.patente));
+
+  const importarDeLojack = () => {
+    const nuevos = faltantes.map((v) => ({ id: genId(), patente: v.patente, modelo: [v.marca, v.modelo].filter(Boolean).join(" ") }));
+    if (nuevos.length) setVehiculos([...vehiculos, ...nuevos]);
+  };
 
   const cargar = () => {
     const lineas = text.split("\n").map((l) => l.trim()).filter(Boolean);
@@ -1518,6 +1733,18 @@ function VehiculosTab({ vehiculos, setVehiculos }) {
         </button>
       </Card>
 
+      {faltantes.length > 0 && (
+        <Card>
+          <p className="de-display font-semibold mb-1">Vehículos de LoJack sin cargar ({faltantes.length})</p>
+          <p className="text-sm mb-3" style={{ color: "var(--slate)" }}>
+            Estos vehículos tienen equipo LoJack pero no están en la lista del portal: <span className="de-mono">{faltantes.map((v) => v.patente).join(", ")}</span>
+          </p>
+          <button onClick={importarDeLojack} className="de-btn-primary de-focus flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold">
+            <Plus size={16} /> Agregarlos con su modelo
+          </button>
+        </Card>
+      )}
+
       <Card>
         <p className="de-display font-semibold mb-3">Vehículos cargados ({vehiculos.length})</p>
         {vehiculos.length === 0 ? (
@@ -1533,6 +1760,17 @@ function VehiculosTab({ vehiculos, setVehiculos }) {
                   <div className="min-w-0">
                     <p className="font-semibold text-sm de-mono truncate">{v.patente}</p>
                     {v.modelo && <p className="text-xs truncate" style={{ color: "var(--slate)" }}>{v.modelo}</p>}
+                    {(() => {
+                      const lj = lojack[normalizarPatente(v.patente)];
+                      if (!flota) return null;
+                      if (!lj) return <p className="text-[11px]" style={{ color: "var(--slate)" }}>Sin equipo LoJack vinculado</p>;
+                      const e = estadoVehiculo(lj);
+                      return (
+                        <p className="text-[11px] font-semibold flex items-center gap-1" style={{ color: e.color }}>
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: e.color }} /> LoJack: {e.label} · {haceCuanto(lj.senal)}
+                        </p>
+                      );
+                    })()}
                   </div>
                 </div>
                 <button onClick={() => eliminar(v.id)} className="de-focus p-2 rounded-lg shrink-0" style={{ color: "var(--danger)" }}>
@@ -3815,7 +4053,7 @@ function CombustibleTab({ combustible, choferes, vehiculos }) {
   );
 }
 
-function MapaVivoTab({ db, choferes, zonas, facturas }) {
+function MapaVivoTab({ db, choferes, zonas, facturas, vehiculos }) {
   const [ubicaciones, setUbicaciones] = useState({});
   const [cargando, setCargando] = useState(true);
   const [choferDetalle, setChoferDetalle] = useState(null);
@@ -3937,9 +4175,11 @@ function MapaVivoTab({ db, choferes, zonas, facturas }) {
   }
 
   return (
+    <div className="space-y-5">
+    <FlotaLojack db={db} choferes={choferes} ubicaciones={ubicaciones} vehiculosPortal={vehiculos} />
     <Card>
       <div className="flex items-center justify-between mb-1">
-        <p className="de-display font-semibold">Mapa en vivo</p>
+        <p className="de-display font-semibold">Choferes (celular)</p>
         <span className="text-xs font-semibold flex items-center gap-1.5" style={{ color: "var(--teal)" }}>
           <span className="w-2 h-2 rounded-full" style={{ background: "var(--teal)" }} /> En vivo
         </span>
@@ -3980,6 +4220,7 @@ function MapaVivoTab({ db, choferes, zonas, facturas }) {
         </div>
       )}
     </Card>
+    </div>
   );
 }
 
