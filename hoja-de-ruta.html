@@ -842,6 +842,18 @@ const sucCmp=(a,b)=>String(a.codigo||"zz").localeCompare(String(b.codigo||"zz"),
 const actSal=x=>x.estado!=="Anulada";
 const isActive=x=>!["Inactiva","Baja","Inactivo"].includes(x.estado);
 const isAcop=c=>c.tipo==="Acoplado"||c.tipo==="Semirremolque";
+/* Nov. 2026: la VTV y el SENASA salen del Parte diario (portal-logistica, nodo tms_aptitud). Se lee por REST cada 5 min: no gasta cupo de Firestore */
+let APT=null;const patK=s=>String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+function cargarAptitud(){fetch("https://portal-logistica-2c88c-default-rtdb.firebaseio.com/tms_aptitud.json").then(r=>r.ok?r.json():null).then(d=>{if(d&&d.vehiculos){APT=d;if(ready)schedule()}}).catch(()=>{})}
+/** papeles de la unidad para la fecha t: VTV y SENASA del Parte diario (si falta la VTV, la cargada acá), seguro del TMS */
+function aptCam(c,t){t=t||today();const p=APT&&APT.vehiculos[patK(c.patente)]||null;
+  const vtv=p&&p.vtv||c.vtvVence||null,vtvTr=!vtv&&!!(p&&p.vtvTramite),sn=p&&p.sn||null,snTr=!sn&&!!(p&&p.snTramite),bad=[],warn=[];
+  if(vtvTr)warn.push("VTV en trámite");else if(!vtv)warn.push("sin VTV cargada");else if(vtv<t)bad.push("VTV vencida "+fD(vtv));
+  if(snTr)warn.push("SENASA en trámite");else if(sn&&sn<t)bad.push("SENASA vencido "+fD(sn));
+  if(c.seguroVence&&c.seguroVence<t)bad.push("seguro vencido "+fD(c.seguroVence));
+  if(APT&&!p)warn.push("no figura en vencimientos del Parte diario");
+  return{p,vtv,vtvTr,sn,snTr,bad,warn,st:bad.length?"bad":warn.length?"warn":"ok"}}
+const camVencs=c=>{const a=aptCam(c);return[[a.vtv,"VTV"],[a.sn,"SENASA"],[c.seguroVence,"Seguro"]].filter(x=>x[0])};
 const portT=id=>{const x=get("portones",id);return x?x.nombre:"Sin portón"};
 const persT=id=>{const x=get("personal",id);return x?x.nombre:""};
 const equipoT=s=>(s.equipoIds||[]).map(persT).filter(Boolean).join(", ");
@@ -1127,7 +1139,7 @@ VIEWS.ordenes=function(){
       +dots([{a:"prog-susp",id:p.id,i:"pause",t:"Suspender envío",w:1},{a:"prog-del",id:p.id,i:"x",t:"Quitar del programa",dng:1,w:1}])+'</div></div>'});
   R+='</div></section>';
   const vv=[];
-  S.camiones.filter(c=>c.estado!=="Baja").forEach(c=>{[["vtvVence","VTV"],["seguroVence","Seguro"]].forEach(([k,l])=>{if(c[k]&&daysTo(c[k])<=30)vv.push({d:c[k],t:plate(c.patente)+" "+l,act:"edit-cam",id:c.id})})});
+  S.camiones.filter(c=>c.estado!=="Baja").forEach(c=>{camVencs(c).forEach(([d,l])=>{if(daysTo(d)<=30)vv.push({d,t:plate(c.patente)+" "+l,act:"edit-cam",id:c.id})})});
   S.choferes.filter(isActive).forEach(c=>{if(c.licenciaVence&&daysTo(c.licenciaVence)<=30)vv.push({d:c.licenciaVence,t:esc(c.nombre)+" · licencia",act:"edit-cho",id:c.id})});
   vv.sort((a,b)=>a.d.localeCompare(b.d));
   if(vv.length)R+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--bad)"></span>Vencimientos</h2></div><div class="list">'+vv.slice(0,6).map(v=>{const d=daysTo(v.d);return'<div class="li" data-act="'+v.act+'" data-id="'+v.id+'" style="cursor:pointer"><div class="t">'+v.t+'</div><div class="r">'+chip(d<0?"Vencido":d===0?"Vence hoy":"En "+d+" días",d<0?"bad":"warn")+'</div></div>'}).join("")+'</div></section>';
@@ -1531,9 +1543,9 @@ VIEWS.flota=function(){
   const busy=new Set(S.salidas.filter(s=>s.fecha===today()&&["Programada","Cargada","En ruta"].includes(s.estado)).flatMap(s=>[s.camionId,s.acopladoId]));
   const list=S.camiones.filter(c=>match("flota",[c.patente,c.interno,c.modelo,c.tipo])).sort((a,b)=>(isAcop(a)-isAcop(b))||String(a.patente).localeCompare(String(b.patente)));
   return ph(crumb(["Inicio","inicio"],["Base de datos","base"],["Flota"]),"Flota",addMenu("new-cam","vehículo","camiones"),"truck")+qbox("flota","Buscar patente, modelo, tipo…")
-  +'<section class="pn"><div class="pnh"><h2>'+pl(S.camiones.filter(x=>!isAcop(x)).length,"camión","camiones")+' · '+pl(S.camiones.filter(isAcop).length,"acoplado","acoplados")+'</h2><span class="s">Para quitar uno, ponelo en estado «Baja»: deja de aparecer pero se conserva el historial</span></div>'
-  +(list.length?'<div class="tw"><table class="wide"><thead><tr><th>Patente</th><th>Modelo</th><th>Tipo</th><th class="num">Km</th><th>VTV</th><th>Seguro</th><th>Hoy</th><th class="num">Viajes mes</th><th>Estado</th></tr></thead><tbody>'
-    +list.map(c=>'<tr class="ck" data-act="edit-cam" data-id="'+c.id+'"><td>'+plate(c.patente)+(c.interno?' <span class="sub">int. '+esc(c.interno)+'</span>':"")+'</td><td>'+esc(c.modelo||"—")+'</td><td>'+(isAcop(c)?'<span class="tag ac">'+esc(c.tipo)+'</span>':esc(c.tipo||"—"))+'</td><td class="num mono">'+fN(kmCam(c))+'</td><td>'+venc(c.vtvVence)+'</td><td>'+venc(c.seguroVence)+'</td><td>'+(busy.has(c.id)?chip("Asignado","info"):c.estado==="Disponible"||!c.estado?chip("Libre","ok"):"—")+'</td><td class="num mono">'+S.salidas.filter(s=>(s.camionId===c.id||s.acopladoId===c.id)&&s.fecha>=ms()&&actSal(s)).length+'</td><td>'+chip(c.estado||"Disponible",c.estado==="En taller"?"warn":c.estado==="Baja"?"mute":"ok")+'</td></tr>').join("")+'</tbody></table></div>'
+  +'<section class="pn"><div class="pnh"><h2>'+pl(S.camiones.filter(x=>!isAcop(x)).length,"camión","camiones")+' · '+pl(S.camiones.filter(isAcop).length,"acoplado","acoplados")+'</h2><span class="s">VTV y SENASA vienen del Parte diario'+(APT&&APT.at?' (actualizado '+fD(APT.at.slice(0,10))+' '+APT.at.slice(11,16)+' UTC)':APT?'':' · no se pudo leer, se muestra la VTV cargada acá')+' · Para quitar uno, ponelo en estado «Baja»: deja de aparecer pero se conserva el historial</span></div>'
+  +(list.length?'<div class="tw"><table class="wide"><thead><tr><th>Patente</th><th>Modelo</th><th>Tipo</th><th class="num">Km</th><th>VTV</th><th>SENASA</th><th>Seguro</th><th>Para salir</th><th>Hoy</th><th class="num">Viajes mes</th><th>Estado</th></tr></thead><tbody>'
+    +list.map(c=>'<tr class="ck" data-act="edit-cam" data-id="'+c.id+'"><td>'+plate(c.patente)+(c.interno?' <span class="sub">int. '+esc(c.interno)+'</span>':"")+'</td><td>'+esc(c.modelo||"—")+'</td><td>'+(isAcop(c)?'<span class="tag ac">'+esc(c.tipo)+'</span>':esc(c.tipo||"—"))+'</td><td class="num mono">'+fN(kmCam(c))+'</td>'+(a=>'<td>'+(a.vtvTr?chip("En trámite","warn"):venc(a.vtv))+'</td><td>'+(a.snTr?chip("En trámite","warn"):venc(a.sn))+'</td><td>'+venc(c.seguroVence)+'</td><td title="'+esc(a.bad.concat(a.warn).join(" · ")||"VTV, SENASA y seguro al día")+'">'+(a.st==="bad"?chip("No apto","bad"):a.st==="warn"?chip("Revisar","warn"):chip("Apto","ok"))+'</td>')(aptCam(c))+'<td>'+(busy.has(c.id)?chip("Asignado","info"):c.estado==="Disponible"||!c.estado?chip("Libre","ok"):"—")+'</td><td class="num mono">'+S.salidas.filter(s=>(s.camionId===c.id||s.acopladoId===c.id)&&s.fecha>=ms()&&actSal(s)).length+'</td><td>'+chip(c.estado||"Disponible",c.estado==="En taller"?"warn":c.estado==="Baja"?"mute":"ok")+'</td></tr>').join("")+'</tbody></table></div>'
     :'<div class="none">Ningún vehículo coincide.</div>')+'</section>';
 };
 VIEWS.choferes=function(){
@@ -2913,7 +2925,7 @@ VIEWS.ordenes=function(){
     pc.sPend.forEach(p=>{const late=p.fecha<f;L+='<article class="lc ch-sc"><div class="ic">'+IC.store+'</div><button class="t" data-act="prog-desp" data-id="'+p.id+'">'+chBadge({canal:"Sucursales"})+esc(sucT(p.sucursalId))+'</button><div class="a">'+(late?chip("No cumplido · "+fDL(p.fecha),"bad"):chip("Hoy","info"))+'<button class="btn sm w" data-act="prog-desp" data-id="'+p.id+'">'+IC.truck+'Emitir orden</button>'+dots([{a:"prog-susp",id:p.id,i:"pause",t:"Suspender envío",w:1},{a:"prog-del",id:p.id,i:"x",t:"Quitar del programa",dng:1,w:1}])+'</div><div class="m"><span class="tag sc">Sucursal</span>'+(p.rubro?'<span>'+esc(p.rubro)+'</span>':"")+'<span>programada '+fDL(p.fecha)+'</span></div></article>'});
     L+='</div>'}
   L+='</div>';
-  const vv=[];S.camiones.filter(c=>c.estado!=="Baja").forEach(c=>{[["vtvVence","VTV"],["seguroVence","Seguro"]].forEach(([k,l])=>{if(c[k]&&daysTo(c[k])<=30)vv.push({d:c[k],t:plate(c.patente)+" "+l,act:"edit-cam",id:c.id})})});
+  const vv=[];S.camiones.filter(c=>c.estado!=="Baja").forEach(c=>{camVencs(c).forEach(([d,l])=>{if(daysTo(d)<=30)vv.push({d,t:plate(c.patente)+" "+l,act:"edit-cam",id:c.id})})});
   S.choferes.filter(isActive).forEach(c=>{if(c.licenciaVence&&daysTo(c.licenciaVence)<=30)vv.push({d:c.licenciaVence,t:esc(c.nombre)+" · licencia",act:"edit-cho",id:c.id})});vv.sort((a,b)=>a.d.localeCompare(b.d));
   let R='<div class="rail"><section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-log)"></span>Cómo sigue</h2></div><div class="pnb mu" style="font-size:13px;line-height:1.55">1 · Emitís la orden de carga: queda acá, <b>esperando hoja de ruta</b>.<br>2 · Cuando quieras, tildás una o varias y <b>Emitir hoja de ruta</b>: pasan a Hojas de ruta.<br>3 · En la hoja cargás guías o facturas, <b>Grabar</b> y <b>Pasar a Viajes</b>.<br>4 · En <b>Viajes</b> marcás la salida y el regreso.</div></section>';
   if(vv.length)R+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--bad)"></span>Vencimientos</h2></div><div class="list">'+vv.slice(0,6).map(v=>{const d=daysTo(v.d);return'<div class="li" data-act="'+v.act+'" data-id="'+v.id+'" style="cursor:pointer"><div class="t">'+v.t+'</div><div class="r">'+chip(d<0?"Vencido":d===0?"Vence hoy":"En "+d+" días",d<0?"bad":"warn")+'</div></div>'}).join("")+'</div></section>';
@@ -3658,7 +3670,7 @@ function camDispo(t){
   return S.camiones.filter(c=>c.estado!=="Baja").sort((a,b)=>String(a.patente).localeCompare(String(b.patente))).map(c=>{
     const usa=s=>actSal(s)&&(s.camionId===c.id||s.acopladoId===c.id);
     const enV=S.salidas.find(s=>usa(s)&&s.estado==="En ruta"&&s.fecha<t),asig=S.salidas.filter(s=>usa(s)&&s.fecha===t&&s.estado!=="Anulada");
-    const venc=[c.vtvVence&&c.vtvVence<t?"VTV vencida "+fD(c.vtvVence):"",c.seguroVence&&c.seguroVence<t?"seguro vencido "+fD(c.seguroVence):""].filter(Boolean);
+    const venc=aptCam(c,t).bad;
     let st="ok",txt="Disponible";
     if(c.estado==="En taller"){st="taller";txt="En taller"}
     else if(venc.length){st="venc";txt=venc.join(" · ")}
@@ -4074,7 +4086,7 @@ async function cliSave(k,fields,zid){
 async function cliDelete(k){const cur=cliGet(k);if(!cur)return;const old=S.cz.find(d=>d.id===cur._z);const oc=Object.assign({},old.c);delete oc[k];await C("cz").doc(old.id).set({zonaId:old.zonaId||old.id,c:oc})}
 
 /* ================= formularios de maestros ================= */
-const camOpts=(acop)=>S.camiones.filter(c=>c.estado!=="Baja"&&(acop?isAcop(c):!isAcop(c))).sort((a,b)=>String(a.patente).localeCompare(String(b.patente))).map(c=>[c.id,c.patente+" · "+(c.modelo||c.tipo||"")+(c.estado==="En taller"?" (en taller)":"")]);
+const camOpts=(acop)=>S.camiones.filter(c=>c.estado!=="Baja"&&(acop?isAcop(c):!isAcop(c))).sort((a,b)=>String(a.patente).localeCompare(String(b.patente))).map(c=>{const b=aptCam(c).bad;return[c.id,c.patente+" · "+(c.modelo||c.tipo||"")+(c.estado==="En taller"?" (en taller)":"")+(b.length?" ⚠ "+b.join(", "):"")]});
 const perOpts=(want)=>S.choferes.filter(c=>isActive(c)&&(!want||want.includes(c.puesto||"Chofer"))).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre))).map(c=>[c.id,c.nombre+(c.legajo?" · "+c.legajo:"")]);
 function formCam(c){
   openForm({title:c?(isAcop(c)?"Acoplado ":"Camión ")+c.patente:"Nuevo vehículo",color:"c-log",values:c||{estado:"Disponible",tipo:"Camión"},meta:metaOf(c),ok:"Vehículo guardado",
@@ -4890,6 +4902,7 @@ function crearDownloads(){return{save:async({filename,data})=>{
 /* ================= arranque ================= */
 (async()=>{
   downloads=crearDownloads();
+  cargarAptitud();setInterval(cargarAptitud,5*60e3);
   try{db=await conectarFirebase();uid=(firebase.auth().currentUser||{}).uid||null}catch(e){console.error("Error conectando Firebase:",e);db=null}
   document.body.classList.toggle("ro",!canWrite);
   if(!db){ready=true;render();return}
