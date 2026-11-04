@@ -1111,6 +1111,28 @@ async function trazarRutaPlanificada(puntos) {
   return null;
 }
 
+/** Ruta óptima por calle (OSRM) para las mismas paradas: sale del depósito, pasa por todas y vuelve.
+ *  Solo sirve de referencia: no cambia el orden que armó Logística.
+ *  Devuelve { orden: [clienteId], km, trazado } o null si no se pudo. */
+async function calcularRutaOptima(deposito, paradas) {
+  const conPos = paradas.filter((p) => p.lat != null);
+  if (!deposito || deposito.lat == null || !conPos.length || conPos.length > 90) return null;
+  try {
+    const coords = [deposito, ...conPos].map((p) => `${p.lng},${p.lat}`).join(";");
+    const resp = await fetch(`https://router.project-osrm.org/trip/v1/driving/${coords}?source=first&roundtrip=true&overview=full&geometries=polyline`);
+    const datos = await resp.json();
+    if (datos.code !== "Ok" || !datos.trips || !datos.trips[0]) return null;
+    // waypoint_index = posición de cada punto dentro del recorrido (el 0 es el depósito)
+    const orden = datos.waypoints.slice(1)
+      .map((w, i) => ({ id: conPos[i].clienteId, pos: w.waypoint_index }))
+      .sort((a, b) => a.pos - b.pos)
+      .map((x) => x.id);
+    return { orden, km: Math.round((datos.trips[0].distance / 1000) * 10) / 10, trazado: datos.trips[0].geometry };
+  } catch (e) {
+    return null;
+  }
+}
+
 /** Distancia (km) de un punto a la línea; proyección plana local, alcanza para distancias de ciudad. */
 function distanciaALineaKm(p, linea) {
   if (!linea.length) return Infinity;
@@ -1190,7 +1212,7 @@ function horaCorta(iso) {
 }
 
 /** Mapa de una ruta: trazado planificado (azul punteado), recorrido real (verde), salidas de ruta (rojo). */
-function MapaSeguimiento({ plan, linea, analisis, vehiculo }) {
+function MapaSeguimiento({ plan, linea, lineaOptima = [], analisis, vehiculo }) {
   const contRef = useRef(null);
   const mapaRef = useRef(null);
   const capaRef = useRef(null);
@@ -1212,6 +1234,7 @@ function MapaSeguimiento({ plan, linea, analisis, vehiculo }) {
     if (!mapa) return;
     const capa = capaRef.current;
     capa.clearLayers();
+    if (lineaOptima.length > 1) L.polyline(lineaOptima.map((p) => [p.lat, p.lng]), { color: "#6B3FA0", weight: 5, opacity: 0.6, dashArray: "2 8" }).addTo(capa);
     if (linea.length > 1) L.polyline(linea.map((p) => [p.lat, p.lng]), { color: "#293B72", weight: 4, opacity: 0.55, dashArray: "8 8" }).addTo(capa);
     if (analisis.pts.length > 1) L.polyline(analisis.pts.map((p) => [p.lat, p.lng]), { color: "#1D7A5A", weight: 4 }).addTo(capa);
     analisis.salidas.forEach((s) => {
@@ -1248,7 +1271,7 @@ function MapaSeguimiento({ plan, linea, analisis, vehiculo }) {
         encuadradoRef.current = true;
       }
     }
-  }, [plan, linea, analisis, vehiculo]);
+  }, [plan, linea, lineaOptima, analisis, vehiculo]);
 
   if (!window.L) {
     return <p className="text-xs" style={{ color: "var(--slate)" }}>No se pudo cargar el mapa. Revisá la conexión y recargá la página.</p>;
@@ -1278,6 +1301,19 @@ function SeguimientoRutaCard({ db, zona, vehiculo, chofer }) {
       () => setPuntos([])
     );
   }, [db, patente, hoy]);
+
+  // Ruta óptima de referencia: viene guardada en el plan; las rutas finalizadas antes de que
+  // existiera se calculan acá, sin guardar nada.
+  const [optimoCalculado, setOptimoCalculado] = useState(null);
+  const [verOptima, setVerOptima] = useState(false);
+  useEffect(() => {
+    if (!plan || plan.optimo) return;
+    let vivo = true;
+    calcularRutaOptima(plan.deposito, plan.paradas).then((r) => { if (vivo) setOptimoCalculado(r); });
+    return () => { vivo = false; };
+  }, [plan]);
+  const optimo = (plan && plan.optimo) || optimoCalculado;
+  const lineaOptima = useMemo(() => (verOptima && optimo && optimo.trazado ? decodificarPolilinea(optimo.trazado) : []), [verOptima, optimo]);
 
   const linea = useMemo(() => (plan ? lineaPlanificada(plan) : []), [plan]);
   const analisis = useMemo(() => (plan ? analizarRecorrido(plan, puntos, linea) : null), [plan, puntos, linea]);
@@ -1353,26 +1389,44 @@ function SeguimientoRutaCard({ db, zona, vehiculo, chofer }) {
             : "Todavía no salió (no hay movimiento desde que se finalizó la ruta)"}
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mb-3 text-center">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-center">
         <div className="p-2 rounded-xl" style={{ background: "var(--paper)" }}>
           <p className="de-display font-bold">{visitadas}/{analisis.paradas.length}</p>
           <p className="text-[11px]" style={{ color: "var(--slate)" }}>paradas visitadas</p>
         </div>
         <div className="p-2 rounded-xl" style={{ background: "var(--paper)" }}>
           <p className="de-display font-bold">{plan.kmPlanificados ? formatKm(plan.kmPlanificados) : "—"}</p>
-          <p className="text-[11px]" style={{ color: "var(--slate)" }}>km planificados</p>
+          <p className="text-[11px]" style={{ color: "var(--slate)" }}>km ruta armada</p>
+        </div>
+        <div className="p-2 rounded-xl" style={{ background: "#EFE9FA" }}>
+          <p className="de-display font-bold" style={{ color: "#6B3FA0" }}>{optimo ? formatKm(optimo.km) : "…"}</p>
+          <p className="text-[11px]" style={{ color: "var(--slate)" }}>km ruta óptima</p>
         </div>
         <div className="p-2 rounded-xl" style={{ background: "var(--paper)" }}>
           <p className="de-display font-bold">{formatKm(analisis.kmReales)}</p>
-          <p className="text-[11px]" style={{ color: "var(--slate)" }}>km reales</p>
+          <p className="text-[11px]" style={{ color: "var(--slate)" }}>km reales (GPS)</p>
         </div>
       </div>
+      {optimo && plan.kmPlanificados > 0 && (
+        <p className="text-xs mb-3" style={{ color: "var(--slate)" }}>
+          {plan.kmPlanificados - optimo.km > 0.5
+            ? <>La ruta armada tiene <b>{formatKm(plan.kmPlanificados - optimo.km)} más</b> que la óptima (+{Math.round(((plan.kmPlanificados - optimo.km) / optimo.km) * 100)}%).</>
+            : "La ruta armada es prácticamente igual de corta que la óptima."}
+          {analisis.kmReales > 0 && <> Por GPS lleva recorridos {formatKm(analisis.kmReales)}.</>}
+          {" "}Solo sobre las paradas que tienen ubicación en el mapa.
+        </p>
+      )}
 
-      <MapaSeguimiento plan={plan} linea={linea} analisis={analisis} vehiculo={vehiculo} />
-      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[11px]" style={{ color: "var(--slate)" }}>
-        <span><span style={{ color: "#293B72" }}>┅</span> Ruta planificada</span>
+      <MapaSeguimiento plan={plan} linea={linea} lineaOptima={lineaOptima} analisis={analisis} vehiculo={vehiculo} />
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[11px]" style={{ color: "var(--slate)" }}>
+        <span><span style={{ color: "#293B72" }}>┅</span> Ruta armada</span>
         <span><span style={{ color: "#1D7A5A" }}>━</span> Recorrido real</span>
         <span><span style={{ color: "#C0392B" }}>━</span> Fuera de ruta</span>
+        {optimo && optimo.trazado && (
+          <label className="flex items-center gap-1 cursor-pointer font-semibold" style={{ color: "#6B3FA0" }}>
+            <input type="checkbox" checked={verOptima} onChange={(e) => setVerOptima(e.target.checked)} /> Mostrar ruta óptima
+          </label>
+        )}
         <span>● verde: visitada · ● ocre: fuera de orden · ● gris: falta</span>
       </div>
 
@@ -1391,10 +1445,16 @@ function SeguimientoRutaCard({ db, zona, vehiculo, chofer }) {
       )}
 
       <p className="de-display font-semibold text-sm mt-4 mb-2">Paradas</p>
+      <p className="text-[11px] mb-1" style={{ color: "var(--slate)" }}>Número de la ruta armada · <span style={{ color: "#6B3FA0" }}>(lugar en la ruta óptima)</span> · cuándo pasó el GPS</p>
       <div className="space-y-1">
         {analisis.paradas.map((p) => (
           <div key={p.clienteId || p.nroPlan} className="flex items-center justify-between gap-2 text-xs py-1">
-            <span className="truncate">{p.nroPlan}. {p.nombre}</span>
+            <span className="truncate">
+              {p.nroPlan}. {p.nombre}
+              {optimo && optimo.orden.includes(p.clienteId) && (
+                <span className="font-semibold" style={{ color: "#6B3FA0" }}> ({optimo.orden.indexOf(p.clienteId) + 1}°)</span>
+              )}
+            </span>
             <span className="shrink-0 font-semibold" style={{ color: p.visitadaEn ? (p.fueraDeOrden ? "var(--amber)" : "var(--teal)") : "var(--slate)" }}>
               {p.visitadaEn ? `${horaCorta(p.visitadaEn)}${p.fueraDeOrden ? ` · hecha ${p.nroReal}°` : ""}` : p.lat == null ? "sin ubicación" : "falta"}
             </span>
@@ -1774,6 +1834,7 @@ function AdminPanel({ db, choferes, setChoferes, zonas, setZonas, facturas, setF
     { id: "combustible", label: "Combustible", icon: Fuel, desc: "Cargas registradas" },
     { id: "costos", label: "Costos y rendimiento", icon: Calculator, desc: "Costo del viaje por día y tipo de rendimiento" },
     { id: "historial", label: "Historial", icon: Clock, desc: "Días cerrados" },
+    { id: "informes", label: "Informes", icon: ClipboardList, desc: "Km, costos, clientes, rutas vs. GPS · a Excel" },
   ];
 
   const seccionActual = secciones.find((s) => s.id === tab);
@@ -1909,6 +1970,7 @@ function AdminContenido({ t, db, choferes, setChoferes, zonas, setZonas, factura
       {t === "combustible" && <CombustibleTab combustible={combustible} choferes={choferes} vehiculos={vehiculos} />}
       {t === "historial" && <HistorialTab db={db} historialDias={historialDias} />}
       {t === "costos" && <CostosTab db={db} facturas={facturas} combustible={combustible} historialDias={historialDias} />}
+      {t === "informes" && <InformesTab db={db} facturas={facturas} zonas={zonas} choferes={choferes} combustible={combustible} historialDias={historialDias} vehiculos={vehiculos} />}
     </>
   );
 }
@@ -3060,12 +3122,17 @@ function RutaTab({ db, choferes = [], vehiculos = [], zonas, setZonas, facturas,
     const paradas = lista.map((c) => ({ clienteId: c.id, nombre: c.nombre, lat: c.lat ?? null, lng: c.lng ?? null }));
     const conPos = paradas.filter((p) => p.lat != null);
     const trazo = await trazarRutaPlanificada(dep ? [dep, ...conPos, dep] : conPos);
+    const optimo = await calcularRutaOptima(dep, paradas); // referencia para comparar, no cambia el orden
+    const plan = {
+      zonaId, zonaNombre: zona?.nombre || "", patente, choferId: zona?.choferId || null, fecha: fechaLocalHoy(), confirmadaEn, deposito: dep, paradas,
+      trazado: trazo ? trazo.trazado : null,
+      kmPlanificados: trazo ? Math.round(trazo.km * 10) / 10 : (zona?.kmEstimados || null),
+      optimo,
+    };
     try {
-      await db.collection("rutas_planificadas").doc(zonaId).set({
-        zonaId, zonaNombre: zona?.nombre || "", patente, confirmadaEn, deposito: dep, paradas,
-        trazado: trazo ? trazo.trazado : null,
-        kmPlanificados: trazo ? Math.round(trazo.km * 10) / 10 : (zona?.kmEstimados || null),
-      });
+      await db.collection("rutas_planificadas").doc(zonaId).set(plan);
+      // Copia por día para los informes (si se finaliza de nuevo el mismo día, se reemplaza).
+      await db.collection("rutas_historial").doc(`${zonaId}_${plan.fecha}`).set(plan);
     } catch (e) {
       console.error("Error guardando la ruta planificada:", e);
       setErrorRuta("No se pudo guardar la ruta para el seguimiento satelital. Probá de nuevo.");
@@ -4173,6 +4240,481 @@ function calcularCostoDia(d, v, base) {
     litrosConsumidos,
     km,
   };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Informes                                                            */
+/* ------------------------------------------------------------------ */
+
+function fechaInforme(f) {
+  return f ? f.split("-").reverse().join("/") : "";
+}
+
+function sumarDias(f, n) {
+  const d = new Date(f + "T00:00:00");
+  d.setDate(d.getDate() + n);
+  return fechaLocalDe(d.toISOString());
+}
+
+/** Tabla simple con desplazamiento horizontal en pantallas chicas. */
+function TablaInforme({ columnas, filas, vacio = "Sin datos en este período." }) {
+  if (!filas.length) return <p className="text-xs" style={{ color: "var(--slate)" }}>{vacio}</p>;
+  return (
+    <div className="overflow-x-auto de-scrollbar -mx-1 px-1">
+      <table className="w-full text-xs" style={{ borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            {columnas.map((c) => (
+              <th key={c.label} className={`py-2 px-2 font-semibold whitespace-nowrap ${c.num ? "text-right" : "text-left"}`}
+                style={{ color: "var(--slate)", borderBottom: "1px solid var(--line)" }}>{c.label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {filas.map((f, i) => (
+            <tr key={i} style={{ background: i % 2 ? "var(--paper)" : "transparent" }}>
+              {columnas.map((c) => (
+                <td key={c.label} className={`py-1.5 px-2 ${c.num ? "text-right de-mono whitespace-nowrap" : ""}`}>{c.ver ? c.ver(f) : f[c.campo]}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SeccionInforme({ titulo, subtitulo, children }) {
+  return (
+    <Card>
+      <p className="de-display font-semibold">{titulo}</p>
+      {subtitulo && <p className="text-xs mb-3" style={{ color: "var(--slate)" }}>{subtitulo}</p>}
+      <div className={subtitulo ? "" : "mt-3"}>{children}</div>
+    </Card>
+  );
+}
+
+const PERIODOS_INFORME = [
+  { id: "hoy", label: "Hoy" },
+  { id: "semana", label: "Últimos 7 días" },
+  { id: "mes", label: "Este mes" },
+  { id: "mesAnterior", label: "Mes anterior" },
+  { id: "elegir", label: "Elegir fechas" },
+];
+
+function InformesTab({ db, facturas, zonas, choferes, combustible, historialDias, vehiculos }) {
+  const hoy = fechaLocalHoy();
+  const [registros] = useDbListDoc(db, "meta/costos");
+  const [ubicaciones, setUbicaciones] = useState({});
+  const [rutas, setRutas] = useState(null); // rutas finalizadas (con su plan y la óptima)
+  const [recorridos, setRecorridos] = useState({}); // "PATENTE_fecha" -> puntos GPS
+  const [pedidosWeb, setPedidosWeb] = useState(null);
+  const [periodo, setPeriodo] = useState("mes");
+  const [desdeElegido, setDesdeElegido] = useState(sumarDias(hoy, -30));
+  const [hastaElegido, setHastaElegido] = useState(hoy);
+
+  useEffect(() => {
+    if (!db) return;
+    const unsub = db.collection("ubicaciones").onSnapshot(
+      (snap) => { const n = {}; snap.docs.forEach((d) => { n[d.id] = d.data(); }); setUbicaciones(n); },
+      () => {}
+    );
+    return () => unsub();
+  }, [db]);
+
+  // Estos datos se leen una sola vez al abrir Informes (no en vivo), para no gastar lecturas.
+  useEffect(() => {
+    if (!db) return;
+    Promise.all([
+      db.collection("rutas_historial").get().catch(() => null),
+      db.collection("rutas_planificadas").get().catch(() => null),
+    ]).then(([hist, actuales]) => {
+      const porClave = {};
+      const agregar = (r) => {
+        const fecha = r.fecha || fechaLocalDe(r.confirmadaEn);
+        if (fecha && r.patente) porClave[`${r.zonaId}_${fecha}`] = { ...r, fecha };
+      };
+      if (actuales) actuales.docs.forEach((d) => agregar(d.data()));
+      if (hist) hist.docs.forEach((d) => agregar(d.data())); // la copia del día manda
+      setRutas(Object.values(porClave));
+    });
+    db.collection("pedidos_web").get()
+      .then((s) => setPedidosWeb(s.docs.map((d) => ({ id: d.id, ...d.data() }))))
+      .catch(() => setPedidosWeb([]));
+  }, [db]);
+
+  const rango = useMemo(() => {
+    if (periodo === "hoy") return { desde: hoy, hasta: hoy };
+    if (periodo === "semana") return { desde: sumarDias(hoy, -6), hasta: hoy };
+    if (periodo === "mes") return { desde: hoy.slice(0, 8) + "01", hasta: hoy };
+    if (periodo === "mesAnterior") {
+      const primeroEste = hoy.slice(0, 8) + "01";
+      const ultimoAnterior = sumarDias(primeroEste, -1);
+      return { desde: ultimoAnterior.slice(0, 8) + "01", hasta: ultimoAnterior };
+    }
+    return desdeElegido <= hastaElegido ? { desde: desdeElegido, hasta: hastaElegido } : { desde: hastaElegido, hasta: desdeElegido };
+  }, [periodo, hoy, desdeElegido, hastaElegido]);
+  const enRango = (f) => f && f >= rango.desde && f <= rango.hasta;
+
+  const config = registros.find((r) => r.id === "config") || {};
+  const base = config.base || "entregado";
+  const costosGuardados = useMemo(() => {
+    const m = {};
+    registros.forEach((r) => { if (r.id !== "config" && r.fecha) m[r.fecha] = r; });
+    return m;
+  }, [registros]);
+
+  // Días del período con su costo calculado igual que en "Costos y rendimiento".
+  const dias = useMemo(() => {
+    return datosOperativosPorDia({ historialDias, facturas, combustible, ubicaciones, fechasExtra: Object.keys(costosGuardados), hoy })
+      .filter((d) => enRango(d.fecha) && (d.cantFacturas || d.km || d.litros || costosGuardados[d.fecha]))
+      .map((d) => ({ ...d, costo: calcularCostoDia(d, valoresCostoDia(d.fecha, costosGuardados, config), base) }))
+      .sort((a, b) => a.fecha.localeCompare(b.fecha));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historialDias, facturas, combustible, ubicaciones, costosGuardados, rango, hoy, base]);
+
+  // Rutas del período: se trae el recorrido GPS de cada una para compararlo con lo armado.
+  const rutasPeriodo = useMemo(() => (rutas || []).filter((r) => enRango(r.fecha)).sort((a, b) => a.fecha.localeCompare(b.fecha)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rutas, rango]);
+  useEffect(() => {
+    if (!db) return;
+    const faltan = rutasPeriodo.map((r) => `${normalizarPatente(r.patente)}_${r.fecha}`).filter((k) => !(k in recorridos)).slice(0, 62);
+    if (!faltan.length) return;
+    Promise.all(faltan.map((k) => db.doc(`flota_recorridos/${k}`).get().then((s) => [k, (s.exists && s.data().puntos) || []]).catch(() => [k, []])))
+      .then((pares) => setRecorridos((prev) => ({ ...prev, ...Object.fromEntries(pares) })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [db, rutasPeriodo]);
+
+  // Rutas finalizadas antes de que se guardara la óptima: se calcula acá, sin guardarla.
+  const [optimas, setOptimas] = useState({});
+  useEffect(() => {
+    rutasPeriodo.filter((r) => !r.optimo && !(`${r.zonaId}_${r.fecha}` in optimas)).slice(0, 10).forEach((r) => {
+      const clave = `${r.zonaId}_${r.fecha}`;
+      setOptimas((prev) => ({ ...prev, [clave]: null }));
+      calcularRutaOptima(r.deposito, r.paradas).then((o) => setOptimas((prev) => ({ ...prev, [clave]: o })));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rutasPeriodo]);
+
+  const filasRutas = rutasPeriodo.map((r) => {
+    const optimo = r.optimo || optimas[`${r.zonaId}_${r.fecha}`];
+    const puntos = recorridos[`${normalizarPatente(r.patente)}_${r.fecha}`];
+    const a = puntos ? analizarRecorrido(r, puntos, lineaPlanificada(r)) : null;
+    const chofer = choferes.find((c) => c.id === r.choferId);
+    return {
+      fecha: r.fecha,
+      zona: r.zonaNombre || "",
+      patente: normalizarPatente(r.patente),
+      chofer: chofer ? chofer.nombre : "",
+      paradas: r.paradas.length,
+      conUbicacion: r.paradas.filter((p) => p.lat != null).length,
+      visitadas: a ? a.paradas.filter((p) => p.visitadaEn).length : null,
+      kmArmada: r.kmPlanificados || 0,
+      kmOptima: optimo ? optimo.km : null,
+      kmReal: a ? Math.round(a.kmReales * 10) / 10 : null,
+      salidas: a ? a.salidas.length : null,
+      kmMaxDesvio: a && a.salidas.length ? Math.max(...a.salidas.map((s) => s.maxKm)) : 0,
+      detenciones: a ? a.detenciones.length : null,
+      minDetenido: a ? a.detenciones.reduce((s, d) => s + d.minutos, 0) : null,
+      fueraDeOrden: a ? a.paradas.filter((p) => p.fueraDeOrden).length : null,
+    };
+  });
+
+  // Totales del período.
+  const t = dias.reduce((acc, d) => {
+    acc.facturas += d.cantFacturas; acc.entregadas += d.cantEntregadas;
+    acc.importeTotal += d.importeTotal; acc.importeEntregado += d.importeEntregado;
+    acc.km += d.costo.km; acc.litros += d.litros; acc.combustibleCargado += d.combustible;
+    acc.costo += d.costo.costoTotal; acc.utilidad += d.costo.utilidad;
+    if (d.cantFacturas) acc.diasTrabajados += 1;
+    return acc;
+  }, { facturas: 0, entregadas: 0, importeTotal: 0, importeEntregado: 0, km: 0, litros: 0, combustibleCargado: 0, costo: 0, utilidad: 0, diasTrabajados: 0 });
+
+  // Por zona y por cliente, a partir de las facturas de cada día.
+  const nombreZona = {};
+  zonas.forEach((z) => { nombreZona[z.id] = z.nombre; });
+  dias.forEach((d) => Object.assign(nombreZona, d.nombresZona));
+  const porZona = {};
+  const porCliente = {};
+  dias.forEach((d) => {
+    d.facturasLista.forEach((f) => {
+      const zn = nombreZona[f.zonaId] || "Sin zona";
+      const z = (porZona[zn] = porZona[zn] || { zona: zn, facturas: 0, entregadas: 0, importe: 0, importeEntregado: 0, dias: new Set() });
+      z.facturas += 1; z.importe += parseImporte(f.importe); z.dias.add(d.fecha);
+      const clave = (f.clienteCodigo || f.cliente || "Sin nombre").trim().toLowerCase();
+      const c = (porCliente[clave] = porCliente[clave] || { cliente: f.cliente || "Sin nombre", codigo: f.clienteCodigo || "", zona: zn, facturas: 0, entregadas: 0, pendientes: 0, importeEntregado: 0, visitas: new Set(), ultima: "" });
+      c.facturas += 1;
+      if (f.estado === "entregado") {
+        z.entregadas += 1; z.importeEntregado += parseImporte(f.importe);
+        c.entregadas += 1; c.importeEntregado += parseImporte(f.importe); c.visitas.add(d.fecha);
+        if (d.fecha > c.ultima) c.ultima = d.fecha;
+      } else {
+        c.pendientes += 1;
+      }
+    });
+  });
+  // Km por zona: los que se informaron al cerrar el día.
+  const kmZona = {};
+  historialDias.forEach((h) => { if (enRango(h.fecha) && h.zonaNombre) kmZona[h.zonaNombre] = (kmZona[h.zonaNombre] || 0) + (h.kmRecorridos || 0); });
+  const filasZona = Object.values(porZona).map((z) => ({ ...z, dias: z.dias.size, km: Math.round((kmZona[z.zona] || 0) * 10) / 10 }))
+    .sort((a, b) => b.importeEntregado - a.importeEntregado);
+  const filasClientes = Object.values(porCliente).map((c) => ({ ...c, visitas: c.visitas.size }))
+    .sort((a, b) => b.importeEntregado - a.importeEntregado);
+
+  // Km por chofer (celular) y días que salió.
+  const porChofer = {};
+  dias.forEach((d) => Object.entries(d.kmPorChofer).forEach(([nombre, km]) => {
+    const c = (porChofer[nombre] = porChofer[nombre] || { chofer: nombre, km: 0, dias: new Set() });
+    c.km += km; c.dias.add(d.fecha);
+  }));
+  const filasChofer = Object.values(porChofer).map((c) => ({ chofer: c.chofer, dias: c.dias.size, km: Math.round(c.km * 10) / 10 })).sort((a, b) => b.km - a.km);
+
+  // Combustible cargado por vehículo.
+  const porVehiculo = {};
+  combustible.forEach((c) => {
+    const f = fechaLocalDe(c.fecha);
+    if (!enRango(f)) return;
+    const v = vehiculos.find((x) => x.id === c.vehiculoId);
+    const pat = v ? normalizarPatente(v.patente) : "Sin patente";
+    const x = (porVehiculo[pat] = porVehiculo[pat] || { patente: pat, cargas: 0, litros: 0, importe: 0 });
+    x.cargas += 1;
+    x.litros += parseFloat(String(c.litros).replace(",", ".")) || 0;
+    x.importe += parseImporte(c.importe);
+  });
+  const filasCombustible = Object.values(porVehiculo).sort((a, b) => b.litros - a.litros);
+
+  // Pedidos de la tienda: por el día de entrega.
+  const pedidosPeriodo = (pedidosWeb || []).filter((p) => enRango(p.fechaEntrega || fechaLocalDe(p.importadoEn)));
+  const pw = {
+    cantidad: pedidosPeriodo.length,
+    importe: pedidosPeriodo.reduce((s, p) => s + (Number(p.importe) || 0), 0),
+    pasados: pedidosPeriodo.filter((p) => p.estado === "pasado").length,
+  };
+
+  const pctEntrega = t.facturas ? t.entregadas / t.facturas : 0;
+  const rutasConGps = filasRutas.filter((r) => r.kmReal != null);
+  const kmArmadaTot = filasRutas.reduce((s, r) => s + (r.kmArmada || 0), 0);
+  const kmOptimaTot = filasRutas.reduce((s, r) => s + (r.kmOptima || 0), 0);
+
+  const exportarExcel = () => {
+    const wb = XLSX.utils.book_new();
+    const hoja = (nombre, filas) => XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filas.length ? filas : [{ "": "Sin datos" }]), nombre);
+    const n2 = (x) => (x == null ? "" : Math.round(x * 100) / 100);
+    hoja("Resumen", [
+      { Dato: "Período", Valor: `${fechaInforme(rango.desde)} al ${fechaInforme(rango.hasta)}` },
+      { Dato: "Días trabajados", Valor: t.diasTrabajados },
+      { Dato: "Facturas cargadas", Valor: t.facturas },
+      { Dato: "Facturas entregadas", Valor: t.entregadas },
+      { Dato: "% entregado", Valor: n2(pctEntrega * 100) },
+      { Dato: "Importe cargado", Valor: n2(t.importeTotal) },
+      { Dato: "Importe entregado", Valor: n2(t.importeEntregado) },
+      { Dato: "Clientes visitados", Valor: filasClientes.filter((c) => c.visitas).length },
+      { Dato: "Km recorridos", Valor: n2(t.km) },
+      { Dato: "Litros cargados", Valor: n2(t.litros) },
+      { Dato: "Costo total de los viajes", Valor: n2(t.costo) },
+      { Dato: "Costo por km", Valor: t.km ? n2(t.costo / t.km) : "" },
+      { Dato: "Costo por entrega", Valor: t.entregadas ? n2(t.costo / t.entregadas) : "" },
+      { Dato: "Utilidad neta", Valor: n2(t.utilidad) },
+      { Dato: "Rutas controladas por GPS", Valor: rutasConGps.length },
+      { Dato: "Km rutas armadas", Valor: n2(kmArmadaTot) },
+      { Dato: "Km rutas óptimas", Valor: n2(kmOptimaTot) },
+      { Dato: "Pedidos de la tienda", Valor: pw.cantidad },
+      { Dato: "Mensajes enviados", Valor: "Todavía no se mandan mensajes desde el portal" },
+    ]);
+    hoja("Por día", dias.map((d) => ({
+      Fecha: fechaInforme(d.fecha), Zonas: d.zonas.join(", "), Facturas: d.cantFacturas, Entregadas: d.cantEntregadas,
+      "Importe cargado": n2(d.importeTotal), "Importe entregado": n2(d.importeEntregado), Km: n2(d.costo.km), Litros: n2(d.litros),
+      "Costo combustible": n2(d.costo.combustible), "Costo total": n2(d.costo.costoTotal), Utilidad: n2(d.costo.utilidad),
+    })));
+    hoja("Rutas vs GPS", filasRutas.map((r) => ({
+      Fecha: fechaInforme(r.fecha), Zona: r.zona, Patente: r.patente, Chofer: r.chofer, Paradas: r.paradas, "Con ubicación": r.conUbicacion,
+      "Visitadas (GPS)": r.visitadas ?? "", "Km ruta armada": n2(r.kmArmada), "Km ruta óptima": n2(r.kmOptima), "Km reales (GPS)": n2(r.kmReal),
+      "Salidas de ruta": r.salidas ?? "", "Máx. desvío km": n2(r.kmMaxDesvio), "Detenciones fuera de parada": r.detenciones ?? "",
+      "Minutos detenido": r.minDetenido ?? "", "Paradas fuera de orden": r.fueraDeOrden ?? "",
+    })));
+    hoja("Por zona", filasZona.map((z) => ({ Zona: z.zona, Días: z.dias, Facturas: z.facturas, Entregadas: z.entregadas, "Importe entregado": n2(z.importeEntregado), Km: n2(z.km) })));
+    hoja("Por chofer", filasChofer.map((c) => ({ Chofer: c.chofer, Días: c.dias, Km: n2(c.km) })));
+    hoja("Clientes", filasClientes.map((c) => ({
+      Cliente: c.cliente, Código: c.codigo, Zona: c.zona, Visitas: c.visitas, "Facturas entregadas": c.entregadas,
+      "Facturas pendientes": c.pendientes, "Importe entregado": n2(c.importeEntregado), "Última visita": fechaInforme(c.ultima),
+    })));
+    hoja("Combustible", filasCombustible.map((v) => ({ Patente: v.patente, Cargas: v.cargas, Litros: n2(v.litros), Importe: n2(v.importe) })));
+    hoja("Pedidos web", pedidosPeriodo.map((p) => ({
+      Pedido: p.numero, Cliente: p.cliente, Entrega: fechaInforme(p.fechaEntrega), Importe: n2(Number(p.importe) || 0),
+      Unidades: p.unidades, Estado: p.estado === "pasado" ? "En ruta" : "Sin pasar", Factura: p.factura || "",
+    })));
+    XLSX.writeFile(wb, `Informe ${rango.desde} a ${rango.hasta}.xlsx`);
+  };
+
+  const Kpi = ({ titulo, valor, detalle }) => (
+    <div className="p-3 rounded-xl" style={{ background: "var(--paper)" }}>
+      <p className="text-[11px] font-semibold uppercase" style={{ color: "var(--slate)" }}>{titulo}</p>
+      <p className="de-display font-bold text-lg">{valor}</p>
+      {detalle && <p className="text-[11px]" style={{ color: "var(--slate)" }}>{detalle}</p>}
+    </div>
+  );
+  const km = (x) => (x == null ? "—" : formatKm(x));
+
+  return (
+    <div className="space-y-5">
+      <Card>
+        <p className="de-display font-semibold mb-1">Informes</p>
+        <p className="text-sm mb-3" style={{ color: "var(--slate)" }}>Elegí el período. Todo lo de abajo se calcula para esas fechas y se puede bajar a Excel.</p>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {PERIODOS_INFORME.map((p) => (
+            <button key={p.id} onClick={() => setPeriodo(p.id)} className="de-focus text-xs font-semibold px-3 py-2 rounded-xl"
+              style={periodo === p.id ? { background: "var(--route)", color: "white" } : { background: "var(--paper)", color: "var(--ink)" }}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+        {periodo === "elegir" && (
+          <div className="flex flex-wrap items-center gap-2 mb-3 text-sm">
+            <span>Desde</span>
+            <input type="date" value={desdeElegido} max={hoy} onChange={(e) => setDesdeElegido(e.target.value)} className="de-focus rounded-lg px-2 py-1.5 border" style={{ borderColor: "var(--line)" }} />
+            <span>hasta</span>
+            <input type="date" value={hastaElegido} max={hoy} onChange={(e) => setHastaElegido(e.target.value)} className="de-focus rounded-lg px-2 py-1.5 border" style={{ borderColor: "var(--line)" }} />
+          </div>
+        )}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs" style={{ color: "var(--slate)" }}>Del {fechaInforme(rango.desde)} al {fechaInforme(rango.hasta)}</p>
+          <button onClick={exportarExcel} className="de-btn-primary de-focus px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5">
+            <Package size={15} /> Bajar todo a Excel
+          </button>
+        </div>
+      </Card>
+
+      <SeccionInforme titulo="Resumen del período">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <Kpi titulo="Días trabajados" valor={t.diasTrabajados} />
+          <Kpi titulo="Facturas entregadas" valor={`${t.entregadas}/${t.facturas}`} detalle={`${Math.round(pctEntrega * 100)}% entregado`} />
+          <Kpi titulo="Importe entregado" valor={formatMoney(t.importeEntregado)} detalle={`de ${formatMoney(t.importeTotal)} cargado`} />
+          <Kpi titulo="Clientes visitados" valor={filasClientes.filter((c) => c.visitas).length} detalle={`${filasClientes.filter((c) => !c.visitas).length} sin visitar`} />
+          <Kpi titulo="Km recorridos" valor={formatKm(t.km)} detalle={t.diasTrabajados ? `${formatKm(t.km / t.diasTrabajados)} por día` : null} />
+          <Kpi titulo="Costo de los viajes" valor={formatMoney(t.costo)} detalle={t.km ? `${formatMoney(t.costo / t.km)} por km` : null} />
+          <Kpi titulo="Costo por entrega" valor={t.entregadas ? formatMoney(t.costo / t.entregadas) : "—"} />
+          <Kpi titulo="Utilidad neta" valor={formatMoney(t.utilidad)} detalle={t.importeEntregado ? `${formatPct(t.utilidad / (base === "total" ? t.importeTotal : t.importeEntregado))} de margen` : null} />
+        </div>
+      </SeccionInforme>
+
+      <SeccionInforme titulo="Rutas: armada vs. óptima vs. GPS"
+        subtitulo="Cada ruta finalizada con camioneta. Compara los km de la ruta armada a mano, la ruta óptima que propone el sistema y lo que marcó el satelital, con las salidas de ruta y detenciones.">
+        {rutas === null ? (
+          <div className="flex justify-center py-6"><Loader2 className="animate-spin" size={20} style={{ color: "var(--route)" }} /></div>
+        ) : (
+          <>
+            {filasRutas.length > 0 && kmOptimaTot > 0 && (
+              <p className="text-xs mb-3">
+                En el período, las rutas armadas suman <b>{formatKm(kmArmadaTot)}</b> y las óptimas <b>{formatKm(kmOptimaTot)}</b>
+                {kmArmadaTot > kmOptimaTot ? <> ({formatKm(kmArmadaTot - kmOptimaTot)} de más, +{Math.round(((kmArmadaTot - kmOptimaTot) / kmOptimaTot) * 100)}%)</> : null}.
+              </p>
+            )}
+            <TablaInforme
+              vacio="No hay rutas finalizadas con camioneta en este período."
+              filas={filasRutas}
+              columnas={[
+                { label: "Fecha", ver: (r) => fechaInforme(r.fecha) },
+                { label: "Zona", campo: "zona" },
+                { label: "Patente", ver: (r) => <span className="de-mono">{r.patente}</span> },
+                { label: "Visitadas", num: true, ver: (r) => r.visitadas == null ? "…" : `${r.visitadas}/${r.conUbicacion}` },
+                { label: "Km armada", num: true, ver: (r) => km(r.kmArmada) },
+                { label: "Km óptima", num: true, ver: (r) => km(r.kmOptima) },
+                { label: "Km GPS", num: true, ver: (r) => km(r.kmReal) },
+                { label: "Salidas de ruta", num: true, ver: (r) => r.salidas == null ? "…" : r.salidas ? `${r.salidas} (hasta ${formatKm(r.kmMaxDesvio)})` : "0" },
+                { label: "Detenciones", num: true, ver: (r) => r.detenciones == null ? "…" : r.detenciones ? `${r.detenciones} (${r.minDetenido} min)` : "0" },
+                { label: "Fuera de orden", num: true, ver: (r) => r.fueraDeOrden ?? "…" },
+              ]}
+            />
+          </>
+        )}
+      </SeccionInforme>
+
+      <SeccionInforme titulo="Por día">
+        <TablaInforme
+          filas={[...dias].reverse()}
+          columnas={[
+            { label: "Fecha", ver: (d) => fechaInforme(d.fecha) },
+            { label: "Entregadas", num: true, ver: (d) => `${d.cantEntregadas}/${d.cantFacturas}` },
+            { label: "Importe entregado", num: true, ver: (d) => formatMoney(d.importeEntregado) },
+            { label: "Km", num: true, ver: (d) => formatKm(d.costo.km) },
+            { label: "Costo", num: true, ver: (d) => formatMoney(d.costo.costoTotal) },
+            { label: "Utilidad", num: true, ver: (d) => formatMoney(d.costo.utilidad) },
+          ]}
+        />
+      </SeccionInforme>
+
+      <SeccionInforme titulo="Por zona">
+        <TablaInforme
+          filas={filasZona}
+          columnas={[
+            { label: "Zona", campo: "zona" },
+            { label: "Días", num: true, campo: "dias" },
+            { label: "Entregadas", num: true, ver: (z) => `${z.entregadas}/${z.facturas}` },
+            { label: "Importe entregado", num: true, ver: (z) => formatMoney(z.importeEntregado) },
+            { label: "Km", num: true, ver: (z) => z.km ? formatKm(z.km) : "—" },
+          ]}
+        />
+      </SeccionInforme>
+
+      <SeccionInforme titulo="Por chofer" subtitulo="Km medidos con el celular del chofer, informados al cerrar cada día.">
+        <TablaInforme
+          filas={filasChofer}
+          columnas={[
+            { label: "Chofer", campo: "chofer" },
+            { label: "Días", num: true, campo: "dias" },
+            { label: "Km", num: true, ver: (c) => formatKm(c.km) },
+          ]}
+        />
+      </SeccionInforme>
+
+      <SeccionInforme titulo="Clientes" subtitulo="Visitas = días en que se le entregó al menos una factura. Ordenados por importe entregado.">
+        <TablaInforme
+          filas={filasClientes.slice(0, 200)}
+          columnas={[
+            { label: "Cliente", campo: "cliente" },
+            { label: "Zona", campo: "zona" },
+            { label: "Visitas", num: true, campo: "visitas" },
+            { label: "Entregadas", num: true, campo: "entregadas" },
+            { label: "Pendientes", num: true, campo: "pendientes" },
+            { label: "Importe entregado", num: true, ver: (c) => formatMoney(c.importeEntregado) },
+            { label: "Última visita", ver: (c) => fechaInforme(c.ultima) || "—" },
+          ]}
+        />
+        {filasClientes.length > 200 && <p className="text-xs mt-2" style={{ color: "var(--slate)" }}>Se muestran 200 de {filasClientes.length}. En el Excel están todos.</p>}
+      </SeccionInforme>
+
+      <SeccionInforme titulo="Combustible por vehículo">
+        <TablaInforme
+          filas={filasCombustible}
+          columnas={[
+            { label: "Patente", ver: (v) => <span className="de-mono">{v.patente}</span> },
+            { label: "Cargas", num: true, campo: "cargas" },
+            { label: "Litros", num: true, ver: (v) => v.litros.toLocaleString("es-AR", { maximumFractionDigits: 1 }) },
+            { label: "Importe", num: true, ver: (v) => formatMoney(v.importe) },
+          ]}
+        />
+      </SeccionInforme>
+
+      <SeccionInforme titulo="Pedidos de la tienda">
+        {pedidosWeb === null ? (
+          <div className="flex justify-center py-4"><Loader2 className="animate-spin" size={18} style={{ color: "var(--route)" }} /></div>
+        ) : (
+          <div className="grid grid-cols-3 gap-2">
+            <Kpi titulo="Pedidos" valor={pw.cantidad} />
+            <Kpi titulo="Importe" valor={formatMoney(pw.importe)} />
+            <Kpi titulo="Pasados a ruta" valor={`${pw.pasados}/${pw.cantidad}`} />
+          </div>
+        )}
+      </SeccionInforme>
+
+      <SeccionInforme titulo="Mensajes a clientes">
+        <p className="text-xs" style={{ color: "var(--slate)" }}>
+          Todavía no se mandan mensajes desde el portal. Cuando activemos los avisos por WhatsApp o mail, acá van a aparecer los enviados y los que contestaron.
+        </p>
+      </SeccionInforme>
+    </div>
+  );
 }
 
 function BadgeRendimiento({ r }) {
