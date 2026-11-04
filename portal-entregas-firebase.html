@@ -367,13 +367,46 @@ function formatKm(km) {
   return (km || 0).toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " km";
 }
 
-/** Busca las coordenadas de una dirección (OpenStreetMap / Nominatim, limitado a Argentina). */
-async function geocodificarDireccion(domicilio, localidad) {
-  const query = [domicilio, localidad].filter(Boolean).join(", ");
-  if (!query) return null;
-  const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ar&q=${encodeURIComponent(query)}`);
-  const datos = await resp.json();
-  if (datos && datos[0]) return { lat: parseFloat(datos[0].lat), lng: parseFloat(datos[0].lon) };
+/* Zona de reparto: las direcciones se buscan solo cerca del depósito. Muchas vienen sin
+   localidad ("BOLIVAR 382") y, buscadas en todo el país, caían en Córdoba o Rosario. */
+let regionGeo = { lat: -26.82, lng: -65.21 }; // San Miguel de Tucumán hasta que se cargue el depósito
+const RADIO_GEO_KM = 80;
+const VERSION_GEO = 2; // clientes ubicados con la búsqueda limitada a la zona de reparto
+const CIUDAD_ZONA = "San Miguel de Tucumán";
+const PROVINCIA_ZONA = "Tucumán";
+
+function fijarRegionGeo(deposito) {
+  if (deposito && deposito.lat != null) regionGeo = { lat: deposito.lat, lng: deposito.lng };
+}
+
+/** Ubicación guardada que quedó lejos de la zona de reparto (de la búsqueda vieja, en todo el país). */
+function ubicacionDudosa(c) {
+  return c.lat != null && c.lng != null && distanciaKm(regionGeo, c) > RADIO_GEO_KM;
+}
+
+/** Busca las coordenadas de una dirección (OpenStreetMap / Nominatim) dentro de la zona de reparto.
+ *  enTodoElPais: para el depósito, que es lo que define la zona. */
+async function geocodificarDireccion(domicilio, localidad, enTodoElPais = false) {
+  const completa = [domicilio, localidad].filter(Boolean).join(", ").replace(/,\s*$/, "").trim();
+  if (!completa) return null;
+  // Si con la dirección completa no aparece, se prueba la calle sola (sin piso, depto, casa;
+  // la "localidad" a veces trae eso) agregando la ciudad y después la provincia de la zona.
+  const calle = String(domicilio || "").split(",")[0].replace(/\b(PISO|DPTO|DTO|DEPTO|DEPARTAMENTO|CASA|LOCAL|OFICINA|OF)\b.*$/i, "").trim();
+  const intentos = [...new Set([
+    completa,
+    ...(enTodoElPais || !calle ? [] : [`${calle}, ${CIUDAD_ZONA}`, `${calle}, ${PROVINCIA_ZONA}`]),
+  ].filter(Boolean))];
+  const { lat, lng } = regionGeo;
+  const caja = enTodoElPais ? "" : `&viewbox=${lng - 0.8},${lat + 0.7},${lng + 0.8},${lat - 0.7}&bounded=1`;
+  for (let i = 0; i < intentos.length; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, 1100)); // límite de Nominatim: 1 consulta por segundo
+    const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ar${caja}&q=${encodeURIComponent(intentos[i])}`);
+    const datos = await resp.json();
+    if (datos && datos[0]) {
+      const r = { lat: parseFloat(datos[0].lat), lng: parseFloat(datos[0].lon) };
+      if (enTodoElPais || distanciaKm(regionGeo, r) <= RADIO_GEO_KM) return r;
+    }
+  }
   return null;
 }
 
@@ -2892,7 +2925,7 @@ function RutaTab({ db, choferes = [], vehiculos = [], zonas, setZonas, facturas,
     setGuardandoDeposito(true);
     setErrorDeposito(null);
     try {
-      const r = await geocodificarDireccion(direccionDeposito.trim(), "");
+      const r = await geocodificarDireccion(direccionDeposito.trim(), "", true);
       if (r) {
         await setDeposito({ direccion: direccionDeposito.trim(), lat: r.lat, lng: r.lng });
         setEditandoDeposito(false);
@@ -2967,7 +3000,9 @@ function RutaTab({ db, choferes = [], vehiculos = [], zonas, setZonas, facturas,
 
   /** Geolocaliza los clientes de la lista que no tienen coordenadas y devuelve la lista con lat/lng. */
   const completarUbicaciones = async (lista, reintentarFallidos) => {
-    const aBuscar = lista.filter((c) => !c.lat && (reintentarFallidos || !c.geoFallo) && (c.domicilio || c.localidad));
+    // También se vuelven a buscar las que quedaron lejos de la zona y las que fallaron con la búsqueda vieja.
+    const aBuscar = lista.filter((c) => (c.domicilio || c.localidad) && (ubicacionDudosa(c)
+      || (!c.lat && (reintentarFallidos || !c.geoFallo || c.geoV !== VERSION_GEO))));
     if (!aBuscar.length) return { lista, fallidos: [] };
     setProgresoGeo(0);
     const { coords, fallidos } = await geocodificarClientes(aBuscar, (hechos) => {
@@ -2976,11 +3011,12 @@ function RutaTab({ db, choferes = [], vehiculos = [], zonas, setZonas, facturas,
     });
     const fallidosSet = new Set(fallidos);
     if (Object.keys(coords).length || fallidos.length) {
-      const nuevos = clientesRef.current.map((c) => coords[c.id] ? { ...c, ...coords[c.id], geoFallo: false } : fallidosSet.has(c.id) ? { ...c, geoFallo: true } : c);
+      const nuevos = clientesRef.current.map((c) => coords[c.id] ? { ...c, ...coords[c.id], geoFallo: false, geoV: VERSION_GEO }
+        : fallidosSet.has(c.id) ? { ...c, lat: null, lng: null, geoFallo: true, geoV: VERSION_GEO } : c);
       clientesRef.current = nuevos;
       await setClientes(nuevos);
     }
-    return { lista: lista.map((c) => coords[c.id] ? { ...c, ...coords[c.id] } : c), fallidos };
+    return { lista: lista.map((c) => coords[c.id] ? { ...c, ...coords[c.id] } : fallidosSet.has(c.id) ? { ...c, lat: null, lng: null } : c), fallidos };
   };
 
   const proponerRutaAutomatica = async () => {
@@ -3321,8 +3357,8 @@ function FacturasTab({ db, facturas, setFacturas, zonas, setZonas, clientes, set
     if (!ids.length && !fallidos.length) return;
     const fallidosSet = new Set(fallidos);
     setClientes(clientesRef.current.map((c) => {
-      if (coords[c.id]) return { ...c, lat: coords[c.id].lat, lng: coords[c.id].lng, geoFallo: false };
-      if (fallidosSet.has(c.id)) return { ...c, geoFallo: true };
+      if (coords[c.id]) return { ...c, lat: coords[c.id].lat, lng: coords[c.id].lng, geoFallo: false, geoV: VERSION_GEO };
+      if (fallidosSet.has(c.id)) return { ...c, lat: null, lng: null, geoFallo: true, geoV: VERSION_GEO };
       return c;
     }));
   };
@@ -4030,6 +4066,115 @@ function formatPct(n) {
   return (n * 100).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
 }
 
+/** Datos operativos de cada día (facturación, entregas, km y combustible), juntando los días
+ *  cerrados del historial con lo que sigue activo hoy. Lo usan Costos e Informes. */
+function datosOperativosPorDia({ historialDias, facturas, combustible, ubicaciones, fechasExtra = [], hoy }) {
+  const dias = {};
+  const dia = (f) => (dias[f] = dias[f] || { fecha: f, facturas: {}, km: 0, litros: 0, litrosSinImporte: 0, combustible: 0, zonas: new Set(), kmPorChofer: {}, nombresZona: {} });
+
+  historialDias.forEach((h) => {
+    if (!h.fecha) return;
+    const d = dia(h.fecha);
+    d.km += h.kmRecorridos || 0;
+    if (h.zonaNombre) d.zonas.add(h.zonaNombre);
+    if (h.zonaId && h.zonaNombre) d.nombresZona[h.zonaId] = h.zonaNombre;
+    (h.kmPorChofer || []).forEach((k) => { d.kmPorChofer[k.nombre] = (d.kmPorChofer[k.nombre] || 0) + (k.km || 0); });
+    // Si el día se cerró más de una vez, una factura pendiente aparece repetida: se cuenta una sola vez.
+    (h.facturas || []).forEach((f) => {
+      const prev = d.facturas[f.id];
+      if (!prev || f.estado === "entregado") d.facturas[f.id] = f;
+    });
+  });
+
+  // Hoy: sumamos lo que sigue activo y los km que todavía no se cerraron.
+  const dHoy = dia(hoy);
+  facturas.forEach((f) => {
+    const prev = dHoy.facturas[f.id];
+    if (!prev || f.estado === "entregado") dHoy.facturas[f.id] = f;
+  });
+  Object.values(ubicaciones).forEach((u) => {
+    if (!u || u.fecha !== hoy) return;
+    const kmTotalesHoy = u.kmRecorridos != null ? u.kmRecorridos : kmDeHistorial(u.historial);
+    dHoy.km += Math.max(0, kmTotalesHoy - (u.kmYaCerrados || 0));
+  });
+
+  combustible.forEach((c) => {
+    const f = fechaLocalDe(c.fecha);
+    if (!f) return;
+    const d = dia(f);
+    const litros = parseFloat(String(c.litros).replace(",", ".")) || 0;
+    const importe = parseImporte(c.importe);
+    d.litros += litros;
+    // Las cargas sin importe se valorizan después con el precio por litro.
+    if (importe > 0) d.combustible += importe;
+    else d.litrosSinImporte += litros;
+  });
+
+  fechasExtra.forEach((f) => dia(f));
+
+  return Object.values(dias).map((d) => {
+    const lista = Object.values(d.facturas);
+    const entregadas = lista.filter((f) => f.estado === "entregado");
+    return {
+      fecha: d.fecha,
+      zonas: [...d.zonas],
+      cantFacturas: lista.length,
+      cantEntregadas: entregadas.length,
+      importeTotal: lista.reduce((s, f) => s + parseImporte(f.importe), 0),
+      importeEntregado: entregadas.reduce((s, f) => s + parseImporte(f.importe), 0),
+      km: Math.round(d.km * 10) / 10,
+      litros: d.litros,
+      litrosSinImporte: d.litrosSinImporte,
+      combustible: d.combustible,
+      facturasLista: lista,
+      kmPorChofer: d.kmPorChofer,
+      nombresZona: d.nombresZona,
+    };
+  }).sort((a, b) => b.fecha.localeCompare(a.fecha));
+}
+
+/** Costos cargados para un día; los fijos que no se cargaron salen de los valores por defecto. */
+function valoresCostoDia(fecha, costosGuardados, config) {
+  const g = costosGuardados[fecha];
+  const v = {};
+  CAMPOS_COSTO.forEach((c) => {
+    v[c.id] = g && g[c.id] != null ? g[c.id] : (c.fijo && config[c.id] != null ? config[c.id] : "");
+  });
+  v.markup = g && g.markup != null ? g.markup : (config.markup != null ? config.markup : "");
+  v.precioLitro = g && g.precioLitro != null ? g.precioLitro : (config.precioLitro != null ? config.precioLitro : "");
+  v.km = g && g.km != null ? g.km : ""; // vacío = se usan los km del GPS
+  return v;
+}
+
+/** Costo del viaje, ganancia y rendimiento de un día. base: "entregado" | "total". */
+function calcularCostoDia(d, v, base) {
+  const costos = {};
+  CAMPOS_COSTO.forEach((c) => { costos[c.id] = parseNum(v[c.id]); });
+  const km = parseNum(v.km) > 0 ? parseNum(v.km) : d.km;
+  const litrosConsumidos = km / KM_POR_LITRO;
+  const combustibleCosto = litrosConsumidos * parseNum(v.precioLitro);
+  const costoTotal = combustibleCosto + Object.values(costos).reduce((s, x) => s + x, 0);
+  const baseImporte = base === "total" ? d.importeTotal : d.importeEntregado;
+  const markup = parseNum(v.markup) / 100;
+  const gananciaBruta = baseImporte * markup;
+  const utilidad = gananciaBruta - costoTotal;
+  return {
+    ...costos,
+    combustible: combustibleCosto,
+    costoTotal,
+    base: baseImporte,
+    markup,
+    gananciaBruta,
+    utilidad,
+    margenNeto: baseImporte ? utilidad / baseImporte : 0,
+    costoSobreFact: baseImporte ? costoTotal / baseImporte : 0,
+    costoPorKm: km ? costoTotal / km : null,
+    costoPorEntrega: d.cantEntregadas ? costoTotal / d.cantEntregadas : null,
+    litrosConsumidos,
+    km,
+  };
+}
+
 function BadgeRendimiento({ r }) {
   const t = tipoRendimiento(r);
   return (
@@ -4071,105 +4216,13 @@ function CostosTab({ db, facturas, combustible, historialDias }) {
   }, [registros]);
 
   // Datos operativos de cada día: facturación, entregas, km y combustible.
-  const datosPorDia = useMemo(() => {
-    const dias = {};
-    const dia = (f) => (dias[f] = dias[f] || { fecha: f, facturas: {}, km: 0, litros: 0, litrosSinImporte: 0, combustible: 0, zonas: new Set() });
+  const datosPorDia = useMemo(
+    () => datosOperativosPorDia({ historialDias, facturas, combustible, ubicaciones, fechasExtra: Object.keys(costosGuardados), hoy }),
+    [historialDias, facturas, combustible, ubicaciones, costosGuardados, hoy]
+  );
 
-    historialDias.forEach((h) => {
-      if (!h.fecha) return;
-      const d = dia(h.fecha);
-      d.km += h.kmRecorridos || 0;
-      if (h.zonaNombre) d.zonas.add(h.zonaNombre);
-      // Si el día se cerró más de una vez, una factura pendiente aparece repetida: se cuenta una sola vez.
-      (h.facturas || []).forEach((f) => {
-        const prev = d.facturas[f.id];
-        if (!prev || f.estado === "entregado") d.facturas[f.id] = f;
-      });
-    });
-
-    // Hoy: sumamos lo que sigue activo y los km que todavía no se cerraron.
-    const dHoy = dia(hoy);
-    facturas.forEach((f) => {
-      const prev = dHoy.facturas[f.id];
-      if (!prev || f.estado === "entregado") dHoy.facturas[f.id] = f;
-    });
-    Object.values(ubicaciones).forEach((u) => {
-      if (!u || u.fecha !== hoy) return;
-      const kmTotalesHoy = u.kmRecorridos != null ? u.kmRecorridos : kmDeHistorial(u.historial);
-      dHoy.km += Math.max(0, kmTotalesHoy - (u.kmYaCerrados || 0));
-    });
-
-    combustible.forEach((c) => {
-      const f = fechaLocalDe(c.fecha);
-      if (!f) return;
-      const d = dia(f);
-      const litros = parseFloat(String(c.litros).replace(",", ".")) || 0;
-      const importe = parseImporte(c.importe);
-      d.litros += litros;
-      // Las cargas sin importe se valorizan después con el precio por litro.
-      if (importe > 0) d.combustible += importe;
-      else d.litrosSinImporte += litros;
-    });
-
-    Object.keys(costosGuardados).forEach((f) => dia(f));
-
-    return Object.values(dias).map((d) => {
-      const lista = Object.values(d.facturas);
-      const entregadas = lista.filter((f) => f.estado === "entregado");
-      return {
-        fecha: d.fecha,
-        zonas: [...d.zonas],
-        cantFacturas: lista.length,
-        cantEntregadas: entregadas.length,
-        importeTotal: lista.reduce((s, f) => s + parseImporte(f.importe), 0),
-        importeEntregado: entregadas.reduce((s, f) => s + parseImporte(f.importe), 0),
-        km: Math.round(d.km * 10) / 10,
-        litros: d.litros,
-        litrosSinImporte: d.litrosSinImporte,
-        combustible: d.combustible,
-      };
-    }).sort((a, b) => b.fecha.localeCompare(a.fecha));
-  }, [historialDias, facturas, combustible, ubicaciones, costosGuardados, hoy]);
-
-  const valoresDe = (f) => {
-    const g = costosGuardados[f];
-    const v = {};
-    CAMPOS_COSTO.forEach((c) => {
-      v[c.id] = g && g[c.id] != null ? g[c.id] : (c.fijo && config[c.id] != null ? config[c.id] : "");
-    });
-    v.markup = g && g.markup != null ? g.markup : (config.markup != null ? config.markup : "");
-    v.precioLitro = g && g.precioLitro != null ? g.precioLitro : (config.precioLitro != null ? config.precioLitro : "");
-    v.km = g && g.km != null ? g.km : ""; // vacío = se usan los km del GPS
-    return v;
-  };
-
-  const calcular = (d, v) => {
-    const costos = {};
-    CAMPOS_COSTO.forEach((c) => { costos[c.id] = parseNum(v[c.id]); });
-    const km = parseNum(v.km) > 0 ? parseNum(v.km) : d.km;
-    const litrosConsumidos = km / KM_POR_LITRO;
-    const combustibleCosto = litrosConsumidos * parseNum(v.precioLitro);
-    const costoTotal = combustibleCosto + Object.values(costos).reduce((s, x) => s + x, 0);
-    const baseImporte = base === "total" ? d.importeTotal : d.importeEntregado;
-    const markup = parseNum(v.markup) / 100;
-    const gananciaBruta = baseImporte * markup;
-    const utilidad = gananciaBruta - costoTotal;
-    return {
-      ...costos,
-      combustible: combustibleCosto,
-      costoTotal,
-      base: baseImporte,
-      markup,
-      gananciaBruta,
-      utilidad,
-      margenNeto: baseImporte ? utilidad / baseImporte : 0,
-      costoSobreFact: baseImporte ? costoTotal / baseImporte : 0,
-      costoPorKm: km ? costoTotal / km : null,
-      costoPorEntrega: d.cantEntregadas ? costoTotal / d.cantEntregadas : null,
-      litrosConsumidos,
-      km,
-    };
-  };
+  const valoresDe = (f) => valoresCostoDia(f, costosGuardados, config);
+  const calcular = (d, v) => calcularCostoDia(d, v, base);
 
   const diaSel = datosPorDia.find((d) => d.fecha === fecha) || {
     fecha, zonas: [], cantFacturas: 0, cantEntregadas: 0, importeTotal: 0, importeEntregado: 0, km: 0, litros: 0, litrosSinImporte: 0, combustible: 0,
@@ -5432,6 +5485,7 @@ function App() {
   const [vehiculos, setVehiculos, loadingV] = useDbListDoc(db, "meta/vehiculos");
   // Punto de salida de los camiones (se guarda como lista de un solo elemento: [{ direccion, lat, lng }])
   const [depositoList, setDepositoList, loadingDep] = useDbListDoc(db, "meta/deposito");
+  fijarRegionGeo(depositoList[0]); // las direcciones se buscan alrededor del depósito
   const [role, setRole] = useState(null);
   // En celular solo se ofrece "Soy chofer"; Logística y Administración quedan para la PC.
   const detectarMovil = () => {
