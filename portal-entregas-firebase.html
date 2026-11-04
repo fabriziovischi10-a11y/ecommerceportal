@@ -914,7 +914,10 @@ function useDbShardedByZona(db, collectionPath) {
       if (!nuevosPorZona[zid]) nuevosPorZona[zid] = [];
       nuevosPorZona[zid].push(item);
     });
-    const zonasAfectadas = new Set([...Object.keys(porZona), ...Object.keys(nuevosPorZona)]);
+    // Solo se reescriben las zonas que cambiaron: cada escritura hace que todos los que tienen
+    // la app abierta vuelvan a leer ese documento, así que no tocar las demás ahorra lecturas.
+    const zonasAfectadas = new Set([...Object.keys(porZona), ...Object.keys(nuevosPorZona)]
+      .filter((zid) => JSON.stringify(porZona[zid] || []) !== JSON.stringify(nuevosPorZona[zid] || [])));
     const col = db.collection(collectionPath);
 
     const escribirConReintento = async (zid, intentos = 3) => {
@@ -984,7 +987,12 @@ function useFlota(db) {
     if (!db) return;
     const unsub = db.doc("flota/actual").onSnapshot(
       (snap) => setFlota(snap.exists ? snap.data() : { vehiculos: {} }),
-      () => setFlota({ vehiculos: {}, error: "Sin permiso para leer flota/actual" })
+      (e) => setFlota({
+        vehiculos: {},
+        error: e && e.code === "resource-exhausted"
+          ? "Se agotó la cuota gratis diaria de lecturas de Firebase; vuelve sola a la madrugada"
+          : "No se pudo leer flota/actual" + (e && e.code ? ` (${e.code})` : ""),
+      })
     );
     return () => unsub();
   }, [db]);
@@ -1341,7 +1349,11 @@ function CombustibleModal({ db, choferId, vehiculoId, onCerrar }) {
 /*  PANEL ADMINISTRADOR                                                 */
 /* ------------------------------------------------------------------ */
 
-function AdminPanel({ db, choferes, setChoferes, zonas, setZonas, facturas, setFacturas, clientes, setClientes, vehiculos, setVehiculos, combustible, historialDias, onExit }) {
+function AdminPanel({ db, choferes, setChoferes, zonas, setZonas, facturas, setFacturas, clientes, setClientes, vehiculos, setVehiculos, onExit }) {
+  // Combustible e historial (hasta 300 documentos cada uno) solo se leen al entrar a Administración,
+  // no cada vez que un chofer o logística abre la app: así se ahorran lecturas de Firebase.
+  const [combustible] = useDbCollectionLive(db, "combustible");
+  const [historialDias] = useDbCollectionLive(db, "historial_dias");
   const [tab, setTab] = useState(null);
   const [confirmandoReset, setConfirmandoReset] = useState(false);
 
@@ -4855,8 +4867,6 @@ function App() {
   const [clientes, setClientes, loadingCl] = useDbShardedByZona(db, "clientes_por_zona");
   const [facturas, setFacturas, loadingF] = useDbShardedByZona(db, "facturas_por_zona");
   const [vehiculos, setVehiculos, loadingV] = useDbListDoc(db, "meta/vehiculos");
-  const [combustible, loadingCo] = useDbCollectionLive(db, "combustible");
-  const [historialDias, loadingHist] = useDbCollectionLive(db, "historial_dias");
   // Punto de salida de los camiones (se guarda como lista de un solo elemento: [{ direccion, lat, lng }])
   const [depositoList, setDepositoList, loadingDep] = useDbListDoc(db, "meta/deposito");
   const [role, setRole] = useState(null);
@@ -4877,7 +4887,7 @@ function App() {
   const [testGeoApi, setTestGeoApi] = useState(null);
   const [testGeoApiLoading, setTestGeoApiLoading] = useState(false);
 
-  const loading = db === undefined || loadingC || loadingZ || loadingCl || loadingF || loadingV || loadingCo || loadingHist || loadingDep;
+  const loading = db === undefined || loadingC || loadingZ || loadingCl || loadingF || loadingV || loadingDep;
   const dbNoDisponible = db === null;
 
   useEffect(() => {
@@ -4921,8 +4931,6 @@ function App() {
           facturas={facturas} setFacturas={setFacturas}
           clientes={clientes} setClientes={setClientes}
           vehiculos={vehiculos} setVehiculos={setVehiculos}
-          combustible={combustible}
-          historialDias={historialDias}
           onExit={() => setRole(null)}
         />
       )}
