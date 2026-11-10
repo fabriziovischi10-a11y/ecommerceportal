@@ -36,16 +36,18 @@
 
   /* ---------- pantalla que tapa la app ---------- */
   if (SUAVE) { window.PortalAcceso_SUAVE = true; }
-  // Nov. 2026: mismo fondo claro y logo original que la intro animada (intro-portal.js); el «cargando» es la P roja dibujándose
+  // Nov. 2026: mismo fondo azul y logo que la intro animada (intro-portal.js): P y DISTRIBUIDORA rojas, PORTAL blanco;
+  // el «cargando» es la P roja dibujándose
   var LOGO = ((script && script.src) || "").replace(/[^\/]*$/, "") + "logo-portal.png";
-  var css = "#pa-velo{position:fixed;inset:0;z-index:2147483600;background:radial-gradient(900px 420px at 50% 42%,#FFFFFF,#F1F3F8);display:grid;place-items:center;padding:20px;font:16px/1.45 'Segoe UI',system-ui,-apple-system,sans-serif;color:#141B33}"
+  var css = "#pa-velo{position:fixed;inset:0;z-index:2147483600;background:radial-gradient(900px 460px at 50% 42%,#22336A,#17214A 70%,#111A3C);display:grid;place-items:center;padding:20px;font:16px/1.45 'Segoe UI',system-ui,-apple-system,sans-serif;color:#fff}"
     + "#pa-velo[hidden]{display:none!important}"
-    + "#pa-velo .pa-c{width:min(440px,100%);background:#fff;border:1px solid #D7DDE8;border-radius:24px;padding:28px 24px;text-align:center;box-shadow:0 24px 56px -22px rgba(20,27,51,.35)}"
-    + "#pa-velo .pa-logo{display:block;width:min(300px,78%);height:auto;margin:0 auto 18px}"
-    + "#pa-velo h2{margin:0 0 6px;font-size:20px;color:#293B72}#pa-velo p{margin:0 0 16px;color:#4F5A73}"
+    + "#pa-velo .pa-c{width:min(440px,100%);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:24px;padding:28px 24px;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,.35)}"
+    + "#pa-velo .pa-logo{position:relative;width:min(300px,78%);aspect-ratio:1670/531;margin:0 auto 18px;background:url('" + LOGO + "') center/100% 100% no-repeat}"
+    + "#pa-velo .pa-logo i{position:absolute;inset:0;background:#FFFFFF;clip-path:inset(0 1.5% 34% 26.5%);-webkit-mask:url('" + LOGO + "') center/100% 100% no-repeat;mask:url('" + LOGO + "') center/100% 100% no-repeat}"
+    + "#pa-velo h2{margin:0 0 6px;font-size:20px}#pa-velo p{margin:0 0 16px;color:rgba(255,255,255,.8)}"
     + "#pa-velo button,#pa-velo a.pa-b{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border:0;border-radius:14px;padding:13px 16px;font:700 16px 'Segoe UI',system-ui,sans-serif;cursor:pointer;margin-top:10px;text-decoration:none}"
-    + "#pa-velo .pa-g{background:#fff;color:#1f2937;border:1px solid #C5CEDE!important}#pa-velo .pa-g svg{width:20px;height:20px}#pa-velo .pa-y{background:#FED501;color:#293B72}#pa-velo .pa-o{background:transparent;color:#293B72;border:1px solid #C5CEDE!important}"
-    + "#pa-velo .pa-e{color:#C9082A;font-weight:700;min-height:1.3em;margin:10px 0 0;font-size:14px}#pa-velo .pa-u{display:inline-block;background:#E8ECF6;color:#293B72;border-radius:999px;padding:4px 12px;font-size:14px;margin-bottom:12px}"
+    + "#pa-velo .pa-g{background:#fff;color:#1f2937}#pa-velo .pa-g svg{width:20px;height:20px}#pa-velo .pa-y{background:#FED501;color:#293B72}#pa-velo .pa-o{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.3)!important}"
+    + "#pa-velo .pa-e{color:#ffb4ae;font-weight:700;min-height:1.3em;margin:10px 0 0;font-size:14px}#pa-velo .pa-u{display:inline-block;background:rgba(255,255,255,.1);border-radius:999px;padding:4px 12px;font-size:14px;margin-bottom:12px}"
     + "#pa-velo .pa-sp{display:block;width:54px;height:auto;margin:4px auto 10px;overflow:visible}"
     + "#pa-velo .pa-sp .pa-tr{stroke-dasharray:1 1;stroke-dashoffset:1;animation:pa-tr 1.8s cubic-bezier(.55,0,.25,1) infinite}"
     + "@keyframes pa-tr{0%{stroke-dashoffset:1}55%{stroke-dashoffset:0}80%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}"
@@ -54,7 +56,7 @@
   var RUEDA = '<svg class="pa-sp" viewBox="40 60 380 440" role="img" aria-label="Cargando"><defs>'
     + '<mask id="pa-mk" maskUnits="userSpaceOnUse" x="0" y="0" width="430" height="531"><path class="pa-tr" d="M82 480V250C82 150 140 103 228 103C320 103 376 160 376 241C376 330 315 381 228 381L130 381" fill="none" stroke="#fff" stroke-width="110" stroke-linejoin="round" pathLength="1"/></mask>'
     + '<clipPath id="pa-ck"><rect width="430" height="531"/></clipPath></defs>'
-    + '<image href="' + LOGO + '" width="1670" height="531" clip-path="url(#pa-ck)" opacity=".12"/>'
+    + '<image href="' + LOGO + '" width="1670" height="531" clip-path="url(#pa-ck)" opacity=".18"/>'
     + '<image href="' + LOGO + '" width="1670" height="531" clip-path="url(#pa-ck)" mask="url(#pa-mk)"/></svg>';
   var st = document.createElement("style"); st.textContent = css; (document.head || document.documentElement).appendChild(st);
   var velo = document.createElement("div"); velo.id = "pa-velo"; velo.setAttribute("role", "dialog"); velo.setAttribute("aria-modal", "true");
@@ -62,7 +64,7 @@
   if (document.body) poner(); else document.addEventListener("DOMContentLoaded", poner);
   var G = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
-  var marca = '<img class="pa-logo" src="' + LOGO + '" alt="Portal Distribuidora">';
+  var marca = '<div class="pa-logo" role="img" aria-label="Portal Distribuidora"><i></i></div>';
   var donde = APP === "torre" ? "la Torre de control" : nombreApp(APP);
   function pintar(html) { if (SUAVE) { velo.hidden = true; return; } velo.innerHTML = '<div class="pa-c">' + marca + html + "</div>"; velo.hidden = false; }
   function cargando() { pintar(RUEDA + '<p>Verificando el acceso…</p>'); }
