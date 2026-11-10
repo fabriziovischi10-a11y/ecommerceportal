@@ -628,7 +628,16 @@ async function guardar(){
       choferSegunTMS:!!(f.origen&&(f.sal?f.sal.choferId:(habitual(f.cam)||{}).id)===f.choferId),
       km:f.km!==""?Number(f.km):null,kmSalida:kmSal(),litros:f.litros!==""?Number(f.litros):null,estrellas:f.estrellas,detalle:f.detalle.trim(),revisadoPor:f.revisadoPor.trim(),
       fotos:cnt,miniatura});
-    F=null;aviso("Recepción guardada ✓");ir("r/"+ref.id);
+    // vínculo con el TMS: los km y los litros quedan en el viaje (y el km en la flota) para el cierre y el informe
+    let tmsOk=true;
+    try{
+      const km=f.km!==""?Number(f.km):null,lit=f.litros!==""?Number(f.litros):null,ahora=new Date().toISOString();
+      if(f.sal){const u={kmRecepcion:km,litrosRegreso:lit,recepcionId:ref.id,recepcionAt:fecha,recepcionPor:f.revisadoPor.trim(),updatedAt:ahora};
+        if(km!=null&&(f.sal.kmRegreso==null||f.sal.kmRegreso===""))u.kmRegreso=km;   // el odómetro de regreso, si en el TMS todavía no se cargó
+        await tms("salidas").doc(f.sal.id).update(u)}
+      if(km!=null&&!(Number(f.cam.km)>=km))await tms("camiones").doc(f.cam.id).update({km,updatedAt:ahora});
+    }catch(e){tmsOk=false;console.warn("TMS",e)}
+    F=null;aviso(tmsOk?"Recepción guardada ✓ · km y litros pasados al TMS":"Recepción guardada ✓ (no se pudo pasar al TMS: avisá al administrador)",!tmsOk);ir("r/"+ref.id);
   }catch(e){
     f.guardando=false;b.textContent="Guardar recepción";validar();aviso("No se pudo guardar: "+(e.message||e.code),true);
   }
