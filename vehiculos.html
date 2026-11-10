@@ -493,7 +493,8 @@ function pintarPaso(){
      +(k0!=null?'<p class="mu" style="margin:10px 0 0;font-size:14px">Salió con <b>'+k0.toLocaleString("es-AR")+' km</b> según el TMS · <span id="km-rec"></span></p>':"")+'</div>';
   }else if(p.k==="litros"){
     cuerpo='<div class="panel"><p class="mu" style="margin:0 0 12px;font-size:14.5px">¿Cuántos litros de combustible tiene el tanque al volver?</p>'
-     +'<label>Litros<input class="campo grande" id="f-lit" type="number" inputmode="decimal" min="0" step="any" placeholder="Ej.: 120" value="'+esc(f.litros)+'"></label></div>';
+     +'<label>Litros<input class="campo grande" id="f-lit" type="number" inputmode="decimal" min="0" step="any" placeholder="Ej.: 120" value="'+esc(f.litros)+'"></label>'
+     +(Number(cam.tanqueL)?'<p class="mu" style="margin:10px 0 0;font-size:14px">Tanque de este vehículo: <b>'+Number(cam.tanqueL).toLocaleString("es-AR")+' L</b> · <span id="lit-pct"></span></p>':"")+'</div>';
   }else if(p.k==="calif"){
     cuerpo='<div class="panel" style="text-align:center"><div class="paso" style="justify-content:center"><h2>¿En qué estado llegó?</h2></div><div class="estrellas" id="estrellas" role="radiogroup" aria-label="Calificación de 0 a 5 estrellas" style="justify-content:center"></div><div class="calif-txt" id="calif-txt"></div></div>';
   }else{
@@ -503,7 +504,7 @@ function pintarPaso(){
      +filaRes(0,"Lo trajo",esc(choNom(f.choferId))+(f.cobradorId?' <span class="mu">· con '+esc(choNom(f.cobradorId))+'</span>':""))
      +TIPOS.map(([k,n],j)=>filaRes(j+1,n,'<span class="tira">'+f.fotos[k].map(d=>'<img src="'+d+'" alt="">').join("")+'</span>'+nf(k)+' foto'+(nf(k)>1?"s":""))).join("")
      +filaRes(4,"Kilómetros",Number(f.km).toLocaleString("es-AR")+' km'+(kmSal()!=null?' <span class="mu">· recorrió '+(Number(f.km)-kmSal()).toLocaleString("es-AR")+' km</span>':""))
-     +filaRes(5,"Combustible",Number(f.litros).toLocaleString("es-AR")+' litros')
+     +filaRes(5,"Combustible",Number(f.litros).toLocaleString("es-AR")+' litros'+(Number(cam.tanqueL)&&Number(f.litros)>Number(cam.tanqueL)?' <b style="color:#ff8a80">⚠ más que el tanque ('+Number(cam.tanqueL).toLocaleString("es-AR")+' L)</b>':""))
      +filaRes(6,"Calificación",'<span style="color:var(--amarillo);letter-spacing:1px">'+est(f.estrellas)+'</span> '+esc(CALIF[f.estrellas]))
      +filaRes(0,"Revisó",esc(f.revisadoPor))
      +'</div></div>';
@@ -526,7 +527,9 @@ function pintarPaso(){
   }else if(p.foto)pintarFotos();
   else if(p.k==="km"){const rec=()=>{const k0=kmSal(),e=$("km-rec");if(e)e.textContent=f.km!==""&&k0!=null&&Number(f.km)>=k0?"recorrió "+(Number(f.km)-k0).toLocaleString("es-AR")+" km":""};
     $("f-km").oninput=e=>{f.km=e.target.value;rec();validar()};rec();setTimeout(()=>$("f-km").focus(),50)}
-  else if(p.k==="litros"){$("f-lit").oninput=e=>{f.litros=e.target.value;validar()};setTimeout(()=>$("f-lit").focus(),50)}
+  else if(p.k==="litros"){const pct=()=>{const t=Number(cam.tanqueL),e=$("lit-pct");if(!e)return;const n=Number(f.litros),mas=f.litros!==""&&n>t;
+      e.innerHTML=t&&f.litros!==""?(mas?'<b style="color:#ff8a80">⚠ Es más que la capacidad del tanque: revisá el número. Se puede guardar igual y queda marcado como alerta para el TMS.</b>':"volvió con el "+Math.round(n*100/t)+"%"):""};
+    $("f-lit").oninput=e=>{f.litros=e.target.value;pct();validar()};pct();setTimeout(()=>$("f-lit").focus(),50)}
   else if(p.k==="calif")pintarEstrellas();
   else{$("f-det").oninput=e=>{f.detalle=e.target.value};$("vista").querySelectorAll("[data-paso]").forEach(b=>b.onclick=()=>irPaso(+b.dataset.paso))}
   validar();
@@ -626,7 +629,8 @@ async function guardar(){
       choferId:f.choferId,choferNombre:choNom(f.choferId),cobradorId:f.cobradorId||null,cobradorNombre:choNom(f.cobradorId)||null,
       choferTMS:f.sal?f.sal.choferId||null:(habitual(f.cam)||{}).id||null,origenTMS:f.origen||null,
       choferSegunTMS:!!(f.origen&&(f.sal?f.sal.choferId:(habitual(f.cam)||{}).id)===f.choferId),
-      km:f.km!==""?Number(f.km):null,kmSalida:kmSal(),litros:f.litros!==""?Number(f.litros):null,estrellas:f.estrellas,detalle:f.detalle.trim(),revisadoPor:f.revisadoPor.trim(),
+      km:f.km!==""?Number(f.km):null,kmSalida:kmSal(),litros:f.litros!==""?Number(f.litros):null,tanqueL:Number(f.cam.tanqueL)||null,
+      alertas:(Number(f.cam.tanqueL)&&Number(f.litros)>Number(f.cam.tanqueL))?["Más litros ("+f.litros+") que la capacidad del tanque ("+f.cam.tanqueL+" L)"]:[],estrellas:f.estrellas,detalle:f.detalle.trim(),revisadoPor:f.revisadoPor.trim(),
       fotos:cnt,miniatura});
     // vínculo con el TMS: los km y los litros quedan en el viaje (y el km en la flota) para el cierre y el informe
     let tmsOk=true;
@@ -658,7 +662,7 @@ async function verRecepcion(id){
        +'<div><small>Lo trajo</small><b>'+esc(r.choferNombre||"—")+'</b>'+(r.cobradorNombre?'<span class="s2">Acompañante: '+esc(r.cobradorNombre)+'</span>':"")+((r.salidaId||r.origenTMS)&&!r.choferSegunTMS?'<span class="s2" style="color:#ffe680">Distinto al asignado en el TMS'+(r.choferTMS&&choNom(r.choferTMS)?" ("+esc(choNom(r.choferTMS))+")":"")+'</span>':"")+'</div>'
        +(r.salidaNro?'<div><small>Orden de carga</small><b>N° '+esc(String(r.salidaNro).padStart(5,"0"))+'</b><span class="s2">'+fFecha(r.salidaFecha)+'</span></div>':"")
        +(r.km?'<div><small>Km del tablero</small><b>'+Number(r.km).toLocaleString("es-AR")+'</b>'+(r.kmSalida&&r.km>=r.kmSalida?'<span class="s2">recorrió '+(r.km-r.kmSalida).toLocaleString("es-AR")+' km</span>':"")+'</div>':"")
-       +(r.litros!=null?'<div><small>Combustible al volver</small><b>'+Number(r.litros).toLocaleString("es-AR")+' L</b></div>':"")
+       +(r.litros!=null?'<div><small>Combustible al volver</small><b>'+Number(r.litros).toLocaleString("es-AR")+' L</b>'+((r.alertas||[]).length?'<span class="s2" style="color:#ff8a80">⚠ '+esc(r.alertas.join(" · "))+'</span>':r.tanqueL?'<span class="s2">'+Math.round(r.litros*100/r.tanqueL)+'% del tanque</span>':"")+'</div>':"")
      +'</div></div>'
      +(r.detalle?'<div class="panel"><h2>Detalles</h2><p class="nota">'+esc(r.detalle)+'</p></div>':"")
      +'<div class="panel"><h2>Fotos</h2><div id="galeria"><div class="carga">Cargando fotos…</div></div></div>';
