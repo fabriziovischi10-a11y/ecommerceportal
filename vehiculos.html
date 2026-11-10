@@ -65,6 +65,7 @@ h2{margin:0 0 12px;font:800 17px var(--f-disp)}
 select.campo{appearance:none;background-image:linear-gradient(45deg,transparent 50%,#fff 50%),linear-gradient(135deg,#fff 50%,transparent 50%);background-position:calc(100% - 20px) 52%,calc(100% - 14px) 52%;background-size:6px 6px;background-repeat:no-repeat;padding-right:36px}
 select.campo option{color:#16203a}
 textarea.campo{min-height:110px;resize:vertical;line-height:1.45}
+.campo.grande{font:800 30px/1.1 var(--f-disp,inherit);padding:16px 18px;text-align:center;letter-spacing:.02em;margin-top:6px}
 .buscar{position:relative;margin-bottom:14px}
 .buscar svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:20px;height:20px;stroke:var(--tinta-2);fill:none;stroke-width:2.2;stroke-linecap:round}
 .buscar .campo{padding-left:44px}
@@ -422,6 +423,8 @@ const PASOS=[
   {k:"exterior",t:"Fotos del exterior",foto:true},
   {k:"interior",t:"Fotos del interior",foto:true},
   {k:"cubiertas",t:"Fotos de las cubiertas",foto:true},
+  {k:"km",t:"Kilómetros del tablero"},
+  {k:"litros",t:"Litros de combustible al volver"},
   {k:"calif",t:"¿Cómo llegó?"},
   {k:"detalle",t:"Detalles y confirmar"}];
 async function verVehiculo(clave,paso){
@@ -453,7 +456,7 @@ async function verVehiculo(clave,paso){
   if(sal&&sal.estado!=="Finalizada")estadoHTML='<div class="aviso" style="margin-bottom:12px">Según el TMS este vehículo <b>todavía no volvió</b> ('+esc((EST_SAL[sal.estado]||[sal.estado])[0])+'). Si ya está en el depósito, podés registrar la recepción igual.</div>';
   else if(sal){const r=recepcionDe(sal,cam.id);if(r)estadoHTML='<div class="aviso" style="margin-bottom:12px">Este regreso <b>ya se controló</b> el '+fFechaHora(r.fecha)+(r.revisadoPor?" ("+esc(r.revisadoPor)+")":"")+'. Si cargás otra recepción queda como una nueva.</div>'}
   const ch0=sal?sal.choferId||"":hab?hab.id:"";
-  F={cam,sal,viajeHTML:estadoHTML+viajeHTML,paso:0,origen:sal?"orden":hab?"habitual":"",choferId:ch0,cobradorId:sal?sal.cobradorId||"":"",km:"",estrellas:null,detalle:"",revisadoPor:ls.get("veh_revisa")||"",fotos:{exterior:[],interior:[],cubiertas:[]},guardando:false};
+  F={cam,sal,viajeHTML:estadoHTML+viajeHTML,paso:0,origen:sal?"orden":hab?"habitual":"",choferId:ch0,cobradorId:sal?sal.cobradorId||"":"",km:"",litros:"",estrellas:null,detalle:"",revisadoPor:ls.get("veh_revisa")||"",fotos:{exterior:[],interior:[],cubiertas:[]},guardando:false};
   pintarPaso();
 }
 // Qué le falta a un paso para poder continuar (lista vacía = completo)
@@ -461,9 +464,13 @@ function faltaPaso(i){
   const f=F,p=PASOS[i],L=[];
   if(p.k==="quien"){if(!f.choferId)L.push("elegí el chofer");if(!f.revisadoPor.trim())L.push("escribí quién revisa")}
   else if(p.foto){const a=f.fotos[p.k];if(a.includes(null))L.push("procesando fotos…");else if(!a.length)L.push("sacá al menos una foto")}
+  else if(p.k==="km"){const k0=kmSal();if(f.km==="")L.push("cargá los km del tablero");else if(k0!=null&&Number(f.km)<k0)L.push("es menos que al salir ("+k0.toLocaleString("es-AR")+" km)")}
+  else if(p.k==="litros"&&f.litros==="")L.push("cargá los litros");
   else if(p.k==="calif"&&f.estrellas==null)L.push("elegí de 0 a 5 estrellas");
   return L;
 }
+/** km con que salió en el último viaje del TMS (si se cargó), para mostrar lo recorrido */
+const kmSal=()=>{const s=F&&F.sal,k=s&&Number(s.kmSalida);return k>0?k:null};
 const primerIncompleto=()=>{for(let i=0;i<PASOS.length;i++)if(faltaPaso(i).length)return i;return PASOS.length-1};
 const irPaso=i=>ir("v/"+clavePat(F.cam.patente)+(i?"/"+i:""));
 function pintarPaso(){
@@ -474,21 +481,30 @@ function pintarPaso(){
      +'<div class="panel"><div class="paso"><h2>¿Quién lo trajo?</h2>'+(f.origen?'<span class="ok">'+(f.origen==="orden"?"según la orden del TMS":"chofer habitual del TMS")+'</span>':"")+'</div>'
      +'<div class="dos"><label>Chofer<select class="campo" id="f-cho">'+opcCho(f.choferId,"— Elegí el chofer —")+'</select></label>'
      +'<label>Acompañante<select class="campo" id="f-cob">'+opcCho(f.cobradorId,"Sin acompañante")+'</select></label>'
-     +'<label>Km del tablero <span class="mu" style="font-weight:600">(opcional)</span><input class="campo" id="f-km" type="number" inputmode="numeric" min="0" placeholder="Ej.: 152340" value="'+esc(f.km)+'"></label>'
      +'<label>Revisado por<input class="campo" id="f-rev" placeholder="Tu nombre" value="'+esc(f.revisadoPor)+'" autocomplete="name"></label></div></div>'
      +'<div class="panel"><h2>Recepciones anteriores</h2><div id="hist"><div class="carga">Cargando…</div></div></div>';
   }else if(p.foto){
     const t=TIPOS.find(x=>x[0]===p.k);
     cuerpo='<div class="panel"><p class="mu" style="margin:0 0 12px;font-size:14.5px">'+esc(t[2])+'. Sacá al menos una; podés sumar varias.</p><div id="fotos"></div></div>';
+  }else if(p.k==="km"){
+    const k0=kmSal();
+    cuerpo='<div class="panel"><p class="mu" style="margin:0 0 12px;font-size:14.5px">Mirá el tablero y anotá los kilómetros que marca ahora.</p>'
+     +'<label>Km del tablero<input class="campo grande" id="f-km" type="number" inputmode="numeric" min="0" placeholder="Ej.: 152340" value="'+esc(f.km)+'"></label>'
+     +(k0!=null?'<p class="mu" style="margin:10px 0 0;font-size:14px">Salió con <b>'+k0.toLocaleString("es-AR")+' km</b> según el TMS · <span id="km-rec"></span></p>':"")+'</div>';
+  }else if(p.k==="litros"){
+    cuerpo='<div class="panel"><p class="mu" style="margin:0 0 12px;font-size:14.5px">¿Cuántos litros de combustible tiene el tanque al volver?</p>'
+     +'<label>Litros<input class="campo grande" id="f-lit" type="number" inputmode="decimal" min="0" step="any" placeholder="Ej.: 120" value="'+esc(f.litros)+'"></label></div>';
   }else if(p.k==="calif"){
     cuerpo='<div class="panel" style="text-align:center"><div class="paso" style="justify-content:center"><h2>¿En qué estado llegó?</h2></div><div class="estrellas" id="estrellas" role="radiogroup" aria-label="Calificación de 0 a 5 estrellas" style="justify-content:center"></div><div class="calif-txt" id="calif-txt"></div></div>';
   }else{
     const nf=k=>f.fotos[k].length;
     cuerpo='<div class="panel"><div class="paso"><h2>Detalles del vehículo</h2><span class="mu" style="margin-left:auto;font-size:13px">opcional</span></div><textarea class="campo" id="f-det" placeholder="Golpes, rayones, luces quemadas, limpieza, cubiertas gastadas, faltantes…">'+esc(f.detalle)+'</textarea></div>'
      +'<div class="panel"><h2>Resumen</h2><div class="resumen">'
-     +filaRes(0,"Lo trajo",esc(choNom(f.choferId))+(f.cobradorId?' <span class="mu">· con '+esc(choNom(f.cobradorId))+'</span>':"")+(f.km?' <span class="mu">· '+Number(f.km).toLocaleString("es-AR")+' km</span>':""))
+     +filaRes(0,"Lo trajo",esc(choNom(f.choferId))+(f.cobradorId?' <span class="mu">· con '+esc(choNom(f.cobradorId))+'</span>':""))
      +TIPOS.map(([k,n],j)=>filaRes(j+1,n,'<span class="tira">'+f.fotos[k].map(d=>'<img src="'+d+'" alt="">').join("")+'</span>'+nf(k)+' foto'+(nf(k)>1?"s":""))).join("")
-     +filaRes(4,"Calificación",'<span style="color:var(--amarillo);letter-spacing:1px">'+est(f.estrellas)+'</span> '+esc(CALIF[f.estrellas]))
+     +filaRes(4,"Kilómetros",Number(f.km).toLocaleString("es-AR")+' km'+(kmSal()!=null?' <span class="mu">· recorrió '+(Number(f.km)-kmSal()).toLocaleString("es-AR")+' km</span>':""))
+     +filaRes(5,"Combustible",Number(f.litros).toLocaleString("es-AR")+' litros')
+     +filaRes(6,"Calificación",'<span style="color:var(--amarillo);letter-spacing:1px">'+est(f.estrellas)+'</span> '+esc(CALIF[f.estrellas]))
      +filaRes(0,"Revisó",esc(f.revisadoPor))
      +'</div></div>';
   }
@@ -505,10 +521,12 @@ function pintarPaso(){
   if(p.k==="quien"){
     $("f-cho").onchange=e=>{f.choferId=e.target.value;validar()};
     $("f-cob").onchange=e=>{f.cobradorId=e.target.value};
-    $("f-km").oninput=e=>{f.km=e.target.value};
     $("f-rev").oninput=e=>{f.revisadoPor=e.target.value;validar()};
     cargarHistVeh(cam);
   }else if(p.foto)pintarFotos();
+  else if(p.k==="km"){const rec=()=>{const k0=kmSal(),e=$("km-rec");if(e)e.textContent=f.km!==""&&k0!=null&&Number(f.km)>=k0?"recorrió "+(Number(f.km)-k0).toLocaleString("es-AR")+" km":""};
+    $("f-km").oninput=e=>{f.km=e.target.value;rec();validar()};rec();setTimeout(()=>$("f-km").focus(),50)}
+  else if(p.k==="litros"){$("f-lit").oninput=e=>{f.litros=e.target.value;validar()};setTimeout(()=>$("f-lit").focus(),50)}
   else if(p.k==="calif")pintarEstrellas();
   else{$("f-det").oninput=e=>{f.detalle=e.target.value};$("vista").querySelectorAll("[data-paso]").forEach(b=>b.onclick=()=>irPaso(+b.dataset.paso))}
   validar();
@@ -570,6 +588,8 @@ function faltantes(){
   const f=F,L=[];
   if(!f.choferId)L.push("el chofer");
   TIPOS.forEach(([k,n])=>{if(!f.fotos[k].filter(Boolean).length)L.push("foto "+n.toLowerCase())});
+  if(f.km==="")L.push("los km del tablero");
+  if(f.litros==="")L.push("los litros de combustible");
   if(f.estrellas==null)L.push("la calificación");
   if(!f.revisadoPor.trim())L.push("quién revisó");
   return L;
@@ -606,7 +626,7 @@ async function guardar(){
       choferId:f.choferId,choferNombre:choNom(f.choferId),cobradorId:f.cobradorId||null,cobradorNombre:choNom(f.cobradorId)||null,
       choferTMS:f.sal?f.sal.choferId||null:(habitual(f.cam)||{}).id||null,origenTMS:f.origen||null,
       choferSegunTMS:!!(f.origen&&(f.sal?f.sal.choferId:(habitual(f.cam)||{}).id)===f.choferId),
-      km:f.km?Number(f.km):null,estrellas:f.estrellas,detalle:f.detalle.trim(),revisadoPor:f.revisadoPor.trim(),
+      km:f.km!==""?Number(f.km):null,kmSalida:kmSal(),litros:f.litros!==""?Number(f.litros):null,estrellas:f.estrellas,detalle:f.detalle.trim(),revisadoPor:f.revisadoPor.trim(),
       fotos:cnt,miniatura});
     F=null;aviso("Recepción guardada ✓");ir("r/"+ref.id);
   }catch(e){
@@ -628,7 +648,8 @@ async function verRecepcion(id){
        +'<div><small>Calificación</small><b style="color:var(--amarillo);letter-spacing:2px;font-size:20px">'+est(r.estrellas)+'</b><span class="s2">'+r.estrellas+' de 5 · '+esc(CALIF[r.estrellas])+'</span></div>'
        +'<div><small>Lo trajo</small><b>'+esc(r.choferNombre||"—")+'</b>'+(r.cobradorNombre?'<span class="s2">Acompañante: '+esc(r.cobradorNombre)+'</span>':"")+((r.salidaId||r.origenTMS)&&!r.choferSegunTMS?'<span class="s2" style="color:#ffe680">Distinto al asignado en el TMS'+(r.choferTMS&&choNom(r.choferTMS)?" ("+esc(choNom(r.choferTMS))+")":"")+'</span>':"")+'</div>'
        +(r.salidaNro?'<div><small>Orden de carga</small><b>N° '+esc(String(r.salidaNro).padStart(5,"0"))+'</b><span class="s2">'+fFecha(r.salidaFecha)+'</span></div>':"")
-       +(r.km?'<div><small>Km del tablero</small><b>'+Number(r.km).toLocaleString("es-AR")+'</b></div>':"")
+       +(r.km?'<div><small>Km del tablero</small><b>'+Number(r.km).toLocaleString("es-AR")+'</b>'+(r.kmSalida&&r.km>=r.kmSalida?'<span class="s2">recorrió '+(r.km-r.kmSalida).toLocaleString("es-AR")+' km</span>':"")+'</div>':"")
+       +(r.litros!=null?'<div><small>Combustible al volver</small><b>'+Number(r.litros).toLocaleString("es-AR")+' L</b></div>':"")
      +'</div></div>'
      +(r.detalle?'<div class="panel"><h2>Detalles</h2><p class="nota">'+esc(r.detalle)+'</p></div>':"")
      +'<div class="panel"><h2>Fotos</h2><div id="galeria"><div class="carga">Cargando fotos…</div></div></div>';
