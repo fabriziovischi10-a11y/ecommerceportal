@@ -4196,7 +4196,7 @@ function tcHorTab(){const A=tcBase(),M=A.filter(s=>cargaMin(s)!=null);if(!M.leng
 /* ---- puntos por equipo (nov. 2026): cada reparto (zona de preventa o sucursal) es Grande, Mediano o Chico
    y la orden suma los puntos de todos sus repartos para el equipo que la cargó ---- */
 const PC_CATS=["Grande","Mediano","Chico"];
-const pcCfg=()=>{const c=S.config.find(x=>x.id==="puntoscarga")||{};return{pts:Object.assign({Grande:10,Mediano:6,Chico:3},c.pts||{}),cat:c.cat||{}}};
+const pcCfg=()=>{const c=S.config.find(x=>x.id==="puntoscarga")||{};return{pts:Object.assign({Grande:3,Mediano:2,Chico:1},c.pts||{}),cat:c.cat||{}}};
 const pcRep=s=>s.canal==="Preventa"?(s.zonaIds||[]).map(id=>({k:"z_"+id,t:zonaT(id)})):(s.sucursalIds||[]).map(id=>({k:"s_"+id,t:sucT(id)}));
 /** cuenta si tiene equipo y ya se cargó (lista para salir, en viaje o volvió) */
 const pcCargo=s=>s.equipoCargaId&&["Cargada","En ruta","Finalizada"].includes(s.estado);
