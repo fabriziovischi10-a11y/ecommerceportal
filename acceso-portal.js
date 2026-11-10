@@ -49,6 +49,7 @@
     + "#pa-velo .pa-g{background:#fff;color:#1f2937}#pa-velo .pa-g svg{width:20px;height:20px}#pa-velo .pa-y{background:#FED501;color:#293B72}#pa-velo .pa-o{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.3)!important}"
     + "#pa-velo .pa-e{color:#ffb4ae;font-weight:700;min-height:1.3em;margin:10px 0 0;font-size:14px}#pa-velo .pa-u{display:inline-block;background:rgba(255,255,255,.1);border-radius:999px;padding:4px 12px;font-size:14px;margin-bottom:12px}"
     + "#pa-velo .pa-sp{display:block;width:54px;height:auto;margin:4px auto 10px;overflow:visible}"
+    + "#pa-velo .pa-solo{text-align:center}#pa-velo .pa-solo .pa-sp{width:88px;margin:0 auto 14px}#pa-velo .pa-solo p{margin:0;font-size:15px;color:rgba(255,255,255,.75);letter-spacing:.02em}"
     + "#pa-velo .pa-sp .pa-tr{stroke-dasharray:1 1;stroke-dashoffset:1;animation:pa-tr 1.8s cubic-bezier(.55,0,.25,1) infinite}"
     + "@keyframes pa-tr{0%{stroke-dashoffset:1}55%{stroke-dashoffset:0}80%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}"
     + "@media (prefers-reduced-motion:reduce){#pa-velo .pa-sp .pa-tr{animation:none;stroke-dashoffset:0}}";
@@ -66,8 +67,9 @@
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
   var marca = '<div class="pa-logo" role="img" aria-label="Portal Distribuidora"><i></i></div>';
   var donde = APP === "torre" ? "la Torre de control" : nombreApp(APP);
-  function pintar(html) { if (SUAVE) { velo.hidden = true; return; } velo.innerHTML = '<div class="pa-c">' + marca + html + "</div>"; velo.hidden = false; }
-  function cargando() { pintar(RUEDA + '<p>Verificando el acceso…</p>'); }
+  function pintar(html, solo) { if (SUAVE) { velo.hidden = true; return; } velo.innerHTML = solo ? '<div class="pa-solo">' + html + "</div>" : '<div class="pa-c">' + marca + html + "</div>"; velo.hidden = false; }
+  // mientras carga: solo la P roja animada, sin tarjeta ni logo completo
+  function cargando() { pintar(RUEDA + '<p>Verificando el acceso…</p>', true); }
   function pedirIngreso(err) {
     pintar("<h2>Ingresá con tu cuenta de Google</h2><p>Para usar " + esc(donde) + " tenés que entrar con el mail que te habilitó el administrador.</p>"
       + '<button class="pa-g" id="pa-google">' + G + "Ingresar con Google</button>" + '<p class="pa-e" id="pa-err">' + esc(err || "") + "</p>");
