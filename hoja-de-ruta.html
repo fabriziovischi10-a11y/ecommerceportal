@@ -4087,7 +4087,7 @@ INF.splice(INF.findIndex(r=>r.id==="resumen")+1,0,{id:"cierres",cat:"General",t:
 /* ================= tiempos de carga: tablero, cargadores, equipos, horarios y orden por orden ================= */
 GRP.tcarga="logistica";MOD.tcarga="m-base";PARENT.tcarga="logistica";
 UI.tc={tab:"tablero",desde:addD(today(),-29),hasta:"",canal:"",eq:"",ordF:""};
-const TC_TABS=[["tablero","Tablero"],["cargadores","Cargadores"],["equipos","Equipos"],["horarios","Horarios y portones"],["ordenes","Orden por orden"]];
+const TC_TABS=[["tablero","Tablero"],["puntos","Puntos"],["cargadores","Cargadores"],["equipos","Equipos"],["horarios","Horarios y portones"],["ordenes","Orden por orden"]];
 /** meta de minutos por carga (la misma del KPI «Tiempo promedio de carga») */
 const tcMeta=()=>{const k=KPIS.find(k=>k.id==="tcarga"),m=k&&kMeta(k);return m>0?m:45};
 const tcF=()=>({desde:UI.tc.desde,hasta:UI.tc.hasta||today(),canal:UI.tc.canal});
@@ -4193,6 +4193,38 @@ function tcHorTab(){const A=tcBase(),M=A.filter(s=>cargaMin(s)!=null);if(!M.leng
     +rCard("Preventa y sucursales","minutos promedio por canal",tb(can,"Canal"),"var(--c-base)")
     +rCard("Por camión","minutos promedio · el tamaño del camión pesa",tChart(cam.slice(0,15).map(r=>({l:r.l,v:r.v})),"Minutos","barras","n",true),"var(--c-base)")+'</div>'}
 
+/* ---- puntos por equipo (nov. 2026): cada reparto (zona de preventa o sucursal) es Grande, Mediano o Chico
+   y la orden suma los puntos de todos sus repartos para el equipo que la cargó ---- */
+const PC_CATS=["Grande","Mediano","Chico"];
+const pcCfg=()=>{const c=S.config.find(x=>x.id==="puntoscarga")||{};return{pts:Object.assign({Grande:10,Mediano:6,Chico:3},c.pts||{}),cat:c.cat||{}}};
+const pcRep=s=>s.canal==="Preventa"?(s.zonaIds||[]).map(id=>({k:"z_"+id,t:zonaT(id)})):(s.sucursalIds||[]).map(id=>({k:"s_"+id,t:sucT(id)}));
+/** cuenta si tiene equipo y ya se cargó (lista para salir, en viaje o volvió) */
+const pcCargo=s=>s.equipoCargaId&&["Cargada","En ruta","Finalizada"].includes(s.estado);
+function pcPts(s,c){const R=pcRep(s).map(r=>{const cat=c.cat[r.k]||"";return Object.assign(r,{cat,p:cat?Number(c.pts[cat])||0:0})});
+  return{R,p:R.reduce((t,r)=>t+r.p,0),sin:R.filter(r=>!r.cat)}}
+function pcTab(){const c=pcCfg(),X=tcBase().filter(pcCargo).map(s=>Object.assign({s},pcPts(s,c))),by=groupBy(X,x=>x.s.equipoCargaId);
+  const L=Object.keys(by).map(id=>{const a=by[id],n={Grande:0,Mediano:0,Chico:0};a.forEach(x=>x.R.forEach(r=>{if(r.cat)n[r.cat]++}));
+    return{id,k:eqT(id)||"(eliminado)",a,n,c:a.length,p:a.reduce((t,x)=>t+x.p,0)}}).sort((a,b)=>b.p-a.p||a.c-b.c);
+  const sin={};X.forEach(x=>x.sin.forEach(r=>sin[r.k]=r.t));const ns=Object.keys(sin).length;
+  let h='<div class="flt"><span class="mu">Grande = <b>'+fN(c.pts.Grande)+'</b> puntos · Mediano = <b>'+fN(c.pts.Mediano)+'</b> · Chico = <b>'+fN(c.pts.Chico)+'</b> · cada reparto de la orden suma sus puntos al equipo que la cargó</span>'
+    +(canWrite?'<button class="btn sm w" data-act="pc-cfg">'+IC.edit+'Categorías y puntos</button>':"")+'</div>';
+  if(ns)h+='<div class="banner">'+IC.alert+' <span>'+pl(ns,"reparto sin categoría","repartos sin categoría")+' en el período, no suman puntos: '+esc(Object.values(sin).sort().join(", "))+(canWrite?' · <a href="#" data-act="pc-cfg"><b>asignarles categoría</b></a>':"")+'</span></div>';
+  if(!L.length)return h+'<div class="none">No hay cargas con equipo en el período. El equipo se elige en la hoja de ruta al largar la carga.</div>';
+  h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-base)"></span>Ranking de equipos</h2><span class="s">'+tcPer()+'</span></div><div class="tw"><table class="wide"><thead><tr><th>#</th><th>Equipo</th><th class="num">Puntos</th><th class="num">Cargas</th><th class="num">Grandes</th><th class="num">Medianos</th><th class="num">Chicos</th><th class="num">Puntos por carga</th></tr></thead><tbody>'
+    +L.map((r,i)=>'<tr><td class="mono" data-l="#">'+(i===0&&L.length>1&&r.p>0?"🏆":i+1)+'</td><td data-l="Equipo"><b>'+esc(r.k)+'</b></td><td class="num" data-l="Puntos"><b style="font-size:17px">'+fN(r.p)+'</b></td><td class="num mono" data-l="Cargas">'+r.c+'</td><td class="num mono" data-l="Grandes">'+r.n.Grande+'</td><td class="num mono" data-l="Medianos">'+r.n.Mediano+'</td><td class="num mono" data-l="Chicos">'+r.n.Chico+'</td><td class="num mono" data-l="Puntos por carga">'+fN(Math.round(r.p/r.c*10)/10)+'</td></tr>').join("")+'</tbody></table></div></section>';
+  const D=X.slice().sort((a,b)=>(b.s.fecha+(b.s.cargaInicio||"")).localeCompare(a.s.fecha+(a.s.cargaInicio||"")));
+  return h+'<div class="rgrid">'+rCard("Puntos por equipo",tcPer(),tChart(L.map(r=>({l:r.k,v:r.p})),"Puntos","barras","n",true),"var(--c-base)")
+    +rCard("Carga por carga","qué repartos cargó cada equipo y cuánto sumó",'<table class="wide" style="min-width:0"><tbody>'+D.map(x=>'<tr class="ck" data-act="tc-hoja" data-id="'+x.s.id+'"><td class="mono">'+fD(x.s.fecha)+'</td><td><b>'+esc(eqT(x.s.equipoCargaId)||"—")+'</b><div class="sub">N° '+nro(x.s)+' · '+esc(camLbl(x.s.camionId))+'</div></td><td class="wrap">'+(x.R.map(r=>esc(r.t)+' '+(r.cat?chip(r.cat,r.cat==="Grande"?"vio":r.cat==="Mediano"?"info":"mute"):chip("sin categoría","warn"))).join("<br>")||'<span class="mu">sin repartos</span>')+'</td><td class="num"><b>'+fN(x.p)+'</b></td></tr>').join("")+'</tbody></table>',"var(--c-base)")+'</div>'}
+/** categoría de cada zona y sucursal + puntos de cada categoría (config/puntoscarga) */
+function pcConfig(){const c=pcCfg(),cmp=(a,b)=>String(a.t).localeCompare(String(b.t),undefined,{numeric:true});
+  const Z=S.zonas.filter(z=>isActive(z)||c.cat["z_"+z.id]).map(z=>({k:"z_"+z.id,t:zonaT(z.id)})).sort(cmp),SU=S.sucursales.filter(s=>isActive(s)||c.cat["s_"+s.id]).map(s=>({k:"s_"+s.id,t:sucT(s.id)})).sort(cmp);
+  const tb=(L,t)=>'<div class="secl" style="margin-top:12px">'+t+'</div>'+(L.length?'<div class="tw"><table class="wide" style="min-width:0"><tbody>'+L.map(r=>'<tr><td>'+esc(r.t)+'</td><td style="width:180px"><select data-pc="'+r.k+'" aria-label="Categoría de '+esc(r.t)+'">'+opts([["","Sin categoría"]].concat(PC_CATS),c.cat[r.k]||"")+'</select></td></tr>').join("")+'</tbody></table></div>':'<p class="mu">No hay cargadas.</p>');
+  openForm({title:"Puntos de carga",color:"c-base",wide:true,values:{g:c.pts.Grande,m:c.pts.Mediano,ch:c.pts.Chico},ok:"Puntos guardados",saveLabel:"Guardar",
+    fields:[{k:"g",label:"Reparto grande (puntos)",type:"number",req:true},{k:"m",label:"Reparto mediano (puntos)",type:"number",req:true},{k:"ch",label:"Reparto chico (puntos)",type:"number",req:true},{k:"rep",type:"html",cls:"gdet"}],
+    after:()=>{$("f_rep").innerHTML='<p class="mu" style="margin:0">Elegí si cada reparto es grande, mediano o chico. Si una orden lleva varios repartos, suma los puntos de todos.</p>'+tb(Z,"Zonas de preventa")+tb(SU,"Sucursales")},
+    save:async d=>{const cat={};document.querySelectorAll("#f_rep [data-pc]").forEach(x=>{if(x.value)cat[x.dataset.pc]=x.value});
+      await C("config").doc("puntoscarga").set({pts:{Grande:Number(d.g)||0,Mediano:Number(d.m)||0,Chico:Number(d.ch)||0},cat,updatedAt:new Date().toISOString(),updatedBy:uid})}})}
+
 /* ---- orden por orden ---- */
 function tcOrdTab(){const A=tcBase(),meta=tcMeta(),f=UI.tc.ordF;
   const flt={fuera:s=>cargaMin(s)>meta,pausa:s=>(s.pausas||[]).length>0,sin:tcSinMedir,"":s=>cargaMin(s)!=null||tcSinMedir(s)||cargaCurso(s)!=null};
@@ -4225,13 +4257,14 @@ VIEWS.tcarga=function(){const F=UI.tc;
     +'<select data-ui="tc.canal" aria-label="Canal">'+opts([["","Preventa y sucursales"],"Preventa","Sucursales"],F.canal)+'</select>'
     +(F.tab==="equipos"?"":'<select data-ui="tc.eq" aria-label="Equipo">'+opts([["","Todos los equipos"]].concat(S.equipos.map(e=>[e.id,e.nombre])),F.eq)+'</select>')
     +'<label>Desde <input type="date" data-ui="tc.desde" value="'+F.desde+'"></label><label>Hasta <input type="date" data-ui="tc.hasta" value="'+F.hasta+'"></label></div>';
-  return h+(F.tab==="cargadores"?tcCargTab():F.tab==="equipos"?tcEqTab():F.tab==="horarios"?tcHorTab():F.tab==="ordenes"?tcOrdTab():tcTablero())};
+  return h+(F.tab==="puntos"?pcTab():F.tab==="cargadores"?tcCargTab():F.tab==="equipos"?tcEqTab():F.tab==="horarios"?tcHorTab():F.tab==="ordenes"?tcOrdTab():tcTablero())};
 Object.assign(GACT,{
   "tc-tab":el=>{UI.tc.tab=el.dataset.v;render();scrollTo(0,0)},
   "tc-ord":el=>{UI.tc.ordF=el.dataset.v;UI.tc.tab="ordenes";render()},
   "tc-car":(el,id)=>verCargador(id),
   "tc-hoja":(el,id)=>{UI.hojaId=id;location.hash="#hoja"},
   "tc-pdf":()=>tcPdf(),
+  "pc-cfg":()=>{if(canWrite)pcConfig()},
   "tc-rango":el=>{const k=el.dataset.v,t=today(),m0=t.slice(0,8)+"01";
     if(k==="hoy"){UI.tc.desde=t;UI.tc.hasta=""}else if(k==="7"){UI.tc.desde=addD(t,-6);UI.tc.hasta=""}else if(k==="30"){UI.tc.desde=addD(t,-29);UI.tc.hasta=""}else if(k==="mes"){UI.tc.desde=m0;UI.tc.hasta=""}
     else if(k==="mesant"){const h=addD(m0,-1);UI.tc.desde=h.slice(0,8)+"01";UI.tc.hasta=h}else{UI.tc.desde="";UI.tc.hasta=""}render()},
