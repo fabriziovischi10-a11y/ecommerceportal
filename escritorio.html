@@ -252,7 +252,7 @@ function pintarLista(){
   $("adm-b").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>pintarForm(USU.find(u=>u.mail===b.dataset.ed)));
 }
 // Secciones que se pueden limitar dentro de una app (por ahora, el Parte diario). Sin marcar ninguna = ve todas.
-const SECCIONES={parte:[["dashboard","Dashboard"],["kpi","KPI"],["recepciones-prog","Recepciones Programadas"],["planilla-suc","Entrega de Sucursales"],["entrega-mensual","Entrega Mensual Preventa"],["baja-deposito","Baja Depósito"],["baja-preventa","Baja Preventa"],["flota-venc","Vencimientos Flota"],["recorridos","Recorridos de Preventa"],["sucursales","Recorridos de Sucursales"],["camiones","Recepción Camiones"],["config","Configuración"]]};
+const SECCIONES={parte:[["kpi","KPI"],["recepciones-prog","Recepciones Programadas"],["planilla-suc","Entrega de Sucursales"],["entrega-mensual","Entrega Mensual Preventa"],["baja-deposito","Baja Depósito"],["baja-preventa","Baja Preventa"],["flota-venc","Vencimientos Flota"],["camiones","Recepción Camiones"],["config","Configuración"]]};
 const seccDe=(u,app)=>((u.secciones||{})[app]||[]);
 const seccNom=(app,id)=>((SECCIONES[app]||[]).find(x=>x[0]===id)||[id,id])[1];
 function pintarForm(u){
