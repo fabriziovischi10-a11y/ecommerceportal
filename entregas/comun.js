@@ -60,7 +60,7 @@
     document.body.appendChild(velo);
     function pantalla(msg, error) {
       velo.innerHTML = '<div class="ge-login card">' +
-        '<img src="logo.png" alt="" class="ge-login-logo">' +
+        '<img src="logo-blanco.png" alt="Portal Distribuidora" class="ge-login-logo">' +
         '<h1>' + esc(op.titulo || "Administración de Portal") + '</h1>' +
         '<p class="muted">' + esc(op.texto || "Ingresá con tu cuenta de Google autorizada.") + '</p>' +
         (error ? '<p class="ge-error">' + esc(error) + '</p>' : '') +

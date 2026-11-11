@@ -3,21 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#102b46">
+<meta name="theme-color" content="#0B1B3D">
 <title>Portal Distribuidora · Entregas</title>
 <link rel="icon" href="logo.png">
 <link rel="stylesheet" href="comun.css">
 <script src="https://fabriziovischi10-a11y.github.io/ecommerceportal/intro-portal.js"></script>
 <style>
   .inicio { max-width: 980px; margin: 0 auto; padding: 2rem 16px; }
-  .marca { display: flex; align-items: center; gap: .9rem; margin-bottom: 1.6rem; }
-  .marca img { width: 64px; height: 64px; object-fit: contain; }
+  .marca { margin: .5rem 0 1.8rem; }
+  .marca img { height: 46px; width: auto; display: block; margin-bottom: 1.4rem; }
+  .marca h1 { font-size: clamp(28px, 6vw, 42px); margin: 0 0 .3rem; }
+  .marca h1 em { font-style: normal; color: var(--amarillo); }
   .marca .t1 { font-size: 1.6rem; font-weight: 800; }
   .tarjetas { display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
   @media (max-width: 760px) { .tarjetas { grid-template-columns: 1fr; } }
   .tarjeta { display: flex; flex-direction: column; gap: .6rem; text-decoration: none; color: inherit; padding: 1.3rem; transition: transform .15s, box-shadow .15s; }
-  .tarjeta:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(16, 30, 54, .1); }
-  .tarjeta .ico { width: 44px; height: 44px; border-radius: .8rem; display: grid; place-items: center; background: var(--primary); color: #fff; }
+  .tarjeta:hover { transform: translateY(-2px); box-shadow: 0 16px 40px -18px rgba(0,0,0,.7); border-color: rgba(255,209,0,.45); }
+  .tarjeta .ico { width: 44px; height: 44px; border-radius: .8rem; display: grid; place-items: center; background: rgba(255,209,0,.15); color: var(--amarillo); border: 1px solid rgba(255,209,0,.3); }
   .tarjeta h2 { margin: 0; }
   .tarjeta p { margin: 0; color: var(--muted-fg); flex: 1; }
   .tarjeta .ir { font-weight: 700; color: var(--primary); }
@@ -27,8 +29,8 @@
 <body>
 <main class="inicio">
   <div class="marca">
-    <img src="logo.png" alt="Portal Distribuidora">
-    <div><div class="t1">Portal Distribuidora</div><div class="muted">Gestión integral</div></div>
+    <img src="logo-blanco.png" alt="Portal Distribuidora">
+    <h1>Gestión de <em>entregas</em></h1><div class="muted">Administración · Soy Chofer · Logística</div>
   </div>
   <div class="tarjetas">
     <a class="card tarjeta" href="admin.html">

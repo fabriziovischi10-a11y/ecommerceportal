@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#102b46">
+<meta name="theme-color" content="#0B1B3D">
 <title>Portal Distribuidora · Entregas</title>
 <link rel="icon" href="logo.png">
 <link rel="stylesheet" href="comun.css">
@@ -40,10 +40,10 @@
   .res .va { font-size: 1.35rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.15; word-break: break-word; }
   .res .va.chico { font-size: 1.05rem; }
   .res .mas { font-size: .75rem; font-weight: 600; text-decoration: underline; opacity: .85; }
-  .t-cyan { background: #ecfeff; color: #0e7490; } .t-cliente { background: var(--cliente-bg); color: var(--brand); }
+  .t-cyan { background: var(--cyan-bg); color: var(--cyan); } .t-cliente { background: var(--cliente-bg); color: var(--brand); }
   .lista { display: grid; gap: .5rem; }
   .item { display: flex; align-items: center; gap: .75rem; width: 100%; text-align: left; background: var(--card); border: 1px solid var(--border); border-radius: .9rem; padding: .75rem .85rem; font: inherit; color: inherit; cursor: pointer; min-height: 56px; touch-action: manipulation; }
-  .item:hover { border-color: #b8c7d6; background: #fbfcfd; }
+  .item:hover { border-color: rgba(255,209,0,.55); background: rgba(255,255,255,.1); }
   .item .cuerpo { flex: 1; min-width: 0; display: grid; gap: .1rem; }
   .item .tit { font-weight: 700; word-break: break-word; }
   .item .sub { font-size: .85rem; color: var(--muted-fg); word-break: break-word; }
@@ -56,7 +56,7 @@
   .mini .et { font-size: .72rem; font-weight: 700; }
   .mini .va { font-weight: 800; font-variant-numeric: tabular-nums; font-size: .8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   @media (max-width: 440px) { .mini { grid-template-columns: 1fr; } .mini > div { display: flex; justify-content: space-between; align-items: center; gap: .5rem; } .mini .va { font-size: .9rem; } }
-  .grupo { display: grid; gap: .5rem; padding: .75rem; border: 1px solid var(--border); border-radius: 1rem; background: #fafcfd; }
+  .grupo { display: grid; gap: .5rem; padding: .75rem; border: 1px solid var(--border); border-radius: 1rem; background: rgba(255,255,255,.04); }
   .aviso { border-radius: .9rem; padding: .75rem .85rem; font-size: .9rem; }
   .pwa { display: flex; gap: .75rem; align-items: flex-start; }
   .pwa .cuerpo { flex: 1; }
@@ -78,8 +78,8 @@
   .panel .l b { font-variant-numeric: tabular-nums; }
   .panel .msg { font-weight: 700; margin-top: .25rem; }
   .estrellas { display: flex; gap: .25rem; }
-  .estrella { background: none; border: 0; padding: .15rem; cursor: pointer; color: #cbd5e1; touch-action: manipulation; }
-  .estrella.on { color: #f59e0b; }
+  .estrella { background: none; border: 0; padding: .15rem; cursor: pointer; color: rgba(255,255,255,.3); touch-action: manipulation; }
+  .estrella.on { color: var(--amarillo); }
   .fotos { display: flex; gap: .4rem; flex-wrap: wrap; }
   .foto { position: relative; width: 64px; height: 64px; border-radius: .6rem; overflow: hidden; border: 1px solid var(--border); }
   .foto img { width: 100%; height: 100%; object-fit: cover; }
@@ -100,8 +100,8 @@
 </head>
 <body>
 <header class="ge-cab">
-  <img src="logo.png" alt="Portal Distribuidora">
-  <div><div class="t1">Portal Distribuidora</div><div class="t2">Entregas</div></div>
+  <img src="logo-blanco.png" alt="Portal Distribuidora">
+  <div class="tit-cab">Entregas</div>
   <div class="esp"></div>
   <details class="menu" id="menuControl">
     <summary class="btn btn-outline btn-sm">Control ▾</summary>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#102b46">
+<meta name="theme-color" content="#0B1B3D">
 <title>Portal Distribuidora · Entregas</title>
 <link rel="icon" href="logo.png">
 <link rel="stylesheet" href="comun.css">
@@ -19,8 +19,8 @@
   .sb { width: 256px; flex-shrink: 0; background: var(--sidebar); color: var(--sidebar-fg); position: sticky; top: var(--banda, 0px); height: calc(100vh - var(--banda, 0px)); display: flex; flex-direction: column; transition: width .18s ease; overflow: hidden; z-index: 60; }
   .sb.mini { width: 66px; }
   .sb.mini .txt { display: none; }
-  .sb-marca { display: flex; align-items: center; gap: .65rem; padding: 1rem .9rem; border-bottom: 1px solid rgba(255,255,255,.08); }
-  .sb-marca img { width: 38px; height: 38px; border-radius: .6rem; background: #fff; object-fit: contain; flex-shrink: 0; }
+  .sb-marca { display: flex; align-items: flex-start; flex-direction: column; gap: .65rem; padding: 1rem .9rem; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .sb-marca img { height: 26px; width: auto; max-width: 100%; object-fit: contain; flex-shrink: 1; }
   .sb-marca .t1 { font-weight: 800; line-height: 1.1; white-space: nowrap; } .sb-marca .t2 { font-size: .78rem; opacity: .7; white-space: nowrap; }
   .sb-grupo { padding: .9rem .6rem 0; flex: 1; overflow-y: auto; }
   .sb-grupo .tit { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; opacity: .55; padding: 0 .55rem .4rem; white-space: nowrap; }
@@ -58,14 +58,14 @@
   .kpi-v { font-size: 1.45rem; font-weight: 800; line-height: 1.2; margin-top: .15rem; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
   .kpi-d { font-size: .8rem; opacity: .85; margin-top: .15rem; }
   .kpi-p { font-size: .74rem; font-weight: 700; margin-top: .35rem; text-decoration: underline; }
-  .k-amber { background: var(--amber-bg); color: var(--amber); border-color: #fde68a; }
-  .k-emerald { background: var(--emerald-bg); color: var(--emerald); border-color: #a7f3d0; }
-  .k-rose { background: var(--rose-bg); color: var(--rose); border-color: #fecdd3; }
-  .k-orange { background: var(--orange-bg); color: var(--orange); border-color: #fed7aa; }
-  .k-violet { background: var(--violet-bg); color: var(--violet); border-color: #ddd6fe; }
-  .k-blue { background: var(--blue-bg); color: var(--blue); border-color: #bfdbfe; }
+  .k-amber { background: var(--amber-bg); color: var(--amber); border-color: rgba(255,255,255,.12); }
+  .k-emerald { background: var(--emerald-bg); color: var(--emerald); border-color: rgba(255,255,255,.12); }
+  .k-rose { background: var(--rose-bg); color: var(--rose); border-color: rgba(255,255,255,.12); }
+  .k-orange { background: var(--orange-bg); color: var(--orange); border-color: rgba(255,255,255,.12); }
+  .k-violet { background: var(--violet-bg); color: var(--violet); border-color: rgba(255,255,255,.12); }
+  .k-blue { background: var(--blue-bg); color: var(--blue); border-color: rgba(255,255,255,.12); }
   .k-slate { background: var(--slate-bg); color: var(--slate); }
-  .k-cyan { background: #ecfeff; color: #0e7490; border-color: #a5f3fc; }
+  .k-cyan { background: var(--cyan-bg); color: var(--cyan); border-color: rgba(255,255,255,.12); }
   .k-cliente { background: var(--cliente-bg); color: var(--brand); }
   .lista { display: grid; gap: .5rem; }
   .itm { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .7rem .85rem; border: 1px solid var(--border); border-radius: .8rem; background: var(--card); }
@@ -79,9 +79,9 @@
   .campo-linea > div { min-width: 180px; flex: 1; }
   .campo-linea label { margin-top: 0; }
   .fila-err { background: var(--rose-bg); } .fila-omit { background: var(--amber-bg); }
-  .caja-err { background: var(--rose-bg); color: var(--rose); border: 1px solid #fecdd3; border-radius: .8rem; padding: .75rem 1rem; }
+  .caja-err { background: var(--rose-bg); color: var(--rose); border: 1px solid rgba(255,255,255,.12); border-radius: .8rem; padding: .75rem 1rem; }
   .caja-err ul { margin: .3rem 0 0; padding-left: 1.2rem; max-height: 220px; overflow: auto; }
-  .aviso { background: var(--blue-bg); color: var(--blue); border: 1px solid #bfdbfe; border-radius: .9rem; padding: .9rem 1rem; }
+  .aviso { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(255,255,255,.12); border-radius: .9rem; padding: .9rem 1rem; }
   details.acc { border: 1px solid var(--border); border-radius: .8rem; background: var(--card); }
   details.acc > summary { list-style: none; cursor: pointer; padding: .75rem .9rem; display: flex; justify-content: space-between; align-items: center; gap: .6rem; flex-wrap: wrap; }
   details.acc > summary::-webkit-details-marker { display: none; }
@@ -91,7 +91,7 @@
   .doc { display: flex; gap: .7rem; align-items: center; padding: .6rem 0; border-top: 1px solid var(--border); flex-wrap: wrap; }
   .doc .mini { width: 46px; height: 46px; border-radius: .5rem; background: var(--muted); object-fit: cover; flex-shrink: 0; display: grid; place-items: center; color: var(--muted-fg); font-size: .7rem; }
   .doc .inf { flex: 1; min-width: 180px; }
-  .stars { color: #f59e0b; letter-spacing: 1px; }
+  .stars { color: var(--amarillo); letter-spacing: 1px; }
   .enc { display: grid; gap: .4rem; }
   .totales3 { display: grid; gap: .6rem; grid-template-columns: repeat(3, minmax(0,1fr)); }
   @media (max-width: 600px) { .totales3 { grid-template-columns: 1fr; } .g2 { grid-template-columns: 1fr; } }
@@ -109,7 +109,7 @@
 <div class="ad">
   <div class="sb-velo" id="sbVelo"></div>
   <aside class="sb" id="sb" aria-label="Menú de administración">
-    <div class="sb-marca"><img src="logo.png" alt=""><div class="txt"><div class="t1">Portal Distribuidora</div><div class="t2">Gestión integral</div></div></div>
+    <div class="sb-marca"><img src="logo-blanco.png" alt="Portal Distribuidora"><div class="txt"><div class="t2">Gestión de entregas</div></div></div>
     <nav class="sb-grupo" id="sbNav"></nav>
     <div class="sb-pie">
       <div class="sb-user"><span class="avatar" id="sbIni">U</span><div class="txt" style="min-width:0"><div class="n" id="sbNombre">Usuario autorizado</div><div class="r">Cuenta administradora</div></div></div>
