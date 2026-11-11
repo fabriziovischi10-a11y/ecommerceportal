@@ -1,0 +1,1518 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#102b46">
+<title>Portal Distribuidora · Entregas</title>
+<link rel="icon" href="logo.png">
+<link rel="stylesheet" href="comun.css">
+<script src="https://fabriziovischi10-a11y.github.io/ecommerceportal/intro-portal.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="comun.js"></script>
+<style>
+  .ad { display: flex; min-height: 100vh; }
+  .sb { width: 256px; flex-shrink: 0; background: var(--sidebar); color: var(--sidebar-fg); position: sticky; top: var(--banda, 0px); height: calc(100vh - var(--banda, 0px)); display: flex; flex-direction: column; transition: width .18s ease; overflow: hidden; z-index: 60; }
+  .sb.mini { width: 66px; }
+  .sb.mini .txt { display: none; }
+  .sb-marca { display: flex; align-items: center; gap: .65rem; padding: 1rem .9rem; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .sb-marca img { width: 38px; height: 38px; border-radius: .6rem; background: #fff; object-fit: contain; flex-shrink: 0; }
+  .sb-marca .t1 { font-weight: 800; line-height: 1.1; white-space: nowrap; } .sb-marca .t2 { font-size: .78rem; opacity: .7; white-space: nowrap; }
+  .sb-grupo { padding: .9rem .6rem 0; flex: 1; overflow-y: auto; }
+  .sb-grupo .tit { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; opacity: .55; padding: 0 .55rem .4rem; white-space: nowrap; }
+  .sb a.item { display: flex; align-items: center; gap: .7rem; padding: .55rem .6rem; border-radius: .6rem; color: inherit; text-decoration: none; font-weight: 600; font-size: .92rem; margin-bottom: 2px; white-space: nowrap; }
+  .sb a.item svg { flex-shrink: 0; }
+  .sb a.item:hover { background: rgba(255,255,255,.06); }
+  .sb a.item.activo { background: var(--sidebar-accent); color: var(--sidebar-primary); }
+  .sb-pie { border-top: 1px solid rgba(255,255,255,.08); padding: .75rem .7rem; display: grid; gap: .5rem; }
+  .sb-user { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--sidebar-primary); color: var(--sidebar); display: grid; place-items: center; font-weight: 800; flex-shrink: 0; }
+  .sb-user .n { font-weight: 700; font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sb-user .r { font-size: .74rem; opacity: .65; }
+  .sb-salir { background: rgba(255,255,255,.08); color: inherit; border: 0; }
+  .sb-velo { display: none; }
+  .principal { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .top { display: flex; align-items: center; gap: .7rem; padding: .65rem 1rem; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: var(--banda, 0px); z-index: 40; }
+  .top .t1 { font-weight: 800; line-height: 1.1; } .top .t2 { font-size: .8rem; color: var(--muted-fg); }
+  .top .esp { flex: 1; }
+  @media (max-width: 860px) {
+    .sb { position: fixed; left: 0; top: 0; bottom: 0; height: 100%; width: 280px; transform: translateX(-102%); transition: transform .2s ease; z-index: 8600; }
+    .sb.mini { width: 280px; } .sb.mini .txt { display: initial; }
+    .sb.abierto { transform: none; box-shadow: 0 0 40px rgba(0,0,0,.35); }
+    .sb-velo.abierto { display: block; position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 8500; }
+  }
+  .vista { max-width: 1240px; width: 100%; margin: 0 auto; padding: 1rem 16px 3rem; display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); }
+  .vista > *, .grid > * { min-width: 0; }
+  .grid#rMes, .grid#cDet { grid-template-columns: minmax(0, 1fr); }
+  .eyebrow { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted-fg); font-weight: 700; margin-bottom: .2rem; }
+  .sec-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: .8rem; flex-wrap: wrap; margin-bottom: .75rem; }
+  .sec-cab p { margin: .1rem 0 0; }
+  .kpi { border-radius: .9rem; padding: .85rem 1rem; border: 1px solid var(--border); background: var(--card); min-width: 0; }
+  .kpi.clic { cursor: pointer; transition: transform .12s, box-shadow .12s; }
+  .kpi.clic:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(16,30,54,.08); }
+  .kpi-l { font-size: .8rem; font-weight: 700; opacity: .85; }
+  .kpi-v { font-size: 1.45rem; font-weight: 800; line-height: 1.2; margin-top: .15rem; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+  .kpi-d { font-size: .8rem; opacity: .85; margin-top: .15rem; }
+  .kpi-p { font-size: .74rem; font-weight: 700; margin-top: .35rem; text-decoration: underline; }
+  .k-amber { background: var(--amber-bg); color: var(--amber); border-color: #fde68a; }
+  .k-emerald { background: var(--emerald-bg); color: var(--emerald); border-color: #a7f3d0; }
+  .k-rose { background: var(--rose-bg); color: var(--rose); border-color: #fecdd3; }
+  .k-orange { background: var(--orange-bg); color: var(--orange); border-color: #fed7aa; }
+  .k-violet { background: var(--violet-bg); color: var(--violet); border-color: #ddd6fe; }
+  .k-blue { background: var(--blue-bg); color: var(--blue); border-color: #bfdbfe; }
+  .k-slate { background: var(--slate-bg); color: var(--slate); }
+  .k-cyan { background: #ecfeff; color: #0e7490; border-color: #a5f3fc; }
+  .k-cliente { background: var(--cliente-bg); color: var(--brand); }
+  .lista { display: grid; gap: .5rem; }
+  .itm { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .7rem .85rem; border: 1px solid var(--border); border-radius: .8rem; background: var(--card); }
+  .itm .tt { font-weight: 700; overflow-wrap: anywhere; } .itm .st { font-size: .84rem; color: var(--muted-fg); overflow-wrap: anywhere; }
+  .itm > div:first-child { min-width: 0; }
+  .tabs { display: flex; gap: .35rem; flex-wrap: wrap; background: var(--muted); padding: .3rem; border-radius: .8rem; width: fit-content; max-width: 100%; }
+  .tabs button { border: 0; background: transparent; padding: .4rem .8rem; border-radius: .6rem; font: inherit; font-weight: 700; color: var(--muted-fg); cursor: pointer; }
+  .tabs button.on { background: var(--card); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .chips { display: flex; gap: .4rem; flex-wrap: wrap; }
+  .campo-linea { display: flex; gap: .6rem; flex-wrap: wrap; align-items: flex-end; }
+  .campo-linea > div { min-width: 180px; flex: 1; }
+  .campo-linea label { margin-top: 0; }
+  .fila-err { background: var(--rose-bg); } .fila-omit { background: var(--amber-bg); }
+  .caja-err { background: var(--rose-bg); color: var(--rose); border: 1px solid #fecdd3; border-radius: .8rem; padding: .75rem 1rem; }
+  .caja-err ul { margin: .3rem 0 0; padding-left: 1.2rem; max-height: 220px; overflow: auto; }
+  .aviso { background: var(--blue-bg); color: var(--blue); border: 1px solid #bfdbfe; border-radius: .9rem; padding: .9rem 1rem; }
+  details.acc { border: 1px solid var(--border); border-radius: .8rem; background: var(--card); }
+  details.acc > summary { list-style: none; cursor: pointer; padding: .75rem .9rem; display: flex; justify-content: space-between; align-items: center; gap: .6rem; flex-wrap: wrap; }
+  details.acc > summary::-webkit-details-marker { display: none; }
+  details.acc > summary::after { content: "▾"; color: var(--muted-fg); }
+  details.acc[open] > summary::after { content: "▴"; }
+  details.acc .acc-cuerpo { padding: 0 .9rem .9rem; }
+  .doc { display: flex; gap: .7rem; align-items: center; padding: .6rem 0; border-top: 1px solid var(--border); flex-wrap: wrap; }
+  .doc .mini { width: 46px; height: 46px; border-radius: .5rem; background: var(--muted); object-fit: cover; flex-shrink: 0; display: grid; place-items: center; color: var(--muted-fg); font-size: .7rem; }
+  .doc .inf { flex: 1; min-width: 180px; }
+  .stars { color: #f59e0b; letter-spacing: 1px; }
+  .enc { display: grid; gap: .4rem; }
+  .totales3 { display: grid; gap: .6rem; grid-template-columns: repeat(3, minmax(0,1fr)); }
+  @media (max-width: 600px) { .totales3 { grid-template-columns: 1fr; } .g2 { grid-template-columns: 1fr; } }
+  .cargando { display: flex; align-items: center; gap: .6rem; color: var(--muted-fg); padding: 1rem; }
+  .spin { width: 18px; height: 18px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: gira .8s linear infinite; }
+  @keyframes gira { to { transform: rotate(360deg); } }
+  .sel-busca { display: grid; gap: .35rem; }
+  .ok-txt { color: var(--emerald); font-weight: 700; } .err-txt { color: var(--rose); font-weight: 700; }
+  .linkbtn { background: none; border: 0; padding: 0; color: var(--primary); font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; }
+  td .st { font-size: .8rem; color: var(--muted-fg); }
+  .nowrap { white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="ad">
+  <div class="sb-velo" id="sbVelo"></div>
+  <aside class="sb" id="sb" aria-label="Menú de administración">
+    <div class="sb-marca"><img src="logo.png" alt=""><div class="txt"><div class="t1">Portal Distribuidora</div><div class="t2">Gestión integral</div></div></div>
+    <nav class="sb-grupo" id="sbNav"></nav>
+    <div class="sb-pie">
+      <div class="sb-user"><span class="avatar" id="sbIni">U</span><div class="txt" style="min-width:0"><div class="n" id="sbNombre">Usuario autorizado</div><div class="r">Cuenta administradora</div></div></div>
+      <button class="btn btn-sm sb-salir" id="sbSalir" title="Cerrar sesión"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg><span class="txt">Cerrar sesión</span></button>
+    </div>
+  </aside>
+  <div class="principal">
+    <header class="top">
+      <button class="btn btn-ghost btn-icon" id="sbBoton" aria-label="Mostrar u ocultar menú"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg></button>
+      <div><div class="t1">Gestión de Entregas</div><div class="t2">Control operativo de distribución</div></div>
+      <div class="esp"></div>
+      <button class="btn btn-outline btn-sm" id="btnActualizar" title="Volver a leer los datos"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Actualizar</button>
+    </header>
+    <main class="vista" id="vista"><div class="cargando"><span class="spin"></span>Cargando operación...</div></main>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var esc = GE.esc, money = GE.money, round2 = GE.round2;
+
+  // ================= Estado =================
+  var P = new URLSearchParams(location.search);
+  function fechaValida(s) { return s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null; }
+  var S = {
+    fecha: fechaValida(P.get("fecha")) || GE.hoy(),
+    clienteSel: P.get("cliente") ? Number(P.get("cliente")) : null,
+    filtroChofer: "", filtroZona: "", tok: 0,
+    op: { tab: "zones", modo: "zona" },
+    seg: { q: "", estado: "all", lim: 40, orden: "recientes", limE: 12 },
+    cli: { q: "" }
+  };
+  S.mes = S.fecha.slice(0, 7);
+  S.mesCli = S.mes;
+
+  function mesSig(m) { var y = +m.slice(0, 4), mm = +m.slice(5, 7) + 1; if (mm > 12) { mm = 1; y++; } return y + "-" + String(mm).padStart(2, "0"); }
+  function mesLabel(m) { return GE.mes(m + "-01"); }
+  function conPrueba(href) { if (!GE.PRUEBA) return href; return href + (href.indexOf("?") >= 0 ? "&" : "?") + "prueba=1"; }
+  function slug(s) { return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase(); }
+  function norm(s) { return String(s == null ? "" : s).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]+/g, " ").trim().toLowerCase(); }
+  function n(v) { return Number(v) || 0; }
+  function plural(k, s, p) { return k + " " + (k === 1 ? s : p); }
+  function sincronizarUrl() {
+    var u = new URL(location.href);
+    u.searchParams.set("fecha", S.fecha);
+    if (S.clienteSel) u.searchParams.set("cliente", S.clienteSel); else u.searchParams.delete("cliente");
+    history.replaceState(null, "", u.pathname + u.search + location.hash);
+  }
+
+  var MOTIVOS = { no_money: "Sin dinero", not_authorized: "No autorizado", closed: "Cliente cerrado", damaged: "Mercadería dañada o rechazada por estado", wrong_order: "Pedido equivocado o no solicitado", other: "Otro motivo" };
+  var CATEGORIAS = { food: "Comida", toll: "Peaje", lodging: "Hospedaje", phone: "Teléfono", assistant: "Ayudante", coca: "Coca", taxi: "Remis", truck_wash: "Lavado camión", floor: "Piso" };
+
+  // ================= Datos =================
+  // Catálogos (zonas y choferes) una vez por sesión; clientes solo cuando hacen falta.
+  var CAT = { zones: [], drivers: [], clients: null, cli: {} };
+  var _pCat = null, _pCli = null;
+  function catalogo() {
+    if (!_pCat) _pCat = Promise.all([GE.todos("zones"), GE.todos("drivers")]).then(function (r) {
+      CAT.zones = r[0].sort(function (a, b) { return String(a.code).localeCompare(String(b.code), "es", { numeric: true }); });
+      CAT.drivers = r[1].sort(function (a, b) { return String(a.name).localeCompare(String(b.name), "es"); });
+      return CAT;
+    }).catch(function (e) { _pCat = null; throw e; });
+    return _pCat;
+  }
+  function clientesTodos() {
+    if (!_pCli) _pCli = GE.todos("clients").then(function (r) {
+      CAT.clients = r.sort(function (a, b) { return String(a.businessName).localeCompare(String(b.businessName), "es"); });
+      r.forEach(function (c) { CAT.cli[c.id] = c; });
+      return r;
+    }).catch(function (e) { _pCli = null; throw e; });
+    return _pCli;
+  }
+  function clientesPorId(ids) {
+    var falta = ids.filter(function (id) { return id != null && !CAT.cli[id]; });
+    if (!falta.length || CAT.clients) return Promise.resolve();
+    return GE.dondeEn("clients", "id", falta).then(function (r) { r.forEach(function (c) { CAT.cli[c.id] = c; }); });
+  }
+  function chofer(id) { return CAT.drivers.filter(function (d) { return d.id === id; })[0] || null; }
+  function zona(id) { return CAT.zones.filter(function (z) { return z.id === id; })[0] || null; }
+
+  var cache = {};
+  var TTL = 60000;
+  function memo(clave, fn) {
+    var c = cache[clave];
+    if (c && Date.now() - c.t < TTL) return c.p;
+    var p = fn();
+    cache[clave] = { t: Date.now(), p: p };
+    p.catch(function () { delete cache[clave]; });
+    return p;
+  }
+  function invalidar() { cache = {}; }
+
+  function rangoQ(nombre, campo, from, to) {
+    // Un solo filtro de rango, sin orderBy: no requiere índice compuesto.
+    return GE.col(nombre).where(campo, ">=", from).where(campo, "<", to).get().then(GE.datos);
+  }
+  function porFecha(a, b) { return String(a.serviceDate || "").localeCompare(String(b.serviceDate || "")); }
+
+  function armar(from, to, r) {
+    var routes = r[0], rmap = {};
+    routes.forEach(function (x) { rmap[x.id] = x; });
+    var invoices = r[1].map(function (f) {
+      var ru = rmap[f.routeId];
+      if (ru) { f.driverId = ru.driverId; f.driverName = ru.driverName; f.routeName = ru.name; if (!f.zoneName) f.zoneName = ru.zoneName; }
+      return f;
+    });
+    var att = {}, adj = [];
+    r[6].concat(r[7]).forEach(function (a) { if (!att[a.id]) { att[a.id] = 1; adj.push(a); } });
+    return {
+      from: from, to: to, routes: routes.sort(porFecha), invoices: invoices, rmap: rmap,
+      expenses: r[2], receipts: r[3], cashClosures: r[4], accountPayments: r[5], paymentAttachments: adj, accountStatements: r[8]
+    };
+  }
+  function cargarRango(from, to) {
+    return Promise.all([
+      rangoQ("routes", "serviceDate", from, to), rangoQ("invoices", "serviceDate", from, to), rangoQ("expenses", "serviceDate", from, to),
+      rangoQ("receipts", "serviceDate", from, to), rangoQ("cashClosures", "serviceDate", from, to), rangoQ("accountPayments", "collectionDate", from, to),
+      rangoQ("paymentAttachments", "serviceDate", from, to), rangoQ("paymentAttachments", "collectionDate", from, to),
+      rangoQ("accountStatements", "issuedAt", from, to), catalogo()
+    ]).then(function (r) { return armar(from, to, r); });
+  }
+  function enRango(v, from, to) { v = String(v || "").slice(0, 10); return v >= from && v < to; }
+  function subRango(ov, from, to) {
+    function f(c) { return function (x) { return enRango(x[c], from, to); }; }
+    var routes = ov.routes.filter(f("serviceDate")), rmap = {};
+    routes.forEach(function (x) { rmap[x.id] = x; });
+    return {
+      from: from, to: to, routes: routes, rmap: rmap, invoices: ov.invoices.filter(f("serviceDate")),
+      expenses: ov.expenses.filter(f("serviceDate")), receipts: ov.receipts.filter(f("serviceDate")), cashClosures: ov.cashClosures.filter(f("serviceDate")),
+      accountPayments: ov.accountPayments.filter(f("collectionDate")),
+      paymentAttachments: ov.paymentAttachments.filter(function (a) { return enRango(a.serviceDate, from, to) || enRango(a.collectionDate, from, to); }),
+      accountStatements: ov.accountStatements.filter(f("issuedAt"))
+    };
+  }
+  // M = mes; D = día (si el mes ya está en memoria, se deriva de ahí sin leer de nuevo)
+  function datosMes(m) { return memo("M" + m, function () { return cargarRango(m + "-01", mesSig(m) + "-01"); }); }
+  function datosDia(f) {
+    var cm = cache["M" + f.slice(0, 7)];
+    if (cm && Date.now() - cm.t < TTL) return cm.p.then(function (ov) { return subRango(ov, f, GE.sumarDias(f, 1)); });
+    return memo("D" + f, function () { return cargarRango(f, GE.sumarDias(f, 1)); });
+  }
+  function datosAsignacion() { return memo("V", function () { return Promise.all([GE.donde("routes", [["driverId", "==", null]]), catalogo()]).then(function (r) { return { routes: r[0], drivers: CAT.drivers }; }); }); }
+
+  // Escrituras en lotes de hasta 450 operaciones
+  function escribir(ops) {
+    var lotes = [];
+    for (var i = 0; i < ops.length; i += 450) lotes.push(ops.slice(i, i + 450));
+    return lotes.reduce(function (p, lote) {
+      return p.then(function () {
+        var b = GE.db.batch();
+        lote.forEach(function (o) { if (o[0] === "set") b.set(o[1], o[2]); else if (o[0] === "update") b.update(o[1], o[2]); else b.delete(o[1]); });
+        return b.commit();
+      });
+    }, Promise.resolve());
+  }
+
+  // Cambia chofer/caja de una ruta y copia el chofer a sus facturas (están desnormalizadas).
+  function reasignarRuta(routeId, driverId, petty, extra) {
+    var d = chofer(driverId);
+    if (!d) return Promise.reject(new Error("Chofer inexistente."));
+    return GE.donde("invoices", [["routeId", "==", routeId]]).then(function (invs) {
+      var cambios = Object.assign({ driverId: d.id, driverName: d.name, pettyCashAmount: round2(petty), updatedAt: GE.ahora() }, extra || {});
+      var ops = [["update", GE.ref("routes", routeId), cambios]];
+      invs.forEach(function (f) {
+        var c = { driverId: d.id, driverName: d.name };
+        if (extra && extra.name) c.routeName = extra.name;
+        if (extra && extra.serviceDate) c.serviceDate = extra.serviceDate;
+        if (extra && extra.zoneName) c.zoneName = extra.zoneName;
+        ops.push(["update", GE.ref("invoices", f.id), c]);
+      });
+      return escribir(ops);
+    });
+  }
+
+  // ================= Cálculos =================
+  function netoDe(f) { return f.netAmount != null && f.netAmount !== "" ? n(f.netAmount) : round2(n(f.amount) - n(f.discountAmount)); }
+  function resumenPagos(invs) {
+    var r = { n: 0, gross: 0, discount: 0, net: 0, mixed: 0, accN: 0, acc: 0, cashN: 0, cash: 0, chkN: 0, chk: 0, trN: 0, tr: 0, nrN: 0, nr: 0 };
+    invs.forEach(function (f) {
+      if (f.status !== "delivered") return;
+      r.n++;
+      var net = netoDe(f);
+      r.gross += n(f.amount); r.discount += n(f.discountAmount); r.net += net;
+      var acc = (f.paymentMethod === "account" && !n(f.accountAmount)) ? net : n(f.accountAmount);
+      if (f.paymentMethod === "mixed") r.mixed++;
+      if (acc !== 0) { r.accN++; r.acc += acc; }
+      if (n(f.cashAmount) > 0) { r.cashN++; r.cash += n(f.cashAmount); }
+      var ch = GE.sumaCheques(f.checkAmounts);
+      if (ch > 0) { r.chkN++; r.chk += ch; }
+      if (n(f.transferAmount) > 0) { r.trN++; r.tr += n(f.transferAmount); }
+      if (!f.paymentMethod) { r.nrN++; r.nr += net; }
+    });
+    return r;
+  }
+  function detallePago(f) {
+    var p = [], acc = GE.ctaOriginal(f), ch = GE.sumaCheques(f.checkAmounts);
+    if (acc) p.push("Cta. cte. " + money(acc));
+    if (n(f.cashAmount) > 0) p.push("Efectivo " + money(f.cashAmount));
+    if (ch > 0) p.push("Cheque " + money(ch));
+    if (n(f.transferAmount) > 0) p.push("Transferencia " + money(f.transferAmount));
+    return p.join(" + ") || "Sin informar";
+  }
+  function notaGeneral(f) {
+    var v = [f.punctualityRating, f.serviceRating, f.overallRating].map(n).filter(function (x) { return x > 0; });
+    return v.length ? v.reduce(function (a, b) { return a + b; }, 0) / v.length : 0;
+  }
+  function promedio(arr) { arr = arr.filter(function (x) { return x > 0; }); return arr.length ? arr.reduce(function (a, b) { return a + b; }, 0) / arr.length : 0; }
+  function estadoBadge(f) {
+    if (f.status === "issue") return '<span class="badge t-rose">Rechazada · ' + esc(MOTIVOS[f.rejectionReason] || f.rejectionReason || "Sin motivo") + '</span>';
+    if (f.status === "delivered") return f.deliveryType === "partial" ? '<span class="badge t-orange">Parcial</span>' : '<span class="badge t-emerald">Total</span>';
+    return '<span class="badge t-amber">Pendiente</span>';
+  }
+  function linkChofer(f) {
+    if (!f.driverId) return "";
+    var q = "chofer.html?fecha=" + encodeURIComponent(f.serviceDate || "") + "&chofer=" + f.driverId + "&ruta=" + f.routeId + "&cliente=" + f.clientId + "&factura=" + f.id;
+    return '<a class="small" href="' + esc(conPrueba(q)) + '" target="_blank" rel="noopener">Abrir en Soy Chofer ↗</a>';
+  }
+  // Filtro mes + chofer + zona (bH)
+  function filtrar(ov, ch, zn) {
+    if (!ch && !zn) return ov;
+    function okR(r) { return (!ch || String(r.driverId == null ? "none" : r.driverId) === ch) && (!zn || r.zoneName === zn); }
+    var routes = ov.routes.filter(okR), ids = {};
+    routes.forEach(function (r) { ids[r.id] = 1; });
+    var invoices = ov.invoices.filter(function (f) { return ids[f.routeId] || (!ov.rmap[f.routeId] && okR(f)); });
+    var clis = {};
+    invoices.forEach(function (f) { clis[f.clientId] = 1; });
+    return {
+      from: ov.from, to: ov.to, rmap: ov.rmap, routes: routes, invoices: invoices,
+      expenses: ov.expenses.filter(function (e) { return ids[e.routeId] || okR(e); }),
+      receipts: ov.receipts.filter(function (e) { return ids[e.routeId] || okR(e); }),
+      paymentAttachments: ov.paymentAttachments.filter(function (e) { return ids[e.routeId]; }),
+      accountPayments: ov.accountPayments.filter(function (e) { return ids[e.collectionRouteId] || okR(e); }),
+      cashClosures: ov.cashClosures.filter(function (c) {
+        return (!ch || String(c.driverId) === ch) && (!zn || routes.some(function (r) { return r.driverId === c.driverId && r.serviceDate === c.serviceDate; }));
+      }),
+      accountStatements: ov.accountStatements.filter(function (s) { return clis[s.clientId]; })
+    };
+  }
+
+  // ================= UI chica =================
+  function kpi(o) {
+    return '<div class="kpi k-' + (o.tono || "slate") + (o.acc ? " clic" : "") + '"' + (o.acc ? ' data-acc="' + o.acc + '" role="button" tabindex="0"' : "") + '>' +
+      '<div class="kpi-l">' + esc(o.label) + '</div><div class="kpi-v">' + o.valor + '</div>' +
+      (o.det ? '<div class="kpi-d">' + o.det + '</div>' : "") + (o.pie ? '<div class="kpi-p">' + esc(o.pie) + '</div>' : "") + '</div>';
+  }
+  function cargando(txt) { return '<div class="cargando"><span class="spin"></span>' + esc(txt || "Cargando operación...") + '</div>'; }
+  function errorBox(e) { return '<div class="card"><h2>No pudimos cargar la operación</h2><p class="muted">' + esc((e && e.message) || "Intentá nuevamente en unos instantes.") + '</p></div>'; }
+  function vacio(t, d) { return '<div class="vacio"><b>' + esc(t) + '</b>' + (d ? '<div class="small">' + esc(d) + '</div>' : "") + '</div>'; }
+  function clicks(el, acc, fn) { el.querySelectorAll('[data-acc="' + acc + '"]').forEach(function (b) { b.onclick = function () { fn(b); }; b.onkeydown = function (e) { if (e.key === "Enter") fn(b); }; }); }
+  function opciones(lista, val, ph) { return (ph != null ? '<option value="">' + esc(ph) + '</option>' : "") + lista.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(o[0]) === String(val) ? " selected" : "") + '>' + esc(o[1]) + '</option>'; }).join(""); }
+  function bloqueCobranza(invs, sub) {
+    var r = resumenPagos(invs);
+    function c(k, label, monto, det, tono) { return kpi({ label: label, valor: money(monto), det: plural(k, "factura", "facturas") + " · " + det, tono: tono }); }
+    return '<section class="card"><div class="eyebrow">Cobranza</div><h2>Cómo se va cobrando</h2><p class="muted">' + esc(sub || "Acumulado de las facturas entregadas del mes seleccionado.") + '</p>' +
+      '<div class="grid g4">' + c(r.cashN, "Efectivo", r.cash, "Cobrado en efectivo", "emerald") + c(r.accN, "Cuenta corriente", r.acc, "Facturado a cuenta", "blue") +
+      c(r.chkN, "Cheque", r.chk, "Importe de cheques", "amber") + c(r.trN, "Transferencia", r.tr, "Importe transferido", "violet") + '</div>' +
+      (r.nrN ? '<p class="muted small">' + plural(r.nrN, "entrega", "entregas") + ' sin medio de pago informado: ' + money(r.nr) + '.</p>' : "") + '</section>';
+  }
+  function listadoFacturas(tipo, invs) {
+    var tit = { pending: "Facturas pendientes", issue: "Facturas rechazadas", delivered: "Facturas entregadas" }[tipo];
+    var html = '<p class="muted">' + plural(invs.length, "factura", "facturas") + ' en el período seleccionado.</p><div class="lista">' +
+      (invs.length ? invs.map(function (f) {
+        return '<div class="itm"><div><div class="tt">' + esc(f.invoiceNumber) + ' · ' + esc(f.clientName) + '</div><div class="st">' + esc(f.zoneName || "") + ' · ' + esc(f.driverName || "Sin chofer") + '</div></div><div style="text-align:right"><div class="num"><b>' + money(f.amount) + '</b></div>' + estadoBadge(f) + '</div></div>';
+      }).join("") : vacio("No hay facturas para mostrar.")) + '</div>';
+    GE.modal({ titulo: tit, html: html, ancho: "720px" });
+  }
+  function descargarBlob(blob, nombre) {
+    var u = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = u; a.download = nombre; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(u); }, 4000);
+  }
+  function entregarArchivo(blob, nombre, modo, titulo) {
+    var file = new File([blob], nombre, { type: blob.type || "application/pdf" });
+    if (modo === "compartir" && navigator.canShare && navigator.canShare({ files: [file] })) {
+      return navigator.share({ files: [file], title: titulo || nombre }).then(function () { return "compartido"; })
+        .catch(function (e) { if (e && e.name === "AbortError") return "compartido"; descargarBlob(blob, nombre); return "descargado"; });
+    }
+    descargarBlob(blob, nombre);
+    return Promise.resolve("descargado");
+  }
+  function blobDeArchivo(fileUrl) {
+    return GE.urlArchivo(fileUrl).then(function (u) { if (!u) throw new Error("sin archivo"); return fetch(u).then(function (r) { return r.blob(); }); });
+  }
+  function accionesArchivo(el) {
+    el.querySelectorAll("[data-abrir]").forEach(function (b) { b.onclick = function () { GE.abrirArchivo(b.dataset.abrir, b.dataset.nombre); }; });
+    el.querySelectorAll("[data-bajar]").forEach(function (b) {
+      b.onclick = function () { blobDeArchivo(b.dataset.bajar).then(function (bl) { descargarBlob(bl, b.dataset.nombre); }).catch(function () { GE.toast("No se pudo descargar el archivo.", "error"); }); };
+    });
+    el.querySelectorAll("[data-enviar]").forEach(function (b) {
+      b.onclick = function () {
+        blobDeArchivo(b.dataset.enviar).then(function (bl) {
+          var f = new File([bl], b.dataset.nombre, { type: bl.type });
+          if (navigator.canShare && navigator.canShare({ files: [f] })) return navigator.share({ files: [f], title: b.dataset.nombre }).catch(function () {});
+          descargarBlob(bl, b.dataset.nombre);
+        }).catch(function () { GE.toast("No se pudo preparar el archivo para enviarlo.", "error"); });
+      };
+    });
+  }
+  function botonesArchivo(fileUrl, nombre) {
+    if (!fileUrl) return "";
+    var a = ' data-nombre="' + esc(nombre) + '"';
+    return '<div class="fila"><button class="btn btn-outline btn-sm" data-abrir="' + esc(fileUrl) + '"' + a + '>Abrir</button><button class="btn btn-outline btn-sm" data-enviar="' + esc(fileUrl) + '"' + a + '>Enviar</button><button class="btn btn-outline btn-sm" data-bajar="' + esc(fileUrl) + '"' + a + '>Descargar</button></div>';
+  }
+
+  // ================= Archivo permanente (Py) =================
+  function archivoPermanente(cont, ov, scopeLabel) {
+    var st = { cob: "", zona: "", tipo: "all" };
+    var zonasDe = function (driverId, fecha) {
+      var z = ov.routes.filter(function (r) { return r.driverId === driverId && r.serviceDate === fecha; }).map(function (r) { return r.zoneName; });
+      return z.length ? Array.from(new Set(z)) : ["Todas las zonas"];
+    };
+    var docs = [];
+    ov.receipts.forEach(function (r) {
+      docs.push({ grupo: "recibos", tipo: "Recibo", tono: "emerald", titulo: (r.receiptNumber || "") + " · " + (r.clientName || ""), det: (r.zoneName || "") + " · " + money(r.totalAmount), cob: r.driverName || "Sin cobrador", zonas: [r.zoneName || ""], fecha: r.issuedAt || r.serviceDate, fileUrl: r.fileUrl, nombre: "recibo-" + slug(r.clientName) + "-" + r.serviceDate + ".pdf" });
+    });
+    ov.cashClosures.forEach(function (c) {
+      var z = zonasDe(c.driverId, c.serviceDate);
+      docs.push({ grupo: "cajas", tipo: "Cierre de caja", tono: "blue", titulo: "Caja · " + GE.fechaCorta(c.serviceDate), det: "Asignada " + money(c.pettyCashAmount) + " · gastos " + money(c.totalExpenses) + " · saldo " + money(c.balance), cob: c.driverName || "Sin cobrador", zonas: z, zonaTxt: z.join(" · "), fecha: c.closedAt || c.serviceDate, fileUrl: c.fileUrl, nombre: "cierre-caja-" + slug(c.driverName) + "-" + c.serviceDate + ".pdf" });
+    });
+    ov.routes.filter(function (r) { return r.status === "completed"; }).forEach(function (r) {
+      docs.push({ grupo: "rutas", tipo: "Ruta cerrada", tono: "slate", titulo: r.zoneName || "", det: r.name || "", cob: r.driverName || "Sin cobrador", zonas: [r.zoneName || ""], fecha: r.closedAt || r.serviceDate });
+    });
+    ov.paymentAttachments.forEach(function (a) {
+      var tr = a.kind === "transfer_photo";
+      docs.push({ grupo: "fotos", foto: true, tipo: (tr ? "Foto de transferencia" : "Foto de cheque") + (a.accountPaymentId ? (tr ? " cobrada" : " cobrado") : ""), tono: tr ? "violet" : "amber", titulo: "Factura " + (a.invoiceNumber || ""), det: a.clientName || "", cob: a.driverName || "Sin cobrador", zonas: [a.zoneName || ""], fecha: a.createdAt, fileUrl: a.fileUrl, nombre: a.fileName || ("foto-" + a.id + ".jpg") });
+    });
+    ov.accountStatements.forEach(function (s) {
+      docs.push({ grupo: "cuentas", tipo: "Resumen de cuenta", tono: "blue", titulo: s.clientName || "", det: GE.fechaCorta(s.issuedAt) + " · neto " + money(s.netAmount) + " · cta. cte. " + money(s.accountAmount), cob: "Clientes y cuentas", zonas: ["Todas las zonas"], fecha: s.issuedAt, fileUrl: s.fileUrl, nombre: "resumen-cuenta-" + slug(s.clientName) + "-" + String(s.periodFrom || "").slice(0, 7) + ".pdf" });
+    });
+    ov.accountPayments.forEach(function (p) {
+      docs.push({ grupo: "cobros", tipo: "Cobro Cuenta Corriente", tono: "emerald", titulo: "Factura " + (p.invoiceNumber || ""), det: (p.clientName || "") + " · " + money(p.totalAmount), cob: p.driverName || "Sin cobrador", zonas: [p.zoneName || ""], fecha: p.paidAt || p.collectionDate });
+    });
+    var cnt = function (g) { return docs.filter(function (d) { return d.grupo === g; }).length; };
+    var cobs = Array.from(new Set(docs.map(function (d) { return d.cob; }).concat(CAT.drivers.map(function (d) { return d.name; })))).sort(function (a, b) { return a.localeCompare(b, "es"); });
+    var zonas = Array.from(new Set([].concat.apply([], docs.map(function (d) { return d.zonas; })).filter(function (z) { return z && z !== "Todas las zonas"; }))).sort(function (a, b) { return a.localeCompare(b, "es", { numeric: true }); });
+
+    function pinta() {
+      var lista = docs.filter(function (d) {
+        if (st.cob && d.cob !== st.cob) return false;
+        if (st.zona && d.zonas.indexOf(st.zona) < 0 && d.zonas.indexOf("Todas las zonas") < 0) return false;
+        if (st.tipo === "recibos" && d.grupo !== "recibos") return false;
+        if (st.tipo === "cajas" && d.grupo !== "cajas") return false;
+        if (st.tipo === "fotos" && d.grupo !== "fotos") return false;
+        return true;
+      }).sort(function (a, b) { return String(b.fecha || "").localeCompare(String(a.fecha || "")); });
+      var grupos = {};
+      lista.forEach(function (d) { (grupos[d.cob] = grupos[d.cob] || []).push(d); });
+      var nTipo = { all: docs.length, recibos: cnt("recibos"), cajas: cnt("cajas"), fotos: cnt("fotos") };
+      cont.innerHTML = '<div class="sec-cab"><div><div class="eyebrow">Archivo permanente</div><h2>Recibos, cierres, cheques y cuentas</h2><p class="muted">Documentación ' + esc(scopeLabel) + ', ordenada por cobrador, zona y fecha.</p></div>' +
+        '<div class="chips"><span class="badge t-emerald">' + cnt("recibos") + ' recibos</span><span class="badge t-blue">' + cnt("cajas") + ' cajas</span><span class="badge t-slate">' + cnt("rutas") + ' rutas</span><span class="badge t-amber">' + cnt("fotos") + ' fotos</span><span class="badge t-blue">' + cnt("cuentas") + ' cuentas</span><span class="badge t-emerald">' + cnt("cobros") + ' cobros de cuenta</span></div></div>' +
+        '<div class="campo-linea"><div><label>Seleccionar cobrador</label><select data-f="cob">' + opciones(cobs.map(function (c) { return [c, c]; }), st.cob, "Todos los cobradores") + '</select></div>' +
+        '<div><label>Filtrar por zona</label><select data-f="zona">' + opciones(zonas.map(function (z) { return [z, z]; }), st.zona, "Todas las zonas") + '</select></div></div>' +
+        '<div class="tabs" style="margin:.75rem 0">' + [["all", "Todo"], ["recibos", "Recibos"], ["cajas", "Cajas chicas"], ["fotos", "Fotos de comprobantes"]].map(function (t) { return '<button data-t="' + t[0] + '" class="' + (st.tipo === t[0] ? "on" : "") + '">' + t[1] + ' (' + nTipo[t[0]] + ')</button>'; }).join("") + '</div>' +
+        '<div class="lista">' + (lista.length ? Object.keys(grupos).sort(function (a, b) { return a.localeCompare(b, "es"); }).map(function (g) {
+          return '<details class="acc"><summary><div><b>Cobrador: ' + esc(g) + '</b><div class="small muted">' + plural(grupos[g].length, "registro guardado", "registros guardados") + '</div></div></summary><div class="acc-cuerpo">' +
+            grupos[g].map(function (d) {
+              return '<div class="doc">' + (d.foto ? '<img class="mini" alt="" data-mini="' + esc(d.fileUrl) + '">' : "") + '<div class="inf"><div class="fila"><b>' + esc(d.titulo) + '</b><span class="badge t-' + d.tono + '">' + esc(d.tipo) + '</span></div>' +
+                '<div class="small muted">' + esc(d.zonaTxt || d.zonas.join(" · ")) + ' · ' + esc(d.det) + '</div><div class="small muted">' + esc(GE.fechaHora(d.fecha)) + '</div></div>' + botonesArchivo(d.fileUrl, d.nombre) + '</div>';
+            }).join("") + '</div></details>';
+        }).join("") : vacio("No hay documentos para los filtros seleccionados.")) + '</div>';
+      cont.querySelectorAll("select[data-f]").forEach(function (s) { s.onchange = function () { st[s.dataset.f] = s.value; pinta(); }; });
+      cont.querySelectorAll("[data-t]").forEach(function (b) { b.onclick = function () { st.tipo = b.dataset.t; pinta(); }; });
+      cont.querySelectorAll("details.acc").forEach(function (d) {
+        d.addEventListener("toggle", function () {
+          if (!d.open) return;
+          d.querySelectorAll("img[data-mini]").forEach(function (im) {
+            if (im.src) return;
+            GE.urlArchivo(im.dataset.mini).then(function (u) { if (u) im.src = u; }).catch(function () {});
+          });
+        });
+      });
+      accionesArchivo(cont);
+    }
+    pinta();
+  }
+
+  // ================= Diálogo de alta (rne) =================
+  function alta(tipo, preset, alGuardar) {
+    preset = preset || {};
+    var titulos = { zone: "Nueva zona", driver: "Nuevo chofer", client: "Nuevo cliente", route: "Asignar zona al chofer", invoice: "Nueva factura" };
+    var p1 = tipo === "client" || tipo === "route" || tipo === "invoice" ? catalogo() : Promise.resolve();
+    var p2 = tipo === "invoice" ? Promise.all([clientesTodos(), datosDia(S.fecha)]) : Promise.resolve();
+    Promise.all([p1, p2]).then(function (r) {
+      var diaRoutes = tipo === "invoice" ? r[1][1].routes : [];
+      var campos;
+      var zonasOp = CAT.zones.map(function (z) { return [z.id, z.code + " · " + z.name]; });
+      var choferesOp = CAT.drivers.filter(function (d) { return d.active !== false; }).map(function (d) { return [d.id, d.code + " · " + d.name]; });
+      if (tipo === "zone") campos = [["code", "Código", "text", "Ej. 84"], ["name", "Nombre de la zona", "text", "Ej. Zona 84"], ["description", "Descripción (opcional)", "textarea", "Referencia de reparto"]];
+      else if (tipo === "driver") campos = [["code", "Legajo / código", "text", "Ej. D-1001"], ["name", "Nombre y apellido", "text", ""], ["phone", "Teléfono (opcional)", "text", "Ej. 381 000 0000"]];
+      else if (tipo === "client") campos = [["zoneId", "Zona", "select", "Seleccioná una zona", zonasOp], ["code", "Código de cliente", "text", "Ej. CLI-0001"], ["businessName", "Razón social / nombre", "text", ""], ["contactName", "Contacto (opcional)", "text", "Responsable de recepción"], ["phone", "Teléfono (opcional)", "text", ""], ["address", "Dirección (opcional)", "textarea", "Dirección de descarga"]];
+      else if (tipo === "route") campos = [["name", "Nombre de la asignación", "text", "Ej. Zona 01 · lunes"], ["serviceDate", "Fecha de servicio", "date", ""], ["zoneId", "Zona", "select", "Seleccioná una zona", zonasOp], ["driverId", "Chofer", "select", "Seleccioná un chofer", choferesOp], ["notes", "Observaciones (opcional)", "textarea", "Indicaciones especiales"]];
+      else campos = [["routeId", "Zona asignada", "select", "Seleccioná una asignación", diaRoutes.map(function (x) { return [x.id, x.name + " · " + x.serviceDate]; })], ["clientId", "Cliente", "selectBusca", "Seleccioná un cliente", CAT.clients.map(function (c) { return [c.id, c.businessName + " · " + (c.zoneName || "")]; })], ["invoiceNumber", "Número de factura", "text", "Ej. A-000123"], ["amount", "Importe", "number", "0,00"]];
+      if (tipo === "route" && !preset.serviceDate) preset.serviceDate = S.fecha;
+      var html = '<p class="muted">Completá solamente los datos necesarios para la operación.</p><form class="fa">' + campos.map(function (c) {
+        var v = preset[c[0]] == null ? "" : preset[c[0]], req = !/opcional/.test(c[1]);
+        var ctrl;
+        if (c[2] === "textarea") ctrl = '<textarea name="' + c[0] + '" rows="2" placeholder="' + esc(c[3]) + '">' + esc(v) + '</textarea>';
+        else if (c[2] === "select") ctrl = '<select name="' + c[0] + '"' + (req ? " required" : "") + '>' + opciones(c[4], v, c[3]) + '</select>';
+        else if (c[2] === "selectBusca") ctrl = '<div class="sel-busca"><input type="search" class="busca-sel" placeholder="Buscar cliente…"><select name="' + c[0] + '" required>' + opciones(c[4].slice(0, 400), v, c[3]) + '</select></div>';
+        else ctrl = '<input name="' + c[0] + '" type="' + c[2] + '"' + (c[2] === "number" ? ' step="0.01"' : "") + ' placeholder="' + esc(c[3]) + '" value="' + esc(v) + '"' + (req ? " required" : "") + '>';
+        return '<label>' + esc(c[1]) + '</label>' + ctrl;
+      }).join("") + (tipo === "invoice" && !diaRoutes.length ? '<p class="err-txt small">No hay asignaciones en ' + esc(GE.fechaLarga(S.fecha)) + '. Primero asigná una zona.</p>' : "") +
+        '<div class="ge-acciones"><button type="button" class="btn btn-outline cancelar">Cancelar</button><button type="submit" class="btn btn-primary guardar">Guardar</button></div></form>';
+      var m = GE.modal({ titulo: titulos[tipo], html: html });
+      var form = m.el.querySelector("form");
+      m.el.querySelector(".cancelar").onclick = m.cerrar;
+      var bs = m.el.querySelector(".busca-sel");
+      if (bs) {
+        var todosOp = campos[1][4], sel = m.el.querySelector('select[name="clientId"]');
+        bs.oninput = function () {
+          var q = norm(bs.value), cur = sel.value;
+          var f = todosOp.filter(function (o) { return !q || norm(o[1]).indexOf(q) >= 0; }).slice(0, 400);
+          sel.innerHTML = opciones(f, cur, "Seleccioná un cliente");
+          if (f.length === 1) sel.value = f[0][0];
+        };
+      }
+      form.onsubmit = function (e) {
+        e.preventDefault();
+        var d = {};
+        new FormData(form).forEach(function (v, k) { d[k] = String(v).trim(); });
+        var btn = m.el.querySelector(".guardar");
+        btn.disabled = true; btn.textContent = "Guardando...";
+        guardarAlta(tipo, d).then(function (obj) {
+          GE.toast("Información guardada.");
+          m.cerrar();
+          if (alGuardar) alGuardar(obj);
+          refrescar();
+        }).catch(function (err) {
+          btn.disabled = false; btn.textContent = "Guardar";
+          GE.toast(err.message || "No se pudo guardar.", "error");
+        });
+      };
+    }).catch(function (e) { GE.toast("No se pudieron cargar los datos: " + e.message, "error"); });
+  }
+  function guardarAlta(tipo, d) {
+    var ahora = GE.ahora();
+    if (tipo === "zone") {
+      var code = d.code;
+      if (/^\d$/.test(code)) code = "0" + code;
+      if (CAT.zones.some(function (z) { return String(z.code).toUpperCase() === code.toUpperCase(); })) return Promise.reject(new Error("Ya existe una zona con el código " + code + "."));
+      var z = { id: GE.nuevoId(), code: code, name: d.name, description: d.description || null, active: true, createdAt: ahora, updatedAt: ahora };
+      return GE.guardar("zones", z).then(function () { CAT.zones.push(z); return z; });
+    }
+    if (tipo === "driver") {
+      if (CAT.drivers.some(function (x) { return String(x.code).toUpperCase() === d.code.toUpperCase(); })) return Promise.reject(new Error("Ya existe un chofer con el legajo " + d.code + "."));
+      var dr = { id: GE.nuevoId(), code: d.code, name: d.name, phone: d.phone || null, active: true, userId: null, createdAt: ahora, updatedAt: ahora };
+      return GE.guardar("drivers", dr).then(function () { CAT.drivers.push(dr); CAT.drivers.sort(function (a, b) { return a.name.localeCompare(b.name, "es"); }); return dr; });
+    }
+    if (tipo === "client") {
+      var zz = zona(Number(d.zoneId));
+      return clientesTodos().then(function (cl) {
+        if (cl.some(function (c) { return String(c.code).toUpperCase() === d.code.toUpperCase(); })) throw new Error("Ya existe un cliente con el código " + d.code + ".");
+        var c = { id: GE.nuevoId(), code: d.code, businessName: d.businessName, contactName: d.contactName || null, phone: d.phone || null, address: d.address || null, active: true, zoneId: zz.id, zoneName: zz.name, createdAt: ahora, updatedAt: ahora };
+        return GE.guardar("clients", c).then(function () { CAT.clients.push(c); CAT.cli[c.id] = c; return c; });
+      });
+    }
+    if (tipo === "route") {
+      var zr = zona(Number(d.zoneId)), ch = chofer(Number(d.driverId));
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d.serviceDate)) return Promise.reject(new Error("Fecha inválida."));
+      var r = { id: GE.nuevoId(), name: d.name, zoneId: zr.id, zoneName: zr.name, zoneCode: zr.code, driverId: ch.id, driverName: ch.name, serviceDate: d.serviceDate, pettyCashAmount: 0, status: "scheduled", closedAt: null, notes: d.notes || null, vehicleId: null, vehicleCode: null, vehiclePlate: null, createdAt: ahora };
+      return GE.guardar("routes", r);
+    }
+    // invoice
+    var amount = Number(String(d.amount).replace(",", "."));
+    if (!isFinite(amount)) return Promise.reject(new Error("Importe inválido."));
+    return Promise.all([GE.uno("routes", d.routeId), GE.donde("invoices", [["invoiceNumber", "==", d.invoiceNumber]])]).then(function (r) {
+      var ru = r[0], c = CAT.cli[Number(d.clientId)];
+      if (!ru || !c) throw new Error("Elegí la asignación y el cliente.");
+      if (r[1].length) throw new Error("La factura " + d.invoiceNumber + " ya existe.");
+      return GE.guardar("invoices", nuevaFactura({ invoiceNumber: d.invoiceNumber, amount: round2(amount), source: "manual" }, ru, c));
+    });
+  }
+  function nuevaFactura(base, ru, c) {
+    return Object.assign({
+      id: GE.nuevoId(), invoiceNumber: "", amount: 0, source: "imported", description: null, status: "pending",
+      rejectionReason: null, rejectionNotes: null, rejectedAt: null, deliveryType: null, paymentMethod: null,
+      accountAmount: null, accountPaidAmount: 0, cashAmount: null, checkAmounts: null, transferAmount: null,
+      discountPercent: 0, discountAmount: 0, netAmount: null, paymentNotes: null, deliveredAt: null,
+      deliveredLatitude: null, deliveredLongitude: null, deliveredAccuracyMeters: null, locationCapturedAt: null,
+      createdAt: GE.ahora(), clientId: c.id, clientName: c.businessName, clientCode: c.code || null, clientAddress: c.address || null,
+      routeId: ru.id, routeName: ru.name, serviceDate: ru.serviceDate, zoneName: ru.zoneName, driverId: ru.driverId == null ? null : ru.driverId, driverName: ru.driverName || null,
+      punctualityRating: null, productConditionRating: null, serviceRating: null, communicationRating: null, overallRating: null
+    }, base);
+  }
+
+  // ================= Router y layout =================
+  var MENU = [
+    ["#/", "Resumen", '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>'],
+    ["#/operacion", "Operación", '<path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/>'],
+    ["#/carga-masiva", "Carga masiva", '<path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/>'],
+    ["#/asignar-zonas", "Asignar zonas", '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>'],
+    ["#/seguimiento", "Seguimiento", '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'],
+    ["#/clientes", "Clientes y cuentas", '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>'],
+    [conPrueba("chofer.html"), "Entregas de choferes", '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.6a1 1 0 0 0-.2-.6L18.3 8.4a1 1 0 0 0-.8-.4H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>']
+  ];
+  var MENU2 = [
+    [conPrueba("logistica.html"), "Logística", '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/>'],
+    [conPrueba("index.html"), "Inicio", '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>']
+  ];
+  function item(m) { return '<a class="item" href="' + esc(m[0]) + '" title="' + esc(m[1]) + '"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + m[2] + '</svg><span class="txt">' + esc(m[1]) + '</span></a>'; }
+  document.getElementById("sbNav").innerHTML = '<div class="tit txt">Control diario</div>' + MENU.map(item).join("") + '<div class="tit txt" style="margin-top:.8rem">Accesos</div>' + MENU2.map(item).join("");
+  var sb = document.getElementById("sb"), velo = document.getElementById("sbVelo");
+  try { if (localStorage.getItem("ge_admin_sb_mini") === "1") sb.classList.add("mini"); } catch (e) {}
+  function esMovil() { return matchMedia("(max-width: 860px)").matches; }
+  function cerrarSheet() { sb.classList.remove("abierto"); velo.classList.remove("abierto"); }
+  document.getElementById("sbBoton").onclick = function () {
+    if (esMovil()) { sb.classList.toggle("abierto"); velo.classList.toggle("abierto"); }
+    else { sb.classList.toggle("mini"); try { localStorage.setItem("ge_admin_sb_mini", sb.classList.contains("mini") ? "1" : "0"); } catch (e) {} }
+  };
+  velo.onclick = cerrarSheet;
+  sb.addEventListener("click", function (e) { if (e.target.closest("a.item")) cerrarSheet(); });
+  document.getElementById("sbSalir").onclick = function () { GE.salir(); };
+  document.getElementById("btnActualizar").onclick = function () { invalidar(); _pCat = null; _pCli = null; CAT.clients = null; CAT.cli = {}; render(); GE.toast("Datos actualizados.", "info"); };
+
+  var VISTAS = { "": vResumen, "operacion": vOperacion, "carga-masiva": vCarga, "asignar-zonas": vAsignar, "seguimiento": vSeguimiento, "clientes": vClientes };
+  function rutaActual() { var r = location.hash.replace(/^#\/?/, "").split("?")[0]; return VISTAS[r] ? r : ""; }
+  function render() {
+    var r = rutaActual();
+    document.querySelectorAll("#sbNav a.item").forEach(function (a) { a.classList.toggle("activo", a.getAttribute("href") === "#/" + r); });
+    var vista = document.getElementById("vista");
+    var tok = ++S.tok;
+    vista.innerHTML = cargando();
+    try { VISTAS[r](vista, function () { return tok === S.tok; }); } catch (e) { console.error(e); vista.innerHTML = errorBox(e); }
+  }
+  function refrescar() { invalidar(); render(); }
+  function irA(h) { if (location.hash === h) render(); else location.hash = h; }
+  window.addEventListener("hashchange", function () { render(); window.scrollTo(0, 0); });
+
+  // ================= 6.3 Resumen =================
+  function vResumen(el, vigente) {
+    el.innerHTML = '<section class="card" id="rDia">' + cargando() + '</section><section class="card" id="rArchDia"></section>' +
+      '<section class="card" id="rMesCab"></section><div id="rMes" class="grid">' + cargando() + '</div>';
+    datosDia(S.fecha).then(function (D) {
+      if (!vigente()) return;
+      var box = el.querySelector("#rDia");
+      var inv = D.invoices, ent = inv.filter(function (f) { return f.status === "delivered"; }), pen = inv.filter(function (f) { return f.status === "pending"; });
+      var clientes = new Set(inv.map(function (f) { return f.clientId; })).size;
+      var r = resumenPagos(inv);
+      var regs = D.receipts.length + D.cashClosures.length + D.paymentAttachments.length + D.accountPayments.length;
+      var ap = D.accountPayments, apT = 0, apE = 0, apC = 0, apTr = 0;
+      ap.forEach(function (p) { apT += n(p.totalAmount); apE += n(p.cashAmount); apC += GE.sumaCheques(p.checkAmounts); apTr += n(p.transferAmount); });
+      // Orden operativo por chofer
+      var porCh = {};
+      inv.forEach(function (f) {
+        var k = f.driverId == null ? "none" : f.driverId;
+        var g = porCh[k] = porCh[k] || { nombre: f.driverName || "Sin chofer asignado", zonas: {}, ent: 0, pen: 0, bruto: 0 };
+        if (f.driverId == null) g.nombre = "Sin chofer asignado";
+        g.zonas[f.zoneName || ""] = 1;
+        if (f.status === "delivered") g.ent++; else if (f.status === "pending") g.pen++;
+        g.bruto += n(f.amount);
+      });
+      var orden = Object.keys(porCh).map(function (k) { return porCh[k]; }).sort(function (a, b) { return a.nombre.localeCompare(b.nombre, "es"); });
+      box.innerHTML = '<div class="sec-cab"><div><div class="eyebrow">Panel de control diario</div><h2>Resumen real de la jornada</h2><p class="muted">Elegí una fecha para ver únicamente sus rutas, entregas, cobros y documentos. La información histórica nunca se borra.</p></div>' +
+        '<div><label for="rFecha">Fecha de la jornada</label><input type="date" id="rFecha" value="' + S.fecha + '"><div class="small muted" style="margin-top:.25rem">' + esc(GE.fechaLarga(S.fecha)) + '</div></div></div>' +
+        '<div class="grid g4">' + kpi({ label: "Clientes", valor: clientes, det: inv.length + " facturas cargadas", tono: "blue" }) +
+        kpi({ label: "Entregadas", valor: ent.length, det: money(r.net) + " netos", tono: "emerald" }) +
+        kpi({ label: "Pendientes", valor: pen.length, det: money(pen.reduce(function (a, f) { return a + n(f.amount); }, 0)), tono: "amber" }) +
+        kpi({ label: "Registros", valor: regs, det: D.receipts.length + " recibos · " + D.cashClosures.length + " cajas · " + D.paymentAttachments.length + " fotos · " + D.accountPayments.length + " cobros", tono: "violet" }) + '</div>' +
+        '<div class="card" style="margin-top:1rem;background:var(--muted)"><div class="sec-cab" style="margin-bottom:.5rem"><div><h3>Cobranza del día</h3><div class="small muted">Totales por forma de pago</div></div><span class="badge t-violet">' + r.mixed + ' pagos combinados</span></div>' +
+        '<div class="grid g4">' + kpi({ label: "Cuenta corriente generada", valor: money(r.acc), tono: "blue" }) + kpi({ label: "Efectivo", valor: money(r.cash), tono: "emerald" }) + kpi({ label: "Cheques", valor: money(r.chk), tono: "amber" }) + kpi({ label: "Transferencias", valor: money(r.tr), tono: "violet" }) + '</div>' +
+        (r.discount > 0 ? '<p class="small muted">Descuentos por importe: ' + money(r.discount) + ' · Total neto: ' + money(r.net) + '</p>' : "") + '</div>' +
+        (ap.length ? '<div class="card" style="margin-top:1rem"><div class="sec-cab" style="margin-bottom:.4rem"><div><h3>Cobranzas de cuentas anteriores</h3><div class="small muted">' + ap.length + ' pago(s) aplicado(s) en esta fecha</div></div><b class="num">' + money(apT) + '</b></div><div class="chips"><span class="badge t-emerald">Efectivo ' + money(apE) + '</span><span class="badge t-amber">Cheques ' + money(apC) + '</span><span class="badge t-violet">Transfer. ' + money(apTr) + '</span></div></div>' : "") +
+        '<div style="margin-top:1rem"><div class="sec-cab"><div><div class="eyebrow">Orden operativo</div><h3>Choferes y zonas de la jornada</h3><p class="muted small">Cada chofer reúne todas las zonas que tiene asignadas en esta fecha.</p></div><button class="btn btn-primary btn-sm" id="rAbrirOp">Abrir operación</button></div>' +
+        '<div class="lista">' + (orden.length ? orden.map(function (g) {
+          return '<div class="itm"><div><div class="tt">' + esc(g.nombre) + '</div><div class="st">' + esc(Object.keys(g.zonas).join(" · ")) + '</div><div class="chips" style="margin-top:.3rem"><span class="badge t-emerald">' + g.ent + ' entregadas</span><span class="badge t-amber">' + g.pen + ' pendientes</span></div></div><div style="text-align:right"><div class="small muted">Importe bruto</div><b class="num">' + money(g.bruto) + '</b></div></div>';
+        }).join("") : vacio("No hay facturas cargadas para esta fecha.")) + '</div></div>';
+      box.querySelector("#rFecha").onchange = function (e) { if (fechaValida(e.target.value)) { S.fecha = e.target.value; sincronizarUrl(); render(); } };
+      box.querySelector("#rAbrirOp").onclick = function () { irA("#/operacion"); };
+      archivoPermanente(el.querySelector("#rArchDia"), D, "de la jornada seleccionada");
+    }).catch(function (e) { if (vigente()) el.querySelector("#rDia").innerHTML = errorBox(e); });
+
+    datosMes(S.mes).then(function (M0) {
+      if (!vigente()) return;
+      var choferes = {}, zonasF = {};
+      M0.routes.forEach(function (r) { choferes[r.driverId == null ? "none" : r.driverId] = r.driverName || "Sin chofer asignado"; if (r.zoneName) zonasF[r.zoneName] = 1; });
+      if (S.filtroChofer && !choferes[S.filtroChofer]) S.filtroChofer = "";
+      if (S.filtroZona && !zonasF[S.filtroZona]) S.filtroZona = "";
+      var M = filtrar(M0, S.filtroChofer, S.filtroZona);
+      var cab = el.querySelector("#rMesCab");
+      cab.innerHTML = '<div class="eyebrow">Archivo histórico</div><h2>Resumen del mes</h2><p class="muted">Elegí mes, chofer y zona. Los totales, facturas, documentos e historial se actualizan juntos.</p>' +
+        '<div class="campo-linea"><div><label>Mes</label><input type="month" id="rMesIn" value="' + S.mes + '"></div>' +
+        '<div><label>Filtrar por chofer</label><select id="rCh">' + opciones(Object.keys(choferes).map(function (k) { return [k, choferes[k]]; }).sort(function (a, b) { return a[1].localeCompare(b[1], "es"); }), S.filtroChofer, "Todos los choferes") + '</select></div>' +
+        '<div><label>Filtrar por zona</label><select id="rZn">' + opciones(Object.keys(zonasF).sort(function (a, b) { return a.localeCompare(b, "es", { numeric: true }); }).map(function (z) { return [z, z]; }), S.filtroZona, "Todas las zonas") + '</select></div>' +
+        '<div style="flex:0 0 auto;min-width:0"><button class="btn btn-outline" id="rLimpiar"' + (S.filtroChofer || S.filtroZona ? "" : " disabled") + '>Limpiar filtros</button></div></div>' +
+        '<p class="small muted" style="margin:.6rem 0 0">Mostrando ' + M.invoices.length + ' facturas del mes con los filtros seleccionados.</p>';
+      cab.querySelector("#rMesIn").onchange = function (e) { if (e.target.value) { S.mes = e.target.value; render(); } };
+      cab.querySelector("#rCh").onchange = function (e) { S.filtroChofer = e.target.value; render(); };
+      cab.querySelector("#rZn").onchange = function (e) { S.filtroZona = e.target.value; render(); };
+      cab.querySelector("#rLimpiar").onclick = function () { S.filtroChofer = ""; S.filtroZona = ""; render(); };
+
+      var inv = M.invoices;
+      var pen = inv.filter(function (f) { return f.status === "pending"; }), ent = inv.filter(function (f) { return f.status === "delivered"; }), rec = inv.filter(function (f) { return f.status === "issue"; });
+      var tot = ent.filter(function (f) { return f.deliveryType !== "partial"; }).length;
+      var porDia = {};
+      inv.forEach(function (f) { var g = porDia[f.serviceDate] = porDia[f.serviceDate] || { n: 0, monto: 0, ent: 0, pen: 0 }; g.n++; g.monto += n(f.amount); if (f.status === "delivered") g.ent++; if (f.status === "pending") g.pen++; });
+      var cont = el.querySelector("#rMes");
+      cont.innerHTML = '<section class="grid g3">' +
+        kpi({ label: "Pendientes", valor: pen.length, det: money(pen.reduce(function (a, f) { return a + n(f.amount); }, 0)) + " por entregar", tono: "amber", acc: "lp", pie: "Tocá para ver listado" }) +
+        kpi({ label: "Entregadas", valor: ent.length, det: "Total " + tot + " · Parcial " + (ent.length - tot), tono: "emerald", acc: "le", pie: "Tocá para ver listado" }) +
+        kpi({ label: "Rechazadas", valor: rec.length, det: "Mercadería no recibida", tono: "rose", acc: "lr", pie: "Tocá para ver listado" }) + '</section>' +
+        bloqueCobranza(inv) + '<section class="card" id="rArchMes"></section>' +
+        '<section class="card"><h2>Historial por jornada</h2><p class="muted">La información no se borra: queda agrupada por fecha dentro del mes seleccionado.</p><div class="lista">' +
+        (Object.keys(porDia).length ? Object.keys(porDia).sort().reverse().map(function (d) {
+          var g = porDia[d];
+          return '<div class="itm"><div><div class="tt">' + esc(GE.fechaLarga(d)) + '</div><div class="st">' + g.n + ' facturas · ' + money(g.monto) + '</div><div class="chips" style="margin-top:.3rem"><span class="badge t-emerald">' + g.ent + ' entregadas</span><span class="badge t-amber">' + g.pen + ' pendientes</span></div></div><button class="btn btn-outline btn-sm" data-acc="verop" data-f="' + d + '">Ver en Operación</button></div>';
+        }).join("") : vacio("No hay jornadas guardadas en el mes seleccionado.")) + '</div></section>';
+      clicks(cont, "lp", function () { listadoFacturas("pending", pen); });
+      clicks(cont, "le", function () { listadoFacturas("delivered", ent); });
+      clicks(cont, "lr", function () { listadoFacturas("issue", rec); });
+      clicks(cont, "verop", function (b) { S.fecha = b.dataset.f; sincronizarUrl(); irA("#/operacion"); });
+      archivoPermanente(cont.querySelector("#rArchMes"), M, "del mes de " + mesLabel(S.mes));
+    }).catch(function (e) { if (vigente()) el.querySelector("#rMes").innerHTML = errorBox(e); });
+  }
+
+  // ================= 6.4 Operación =================
+  function vOperacion(el, vigente) {
+    datosDia(S.fecha).then(function (D) {
+      return clientesPorId(D.invoices.map(function (f) { return f.clientId; })).then(function () { return D; });
+    }).then(function (D) {
+      if (!vigente()) return;
+      var inv = D.invoices;
+      var pen = inv.filter(function (f) { return f.status === "pending"; }), ent = inv.filter(function (f) { return f.status === "delivered"; });
+      var tot = ent.filter(function (f) { return f.deliveryType !== "partial"; }).length;
+      var enc = ent.filter(function (f) { return n(f.overallRating) > 0 || n(f.punctualityRating) > 0 || n(f.serviceRating) > 0; });
+      var gen = promedio(enc.map(notaGeneral));
+      var pP = promedio(enc.map(function (f) { return n(f.punctualityRating); })), pA = promedio(enc.map(function (f) { return n(f.serviceRating); })), pS = promedio(enc.map(function (f) { return n(f.overallRating); }));
+      // zonas y clientes de la jornada
+      var zIds = {}, opZonas = [];
+      D.routes.forEach(function (r) { if (!zIds[r.zoneId]) { zIds[r.zoneId] = 1; opZonas.push(zona(r.zoneId) || { id: r.zoneId, code: "", name: r.zoneName, description: "" }); } });
+      var cIds = {}, opClientes = [];
+      inv.forEach(function (f) { if (!cIds[f.clientId]) { cIds[f.clientId] = 1; opClientes.push(CAT.cli[f.clientId] || { id: f.clientId, code: "", businessName: f.clientName, zoneName: f.zoneName, address: f.clientAddress }); } });
+      opZonas.sort(function (a, b) { return String(a.code).localeCompare(String(b.code), "es", { numeric: true }); });
+      opClientes.sort(function (a, b) { return String(a.businessName).localeCompare(String(b.businessName), "es"); });
+      var invOrd = inv.slice().sort(function (a, b) { return String(a.invoiceNumber).localeCompare(String(b.invoiceNumber), "es", { numeric: true }); });
+
+      // Control diario de pendientes
+      var grupos = {};
+      pen.forEach(function (f) {
+        var k = f.serviceDate + "|" + (S.op.modo === "zona" ? f.zoneName : f.clientId);
+        var g = grupos[k] = grupos[k] || { fecha: f.serviceDate, nombre: S.op.modo === "zona" ? f.zoneName : f.clientName, ch: {}, cl: {}, ids: {}, monto: 0 };
+        g.ch[f.driverName || "Sin chofer asignado"] = 1; g.cl[f.clientId] = 1;
+        if (!g.ids[f.id]) { g.ids[f.id] = 1; g.monto += n(f.amount); }
+      });
+      var filas = Object.keys(grupos).map(function (k) { return grupos[k]; }).sort(function (a, b) { return b.monto - a.monto; });
+      var penMonto = pen.reduce(function (a, f) { return a + n(f.amount); }, 0);
+      var penCli = new Set(pen.map(function (f) { return f.clientId; })).size;
+
+      var tabs = { zones: ["Zonas", opZonas.length, "Zonas de la jornada", "Nueva zona", "zone"], clients: ["Clientes", opClientes.length, "Clientes de la jornada", "Nuevo cliente", "client"], invoices: ["Facturas", inv.length, "Facturas asignadas", "Nueva factura", "invoice"] };
+      var t = tabs[S.op.tab];
+      var items;
+      if (S.op.tab === "zones") items = opZonas.map(function (z) { return ["zone", z.id, (z.code ? z.code + " · " : "") + z.name, z.description || "Sin descripción", ""]; });
+      else if (S.op.tab === "clients") items = opClientes.map(function (c) { return ["client", c.id, (c.code ? c.code + " · " : "") + c.businessName, (c.zoneName || "") + " · " + (c.address || "Sin dirección"), ""]; });
+      else items = invOrd.map(function (f) { return ["invoice", f.id, f.invoiceNumber, f.clientName + " · " + (f.routeName || "") + " · " + money(f.amount), estadoBadge(f) + " " + linkChofer(f)]; });
+      var vacios = { zones: "No hay zonas asignadas para esta fecha.", clients: "No hay clientes con facturas para esta fecha.", invoices: "No hay facturas asignadas para esta fecha." };
+
+      el.innerHTML = '<section class="card"><div class="sec-cab"><div><div class="eyebrow">Operación por jornada</div><h2>Continuá hoy o una fecha anterior.</h2><p class="muted">Elegí la fecha. Las entregas, pendientes, pagos, gastos y encuestas quedan guardados en el historial.</p></div>' +
+        '<div><label for="oFecha">Fecha de operación</label><input type="date" id="oFecha" value="' + S.fecha + '"><div class="small muted" style="margin-top:.25rem">' + esc(GE.fechaLarga(S.fecha)) + '</div></div></div>' +
+        '<div class="grid g3">' + kpi({ label: "Pendientes", valor: pen.length, det: money(penMonto) + " por entregar", tono: "amber" }) +
+        kpi({ label: "Entregadas", valor: ent.length, det: money(ent.reduce(function (a, f) { return a + n(f.amount); }, 0)) + " · Total " + tot + " · Parcial " + (ent.length - tot), tono: "emerald" }) +
+        kpi({ label: "Encuestas", valor: gen ? gen.toFixed(1) + "/5" : "—", det: enc.length ? "Puntualidad " + pP.toFixed(1) + " · Atención " + pA.toFixed(1) + " · Satisfacción " + pS.toFixed(1) : "Sin respuestas", tono: "violet" }) + '</div></section>' +
+        bloqueCobranza(inv, "Acumulado de las facturas entregadas de la jornada seleccionada.") +
+        '<section class="card"><div class="sec-cab"><div><div class="eyebrow">Control diario</div><h2>Qué queda pendiente por zona o cliente</h2><p class="muted">Cada fila suma todas las rutas de la misma zona y fecha, sin duplicar facturas ni importes.</p></div>' +
+        '<div class="tabs"><button data-modo="zona" class="' + (S.op.modo === "zona" ? "on" : "") + '">Por zona</button><button data-modo="cliente" class="' + (S.op.modo === "cliente" ? "on" : "") + '">Por cliente</button></div></div>' +
+        '<div class="chips" style="margin-bottom:.6rem"><span class="badge t-blue">' + penCli + ' clientes</span><span class="badge t-slate">' + pen.length + ' facturas</span><span class="badge t-amber">' + money(penMonto) + ' pendiente</span></div>' +
+        (filas.length ? '<div class="tabla-scroll"><table><thead><tr><th>Chofer</th><th>' + (S.op.modo === "zona" ? "Zona" : "Cliente") + '</th><th>Fecha</th><th class="num">Clientes</th><th class="num">Facturas</th><th class="num">Importe pendiente</th></tr></thead><tbody>' +
+          filas.map(function (g) { var k = Object.keys(g.ids).length; return '<tr><td>' + esc(Object.keys(g.ch).join(" · ")) + '</td><td>' + esc(g.nombre) + '</td><td class="nowrap">' + esc(GE.fechaCorta(g.fecha)) + '</td><td class="num">' + Object.keys(g.cl).length + '</td><td class="num">' + k + ' <span class="st">' + plural(k, "pendiente", "pendientes") + '</span></td><td class="num"><b>' + money(g.monto) + '</b></td></tr>'; }).join("") + '</tbody></table></div>'
+          : vacio("No hay facturas pendientes en las asignaciones cargadas.")) + '</section>' +
+        '<section class="card"><div class="sec-cab"><div class="tabs">' + Object.keys(tabs).map(function (k) { return '<button data-tab="' + k + '" class="' + (S.op.tab === k ? "on" : "") + '">' + tabs[k][0] + ' (' + tabs[k][1] + ')</button>'; }).join("") + '</div>' +
+        '<button class="btn btn-primary btn-sm" id="oNuevo">' + t[3] + '</button></div><h3>' + t[2] + '</h3><p class="muted small">Seleccioná un registro para editarlo.</p>' +
+        '<div class="lista">' + (items.length ? items.map(function (it) { return '<div class="itm"><div><div class="tt">' + esc(it[2]) + '</div><div class="st">' + esc(it[3]) + '</div>' + (it[4] ? '<div class="fila" style="margin-top:.25rem">' + it[4] + '</div>' : "") + '</div><button class="btn btn-outline btn-sm" data-acc="editar" data-tipo="' + it[0] + '" data-id="' + it[1] + '">Editar</button></div>'; }).join("") : vacio(vacios[S.op.tab])) + '</div></section>' +
+        '<section class="card"><div class="sec-cab"><div><h2>Asignaciones de la jornada</h2><p class="muted">Podés corregir el chofer o la caja chica sin borrar la ruta ni sus entregas.</p></div><button class="btn btn-primary btn-sm" id="oAsignar">Asignar zona</button></div>' +
+        '<div class="lista">' + (D.routes.length ? D.routes.slice().sort(function (a, b) { return String(a.name).localeCompare(String(b.name), "es", { numeric: true }); }).map(function (r) {
+          return '<div class="itm"><div><div class="tt">' + esc(r.name) + '</div><div class="st">' + esc(r.zoneName || "") + ' · ' + esc(r.driverName || "Sin persona asignada") + ' · Caja ' + money(r.pettyCashAmount) + '</div><div class="fila" style="margin-top:.25rem"><span class="badge t-blue">' + esc(GE.fechaCorta(r.serviceDate)) + '</span>' + (r.status === "completed" ? '<span class="badge t-slate">Ruta cerrada</span>' : "") + '</div></div><button class="btn btn-outline btn-sm" data-acc="reasig" data-id="' + r.id + '">Modificar</button></div>';
+        }).join("") : vacio("Asigná una zona y una persona para comenzar la jornada.")) + '</div></section>';
+
+      el.querySelector("#oFecha").onchange = function (e) { if (fechaValida(e.target.value)) { S.fecha = e.target.value; sincronizarUrl(); render(); } };
+      el.querySelectorAll("[data-modo]").forEach(function (b) { b.onclick = function () { S.op.modo = b.dataset.modo; render(); }; });
+      el.querySelectorAll("[data-tab]").forEach(function (b) { b.onclick = function () { S.op.tab = b.dataset.tab; render(); }; });
+      el.querySelector("#oNuevo").onclick = function () { alta(t[4]); };
+      el.querySelector("#oAsignar").onclick = function () { alta("route"); };
+      clicks(el, "editar", function (b) { editar(b.dataset.tipo, Number(b.dataset.id), D); });
+      clicks(el, "reasig", function (b) { modificarAsignacion(D.rmap[Number(b.dataset.id)]); });
+    }).catch(function (e) { console.error(e); if (vigente()) el.innerHTML = errorBox(e); });
+  }
+
+  function editar(tipo, id, D) {
+    var tit = { zone: "Editar zona", client: "Editar cliente", invoice: "Editar factura" }[tipo];
+    var pre = tipo === "zone" ? Promise.resolve(zona(id)) : tipo === "client" ? GE.uno("clients", id) : Promise.all([GE.uno("invoices", id), clientesTodos()]).then(function (r) { return r[0]; });
+    pre.then(function (o) {
+      if (!o) { GE.toast("No se encontró el registro.", "error"); return; }
+      var campos;
+      if (tipo === "zone") campos = '<label>Código</label><input name="code" required value="' + esc(o.code) + '"><label>Nombre</label><input name="name" required value="' + esc(o.name) + '"><label>Descripción</label><textarea name="description" rows="2">' + esc(o.description || "") + '</textarea>';
+      else if (tipo === "client") campos = '<label>Zona</label><select name="zoneId" required>' + opciones(CAT.zones.map(function (z) { return [z.id, z.code + " · " + z.name]; }), o.zoneId, "Seleccioná una zona") + '</select>' +
+        '<label>Código</label><input name="code" required value="' + esc(o.code || "") + '"><label>Razón social / nombre</label><input name="businessName" required value="' + esc(o.businessName || "") + '">' +
+        '<label>Contacto (opcional)</label><input name="contactName" value="' + esc(o.contactName || "") + '"><label>Teléfono (opcional)</label><input name="phone" value="' + esc(o.phone || "") + '"><label>Dirección</label><textarea name="address" rows="2">' + esc(o.address || "") + '</textarea>';
+      else {
+        var rutas = D.routes.slice();
+        if (!D.rmap[o.routeId]) rutas.push({ id: o.routeId, name: o.routeName, serviceDate: o.serviceDate });
+        var clis = CAT.clients.map(function (c) { return [c.id, c.businessName + " · " + (c.zoneName || "")]; });
+        campos = '<label>Zona asignada</label><select name="routeId" required>' + opciones(rutas.map(function (r) { return [r.id, r.name + " · " + r.serviceDate]; }), o.routeId, null) + '</select>' +
+          '<label>Cliente</label><div class="sel-busca"><input type="search" class="busca-sel" placeholder="Buscar cliente…"><select name="clientId" required>' + opciones(clis.filter(function (c) { return c[0] === o.clientId; }).concat(clis.filter(function (c) { return c[0] !== o.clientId; }).slice(0, 300)), o.clientId, null) + '</select></div>' +
+          '<label>Número de factura</label><input name="invoiceNumber" required value="' + esc(o.invoiceNumber) + '"><label>Importe</label><input name="amount" type="number" step="0.01" required value="' + esc(o.amount) + '">';
+      }
+      var m = GE.modal({ titulo: tit, html: '<p class="muted">Los cambios se reflejarán en las rutas y el seguimiento.</p><form>' + campos + '<div class="ge-acciones"><button type="button" class="btn btn-outline cancelar">Cancelar</button><button class="btn btn-primary guardar">Guardar cambios</button></div></form>' });
+      m.el.querySelector(".cancelar").onclick = m.cerrar;
+      var bs = m.el.querySelector(".busca-sel");
+      if (bs) {
+        var sel = m.el.querySelector('select[name="clientId"]'), clis2 = CAT.clients.map(function (c) { return [c.id, c.businessName + " · " + (c.zoneName || "")]; });
+        bs.oninput = function () { var q = norm(bs.value), cur = sel.value; var f = clis2.filter(function (c) { return !q || norm(c[1]).indexOf(q) >= 0; }).slice(0, 300); sel.innerHTML = opciones(f, cur, f.length ? null : "Sin resultados"); };
+      }
+      var form = m.el.querySelector("form");
+      form.onsubmit = function (e) {
+        e.preventDefault();
+        var d = {}; new FormData(form).forEach(function (v, k) { d[k] = String(v).trim(); });
+        var btn = m.el.querySelector(".guardar"); btn.disabled = true; btn.textContent = "Guardando...";
+        var p;
+        if (tipo === "zone") {
+          var cz = { code: d.code, name: d.name, description: d.description || null, updatedAt: GE.ahora() };
+          p = GE.donde("routes", [["zoneId", "==", id]]).then(function (rs) {
+            var ops = [["update", GE.ref("zones", id), cz]];
+            if (d.name !== o.name) rs.filter(function (r) { return r.status !== "completed"; }).forEach(function (r) { ops.push(["update", GE.ref("routes", r.id), { zoneName: d.name }]); });
+            return escribir(ops);
+          }).then(function () { Object.assign(o, cz); });
+        } else if (tipo === "client") {
+          var z = zona(Number(d.zoneId));
+          var cc = { zoneId: z.id, zoneName: z.name, code: d.code, businessName: d.businessName, contactName: d.contactName || null, phone: d.phone || null, address: d.address || null, updatedAt: GE.ahora() };
+          p = GE.donde("invoices", [["clientId", "==", id], ["status", "==", "pending"]]).then(function (fs) {
+            var ops = [["update", GE.ref("clients", id), cc]];
+            fs.forEach(function (f) { ops.push(["update", GE.ref("invoices", f.id), { clientName: cc.businessName, clientAddress: cc.address, clientCode: cc.code }]); });
+            return escribir(ops);
+          }).then(function () { Object.assign(o, cc); CAT.cli[id] = o; });
+        } else {
+          var amount = Number(d.amount);
+          if (!isFinite(amount)) { p = Promise.reject(new Error("Importe inválido.")); }
+          else p = Promise.all([GE.uno("routes", Number(d.routeId)), GE.donde("invoices", [["invoiceNumber", "==", d.invoiceNumber]])]).then(function (r) {
+            var ru = r[0], c = CAT.cli[Number(d.clientId)];
+            if (r[1].some(function (x) { return x.id !== id; })) throw new Error("Ya existe otra factura con el número " + d.invoiceNumber + ".");
+            return GE.actualizar("invoices", id, { routeId: ru.id, routeName: ru.name, serviceDate: ru.serviceDate, zoneName: ru.zoneName, driverId: ru.driverId == null ? null : ru.driverId, driverName: ru.driverName || null, clientId: c.id, clientName: c.businessName, clientCode: c.code || null, clientAddress: c.address || null, invoiceNumber: d.invoiceNumber, amount: round2(amount) });
+          });
+        }
+        p.then(function () { GE.toast("Registro actualizado."); m.cerrar(); refrescar(); })
+          .catch(function (err) { btn.disabled = false; btn.textContent = "Guardar cambios"; GE.toast(err.message || "No se pudo guardar.", "error"); });
+      };
+    }).catch(function (e) { GE.toast(e.message, "error"); });
+  }
+
+  function modificarAsignacion(r) {
+    if (!r) return;
+    catalogo().then(function () {
+      var m = GE.modal({ titulo: "Modificar asignación", html: '<p class="muted">Cambiá la persona o la caja chica. Las facturas, entregas, pagos y gastos permanecen guardados.</p>' +
+        '<div class="card" style="background:var(--muted)"><b>' + esc(r.name) + '</b><div class="small muted">' + esc(r.zoneName || "") + ' · ' + esc(GE.fechaCorta(r.serviceDate)) + '</div></div>' +
+        '<label>Persona asignada</label><select id="maP">' + opciones(CAT.drivers.filter(function (d) { return d.active !== false || d.id === r.driverId; }).map(function (d) { return [d.id, d.code + " · " + d.name]; }), r.driverId == null ? "" : r.driverId, "Elegí la persona") + '</select>' +
+        '<label>Total de caja chica</label><input id="maC" type="number" min="0" step="0.01" value="' + esc(r.pettyCashAmount == null ? "" : r.pettyCashAmount) + '">' +
+        '<div class="ge-acciones"><button class="btn btn-outline cancelar">Cancelar</button><button class="btn btn-primary guardar">Guardar reasignación</button></div>' });
+      var selP = m.el.querySelector("#maP"), inC = m.el.querySelector("#maC"), btn = m.el.querySelector(".guardar");
+      function chk() { btn.disabled = !selP.value || inC.value === "" || Number(inC.value) < 0; }
+      selP.onchange = chk; inC.oninput = chk; chk();
+      m.el.querySelector(".cancelar").onclick = m.cerrar;
+      btn.onclick = function () {
+        btn.disabled = true; btn.textContent = "Guardando...";
+        reasignarRuta(r.id, Number(selP.value), Number(inC.value)).then(function () {
+          GE.toast("Asignación actualizada sin borrar la operación."); m.cerrar(); refrescar();
+        }).catch(function (e) { btn.textContent = "Guardar reasignación"; chk(); GE.toast(e.message, "error"); });
+      };
+    });
+  }
+
+  // ================= 6.6 Asignar zonas =================
+  function vAsignar(el, vigente) {
+    datosAsignacion().then(function (V) {
+      if (!vigente()) return;
+      var rs = V.routes.filter(function (r) { return r.driverId == null; }).sort(function (a, b) { return (a.serviceDate + "-" + a.name).localeCompare(b.serviceDate + "-" + b.name, "es", { numeric: true }); });
+      var chs = V.drivers.filter(function (d) { return d.active !== false; }).map(function (d) { return [d.id, d.code + " · " + d.name]; });
+      el.innerHTML = '<section class="card"><div class="sec-cab"><div><div class="eyebrow">Administración · asignación</div><h2>Zonas cargadas listas para asignar</h2><p class="muted">Primero cargá y revisá todos los Excel en Carga masiva. Después elegí desde este listado el cobrador y la caja chica de cada zona.</p></div><button class="btn btn-outline btn-sm" id="aNuevoCh">Nuevo chofer</button></div></section>' +
+        '<section class="card"><div class="sec-cab"><div><div class="eyebrow">Pendientes de asignación</div><h2>Zonas sin cobrador</h2><p class="muted">La carga masiva no publica nada en Soy Chofer hasta completar esta asignación.</p></div><span class="badge t-amber">' + rs.length + ' zonas pendientes</span></div>' +
+        '<div class="lista">' + (rs.length ? rs.map(function (r) {
+          return '<div class="itm" style="flex-wrap:wrap;align-items:flex-end" data-ruta="' + r.id + '"><div style="flex:1 1 260px"><div class="tt">' + esc(r.name) + '</div><div class="st">' + esc(GE.fechaCorta(r.serviceDate)) + ' · Ruta #' + r.id + '</div></div>' +
+            '<div style="flex:1 1 220px"><label>Cobrador de Soy Chofer</label><select class="aCh">' + opciones(chs, "", "Elegí el cobrador") + '</select></div>' +
+            '<div style="flex:0 1 170px"><label>Caja chica total ($)</label><input class="aCa" type="number" min="0" step="0.01" placeholder="Ej. 50000"></div>' +
+            '<button class="btn btn-primary aOk">Asignar y publicar</button></div>';
+        }).join("") : vacio("No hay zonas pendientes.", "Las zonas asignadas ya están disponibles para el cobrador.")) + '</div></section>';
+      el.querySelector("#aNuevoCh").onclick = function () { alta("driver"); };
+      el.querySelectorAll("[data-ruta]").forEach(function (row) {
+        var b = row.querySelector(".aOk");
+        b.onclick = function () {
+          var ch = row.querySelector(".aCh").value, ca = row.querySelector(".aCa").value;
+          if (!ch) { GE.toast("Elegí el cobrador para esta zona.", "error"); return; }
+          if (ca === "" || !isFinite(Number(ca)) || Number(ca) < 0) { GE.toast("Ingresá la caja chica de esta zona. Podés indicar 0.", "error"); return; }
+          b.disabled = true; b.textContent = "Asignando...";
+          reasignarRuta(Number(row.dataset.ruta), Number(ch), Number(ca)).then(function () {
+            GE.toast("Cobrador y caja chica asignados. La zona ya aparece en Soy Chofer.");
+            refrescar();
+          }).catch(function (e) { b.disabled = false; b.textContent = "Asignar y publicar"; GE.toast(e.message, "error"); });
+        };
+      });
+    }).catch(function (e) { if (vigente()) el.innerHTML = errorBox(e); });
+  }
+
+  // ================= 6.7 Seguimiento =================
+  function selectorMes(id, val) { return '<div style="max-width:220px"><label for="' + id + '">Mes</label><input type="month" id="' + id + '" value="' + val + '"></div>'; }
+  function vSeguimiento(el, vigente) {
+    datosMes(S.mes).then(function (M) {
+      if (!vigente()) return;
+      el.innerHTML = '<section class="card" id="sTab"></section><section class="card" id="sEnc"></section><section class="card" id="sCaja"></section><section class="card" id="sArch"></section>';
+      var todas = M.invoices.slice().sort(function (a, b) {
+        return String(a.driverName || "~").localeCompare(String(b.driverName || "~"), "es") || String(a.zoneName).localeCompare(String(b.zoneName), "es", { numeric: true }) || String(a.clientName).localeCompare(String(b.clientName), "es");
+      });
+      function pintaTabla() {
+        var q = norm(S.seg.q);
+        var f = todas.filter(function (x) {
+          if (S.seg.estado === "pending" && x.status !== "pending") return false;
+          if (S.seg.estado === "delivered" && x.status !== "delivered") return false;
+          if (S.seg.estado === "issue" && x.status !== "issue") return false;
+          return !q || norm([x.invoiceNumber, x.clientName, x.zoneName, x.driverName].join(" ")).indexOf(q) >= 0;
+        });
+        var vis = f.slice(0, S.seg.lim);
+        var box = el.querySelector("#sTab");
+        box.innerHTML = '<div class="sec-cab"><div><div class="eyebrow">Seguimiento y calidad</div><h2>Entrega, horario y experiencia del cliente.</h2><p class="muted">Las tres respuestas de cada encuesta y la ubicación autorizada se guardan junto con la confirmación de la factura.</p></div>' + selectorMes("sMes", S.mes) + '</div>' +
+          '<div class="campo-linea"><div><label for="sQ">Buscar factura, cliente, zona o cobrador</label><input id="sQ" type="search" placeholder="Escribí para buscar..." value="' + esc(S.seg.q) + '"></div>' +
+          '<div style="max-width:220px"><label for="sE">Estado</label><select id="sE">' + opciones([["all", "Todas"], ["pending", "Pendientes"], ["delivered", "Entregadas"], ["issue", "Rechazadas"]], S.seg.estado, null) + '</select></div>' +
+          '<div style="flex:0 0 auto;min-width:0"><span class="badge t-blue">Mostrando ' + vis.length + ' de ' + f.length + '</span></div></div>' +
+          (vis.length ? '<div class="tabla-scroll" style="margin-top:.75rem"><table><thead><tr><th>Factura / cliente</th><th>Zona y chofer</th><th class="num">Importe</th><th>Estado</th><th>Descarga</th><th>Ubicación</th><th>General</th></tr></thead><tbody>' +
+            vis.map(function (x) {
+              var est = x.status === "issue" ? '<span class="badge t-rose">Rechazada</span><div class="st">' + esc([MOTIVOS[x.rejectionReason] || x.rejectionReason, x.rejectionNotes].filter(Boolean).join(" · ")) + '</div>'
+                : x.status === "delivered" ? (x.deliveryType === "partial" ? '<span class="badge t-orange">Entrega parcial</span>' : '<span class="badge t-emerald">Entrega total</span>') : '<span class="badge t-amber">Pendiente</span>';
+              var ub = x.deliveredLatitude != null && x.deliveredLongitude != null
+                ? '<a href="https://www.google.com/maps?q=' + x.deliveredLatitude + ',' + x.deliveredLongitude + '" target="_blank" rel="noopener">Geolocalizado · Ver mapa</a><div class="st">Ubicación guardada' + (x.deliveredAccuracyMeters != null ? ' · ± ' + Math.round(x.deliveredAccuracyMeters) + ' m' : "") + '</div>'
+                : (x.status === "delivered" ? '<span class="st">Sin ubicación</span>' : "—");
+              var g = notaGeneral(x);
+              return '<tr><td><b>' + esc(x.invoiceNumber) + '</b><div class="st">' + esc(x.clientName) + '</div>' + linkChofer(x) + '</td><td>' + esc(x.zoneName || "") + '<div class="st">' + esc(x.driverName || "Sin chofer") + '</div></td><td class="num nowrap">' + money(x.amount) + '</td><td>' + est + '</td><td class="nowrap">' + (x.deliveredAt ? esc(GE.fechaHora(x.deliveredAt)) : "Pendiente") + '</td><td>' + ub + '</td><td class="nowrap">' + (g ? g.toFixed(1) + "/5" : '<span class="st">Sin encuesta</span>') + '</td></tr>';
+            }).join("") + '</tbody></table></div>' : '<div style="margin-top:.75rem">' + vacio("No hay facturas que coincidan con los filtros.") + '</div>') +
+          (f.length > vis.length ? '<div style="text-align:center;margin-top:.75rem"><button class="btn btn-outline" id="sMas">Mostrar 40 facturas más</button></div>' : "");
+        var qIn = box.querySelector("#sQ");
+        qIn.oninput = function () { S.seg.q = qIn.value; S.seg.lim = 40; var pos = qIn.selectionStart; pintaTabla(); var n2 = el.querySelector("#sQ"); n2.focus(); n2.setSelectionRange(pos, pos); };
+        box.querySelector("#sE").onchange = function (e) { S.seg.estado = e.target.value; S.seg.lim = 40; pintaTabla(); };
+        box.querySelector("#sMes").onchange = function (e) { if (e.target.value) { S.mes = e.target.value; render(); } };
+        var mas = box.querySelector("#sMas"); if (mas) mas.onclick = function () { S.seg.lim += 40; pintaTabla(); };
+      }
+      function pintaEnc() {
+        var enc = M.invoices.filter(function (x) { return x.status === "delivered" && notaGeneral(x) > 0; });
+        if (S.seg.orden === "mejor") enc.sort(function (a, b) { return notaGeneral(b) - notaGeneral(a); });
+        else if (S.seg.orden === "alfa") enc.sort(function (a, b) { return String(a.clientName).localeCompare(String(b.clientName), "es"); });
+        else enc.sort(function (a, b) { return String(b.deliveredAt || "").localeCompare(String(a.deliveredAt || "")); });
+        var vis = enc.slice(0, S.seg.limE);
+        function est(v) { v = n(v); return v ? '<span><span class="stars">' + "★★★★★".slice(0, v) + '</span><span class="muted">' + "★★★★★".slice(v) + '</span> ' + v + '/5</span>' : '<span class="muted">—</span>'; }
+        var box = el.querySelector("#sEnc");
+        box.innerHTML = '<div class="sec-cab"><div><h2>Encuestas respondidas</h2><p class="muted">Detalle de las tres preguntas respondidas por cada cliente.</p></div><div class="fila"><select id="sOrd" style="width:auto">' + opciones([["recientes", "Más recientes"], ["mejor", "Mejor puntuación"], ["alfa", "Orden alfabético"]], S.seg.orden, null) + '</select><span class="badge t-violet">' + enc.length + ' respuestas</span></div></div>' +
+          (vis.length ? '<div class="grid g3">' + vis.map(function (x) {
+            var acc = GE.ctaOriginal(x), ch = GE.sumaCheques(x.checkAmounts), b = [];
+            if (acc) b.push('<span class="badge t-blue">Cta. cte. ' + money(acc) + '</span>');
+            if (n(x.cashAmount) > 0) b.push('<span class="badge t-emerald">Efectivo ' + money(x.cashAmount) + '</span>');
+            if (ch > 0) b.push('<span class="badge t-amber">Cheque ' + money(ch) + '</span>');
+            if (n(x.transferAmount) > 0) b.push('<span class="badge t-violet">Transferencia ' + money(x.transferAmount) + '</span>');
+            if (n(x.discountAmount) > 0) b.push('<span class="badge t-slate">Descuento ' + money(x.discountAmount) + '</span>');
+            if (!x.paymentMethod) b = ['<span class="badge t-slate">Pago no informado</span>'];
+            return '<div class="kpi"><div class="fila entre"><b>' + esc(x.clientName) + '</b><span class="badge t-violet">' + notaGeneral(x).toFixed(1) + '/5</span></div><div class="small muted">Factura ' + esc(x.invoiceNumber) + ' · ' + esc(GE.fechaCorta(x.deliveredAt || x.serviceDate)) + '</div>' +
+              '<div class="chips" style="margin:.4rem 0">' + b.join("") + '</div><div class="enc small"><div class="fila entre"><span>Puntualidad</span>' + est(x.punctualityRating) + '</div><div class="fila entre"><span>Atención</span>' + est(x.serviceRating) + '</div><div class="fila entre"><span>Satisfacción</span>' + est(x.overallRating) + '</div></div></div>';
+          }).join("") + '</div>' : vacio("Las respuestas se verán aquí cuando un chofer confirme una entrega.")) +
+          (enc.length > vis.length ? '<div style="text-align:center;margin-top:.75rem"><button class="btn btn-outline" id="sMasE">Mostrar 12 encuestas más</button></div>' : "");
+        box.querySelector("#sOrd").onchange = function (e) { S.seg.orden = e.target.value; S.seg.limE = 12; pintaEnc(); };
+        var m2 = box.querySelector("#sMasE"); if (m2) m2.onclick = function () { S.seg.limE += 12; pintaEnc(); };
+      }
+      // Caja chica diaria (_$): máximo de la caja de las rutas por chofer y jornada
+      var jor = {};
+      M.routes.forEach(function (r) { if (r.driverId == null) return; var k = r.driverId + "::" + r.serviceDate; jor[k] = Math.max(jor[k] || 0, n(r.pettyCashAmount)); });
+      var caja = Object.keys(jor).reduce(function (a, k) { return a + jor[k]; }, 0);
+      var gastos = M.expenses.reduce(function (a, e) { return a + n(e.amount); }, 0);
+      var saldoC = round2(caja - gastos);
+      var exps = M.expenses.slice().sort(function (a, b) { return String(b.serviceDate).localeCompare(String(a.serviceDate)) || String(b.spentAt).localeCompare(String(a.spentAt)); });
+      el.querySelector("#sCaja").innerHTML = '<div class="eyebrow">Caja chica diaria</div><h2>Un fondo por chofer y jornada</h2><p class="muted">Las zonas identifican dónde ocurrió cada gasto, pero la caja asignada se contabiliza una sola vez por día.</p>' +
+        '<div class="totales3">' + kpi({ label: "Caja asignada", valor: money(caja), tono: "blue" }) + kpi({ label: "Gastos", valor: money(gastos), tono: "amber" }) + kpi({ label: "Saldo", valor: money(saldoC), tono: saldoC < 0 ? "rose" : "emerald" }) + '</div>' +
+        (exps.length ? '<div class="tabla-scroll" style="margin-top:.75rem"><table><thead><tr><th>Fecha</th><th>Chofer / ruta</th><th>Categoría</th><th>Detalle</th><th class="num">Monto</th></tr></thead><tbody>' +
+          exps.map(function (e) { return '<tr><td class="nowrap">' + esc(GE.fechaCorta(e.serviceDate)) + '</td><td>' + esc(e.driverName || "") + '<div class="st">' + esc(e.zoneName || "") + ' · ' + esc(e.routeName || "") + '</div></td><td>' + esc(CATEGORIAS[e.category] || e.category || "") + '</td><td>' + esc(e.notes || "Sin detalle") + '</td><td class="num nowrap">' + money(e.amount) + '</td></tr>'; }).join("") + '</tbody></table></div>'
+          : '<div style="margin-top:.75rem">' + vacio("Los gastos aparecerán aquí cuando un chofer los registre en el Paso 3/4.") + '</div>');
+      pintaTabla(); pintaEnc();
+      archivoPermanente(el.querySelector("#sArch"), M, "del mes de " + mesLabel(S.mes));
+    }).catch(function (e) { if (vigente()) el.innerHTML = errorBox(e); });
+  }
+
+  // ================= 6.10 Clientes y cuentas =================
+  function vClientes(el, vigente) {
+    datosMes(S.mesCli).then(function (M) {
+      var ids = {};
+      M.invoices.forEach(function (f) { ids[f.clientId] = 1; });
+      M.accountPayments.forEach(function (p) { ids[p.clientId] = 1; });
+      if (S.clienteSel) ids[S.clienteSel] = 1;
+      return clientesPorId(Object.keys(ids).map(Number)).then(function () { return M; });
+    }).then(function (M) {
+      if (!vigente()) return;
+      var conMov = {};
+      M.invoices.forEach(function (f) { conMov[f.clientId] = conMov[f.clientId] || { id: f.clientId, businessName: f.clientName, code: "" }; });
+      M.accountPayments.forEach(function (p) { conMov[p.clientId] = conMov[p.clientId] || { id: p.clientId, businessName: p.clientName, code: "" }; });
+      if (S.clienteSel && !conMov[S.clienteSel] && CAT.cli[S.clienteSel]) conMov[S.clienteSel] = CAT.cli[S.clienteSel];
+      var lista = Object.keys(conMov).map(function (k) { var c = CAT.cli[k] || conMov[k]; return c; }).sort(function (a, b) { return String(a.businessName).localeCompare(String(b.businessName), "es"); });
+      var q = norm(S.cli.q);
+      var filtrada = lista.filter(function (c) { return !q || norm(c.businessName + " " + (c.code || "")).indexOf(q) >= 0 || c.id === S.clienteSel; });
+      var c = S.clienteSel ? (CAT.cli[S.clienteSel] || conMov[S.clienteSel]) : null;
+      el.innerHTML = '<section class="card"><div class="sec-cab"><div><div class="eyebrow">Clientes y cuentas</div><h2>Historia por cliente</h2><p class="muted">Consultá facturas, descuentos, cobros y saldos enviados a cuenta corriente.</p></div>' + selectorMes("cMes", S.mesCli) + '</div>' +
+        '<div class="campo-linea"><div><label for="cQ">Buscar cliente</label><input id="cQ" type="search" placeholder="Nombre o código" value="' + esc(S.cli.q) + '"></div>' +
+        '<div><label for="cSel">Cliente con movimientos</label><select id="cSel">' + opciones(filtrada.map(function (x) { return [x.id, x.businessName + (x.code ? " · " + x.code : "")]; }), S.clienteSel || "", "Seleccioná un cliente") + '</select></div></div></section><div id="cDet" class="grid"></div>';
+      var qIn = el.querySelector("#cQ");
+      qIn.oninput = function () { S.cli.q = qIn.value; var pos = qIn.selectionStart; vClientes(el, vigente); setTimeout(function () { var x = el.querySelector("#cQ"); if (x) { x.focus(); x.setSelectionRange(pos, pos); } }); };
+      el.querySelector("#cSel").onchange = function (e) { S.clienteSel = e.target.value ? Number(e.target.value) : null; sincronizarUrl(); render(); };
+      el.querySelector("#cMes").onchange = function (e) { if (e.target.value) { S.mesCli = e.target.value; render(); } };
+      var det = el.querySelector("#cDet");
+      if (!c) { det.innerHTML = '<section class="card">' + vacio("Elegí un cliente", "Vas a ver su historia completa dentro del mes seleccionado.") + '</section>'; return; }
+      var invs = M.invoices.filter(function (f) { return f.clientId === c.id; }).sort(function (a, b) { return String(b.serviceDate).localeCompare(String(a.serviceDate)) || String(b.invoiceNumber).localeCompare(String(a.invoiceNumber)); });
+      var pagos = M.accountPayments.filter(function (p) { return p.clientId === c.id; }).sort(function (a, b) { return String(b.paidAt).localeCompare(String(a.paidAt)); });
+      var recibos = M.receipts.filter(function (r) { return r.clientId === c.id; });
+      var T = { bruto: 0, desc: 0, alEnt: 0, desp: 0, saldo: 0, neto: 0 };
+      invs.forEach(function (f) { T.bruto += n(f.amount); T.desc += n(f.discountAmount); T.neto += GE.neto(f); T.alEnt += GE.cobradoAlEntregar(f); T.desp += n(f.accountPaidAmount); T.saldo += GE.saldo(f); });
+      det.innerHTML = '<section class="grid g4" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">' + kpi({ label: "Facturado bruto", valor: money(T.bruto), tono: "slate" }) + kpi({ label: "Descuentos por importe", valor: money(T.desc), tono: "violet" }) +
+        kpi({ label: "Cobrado al entregar", valor: money(T.alEnt), tono: "emerald" }) + kpi({ label: "Cobrado después", valor: money(T.desp), tono: "emerald" }) + kpi({ label: "Saldo cuenta corriente", valor: money(T.saldo), tono: "amber" }) + '</section>' +
+        '<section class="card"><div class="sec-cab"><div><h2>' + esc(c.businessName) + '</h2><p class="muted">' + esc(c.address || "Sin domicilio registrado") + ' · ' + invs.length + ' comprobantes · ' + recibos.length + ' recibos</p></div>' +
+        '<div class="fila"><button class="btn btn-primary" id="cCompartir"' + (invs.length ? "" : " disabled") + '>Emitir y compartir</button><button class="btn btn-outline" id="cBajar"' + (invs.length ? "" : " disabled") + '>Emitir y descargar</button></div></div>' +
+        (invs.length ? '<div class="tabla-scroll"><table><thead><tr><th>Fecha</th><th>Factura / zona</th><th class="num">Original</th><th class="num">Descuento</th><th class="num">Neto</th><th class="num">Cobrado al entregar</th><th class="num">Cobrado después</th><th class="num">Saldo Cta. Cte.</th></tr></thead><tbody>' +
+          invs.map(function (f) { return '<tr><td class="nowrap">' + esc(GE.fechaCorta(f.serviceDate)) + '</td><td><b>' + esc(f.invoiceNumber) + '</b> ' + estadoBadge(f) + '<div class="st">' + esc(f.zoneName || "") + ' · ' + esc(f.driverName || "Sin chofer") + '</div></td><td class="num nowrap">' + money(f.amount) + '</td><td class="num nowrap">' + money(f.discountAmount) + '</td><td class="num nowrap">' + money(GE.neto(f)) + '</td><td class="num nowrap">' + money(GE.cobradoAlEntregar(f)) + '</td><td class="num nowrap">' + money(f.accountPaidAmount) + '</td><td class="num nowrap"><b>' + money(GE.saldo(f)) + '</b></td></tr>'; }).join("") + '</tbody></table></div>'
+          : vacio("Sin facturas en el mes seleccionado.")) + '</section>' +
+        '<section class="card"><h3>Pagos posteriores aplicados</h3><div class="lista">' + (pagos.length ? pagos.map(function (p) { return '<div class="itm"><div><div class="tt">Factura ' + esc(p.invoiceNumber) + '</div><div class="st">' + esc(GE.fechaHora(p.paidAt)) + ' · ' + esc(p.driverName || "") + '</div></div><b class="num">' + money(p.totalAmount) + '</b></div>'; }).join("") : vacio("Sin pagos posteriores en el mes.")) + '</div></section>' +
+        '<section class="grid g2"><div class="card"><h3>Recibos disponibles</h3><div class="lista">' + (recibos.length ? recibos.map(function (r) { return '<div class="itm" style="flex-wrap:wrap"><div><div class="tt">' + esc(r.receiptNumber || "") + '</div><div class="st">' + esc(r.zoneName || "") + ' · ' + esc(GE.fechaCorta(r.serviceDate)) + '</div></div>' + botonesArchivo(r.fileUrl, "recibo-" + slug(r.clientName) + "-" + r.serviceDate + ".pdf") + '</div>'; }).join("") : vacio("Sin recibos en el mes.")) + '</div></div>' +
+        '<div class="card"><h3>Resúmenes archivados</h3><div class="lista" id="cRes">' + cargando("Buscando resúmenes...") + '</div></div></section>';
+      accionesArchivo(det);
+      // Resúmenes del cliente: toda su historia (consulta acotada por clientId)
+      memo("ST" + c.id, function () { return GE.donde("accountStatements", [["clientId", "==", c.id]]); }).then(function (sts) {
+        if (!vigente()) return;
+        sts.sort(function (a, b) { return String(b.issuedAt).localeCompare(String(a.issuedAt)); });
+        var box = det.querySelector("#cRes");
+        box.innerHTML = sts.length ? sts.map(function (s) { var mm = String(s.periodFrom || "").slice(0, 7); return '<div class="itm" style="flex-wrap:wrap"><div><div class="tt">' + esc(mm ? mesLabel(mm) : "") + '</div><div class="st">Emitido ' + esc(GE.fechaHora(s.issuedAt)) + ' · neto ' + money(s.netAmount) + '</div></div>' + botonesArchivo(s.fileUrl, "resumen-cuenta-" + slug(s.clientName) + "-" + mm + ".pdf") + '</div>'; }).join("") : vacio("Sin resúmenes archivados.");
+        accionesArchivo(box);
+      }).catch(function () { det.querySelector("#cRes").innerHTML = vacio("No se pudieron leer los resúmenes."); });
+      function emitir(modo, btn) {
+        var orig = btn.textContent;
+        btn.disabled = true; btn.textContent = "Guardando...";
+        var mesP = S.mesCli, nombre = "resumen-cuenta-" + slug(c.businessName) + "-" + mesP + ".pdf", ahora = GE.ahora();
+        pdfResumenCuenta(c, invs, mesP).then(function (blob) {
+          return GE.guardarArchivo(blob, "cuentas-clientes", nombre).then(function (fileUrl) {
+            return GE.guardar("accountStatements", { clientId: c.id, clientName: c.businessName, clientCode: c.code || null, periodFrom: mesP + "-01", periodTo: mesSig(mesP) + "-01", grossAmount: round2(T.bruto), discountAmount: round2(T.desc), netAmount: round2(T.neto), accountAmount: round2(T.saldo), fileUrl: fileUrl, issuedAt: ahora });
+          }).then(function () { return entregarArchivo(blob, nombre, modo, "Resumen de cuenta"); });
+        }).then(function (res) {
+          GE.toast(res === "compartido" ? "Resumen guardado en Administración y listo para compartir." : "Resumen guardado en Administración y descargado.");
+          delete cache["ST" + c.id]; refrescar();
+        }).catch(function (e) { console.error(e); btn.disabled = false; btn.textContent = orig; GE.toast("No se pudo generar el resumen.", "error"); });
+      }
+      var b1 = det.querySelector("#cCompartir"), b2 = det.querySelector("#cBajar");
+      b1.onclick = function () { emitir("compartir", b1); };
+      b2.onclick = function () { emitir("descargar", b2); };
+    }).catch(function (e) { console.error(e); if (vigente()) el.innerHTML = errorBox(e); });
+  }
+
+  // ================= PDFs (§9) =================
+  function txtPdf(s) { return String(s == null ? "" : s).replace(/[  ]/g, " "); }
+  // Logo chico en JPEG para que el PDF pese poco (el PNG original infla el archivo a ~450 KB).
+  var _logoPdf = null;
+  function logoPdf() {
+    if (!_logoPdf) _logoPdf = GE.logoDataUrl().then(function (src) {
+      if (!src) return null;
+      return new Promise(function (ok) {
+        var im = new Image();
+        im.onload = function () {
+          var c = document.createElement("canvas"); c.width = 160; c.height = 160;
+          var x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, 160, 160);
+          var s = Math.min(160 / im.width, 160 / im.height), w = im.width * s, h = im.height * s;
+          x.drawImage(im, (160 - w) / 2, (160 - h) / 2, w, h);
+          ok(c.toDataURL("image/jpeg", 0.85));
+        };
+        im.onerror = function () { ok(null); };
+        im.src = src;
+      });
+    });
+    return _logoPdf;
+  }
+  function pdfEncabezado(doc, subtitulo, logo) {
+    if (logo) { try { doc.addImage(logo, "JPEG", 14, 12, 18, 18); } catch (e) { logo = null; } }
+    if (!logo) { doc.setFillColor(13, 62, 130); doc.roundedRect(14, 12, 18, 18, 3, 3, "F"); doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.text("P", 23, 24, { align: "center" }); }
+    doc.setTextColor(15, 23, 42); doc.setFont("helvetica", "bold"); doc.setFontSize(15); doc.text("PORTAL DISTRIBUIDORA", 38, 19);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.text(txtPdf(subtitulo), 38, 26);
+    doc.setDrawColor(200, 200, 200); doc.line(14, 35, 196, 35);
+  }
+  function pdfResumenCuenta(c, invs, mesP) {
+    return logoPdf().then(function (logo) {
+      var doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+      var y = 44;
+      function salto(h) { if (y + (h || 0) > 278) { doc.addPage(); y = 18; } }
+      function linea(t, x, opt) { doc.text(txtPdf(t), x, y, opt); }
+      pdfEncabezado(doc, "Resumen de cuenta del cliente", logo);
+      doc.setFontSize(10); doc.setTextColor(15, 23, 42); doc.setFont("helvetica", "normal");
+      linea("Emitido: " + GE.fechaHora(new Date()), 14); y += 6;
+      linea("Período: " + mesLabel(mesP), 14); y += 6;
+      linea("Cliente: " + c.businessName + (c.code ? " · Código " + c.code : ""), 14); y += 6;
+      doc.splitTextToSize(txtPdf("Dirección: " + (c.address || "No informada")), 182).forEach(function (l) { doc.text(l, 14, y); y += 5; });
+      y += 4;
+      function cab() { doc.setFont("helvetica", "bold"); doc.setFontSize(9); linea("Fecha / comprobante", 14); linea("Original", 140, { align: "right" }); linea("Descuento", 168, { align: "right" }); linea("Neto", 196, { align: "right" }); y += 2; doc.setDrawColor(220, 220, 220); doc.line(14, y, 196, y); y += 5; doc.setFont("helvetica", "normal"); }
+      cab();
+      var T = { o: 0, d: 0, n: 0, s: 0 };
+      invs.slice().sort(function (a, b) { return String(a.serviceDate).localeCompare(String(b.serviceDate)) || String(a.invoiceNumber).localeCompare(String(b.invoiceNumber)); }).forEach(function (f) {
+        var pago = doc.splitTextToSize(txtPdf("Pago: " + (f.status === "delivered" ? detallePago(f) : f.status === "issue" ? "Rechazada" : "Pendiente de entrega") + " · " + (f.zoneName || "")), 182);
+        salto(5 + pago.length * 4);
+        if (y === 18) cab();
+        doc.setFontSize(9); doc.setTextColor(15, 23, 42);
+        linea(GE.fechaPdf(f.serviceDate) + " · " + f.invoiceNumber, 14); linea(money(f.amount), 140, { align: "right" }); linea(money(f.discountAmount), 168, { align: "right" }); linea(money(GE.neto(f)), 196, { align: "right" });
+        y += 4; doc.setFontSize(8); doc.setTextColor(110, 116, 128);
+        pago.forEach(function (l) { doc.text(l, 14, y); y += 3.6; });
+        y += 2.4;
+        T.o += n(f.amount); T.d += n(f.discountAmount); T.n += GE.neto(f); T.s += GE.saldo(f);
+      });
+      salto(30);
+      doc.setDrawColor(200, 200, 200); doc.line(14, y, 196, y); y += 6;
+      doc.setTextColor(15, 23, 42); doc.setFontSize(10);
+      [["Total original", T.o], ["Descuentos", T.d], ["Total neto", T.n], ["Saldo cuenta corriente", T.s]].forEach(function (t, i) {
+        doc.setFont("helvetica", i >= 2 ? "bold" : "normal"); linea(t[0] + ": " + money(t[1]), 196, { align: "right" }); y += 6;
+      });
+      salto(10); y += 4;
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(110, 116, 128);
+      linea("Este resumen refleja los pagos al entregar y los cobros posteriores aplicados.", 14);
+      return doc.output("blob");
+    });
+  }
+
+  // ================= 6.5 Carga masiva =================
+  var CM = { ch: null, rutas: null, dom: null, val: null, ocupado: false };
+  var ALIAS = {
+    fecha: ["fecha", "fechacomp", "fecha reparto", "fecha de reparto", "fecha entrega"],
+    ruta: ["ruta", "nombre ruta", "nombre de ruta", "asignacion", "recorrido"],
+    codZona: ["codigo zona", "cod zona", "codzon", "zona codigo", "zona cod"],
+    zona: ["zona", "nombre zona"],
+    codCli: ["codigo cliente", "cod cliente", "codcli", "cliente codigo", "cliente cod"],
+    cliente: ["cliente", "razon social", "nombre cliente", "cliente nombre", "nombre"],
+    // «numero de factura» y «nro de factura»: corrección pedida (el modelo usa «Número de Factura»).
+    factura: ["factura", "numero factura", "numero de factura", "n factura", "nro factura", "nro de factura", "comprobante", "id"],
+    importe: ["importe", "monto", "total", "totalfac", "importe factura"],
+    domicilio: ["domicilio", "direccion", "direccion entrega", "calle"],
+    localidad: ["localidad", "ciudad"], provincia: ["provincia"],
+    legajo: ["legajo", "codigo", "codigo chofer", "cod chofer"], nombreCh: ["nombre", "chofer", "nombre chofer"]
+  };
+  function mapear(cabs) {
+    var m = {};
+    Object.keys(ALIAS).forEach(function (k) {
+      for (var i = 0; i < ALIAS[k].length && !m[k]; i++) {
+        for (var j = 0; j < cabs.length; j++) if (norm(cabs[j]) === ALIAS[k][i]) { m[k] = cabs[j]; break; }
+      }
+    });
+    return m;
+  }
+  function hoja(ws) {
+    var txt = XLSX.utils.sheet_to_json(ws, { defval: "", raw: false });
+    var crudo = XLSX.utils.sheet_to_json(ws, { defval: "", raw: true });
+    var cabs = txt.length ? Object.keys(txt[0]) : [];
+    return { cabs: cabs, filas: txt.map(function (t, i) { return { t: t, r: crudo[i] || {} }; }) };
+  }
+  function leerLibro(file) {
+    return file.arrayBuffer().then(function (buf) {
+      try { return XLSX.read(buf, { type: "array", raw: true }); }
+      catch (e) { throw new Error("No pudimos leer el archivo. Abrilo en Excel y guardalo nuevamente como XLSX o CSV, o revisá que no tenga contraseña."); }
+    });
+  }
+  function importe(t, r) {
+    if (typeof r === "number" && isFinite(r)) return r;
+    var s = String(t == null ? "" : t).replace(/\$/g, "").replace(/\s/g, "");
+    if (!s) return NaN;
+    if (s.indexOf(",") >= 0) s = s.replace(/\./g, "").replace(",", "."); else s = s.replace(/,/g, "");
+    var v = Number(s);
+    return isFinite(v) ? v : NaN;
+  }
+  function isoValida(y, m, d) {
+    y = +y; m = +m; d = +d;
+    if (!(y > 1990 && y < 2200 && m >= 1 && m <= 12 && d >= 1 && d <= 31)) return null;
+    var dt = new Date(y, m - 1, d);
+    if (dt.getMonth() !== m - 1) return null;
+    return y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+  }
+  function fecha(t, r, esUS) {
+    if (typeof r === "number" && r > 20000 && r < 80000) {
+      // Serial de Excel. Un resto de 23:59 es error de huso horario del que generó el archivo: se redondea al día siguiente.
+      var pd = XLSX.SSF.parse_date_code(r % 1 > 0.99 ? Math.round(r) : Math.floor(r));
+      if (pd) return isoValida(pd.y, pd.m, pd.d);
+    }
+    if (r instanceof Date && !isNaN(r)) return GE.iso(r);
+    var s = String(t == null ? "" : t).trim();
+    if (!s) return null;
+    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return isoValida(m[1], m[2], m[3]);
+    m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+    if (!m) return null;
+    var a = m[1], b = m[2], y = m[3], forzar = false;
+    if (y.length === 2) y = "20" + y;
+    else if (y.length === 3) { y = y.slice(0, 2) + "2" + y.slice(2); forzar = true; }
+    return esUS && !forzar ? isoValida(y, a, b) : isoValida(y, b, a);
+  }
+  function padZona(c) { c = String(c == null ? "" : c).trim(); return /^\d{1,3}$/.test(c) ? String(Number(c)).padStart(2, "0") : c; }
+  function claveZona(c) { c = String(c == null ? "" : c).trim().toUpperCase(); return /^\d+$/.test(c) ? String(Number(c)) : c; }
+  // Deducciones desde el nombre del archivo (L7, O7, Hre)
+  function deducir(nombre) {
+    var base = nombre.replace(/\.[^.]+$/, ""), L = base.toUpperCase().replace(/[^A-Z0-9]/g, ""), r = { limpio: base.replace(/[^A-Za-z0-9ÁÉÍÓÚÑáéíóúñ]+/g, " ").trim() };
+    var m = L.match(/(\d*)(\d{2})(\d{2})(\d{4})$/);
+    var f = m ? isoValida(m[4], m[3], m[2]) : null;
+    if (f) { r.serviceDate = f; var prev = m[1].slice(-3); if (prev) r.zoneCode = padZona(prev); }
+    else {
+      m = L.match(/^ZONA([A-Z]+?)(\d{1,3})(\d{4,6}|AL\d{2,4})/);
+      if (m) { r.zoneName = "Zona " + m[1]; r.zoneCode = padZona(m[2]); }
+    }
+    m = base.match(/zona\s*0*(\d{1,2})/i);
+    if (m && !/^zonas/i.test(base.replace(/[^A-Za-z]/g, ""))) {
+      r.zoneCode = padZona(m[1]);
+      // O7: después de ZONA{n} vienen día+mes+año(4)
+      var resto = L.replace(/^.*?ZONA0*\d{1,2}/, "");
+      var mm = resto.match(/^(\d{6,8})(?!\d)/);
+      if (mm && !r.serviceDate) {
+        var dig = mm[1], y = dig.slice(-4), dm = dig.slice(0, -4), cands = [];
+        if (dm.length === 3) cands.push(isoValida(y, dm.slice(1), dm.slice(0, 1)));
+        if (dm.length === 4) cands.push(isoValida(y, dm.slice(2), dm.slice(0, 2)));
+        if (dm.length === 2) cands.push(isoValida(y, dm.slice(1), dm.slice(0, 1)));
+        cands = cands.filter(Boolean);
+        if (cands.length === 1) r.serviceDate = cands[0];
+      }
+    }
+    var h2 = L.match(/^ZONAS(\d{1,3})Y(\d{1,3})(?=\d{4}AL)/);
+    if (h2) { r.multi = [h2[1], h2[2]]; delete r.zoneCode; }
+    return r;
+  }
+  function leerChoferes(file) {
+    return leerLibro(file).then(function (wb) {
+      if (!wb.SheetNames.length) throw new Error("El archivo de choferes no contiene hojas para importar.");
+      var hj = hoja(wb.Sheets[wb.SheetNames[0]]), mp = mapear(hj.cabs), filas = [], errores = [], vistos = {};
+      hj.filas.forEach(function (p, i) {
+        var leg = String(mp.legajo ? p.t[mp.legajo] : "").trim(), nom = String(mp.nombreCh ? p.t[mp.nombreCh] : "").trim(), nf = i + 2;
+        if (!leg && !nom) return;
+        if (!leg || !nom) { errores.push("Fila " + nf + ": faltan Legajo o Nombre."); return; }
+        var k = leg.toUpperCase();
+        if (vistos[k]) { errores.push("Fila " + nf + ": el legajo " + leg + " está repetido."); return; }
+        vistos[k] = 1; filas.push({ code: leg, name: nom });
+      });
+      if (!filas.length && !errores.length) errores.push("No se encontraron choferes válidos en el archivo.");
+      return { archivo: file.name, filas: filas, errores: errores };
+    });
+  }
+  function leerRutas(file) {
+    return leerLibro(file).then(function (wb) {
+      var errores = [], filas = [];
+      if (!wb.SheetNames.length) return { filas: [], errores: [file.name + ": la planilla no contiene filas de facturas."] };
+      var info = deducir(file.name), hj = hoja(wb.Sheets[wb.SheetNames[0]]), mp = mapear(hj.cabs);
+      var esUS = mp.fecha && norm(mp.fecha) === "fechacomp";
+      function v(p, k) { return mp[k] ? p.t[mp[k]] : ""; }
+      function vr(p, k) { return mp[k] ? p.r[mp[k]] : ""; }
+      hj.filas.forEach(function (p, i) {
+        var nf = i + 2;
+        var fTxt = String(v(p, "fecha")).trim(), fac = String(v(p, "factura")).trim(), codCli = String(v(p, "codCli")).trim();
+        if (!fTxt && !fac && !codCli) return;
+        var f = fTxt ? fecha(fTxt, vr(p, "fecha"), esUS) : (info.serviceDate || null);
+        var zc = padZona(v(p, "codZona")), zn = String(v(p, "zona")).trim();
+        if (/^\d{1,3}$/.test(zn)) { if (!zc) zc = padZona(zn); zn = ""; }
+        if (!zc && !zn) { zc = info.zoneCode || ""; zn = info.zoneName || ""; }
+        if (!zn && zc) zn = "Zona " + zc;
+        if (!zc) { var mz = zn.match(/^zona\s*0*(\d{1,3})\b/i); if (mz) zc = padZona(mz[1]); }
+        var imp = importe(v(p, "importe"), vr(p, "importe"));
+        if (!f || !zn || !fac || !isFinite(imp)) { errores.push(file.name + " · Fila " + nf + ": faltan Fecha, Zona, Factura o Importe."); return; }
+        filas.push({ rowNumber: nf, serviceDate: f, invoiceNumber: fac, amount: round2(imp), zoneCode: zc || null, zoneName: zn, clientCode: codCli || null, clientName: String(v(p, "cliente")).trim() || null, routeCol: String(v(p, "ruta")).trim() || null, sourceFile: file.name });
+      });
+      if (info.multi && !mp.zona && !mp.codZona) {
+        return { filas: [], errores: ["El archivo indica varias zonas (" + info.multi[0] + " y " + info.multi[1] + "), pero las facturas no indican la zona de cada fila. Separá el archivo por zona y usá, por ejemplo, ZONA" + info.multi[0] + "_1710AL1910.xls; o agregá una columna Zona en cada fila."] };
+      }
+      if (!filas.length && !errores.length) errores.push(file.name + ": la planilla no contiene filas de facturas.");
+      // Vre: un archivo = una ruta por zona
+      var porZona = {};
+      filas.forEach(function (x) { var k = x.zoneCode || norm(x.zoneName); (porZona[k] = porZona[k] || []).push(x); });
+      Object.keys(porZona).forEach(function (k) {
+        var g = porZona[k];
+        var fr = info.serviceDate || g.map(function (x) { return x.serviceDate; }).sort().pop();
+        var rn = (g[0].zoneName || ("Zona " + g[0].zoneCode)) + " · " + info.limpio + " · " + fr;
+        g.forEach(function (x) { x.routeName = rn; x.routeKey = rn.toUpperCase(); x.routeServiceDate = fr; });
+      });
+      return { filas: filas, errores: errores };
+    });
+  }
+  function leerDomicilios(file) {
+    return leerLibro(file).then(function (wb) {
+      if (!wb.SheetNames.length) throw new Error("El archivo de domicilios no contiene hojas para importar.");
+      var filas = [];
+      wb.SheetNames.forEach(function (sn) {
+        var hj = hoja(wb.Sheets[sn]), mp = mapear(hj.cabs);
+        if (!mp.domicilio) return;
+        hj.filas.forEach(function (p, i) {
+          var cc = String(mp.codCli ? p.t[mp.codCli] : "").trim(), cn = String(mp.cliente ? p.t[mp.cliente] : "").trim();
+          var dir = [mp.domicilio, mp.localidad, mp.provincia].filter(Boolean).map(function (k) { return String(p.t[k]).trim(); }).filter(Boolean).join(", ");
+          if ((cc || cn) && dir) filas.push({ rowNumber: i + 2, address: dir, clientCode: cc || null, clientName: cn || null, zoneCode: mp.codZona ? padZona(p.t[mp.codZona]) || null : null, zoneName: mp.zona ? String(p.t[mp.zona]).trim() || null : null, sourceFile: file.name + " · " + sn });
+        });
+      });
+      return { archivo: file.name, filas: filas, errores: [] };
+    });
+  }
+
+  // validateBulkRouteImport + importBulkRoutes (lógica que antes hacía el servidor)
+  function planificar(rows, book) {
+    var nums = rows.map(function (r) { return r.invoiceNumber; });
+    return Promise.all([catalogo(), clientesTodos(), GE.dondeEn("invoices", "invoiceNumber", nums),
+      GE.dondeEn("routes", "importKey", rows.map(function (r) { return r.routeKey; })), GE.dondeEn("routes", "name", rows.map(function (r) { return r.routeName; }))
+    ]).then(function (res) {
+      var existentes = {};
+      res[2].forEach(function (f) { existentes[String(f.invoiceNumber).trim().toUpperCase()] = f; });
+      var rutasExist = {};
+      res[3].concat(res[4]).forEach(function (r) { rutasExist[(r.importKey || String(r.name).toUpperCase())] = r; });
+      var zPorCod = {}, zPorNom = {};
+      CAT.zones.forEach(function (z) { if (z.code != null && z.code !== "") zPorCod[claveZona(z.code)] = z; zPorNom[norm(z.name)] = z; });
+      var cPorCod = {}, cPorNom = {};
+      CAT.clients.forEach(function (c) { if (c.code) cPorCod[String(c.code).trim().toUpperCase()] = c; var k = norm(c.businessName); (cPorNom[k] = cPorNom[k] || []).push(c); });
+      var bCod = {}, bNom = {};
+      (book || []).forEach(function (b) {
+        if (b.clientCode) (bCod[b.clientCode.toUpperCase()] = bCod[b.clientCode.toUpperCase()] || {})[b.address] = 1;
+        if (b.clientName) (bNom[norm(b.clientName)] = bNom[norm(b.clientName)] || {})[b.address] = 1;
+      });
+      function direccion(cod, nom) {
+        var s = cod && bCod[cod.toUpperCase()]; if (s && Object.keys(s).length === 1) return Object.keys(s)[0];
+        s = nom && bNom[norm(nom)]; if (s && Object.keys(s).length === 1) return Object.keys(s)[0];
+        return null;
+      }
+      var zonasNuevas = {}, clientesNuevos = {}, vistos = {}, salida = [], sum = { zonesToCreate: 0, clientsToCreate: 0, invoices: 0, skipped: 0, addressesMatched: 0, errors: 0 };
+      rows.forEach(function (r) {
+        var o = { row: r, sourceFile: r.sourceFile, rowNumber: r.rowNumber, invoiceNumber: r.invoiceNumber, errors: [] };
+        // Zona
+        var z = (r.zoneCode && zPorCod[claveZona(r.zoneCode)]) || zPorNom[norm(r.zoneName)];
+        var zk = r.zoneCode ? "c:" + claveZona(r.zoneCode) : "n:" + norm(r.zoneName);
+        if (!z) { if (!zonasNuevas[zk]) { zonasNuevas[zk] = { id: GE.nuevoId(), code: r.zoneCode ? padZona(r.zoneCode) : "", name: r.zoneName, nueva: true }; sum.zonesToCreate++; } z = zonasNuevas[zk]; }
+        o.zona = z; o.zoneNameResolved = z.name;
+        // Cliente
+        var c = null;
+        if (!r.clientCode && !r.clientName) o.errors.push("Fila " + r.rowNumber + ": falta el cliente.");
+        else {
+          if (r.clientCode) c = cPorCod[r.clientCode.toUpperCase()] || null;
+          if (!c && r.clientName) {
+            var cand = cPorNom[norm(r.clientName)] || [];
+            var mismaZona = cand.filter(function (x) { return x.zoneId === z.id; });
+            if (mismaZona.length === 1) c = mismaZona[0]; else if (cand.length === 1) c = cand[0];
+          }
+          var ck = r.clientCode ? "c:" + r.clientCode.toUpperCase() : "n:" + norm(r.clientName) + "|" + zk;
+          if (!c) { if (!clientesNuevos[ck]) { clientesNuevos[ck] = { id: GE.nuevoId(), code: r.clientCode || "", businessName: r.clientName || r.clientCode, zona: z, nueva: true, address: null }; sum.clientsToCreate++; } c = clientesNuevos[ck]; }
+          o.cliente = c; o.clientNameResolved = c.businessName;
+          var dir = direccion(r.clientCode || c.code, r.clientName || c.businessName);
+          o.addressMatched = !!dir; o.address = dir;
+          if (dir) { sum.addressesMatched++; if (c.nueva) c.address = dir; }
+        }
+        // Dedupe por número de factura (regla 11)
+        var nk = String(r.invoiceNumber).trim().toUpperCase();
+        if (o.errors.length) { o.status = "error"; sum.errors++; }
+        else if (existentes[nk] || vistos[nk]) { o.status = "skipped"; sum.skipped++; }
+        else { o.status = "ready"; vistos[nk] = 1; sum.invoices++; }
+        salida.push(o);
+      });
+      // Solo cuentan las zonas y clientes nuevos que realmente se van a crear (filas listas)
+      var zN = {}, cN = {};
+      salida.forEach(function (o) { if (o.status !== "ready") return; if (o.zona.nueva) zN[o.zona.id] = 1; if (o.cliente && o.cliente.nueva) cN[o.cliente.id] = 1; });
+      sum.zonesToCreate = Object.keys(zN).length; sum.clientsToCreate = Object.keys(cN).length;
+      return { canImport: sum.errors === 0 && sum.invoices > 0, summary: sum, rows: salida, rutasExist: rutasExist };
+    });
+  }
+  function importar(plan) {
+    var ahora = GE.ahora(), ops = [], rutas = {}, zonasCreadas = {}, clientesCreados = {}, dirs = {}, creadas = 0, rutasNuevas = [];
+    plan.rows.forEach(function (o) {
+      if (o.status !== "ready") return;
+      var r = o.row, z = o.zona, c = o.cliente;
+      if (z.nueva && !zonasCreadas[z.id]) { zonasCreadas[z.id] = 1; ops.push(["set", GE.ref("zones", z.id), { id: z.id, code: z.code, name: z.name, description: "Importación masiva", active: true, createdAt: ahora, updatedAt: ahora }]); }
+      if (c.nueva && !clientesCreados[c.id]) { clientesCreados[c.id] = 1; ops.push(["set", GE.ref("clients", c.id), { id: c.id, code: c.code, businessName: c.businessName, contactName: null, phone: null, address: c.address || null, active: true, zoneId: c.zona.id, zoneName: c.zona.name, createdAt: ahora, updatedAt: ahora }]); }
+      if (!c.nueva && o.address && c.address !== o.address && !dirs[c.id]) { dirs[c.id] = 1; ops.push(["update", GE.ref("clients", c.id), { address: o.address, updatedAt: ahora }]); }
+      var ru = rutas[r.routeKey] || plan.rutasExist[r.routeKey];
+      if (!ru) {
+        ru = { id: GE.nuevoId(), name: r.routeName, zoneId: z.id, zoneName: z.name, zoneCode: z.code || null, driverId: null, driverName: null, serviceDate: r.routeServiceDate, pettyCashAmount: 0, status: "scheduled", closedAt: null, notes: "Importación masiva · pendiente de asignar chofer", importKey: r.routeKey, sourceFile: r.sourceFile, vehicleId: null, vehicleCode: null, vehiclePlate: null, createdAt: ahora };
+        ops.push(["set", GE.ref("routes", ru.id), ru]); rutasNuevas.push(ru);
+      }
+      rutas[r.routeKey] = ru;
+      var cli = { id: c.id, businessName: c.businessName, code: c.code, address: o.address || c.address || null };
+      var f = nuevaFactura({ invoiceNumber: r.invoiceNumber, amount: r.amount, source: "imported" }, ru, cli);
+      ops.push(["set", GE.ref("invoices", f.id), f]);
+      creadas++;
+    });
+    return escribir(ops).then(function () {
+      _pCat = null; _pCli = null; CAT.clients = null; CAT.cli = {};
+      return { invoicesCreated: creadas, createdRoutes: rutasNuevas };
+    });
+  }
+
+  function vCarga(el, vigente) {
+    var errores = [].concat(CM.rutas ? CM.rutas.errores : [], CM.dom ? CM.dom.errores : []);
+    var rows = CM.rutas ? CM.rutas.filas : [];
+    var porRuta = {};
+    rows.forEach(function (r) { var g = porRuta[r.routeKey] = porRuta[r.routeKey] || { nombre: r.routeName, fecha: r.routeServiceDate, zona: r.zoneName, n: 0 }; g.n++; });
+    var V = CM.val;
+    el.innerHTML = '<section class="card"><div class="sec-cab"><div><div class="eyebrow">Carga integral</div><h2>Cargá choferes, rutas y facturas desde Excel.</h2><p class="muted">Paso 1: subí el listado de choferes. Paso 2: cargá un Excel por ruta y la base de domicilios. Paso 3: validá y creá las rutas. Paso 4: elegí un chofer en el desplegable para publicarla en Soy Chofer.</p></div><button class="btn btn-outline" id="cmModelo">Descargar modelo</button></div></section>' +
+      // Paso 1
+      '<section class="card"><div class="sec-cab"><div><div class="eyebrow">Paso 1 · Choferes</div><label for="cmCh" style="font-size:1rem">Subí el listado completo de personal de reparto</label></div><button class="btn btn-ghost btn-sm" id="cmNuevoCh">Nuevo chofer</button></div>' +
+      '<input type="file" id="cmCh" accept=".xlsx,.xls,.csv"><p class="small muted">Archivo Excel o CSV con Legajo y Nombre. Se incorporan todos los registros del archivo para que ' + (CM.ch ? "los " + CM.ch.filas.length + " nombres estén" : "todos los nombres estén") + ' disponibles en Soy Chofer.</p>' +
+      (CM.ch ? '<div class="fila"><span class="badge t-blue">' + esc(CM.ch.archivo) + ' · ' + CM.ch.filas.length + ' personas</span></div>' + (CM.ch.errores.length ? '<div class="caja-err" style="margin-top:.5rem"><b>Revisá el archivo</b><ul>' + CM.ch.errores.map(function (e) { return "<li>" + esc(e) + "</li>"; }).join("") + '</ul></div>' : "") +
+        '<div class="ge-acciones" style="justify-content:flex-start"><button class="btn btn-primary" id="cmChOk"' + (CM.ch.errores.length || !CM.ch.filas.length ? " disabled" : "") + '>Incorporar los ' + CM.ch.filas.length + ' nombres</button></div>' : "") + '</section>' +
+      // Paso 2
+      '<section class="card"><div class="eyebrow">Paso 2 · Planillas de rutas y facturas</div><label for="cmRu" style="font-size:1rem">Planillas de rutas y facturas</label><input type="file" id="cmRu" accept=".xlsx,.xls,.csv" multiple>' +
+      '<p class="small muted">Subí un Excel por ruta. Columnas: Fecha, Número de Factura, Cliente, Importe y Zona. Las zonas o clientes que no existan se crearán al confirmar.</p>' +
+      '<label for="cmDo">Planilla maestra de domicilios (opcional)</label><input type="file" id="cmDo" accept=".xlsx,.xls,.csv"><p class="small muted">Debe incluir Cliente o Código de cliente y Domicilio; se aplica solamente cuando existe una coincidencia única y segura.</p>' +
+      (CM.dom ? '<span class="badge t-blue">' + esc(CM.dom.archivo) + ' · ' + CM.dom.filas.length + ' domicilios</span>' : "") +
+      (errores.length ? '<div class="caja-err" style="margin-top:.6rem"><b>Revisá los archivos antes de seguir</b><ul>' + errores.map(function (e) { return "<li>" + esc(e) + "</li>"; }).join("") + '</ul></div>' : "") + '</section>' +
+      // Previsualización
+      (rows.length ? '<section class="card"><div class="sec-cab"><div><div class="eyebrow">Paso 1</div><h2>Revisá la carga antes de crearla</h2><p class="muted">Las rutas se generarán sin chofer para que puedas revisar la lista antes de publicarlas en el celular.</p></div><span class="badge t-blue">' + Object.keys(porRuta).length + ' rutas · ' + rows.length + ' facturas</span></div>' +
+        '<div class="lista">' + Object.keys(porRuta).map(function (k) { var g = porRuta[k]; return '<div class="itm"><div><div class="tt">' + esc(g.nombre) + '</div><div class="st">' + esc(GE.fechaCorta(g.fecha)) + ' · ' + esc(g.zona) + ' · ' + plural(g.n, "factura", "facturas") + '</div></div><span class="badge t-amber">Pendiente de asignar</span></div>'; }).join("") + '</div>' +
+        '<div class="ge-acciones"><button class="btn btn-primary" id="cmValidar"' + (errores.length ? " disabled" : "") + '>Validar y preparar carga</button></div></section>' : "") +
+      // Resultado validación
+      (V ? '<section class="card"><div class="sec-cab"><div><div class="eyebrow">Paso 2</div><h2>Vista previa de la importación</h2><p class="muted">Las facturas nuevas se cargarán. Las que ya existen quedarán en sus rutas actuales y no se duplicarán.</p></div>' +
+        (V.summary.errors ? '<span class="badge t-rose">' + V.summary.errors + ' filas con error</span>' : '<span class="badge t-emerald">' + V.summary.invoices + ' nuevas · ' + V.summary.skipped + ' ya existentes</span>') + '</div>' +
+        '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr))">' + [["zonesToCreate", "zonas nuevas", "blue"], ["clientsToCreate", "clientes nuevos", "blue"], ["invoices", "facturas nuevas", "emerald"], ["skipped", "ya cargadas", "amber"], ["addressesMatched", "domicilios", "violet"], ["errors", "errores", "rose"]].map(function (x) { return kpi({ label: x[1], valor: V.summary[x[0]], tono: x[2] }); }).join("") + '</div>' +
+        '<div class="tabla-scroll" style="margin-top:.75rem;max-height:420px;overflow:auto"><table><thead><tr><th>Archivo / fila</th><th>Zona / cliente</th><th>Factura</th><th>Domicilio</th><th>Validación</th></tr></thead><tbody>' +
+        V.rows.map(function (o) { return '<tr class="' + (o.status === "error" ? "fila-err" : o.status === "skipped" ? "fila-omit" : "") + '"><td>' + esc(o.sourceFile) + '<div class="st">Fila ' + o.rowNumber + '</div></td><td>' + esc(o.zoneNameResolved || "") + '<div class="st">' + esc(o.clientNameResolved || "") + '</div></td><td>' + esc(o.invoiceNumber) + '</td><td>' + (o.addressMatched ? '<span class="ok-txt">Vinculado</span>' : '<span class="st">Sin coincidencia segura</span>') + '</td><td>' + (o.status === "ready" ? '<span class="ok-txt">Se cargará</span>' : o.status === "skipped" ? "Ya cargada · se omite" : '<span class="err-txt">' + esc(o.errors.join(" ")) + '</span>') + '</td></tr>'; }).join("") + '</tbody></table></div>' +
+        '<div class="ge-acciones"><button class="btn btn-primary" id="cmImportar"' + (V.canImport ? "" : " disabled") + '>Cargar ' + V.summary.invoices + ' facturas nuevas</button></div></section>' : "") +
+      '<section class="aviso"><div class="eyebrow" style="color:inherit">Siguiente paso</div><h3>Las zonas quedan pendientes de asignación</h3><p style="margin:0">La carga masiva no asigna cobrador ni caja chica. Cuando termines de cargar los Excel, abrí <a href="#/asignar-zonas"><b>Asignar zonas</b></a> en el menú de Administración.</p></section>' +
+      '<section class="card" id="cmAud">' + cargando("Cargando auditoría...") + '</section>';
+
+    el.querySelector("#cmModelo").onclick = function () {
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Fecha", "Número de Factura", "Cliente", "Importe", "Zona"]]), "Rutas y facturas");
+      XLSX.writeFile(wb, "modelo_carga_masiva_rutas.xlsx");
+    };
+    el.querySelector("#cmNuevoCh").onclick = function () { alta("driver"); };
+    el.querySelector("#cmCh").onchange = function (e) {
+      var f = e.target.files[0]; if (!f) return;
+      leerChoferes(f).then(function (r) { CM.ch = r; if (r.filas.length) GE.toast(r.filas.length + " choferes listos para incorporar."); vCarga(el, vigente); })
+        .catch(function (err) { CM.ch = { archivo: f.name, filas: [], errores: [err.message] }; vCarga(el, vigente); });
+    };
+    var bOk = el.querySelector("#cmChOk");
+    if (bOk) bOk.onclick = function () {
+      bOk.disabled = true; bOk.textContent = "Incorporando...";
+      catalogo().then(function () {
+        var ahora = GE.ahora(), ops = [], porCod = {};
+        CAT.drivers.forEach(function (d) { porCod[String(d.code).trim().toUpperCase()] = d; });
+        CM.ch.filas.forEach(function (x) {
+          var d = porCod[x.code.toUpperCase()];
+          if (d) ops.push(["update", GE.ref("drivers", d.id), { name: x.name, active: true, updatedAt: ahora }]);
+          else { var id = GE.nuevoId(); ops.push(["set", GE.ref("drivers", id), { id: id, code: x.code, name: x.name, phone: null, active: true, userId: null, createdAt: ahora, updatedAt: ahora }]); }
+        });
+        return escribir(ops).then(function () { return CM.ch.filas.length; });
+      }).then(function (t) {
+        GE.toast(t + " choferes listos para asignar rutas.");
+        CM.ch = null; _pCat = null; refrescar();
+      }).catch(function (e) { bOk.disabled = false; bOk.textContent = "Incorporar los " + CM.ch.filas.length + " nombres"; GE.toast(e.message, "error"); });
+    };
+    el.querySelector("#cmRu").onchange = function (e) {
+      var fs = Array.from(e.target.files); if (!fs.length) return;
+      Promise.all(fs.map(function (f) { return leerRutas(f).catch(function (err) { return { filas: [], errores: [f.name + ": " + err.message] }; }); })).then(function (rs) {
+        var filas = [].concat.apply([], rs.map(function (r) { return r.filas; })), errs = [].concat.apply([], rs.map(function (r) { return r.errores; }));
+        CM.rutas = { filas: filas, errores: errs }; CM.val = null;
+        var lotes = new Set(filas.map(function (r) { return r.routeKey; })).size;
+        if (filas.length) GE.toast(filas.length + " facturas leídas en " + lotes + " lotes operativos. Revisá la vista previa antes de cargar.");
+        vCarga(el, vigente);
+      });
+    };
+    el.querySelector("#cmDo").onchange = function (e) {
+      var f = e.target.files[0]; if (!f) return;
+      leerDomicilios(f).then(function (r) { CM.dom = r; CM.val = null; GE.toast(r.filas.length + " domicilios listos para relacionar de forma segura."); vCarga(el, vigente); })
+        .catch(function (err) { CM.dom = { archivo: f.name, filas: [], errores: [err.message] }; vCarga(el, vigente); });
+    };
+    var bV = el.querySelector("#cmValidar");
+    if (bV) bV.onclick = function () {
+      bV.disabled = true; bV.textContent = "Validando...";
+      planificar(rows, CM.dom ? CM.dom.filas : []).then(function (p) { CM.val = p; vCarga(el, vigente); })
+        .catch(function (e) { console.error(e); bV.disabled = false; bV.textContent = "Validar y preparar carga"; GE.toast(e.message, "error"); });
+    };
+    var bI = el.querySelector("#cmImportar");
+    if (bI) bI.onclick = function () {
+      bI.disabled = true; bI.textContent = "Cargando...";
+      // Se vuelve a validar contra la base justo antes de escribir (evita duplicar si otro admin cargó lo mismo).
+      planificar(rows, CM.dom ? CM.dom.filas : []).then(function (p) {
+        if (!p.canImport) { CM.val = p; throw new Error("La validación cambió: revisá la vista previa."); }
+        return importar(p);
+      }).then(function (res) {
+        GE.toast(res.invoicesCreated + " facturas y " + res.createdRoutes.length + " zonas cargadas. Ahora podés asignar cobrador y caja chica desde “Asignar zonas”.");
+        CM.rutas = null; CM.val = null; CM.dom = null; refrescar();
+      }).catch(function (e) { console.error(e); GE.toast(e.message, "error"); vCarga(el, vigente); });
+    };
+
+    // Auditoría de carga (mes M)
+    datosMes(S.mes).then(function (M) {
+      if (!vigente()) return;
+      var porR = {};
+      M.invoices.forEach(function (f) { (porR[f.routeId] = porR[f.routeId] || []).push(f); });
+      var rs = M.routes.slice().sort(function (a, b) { return String(b.serviceDate).localeCompare(String(a.serviceDate)) || b.id - a.id; });
+      var box = el.querySelector("#cmAud");
+      box.innerHTML = '<div class="sec-cab"><div><div class="eyebrow">Auditoría de carga</div><h2>Rutas y facturas ya cargadas</h2><p class="muted">Abrí cada jornada para comprobar todas las facturas y clientes, incluso después de recargar la página.</p></div><div class="fila" style="align-items:flex-end">' + selectorMes("cmMes", S.mes) + '<span class="badge t-blue">' + rs.length + ' rutas · ' + M.invoices.length + ' facturas</span></div></div>' +
+        '<div class="lista">' + (rs.length ? rs.map(function (r) {
+          var fs = (porR[r.id] || []).sort(function (a, b) { return String(a.invoiceNumber).localeCompare(String(b.invoiceNumber), "es", { numeric: true }); });
+          var tot = fs.reduce(function (a, f) { return a + n(f.amount); }, 0), ncli = new Set(fs.map(function (f) { return f.clientId; })).size;
+          return '<details class="acc"><summary><div><b>' + esc(r.name) + '</b><div class="small muted">' + esc(GE.fechaCorta(r.serviceDate)) + ' · ' + esc(r.driverName || "Pendiente de asignar") + ' · ' + ncli + ' clientes</div></div><div class="fila"><span class="badge t-blue">' + fs.length + ' facturas</span><b class="num">' + money(tot) + '</b></div></summary><div class="acc-cuerpo">' +
+            (fs.length ? '<div class="tabla-scroll"><table><thead><tr><th>Factura</th><th>Cliente</th><th>Estado</th><th class="num">Importe</th></tr></thead><tbody>' + fs.map(function (f) { return '<tr><td>' + esc(f.invoiceNumber) + '</td><td>' + esc(f.clientName) + (f.clientCode ? '<div class="st">' + esc(f.clientCode) + '</div>' : "") + '</td><td>' + (f.status === "delivered" ? '<span class="badge t-emerald">Entregada</span>' : f.status === "issue" ? '<span class="badge t-rose">Rechazada</span>' : '<span class="badge t-amber">Pendiente</span>') + '</td><td class="num nowrap">' + money(f.amount) + '</td></tr>'; }).join("") + '</tbody></table></div>' : vacio("Sin facturas.")) + '</div></details>';
+        }).join("") : vacio("Todavía no hay rutas cargadas en el período seleccionado.")) + '</div>';
+      box.querySelector("#cmMes").onchange = function (e) { if (e.target.value) { S.mes = e.target.value; vCarga(el, vigente); } };
+    }).catch(function (e) { if (vigente()) el.querySelector("#cmAud").innerHTML = errorBox(e); });
+  }
+
+  // ================= Arranque =================
+  GE.requerirAdmin({ titulo: "Administración de Portal", texto: "Ingresá con tu cuenta de Google autorizada. Cada persona autorizada puede abrir este enlace desde su propio teléfono o computadora.", volver: { href: conPrueba("chofer.html"), label: "Volver a Soy Chofer" } }).then(function (u) {
+    var nombre = (u && !u.isAnonymous && (u.displayName || u.email)) || "Usuario autorizado";
+    document.getElementById("sbNombre").textContent = nombre;
+    document.getElementById("sbNombre").title = (u && u.email) || "";
+    document.getElementById("sbIni").textContent = nombre.trim().charAt(0).toUpperCase() || "U";
+    var banda = document.querySelector(".ge-banda-prueba");
+    if (banda) document.documentElement.style.setProperty("--banda", banda.offsetHeight + "px");
+    sincronizarUrl();
+    render();
+  });
+})();
+</script>
+</body>
+</html>

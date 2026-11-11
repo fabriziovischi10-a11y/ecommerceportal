@@ -1,0 +1,1436 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#102b46">
+<title>Portal Distribuidora · Entregas</title>
+<link rel="icon" href="logo.png">
+<link rel="stylesheet" href="comun.css">
+<script src="https://fabriziovischi10-a11y.github.io/ecommerceportal/intro-portal.js"></script>
+<style>
+  .chofer { max-width: 760px; padding: 1rem 16px 5rem; display: grid; gap: 1rem; }
+  .ge-cab .esp { flex: 1; }
+  [hidden] { display: none !important; }
+  .menu > summary { white-space: nowrap; }
+  .pwa .ico-pwa { flex: none; width: 38px; height: 38px; border-radius: 99px; display: grid; place-items: center; }
+  .menu { position: relative; }
+  .menu > summary { list-style: none; }
+  .menu > summary::-webkit-details-marker { display: none; }
+  .menu-lista { position: absolute; right: 0; top: calc(100% + 6px); background: var(--card); border: 1px solid var(--border); border-radius: .8rem; box-shadow: 0 10px 30px rgba(16,30,54,.15); min-width: 210px; padding: .35rem; z-index: 60; display: grid; }
+  .menu-lista a { padding: .6rem .75rem; border-radius: .55rem; text-decoration: none; color: var(--fg); font-weight: 600; }
+  .menu-lista a:hover { background: var(--muted); }
+  .menu-tit { font-size: .75rem; color: var(--muted-fg); padding: .3rem .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .wizard { display: grid; gap: .5rem; }
+  .wizard .paso { font-size: .8rem; font-weight: 700; color: var(--muted-fg); text-transform: uppercase; letter-spacing: .04em; }
+  .barra { height: 6px; background: var(--muted); border-radius: 99px; overflow: hidden; }
+  .barra > i { display: block; height: 100%; background: var(--primary); border-radius: 99px; transition: width .25s; }
+  .wizard .cab { display: flex; align-items: center; gap: .6rem; }
+  .wizard h1 { margin: 0; font-size: 1.35rem; }
+  .ceja { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted-fg); margin-bottom: .15rem; }
+  .sec { display: grid; gap: .75rem; }
+  .sec > h2, .sec-cab h2 { margin: 0; }
+  .sec-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; flex-wrap: wrap; }
+  .res-grid { display: grid; gap: .6rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 560px) { .res-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .res { border-radius: .9rem; padding: .7rem .8rem; border: 1px solid rgba(0,0,0,.04); display: grid; gap: .1rem; text-align: left; font: inherit; color: inherit; }
+  button.res { cursor: pointer; }
+  button.res:hover { filter: brightness(.97); }
+  .res .et { font-size: .78rem; font-weight: 700; opacity: .85; }
+  .res .va { font-size: 1.35rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.15; word-break: break-word; }
+  .res .va.chico { font-size: 1.05rem; }
+  .res .mas { font-size: .75rem; font-weight: 600; text-decoration: underline; opacity: .85; }
+  .t-cyan { background: #ecfeff; color: #0e7490; } .t-cliente { background: var(--cliente-bg); color: var(--brand); }
+  .lista { display: grid; gap: .5rem; }
+  .item { display: flex; align-items: center; gap: .75rem; width: 100%; text-align: left; background: var(--card); border: 1px solid var(--border); border-radius: .9rem; padding: .75rem .85rem; font: inherit; color: inherit; cursor: pointer; min-height: 56px; touch-action: manipulation; }
+  .item:hover { border-color: #b8c7d6; background: #fbfcfd; }
+  .item .cuerpo { flex: 1; min-width: 0; display: grid; gap: .1rem; }
+  .item .tit { font-weight: 700; word-break: break-word; }
+  .item .sub { font-size: .85rem; color: var(--muted-fg); word-break: break-word; }
+  .item .der { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .item .ic { flex: none; width: 34px; height: 34px; border-radius: 99px; display: grid; place-items: center; }
+  .estado { font-size: .82rem; font-weight: 600; }
+  .ok-txt { color: var(--emerald); } .warn-txt { color: var(--amber); } .rose-txt { color: var(--rose); } .orange-txt { color: var(--orange); }
+  .mini { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: .4rem; }
+  .mini > div { border-radius: .7rem; padding: .4rem .55rem; }
+  .mini .et { font-size: .72rem; font-weight: 700; }
+  .mini .va { font-weight: 800; font-variant-numeric: tabular-nums; font-size: .8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  @media (max-width: 440px) { .mini { grid-template-columns: 1fr; } .mini > div { display: flex; justify-content: space-between; align-items: center; gap: .5rem; } .mini .va { font-size: .9rem; } }
+  .grupo { display: grid; gap: .5rem; padding: .75rem; border: 1px solid var(--border); border-radius: 1rem; background: #fafcfd; }
+  .aviso { border-radius: .9rem; padding: .75rem .85rem; font-size: .9rem; }
+  .pwa { display: flex; gap: .75rem; align-items: flex-start; }
+  .pwa .cuerpo { flex: 1; }
+  .opciones { display: grid; gap: .5rem; }
+  .opciones.c3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .opciones.c2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .opcion { border: 2px solid var(--border); background: var(--card); border-radius: .9rem; padding: .6rem .5rem; font: inherit; cursor: pointer; text-align: center; display: grid; gap: .1rem; color: var(--fg); min-height: 60px; touch-action: manipulation; }
+  .opcion b { font-size: .92rem; } .opcion span { font-size: .75rem; color: var(--muted-fg); }
+  .opcion.on.t-emerald, .opcion.on.e-emerald { border-color: var(--emerald); background: var(--emerald-bg); color: var(--emerald); }
+  .opcion.on.e-amber { border-color: var(--amber); background: var(--amber-bg); color: var(--amber); }
+  .opcion.on.e-rose { border-color: var(--rose); background: var(--rose-bg); color: var(--rose); }
+  .opcion.on.e-blue { border-color: var(--blue); background: var(--blue-bg); color: var(--blue); }
+  .opcion.on.e-violet { border-color: var(--violet); background: var(--violet-bg); color: var(--violet); }
+  .opcion.on span { color: inherit; }
+  .bloque { border: 1px solid var(--border); border-radius: .9rem; padding: .75rem; display: grid; gap: .5rem; }
+  .bloque h3 { margin: 0; }
+  .panel { background: var(--slate-bg); border-radius: .9rem; padding: .75rem; display: grid; gap: .3rem; font-size: .92rem; }
+  .panel .l { display: flex; justify-content: space-between; gap: .5rem; }
+  .panel .l b { font-variant-numeric: tabular-nums; }
+  .panel .msg { font-weight: 700; margin-top: .25rem; }
+  .estrellas { display: flex; gap: .25rem; }
+  .estrella { background: none; border: 0; padding: .15rem; cursor: pointer; color: #cbd5e1; touch-action: manipulation; }
+  .estrella.on { color: #f59e0b; }
+  .fotos { display: flex; gap: .4rem; flex-wrap: wrap; }
+  .foto { position: relative; width: 64px; height: 64px; border-radius: .6rem; overflow: hidden; border: 1px solid var(--border); }
+  .foto img { width: 100%; height: 100%; object-fit: cover; }
+  .foto button { position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 99px; border: 0; background: rgba(15,23,42,.75); color: #fff; font-size: 12px; cursor: pointer; padding: 0; }
+  .subir { display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; margin: 0; }
+  .subir input { display: none; }
+  .ck { display: flex; align-items: center; gap: .6rem; }
+  .ck input[type=checkbox] { width: 22px; height: 22px; min-height: 0; flex: none; }
+  .ck .item { flex: 1; }
+  .err-dlg { color: var(--rose); background: var(--rose-bg); border-radius: .6rem; padding: .5rem .7rem; font-weight: 600; }
+  .ancho { width: 100%; }
+  .cheque-fila { display: flex; gap: .4rem; align-items: center; }
+  .cheque-fila input { flex: 1; }
+  .nota { font-size: .82rem; color: var(--muted-fg); }
+  .sticky-acc { position: sticky; bottom: 0; background: var(--card); padding: .75rem 0 .25rem; border-top: 1px solid var(--border); margin-top: .5rem; }
+  .flex1 { flex: 1; }
+</style>
+</head>
+<body>
+<header class="ge-cab">
+  <img src="logo.png" alt="Portal Distribuidora">
+  <div><div class="t1">Portal Distribuidora</div><div class="t2">Entregas</div></div>
+  <div class="esp"></div>
+  <details class="menu" id="menuControl">
+    <summary class="btn btn-outline btn-sm">Control ▾</summary>
+    <div class="menu-lista">
+      <div class="menu-tit">Control</div>
+      <a data-link="index.html">Inicio</a>
+      <a data-link="admin.html">Panel administrador</a>
+      <a data-link="admin.html#/seguimiento">Seguimiento</a>
+    </div>
+  </details>
+  <button class="btn btn-ghost btn-sm" id="btnCambiar" hidden>Cambiar</button>
+</header>
+<main id="app" class="contenedor chofer"><div class="vacio">Cargando…</div></main>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="comun.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  var esc = GE.esc, money = GE.money, r2 = GE.round2;
+  var Q = new URLSearchParams(location.search);
+  var TTL = 120000; // 2 min de caché para no gastar lecturas
+  var ABIERTAS = ["scheduled", "open", "in_progress", "pending", "active"];
+
+  // ---------------- Íconos ----------------
+  var P = {
+    atras: '<path d="m15 18-6-6 6-6"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    alerta: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+    editar: '<path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
+    basura: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    estrella: '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/>',
+    ubic: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+    camara: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+    mas: '<path d="M12 5v14"/><path d="M5 12h14"/>',
+    flecha: '<path d="m9 18 6-6-6-6"/>',
+    descargar: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+    compartir: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98"/><path d="m15.41 6.51-6.82 3.98"/>',
+    celu: '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/>'
+  };
+  function ico(n, s) { s = s || 18; return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + P[n] + '</svg>'; }
+
+  // ---------------- Catálogos ----------------
+  var CATS = [["food", "Comida"], ["toll", "Peaje"], ["lodging", "Hospedaje"], ["phone", "Teléfono"], ["assistant", "Ayudante"], ["coca", "Coca"], ["taxi", "Remis"], ["truck_wash", "Lavado camión"], ["floor", "Piso"]];
+  var CAT = {}; CATS.forEach(function (c) { CAT[c[0]] = c[1]; });
+  var MOTIVOS = [["no_money", "Sin dinero"], ["not_authorized", "No autorizado"], ["closed", "Cliente cerrado"], ["damaged", "Mercadería dañada o rechazada por estado"], ["wrong_order", "Pedido equivocado o no solicitado"], ["other", "Otro motivo"]];
+  var MOTIVO = {}; MOTIVOS.forEach(function (m) { MOTIVO[m[0]] = m[1]; });
+  function catLabel(c) { return CAT[c] || c || "Gasto"; }
+
+  // ---------------- Estado ----------------
+  var S = {
+    driver: null, fecha: /^\d{4}-\d{2}-\d{2}$/.test(Q.get("fecha") || "") ? Q.get("fecha") : GE.hoy(),
+    route: null, client: null,
+    buscarChofer: "", verTodos: false, buscarZona: "", buscarCC: "", ccSel: {},
+    gasto: { cat: "food", monto: "", notas: "", editId: null }, manual: { abierta: false, numero: "", importe: "", detalle: "Flete" },
+    ocupado: {}, pwaCerrado: false
+  };
+  var C = { drivers: null, zonas: {}, d: {}, dia: {}, cc: {} };
+  var cargando = { drivers: false, dia: false, chofer: false, cc: false };
+  var app = document.getElementById("app");
+
+  // ---------------- Utilidades ----------------
+  function num(v) { var n = Number(String(v == null ? "" : v).replace(",", ".")); return isFinite(n) ? n : 0; }
+  function pos(v) { var n = r2(num(v)); return n > 0 ? n : 0; }
+  function suma(a) { return r2(a.reduce(function (x, y) { return x + (Number(y) || 0); }, 0)); }
+  function plural(n, s, p) { return n + " " + (n === 1 ? s : p); }
+  function ts(v) { var t = v ? new Date(v).getTime() : 0; return isFinite(t) ? t : 0; }
+  function conPrueba(href) { if (!GE.PRUEBA) return href; var i = href.indexOf("#"); var base = i >= 0 ? href.slice(0, i) : href, hash = i >= 0 ? href.slice(i) : ""; return base + (base.indexOf("?") >= 0 ? "&" : "?") + "prueba=1" + hash; }
+  /* Reparte `total` según `pesos` (proporcional); el último absorbe el redondeo. */
+  function repartir(total, pesos) {
+    var s = pesos.reduce(function (a, b) { return a + b; }, 0), acum = 0, out = [];
+    pesos.forEach(function (w, i) {
+      if (i === pesos.length - 1) out.push(r2(total - acum));
+      else { var v = s ? r2(total * w / s) : 0; out.push(v); acum = r2(acum + v); }
+    });
+    return out;
+  }
+  function detallePago(f) {
+    var acc = GE.ctaOriginal(f), partes = [];
+    if (Math.abs(acc) > 0.0001) partes.push("Cta. cte. " + money(acc));
+    if (Number(f.cashAmount) > 0) partes.push("Efectivo " + money(f.cashAmount));
+    var ch = GE.sumaCheques(f.checkAmounts); if (ch > 0) partes.push("Cheque " + money(ch));
+    if (Number(f.transferAmount) > 0) partes.push("Transferencia " + money(f.transferAmount));
+    return partes.length ? partes.join(" + ") : "Sin informar";
+  }
+  function esCC(f) { return f.status === "delivered" && GE.saldo(f) > 0.009; }
+
+  // Menú Control
+  document.querySelectorAll("[data-link]").forEach(function (a) { a.href = conPrueba(a.getAttribute("data-link")); });
+  document.addEventListener("click", function (e) { var m = document.getElementById("menuControl"); if (m.open && !m.contains(e.target)) m.open = false; });
+  document.getElementById("btnCambiar").onclick = function () { S.driver = null; S.route = null; S.client = null; S.ccSel = {}; render(); };
+
+  // ---------------- "Procedimientos" (driverFlow) sobre Firestore ----------------
+  function listDrivers() {
+    if (C.drivers) return Promise.resolve(C.drivers);
+    return GE.todos("drivers").then(function (ds) {
+      C.drivers = ds.filter(function (d) { return d.active !== false; })
+        .map(function (d) { return { id: d.id, code: d.code || "", name: d.name || "" }; })
+        .sort(function (a, b) { return a.name.localeCompare(b.name, "es"); });
+      return C.drivers;
+    });
+  }
+  function fechasRecientes(n) { var out = [], h = GE.hoy(); for (var i = 0; i < n; i++) out.push(GE.sumarDias(h, -i)); return out; }
+  /* Carga todo lo del chofer: rutas (abiertas + últimas 60 jornadas), facturas de las rutas abiertas,
+     gastos y cierres de caja de esas jornadas. Queda en caché TTL y se parchea tras cada acción. */
+  function cargarChofer(driverId, forzar) {
+    var d = C.d[driverId];
+    if (d && !forzar && Date.now() - d.t < TTL) return Promise.resolve(d);
+    cargando.chofer = true;
+    return GE.donde("routes", [["driverId", "==", driverId], ["status", "in", ABIERTAS]]).then(function (abiertas) {
+      var fechas = fechasRecientes(60);
+      abiertas.forEach(function (r) { if (r.serviceDate && fechas.indexOf(r.serviceDate) < 0) fechas.push(r.serviceDate); });
+      var extra = [["driverId", "==", driverId]];
+      return Promise.all([
+        GE.dondeEn("routes", "serviceDate", fechas, extra),
+        GE.dondeEn("expenses", "serviceDate", fechas, extra),
+        GE.dondeEn("cashClosures", "serviceDate", fechas, extra),
+        GE.dondeEn("invoices", "routeId", abiertas.map(function (r) { return r.id; }))
+      ]).then(function (res) {
+        var porId = {};
+        res[0].concat(abiertas).forEach(function (r) { porId[r.id] = r; });
+        var inv = {};
+        abiertas.forEach(function (r) { inv[r.id] = []; });
+        res[3].forEach(function (f) { (inv[f.routeId] = inv[f.routeId] || []).push(f); });
+        var nd = { t: Date.now(), driverId: driverId, rutas: Object.keys(porId).map(function (k) { return porId[k]; }), gastos: res[1], cierres: res[2], inv: inv };
+        var zids = nd.rutas.map(function (r) { return r.zoneId; }).filter(function (z) { return z != null && !C.zonas[z]; });
+        return (zids.length ? GE.dondeEn("zones", "id", zids).then(function (zs) { zs.forEach(function (z) { C.zonas[z.id] = z; }); }) : Promise.resolve()).then(function () {
+          C.d[driverId] = nd; cargando.chofer = false; return nd;
+        });
+      });
+    }).catch(function (e) { cargando.chofer = false; throw e; });
+  }
+  function dc() { return S.driver ? C.d[S.driver.id] : null; }
+  function rutaActual() { var d = dc(); if (!d || !S.route) return null; return d.rutas.filter(function (r) { return r.id === S.route; })[0] || null; }
+  function facturasRuta(routeId) { var d = dc(); return (d && d.inv[routeId]) || []; }
+
+  function listZones() {
+    var d = dc(); if (!d) return [];
+    return d.rutas.filter(function (r) { return r.status !== "completed"; }).map(function (r) {
+      var fs = d.inv[r.id] || [], last = null;
+      fs.forEach(function (f) { if (f.status === "delivered" && f.deliveredAt && (!last || ts(f.deliveredAt) > ts(last))) last = f.deliveredAt; });
+      return {
+        routeId: r.id, routeName: r.name || "", zoneName: r.zoneName || "", zoneCode: (C.zonas[r.zoneId] || {}).code || "", serviceDate: r.serviceDate,
+        pendingInvoices: fs.filter(function (f) { return f.status === "pending"; }).length,
+        partialInvoices: fs.filter(function (f) { return f.status === "delivered" && f.deliveryType === "partial"; }).length,
+        lastDeliveredAt: last
+      };
+    });
+  }
+  function listDailyCashSummaries() {
+    var d = dc(); if (!d) return [];
+    var g = {};
+    d.rutas.forEach(function (r) {
+      var x = g[r.serviceDate] = g[r.serviceDate] || { serviceDate: r.serviceDate, routeCount: 0, openRouteCount: 0, pettyCashAmount: 0, totalExpenses: 0, balance: 0, cashClosedAt: null };
+      x.routeCount++; if (r.status !== "completed") x.openRouteCount++;
+      x.pettyCashAmount = Math.max(x.pettyCashAmount, Number(r.pettyCashAmount) || 0);
+    });
+    d.gastos.forEach(function (e) { if (g[e.serviceDate]) g[e.serviceDate].totalExpenses = r2(g[e.serviceDate].totalExpenses + (Number(e.amount) || 0)); });
+    d.cierres.forEach(function (c) { var x = g[c.serviceDate]; if (x && c.closedAt && !c.reopenedAt && (!x.cashClosedAt || ts(c.closedAt) > ts(x.cashClosedAt))) x.cashClosedAt = c.closedAt; });
+    return Object.keys(g).map(function (k) { var x = g[k]; x.balance = r2(x.pettyCashAmount - x.totalExpenses); return x; })
+      .sort(function (a, b) { return b.serviceDate < a.serviceDate ? -1 : 1; });
+  }
+  function listClients(routeId) {
+    var g = {};
+    facturasRuta(routeId).forEach(function (f) {
+      var x = g[f.clientId] = g[f.clientId] || { id: f.clientId, businessName: f.clientName || "", address: f.clientAddress || "", invoiceCount: 0, pendingCount: 0, partialCount: 0, completedAt: null, _max: null };
+      x.invoiceCount++;
+      if (f.status === "pending") x.pendingCount++;
+      if (f.status === "delivered" && f.deliveryType === "partial") x.partialCount++;
+      var t = f.deliveredAt || f.rejectedAt; if (t && (!x._max || ts(t) > ts(x._max))) x._max = t;
+    });
+    return Object.keys(g).map(function (k) { var x = g[k]; if (x.pendingCount === 0 && x.partialCount === 0) x.completedAt = x._max; return x; })
+      .sort(function (a, b) { return a.businessName.localeCompare(b.businessName, "es"); });
+  }
+  function getZoneSummary(routeId) { var fs = facturasRuta(routeId); return { totalInvoices: fs.length, pendingInvoices: fs.filter(function (f) { return f.status === "pending"; }).length }; }
+  function getRouteExpenses(routeId) {
+    var d = dc(); var ex = (d ? d.gastos : []).filter(function (e) { return e.routeId === routeId; }).sort(function (a, b) { return ts(b.spentAt) - ts(a.spentAt); });
+    return { totalExpenses: suma(ex.map(function (e) { return e.amount; })), expenses: ex };
+  }
+  function listInvoices(routeId, clientId) {
+    return facturasRuta(routeId).filter(function (f) { return f.clientId === clientId; })
+      .sort(function (a, b) { return String(a.invoiceNumber).localeCompare(String(b.invoiceNumber), "es", { numeric: true }); });
+  }
+  function cargarDia(fecha, forzar) {
+    var x = C.dia[fecha];
+    if (x && !forzar && Date.now() - x.t < TTL) return Promise.resolve(x);
+    cargando.dia = true;
+    return GE.donde("invoices", [["serviceDate", "==", fecha]]).then(function (inv) { cargando.dia = false; return (C.dia[fecha] = { t: Date.now(), inv: inv }); })
+      .catch(function (e) { cargando.dia = false; throw e; });
+  }
+  function getDailySummary(fecha) {
+    var x = C.dia[fecha]; if (!x) return null;
+    var fs = x.inv, zonas = {}, clientes = {}, r = { zones: 0, clients: 0, invoiceCount: fs.length, grossAmount: 0, deliveredInvoices: 0, totalInvoices: 0, partialInvoices: 0, pendingInvoices: 0, surveyAverage: null };
+    var enc = [];
+    fs.forEach(function (f) {
+      zonas[f.zoneName || f.routeId] = 1; clientes[f.clientId] = 1;
+      r.grossAmount = r2(r.grossAmount + (Number(f.amount) || 0));
+      if (f.status === "delivered") { r.deliveredInvoices++; if (f.deliveryType === "partial") r.partialInvoices++; else r.totalInvoices++; }
+      if (f.status === "pending") r.pendingInvoices++;
+      if (Number(f.overallRating) > 0) enc.push(Number(f.overallRating));
+    });
+    r.zones = Object.keys(zonas).length; r.clients = Object.keys(clientes).length;
+    if (enc.length) r.surveyAverage = enc.reduce(function (a, b) { return a + b; }, 0) / enc.length;
+    return r;
+  }
+  function cargarCC(clientId, forzar) {
+    var x = C.cc[clientId];
+    if (x && !forzar && Date.now() - x.t < TTL) return Promise.resolve(x);
+    cargando.cc = true;
+    return GE.donde("invoices", [["clientId", "==", clientId], ["status", "==", "delivered"], ["paymentMethod", "in", ["account", "mixed"]]]).then(function (fs) {
+      cargando.cc = false; return (C.cc[clientId] = { t: Date.now(), inv: fs.filter(esCC) });
+    }).catch(function (e) { cargando.cc = false; throw e; });
+  }
+  function listOpenAccountInvoices(clientId) {
+    var x = C.cc[clientId]; if (!x) return null;
+    return x.inv.filter(esCC).map(function (f) {
+      var orig = GE.ctaOriginal(f), paid = Number(f.accountPaidAmount) || 0;
+      return { id: f.id, invoiceNumber: f.invoiceNumber, clientId: f.clientId, clientName: f.clientName, originZoneName: f.zoneName || "", serviceDate: f.serviceDate, originalAccountAmount: orig, paidAmount: paid, outstandingAmount: GE.saldo(f), _f: f };
+    }).sort(function (a, b) { return a.serviceDate < b.serviceDate ? -1 : a.serviceDate > b.serviceDate ? 1 : String(a.invoiceNumber).localeCompare(String(b.invoiceNumber)); });
+  }
+
+  // Parches de caché tras escribir
+  function parcharFactura(f) {
+    var d = dc();
+    function en(arr) { if (!arr) return; for (var i = 0; i < arr.length; i++) if (arr[i].id === f.id) { arr[i] = f; return true; } arr.push(f); return true; }
+    if (d && d.inv[f.routeId]) en(d.inv[f.routeId]);
+    if (C.dia[f.serviceDate]) en(C.dia[f.serviceDate].inv);
+    if (C.cc[f.clientId]) { var l = C.cc[f.clientId].inv.filter(function (x) { return x.id !== f.id; }); if (esCC(f)) l.push(f); C.cc[f.clientId].inv = l; }
+  }
+  function releer(ids) { return GE.dondeEn("invoices", "id", ids).then(function (fs) { fs.forEach(parcharFactura); return fs; }); }
+
+  // ---------------- Mutaciones ----------------
+  function errorSi(c, msg) { if (c) throw new Error(msg); }
+  function leerPendientes(ids) {
+    return GE.dondeEn("invoices", "id", ids).then(function (fs) {
+      errorSi(fs.length !== ids.length, "No se encontró la factura.");
+      fs.forEach(function (f) {
+        errorSi(f.driverId !== S.driver.id, "La factura no pertenece a este chofer.");
+        errorSi(f.status !== "pending", "La factura " + f.invoiceNumber + " ya no está pendiente. Actualizá la pantalla.");
+      });
+      var orden = {}; fs.forEach(function (f) { orden[f.id] = f; });
+      return ids.map(function (id) { return orden[id]; });
+    });
+  }
+  function subirFotos(fotos, tipo) {
+    return Promise.all(fotos.map(function (p, i) {
+      var nombre = p.file.name || ((tipo === "cheques" ? "cheque-" : "transferencia-") + Date.now() + "-" + (i + 1) + ".jpg");
+      return GE.guardarArchivo(p.file, tipo, nombre).then(function (u) { return { fileUrl: u, fileName: nombre }; });
+    }));
+  }
+  function adjuntos(batch, fs, subidas, kind, extra) {
+    fs.forEach(function (f) {
+      subidas.forEach(function (s) {
+        var id = GE.nuevoId();
+        batch.set(GE.ref("paymentAttachments", id), Object.assign({
+          id: id, invoiceId: f.id, accountPaymentId: null, invoiceNumber: f.invoiceNumber, clientName: f.clientName, routeId: f.routeId, serviceDate: f.serviceDate,
+          collectionDate: null, driverName: S.driver.name, zoneName: f.zoneName, kind: kind, fileUrl: s.fileUrl, fileName: s.fileName, createdAt: GE.ahora()
+        }, extra ? extra(f) : {}));
+      });
+    });
+  }
+  /* confirmInvoice / confirmInvoicesBatch */
+  function confirmarEntrega(op) {
+    // op: {ids, deliveryType, pago:{account, cash, transfer, checks[], discount, notes, method}, loc, survey, fotosCheque, fotosTransfer}
+    return leerPendientes(op.ids).then(function (fs) {
+      return Promise.all([subirFotos(op.fotosCheque, "cheques"), subirFotos(op.fotosTransfer, "transferencias")]).then(function (sub) {
+        var batch = GE.db.batch(), ahora = GE.ahora(), p = op.pago;
+        var nc = fs.filter(function (f) { return Number(f.amount) < 0; }), posit = fs.filter(function (f) { return Number(f.amount) >= 0; });
+        var asign = {};
+        if (fs.length === 1) {
+          asign[fs[0].id] = { acc: p.account, cash: p.cash, transfer: p.transfer, checks: p.checks, desc: p.discount };
+        } else {
+          // Lote: las NC van completas a cuenta corriente; el resto se reparte proporcional al importe.
+          nc.forEach(function (f) { asign[f.id] = { acc: r2(Number(f.amount)), cash: 0, transfer: 0, checks: [], desc: 0 }; });
+          var pesos = posit.map(function (f) { return Number(f.amount) || 0; });
+          if (posit.length) {
+            var accPos = r2(p.account - suma(nc.map(function (f) { return f.amount; })));
+            var dA = repartir(p.discount, pesos), aA = repartir(accPos, pesos), cA = repartir(p.cash, pesos), tA = repartir(p.transfer, pesos);
+            var chA = p.checks.map(function (ch) { return repartir(ch, pesos); });
+            posit.forEach(function (f, i) { asign[f.id] = { acc: aA[i], cash: cA[i], transfer: tA[i], checks: chA.map(function (x) { return x[i]; }).filter(function (v) { return v > 0; }), desc: dA[i] }; });
+          }
+        }
+        fs.forEach(function (f) {
+          var a = asign[f.id], amount = Number(f.amount) || 0;
+          var usados = [];
+          if (Math.abs(a.acc) > 0.0001 || (fs.length === 1 && p.method === "account")) usados.push("account");
+          if (a.cash > 0) usados.push("cash"); if (suma(a.checks) > 0) usados.push("check"); if (a.transfer > 0) usados.push("transfer");
+          var method = fs.length === 1 ? p.method : (usados.length > 1 ? "mixed" : (usados[0] || p.method));
+          var cambios = {
+            status: "delivered", deliveryType: op.deliveryType, deliveredAt: ahora, paymentMethod: method,
+            accountAmount: (fs.length === 1 ? p.hasAccount : Math.abs(a.acc) > 0.0001) ? r2(a.acc) : null,
+            cashAmount: a.cash > 0 ? r2(a.cash) : null,
+            checkAmounts: a.checks.length ? a.checks.map(r2) : null,
+            transferAmount: a.transfer > 0 ? r2(a.transfer) : null,
+            discountAmount: r2(a.desc), discountPercent: amount > 0 ? r2(a.desc * 100 / amount) : 0, netAmount: r2(amount - a.desc),
+            paymentNotes: p.notes || null,
+            deliveredLatitude: op.loc ? op.loc.latitude : null, deliveredLongitude: op.loc ? op.loc.longitude : null,
+            deliveredAccuracyMeters: op.loc ? op.loc.accuracyMeters : null, locationCapturedAt: op.loc ? op.loc.capturedAt : null,
+            punctualityRating: op.survey.punctualityRating, serviceRating: op.survey.serviceRating, overallRating: op.survey.overallRating,
+            rejectionReason: null, rejectionNotes: null, rejectedAt: null
+          };
+          batch.update(GE.ref("invoices", f.id), cambios);
+        });
+        adjuntos(batch, fs, sub[0], "check_photo");
+        adjuntos(batch, fs, sub[1], "transfer_photo");
+        return batch.commit().then(function () { return releer(op.ids); }).then(function () { return { appliedInvoices: fs.length }; });
+      });
+    });
+  }
+  function rechazarFactura(f, motivo, notas) {
+    return leerPendientes([f.id]).then(function () {
+      return GE.actualizar("invoices", f.id, {
+        status: "issue", rejectionReason: motivo, rejectionNotes: notas || null, rejectedAt: GE.ahora(), deliveryType: null, deliveredAt: null, paymentMethod: null
+      });
+    }).then(function () { return releer([f.id]); });
+  }
+  function revertirFactura(f) {
+    return GE.uno("invoices", f.id).then(function (x) {
+      errorSi(!x, "No se encontró la factura.");
+      errorSi(x.driverId !== S.driver.id, "La factura no pertenece a este chofer.");
+      errorSi(Number(x.accountPaidAmount) > 0.009, "La factura ya tiene cobros de Cuenta Corriente aplicados. Pedile a Administración que los revise antes de quitar el tilde.");
+      return GE.donde("paymentAttachments", [["invoiceId", "==", f.id]]).then(function (adj) {
+        var batch = GE.db.batch();
+        batch.update(GE.ref("invoices", f.id), {
+          status: "pending", deliveryType: null, deliveredAt: null, paymentMethod: null, accountAmount: null, cashAmount: null, checkAmounts: null, transferAmount: null,
+          discountAmount: 0, discountPercent: 0, netAmount: Number(x.amount) || 0, paymentNotes: null,
+          deliveredLatitude: null, deliveredLongitude: null, deliveredAccuracyMeters: null, locationCapturedAt: null,
+          punctualityRating: null, serviceRating: null, overallRating: null, productConditionRating: null, communicationRating: null,
+          rejectionReason: null, rejectionNotes: null, rejectedAt: null
+        });
+        var borrar = adj.filter(function (a) { return a.accountPaymentId == null; });
+        borrar.forEach(function (a) { batch.delete(GE.ref("paymentAttachments", a.id)); });
+        // Archivos de las fotos: se borran si ningún otro adjunto los usa (en el pago total se comparten).
+        var urls = Array.from(new Set(borrar.map(function (a) { return a.fileUrl; }).filter(function (u) { return /^archivo:/.test(u || ""); })));
+        // Va aparte y sin bloquear: si las reglas no permiten borrar archivos, la reversión igual queda hecha.
+        return batch.commit().then(function () {
+          return Promise.all(urls.map(function (u) {
+            return GE.donde("paymentAttachments", [["fileUrl", "==", u]]).then(function (otros) {
+              if (!otros.length) return GE.borrar("archivos", u.slice(8));
+            }).catch(function (e) { console.warn("No se pudo borrar el archivo " + u, e); });
+          }));
+        });
+      });
+    }).then(function () { return releer([f.id]); });
+  }
+  function crearFacturaManual(ruta, cli, numero, importe, detalle) {
+    return GE.donde("invoices", [["invoiceNumber", "==", numero]]).then(function (ex) {
+      errorSi(ex.length > 0, "Ya existe una factura con el número " + numero + ".");
+      errorSi(ruta.driverId !== S.driver.id, "La ruta no pertenece a este chofer.");
+      var f = {
+        id: GE.nuevoId(), invoiceNumber: numero, amount: r2(importe), source: "manual", description: detalle || "Flete", status: "pending",
+        rejectionReason: null, rejectionNotes: null, rejectedAt: null, deliveryType: null, paymentMethod: null,
+        accountAmount: null, accountPaidAmount: 0, cashAmount: null, checkAmounts: null, transferAmount: null,
+        discountPercent: 0, discountAmount: 0, netAmount: r2(importe), paymentNotes: null, deliveredAt: null,
+        deliveredLatitude: null, deliveredLongitude: null, deliveredAccuracyMeters: null, locationCapturedAt: null, createdAt: GE.ahora(),
+        clientId: cli.id, clientName: cli.businessName, clientAddress: cli.address || null, routeId: ruta.id, routeName: ruta.name, serviceDate: ruta.serviceDate,
+        zoneName: ruta.zoneName, driverId: S.driver.id, driverName: S.driver.name,
+        punctualityRating: null, productConditionRating: null, serviceRating: null, communicationRating: null, overallRating: null
+      };
+      return GE.guardar("invoices", f).then(function () { parcharFactura(f); return f; });
+    });
+  }
+  /* applyAccountPayment / applyAccountPaymentBatch */
+  function aplicarPagoCC(op) {
+    // op: {ids, cash, checks[], transfer, notes, fotosCheque, fotosTransfer}
+    var ruta = rutaActual();
+    return GE.dondeEn("invoices", "id", op.ids).then(function (fs) {
+      errorSi(fs.length !== op.ids.length, "No se encontró la factura.");
+      var orden = {}; fs.forEach(function (f) { orden[f.id] = f; }); fs = op.ids.map(function (id) { return orden[id]; });
+      var saldos = fs.map(function (f) { errorSi(f.status !== "delivered", "La factura " + f.invoiceNumber + " no está entregada."); return GE.saldo(f); });
+      var saldoTot = suma(saldos), total = r2(op.cash + suma(op.checks) + op.transfer);
+      errorSi(!(total > 0), "Ingresá un pago mayor a cero.");
+      errorSi(total > saldoTot + 0.009, "El pago supera el saldo de la factura.");
+      return Promise.all([subirFotos(op.fotosCheque, "cheques"), subirFotos(op.fotosTransfer, "transferencias")]).then(function (sub) {
+        var cA = repartir(op.cash, saldos), tA = repartir(op.transfer, saldos), chA = op.checks.map(function (c) { return repartir(c, saldos); });
+        var batch = GE.db.batch(), ahora = GE.ahora(), batchId = fs.length > 1 ? GE.nuevoId() : null, restante = 0;
+        fs.forEach(function (f, i) {
+          var checks = chA.map(function (x) { return x[i]; }).filter(function (v) { return v > 0; });
+          var tot = r2(cA[i] + suma(checks) + tA[i]);
+          var pid = GE.nuevoId();
+          var pago = {
+            id: pid, invoiceId: f.id, invoiceNumber: f.invoiceNumber, clientId: f.clientId, clientName: f.clientName,
+            collectionRouteId: ruta.id, collectionRouteName: ruta.name, zoneName: ruta.zoneName, driverId: S.driver.id, driverName: S.driver.name,
+            collectionDate: ruta.serviceDate, totalAmount: tot, cashAmount: cA[i] > 0 ? cA[i] : null, checkAmounts: checks.length ? checks : null,
+            transferAmount: tA[i] > 0 ? tA[i] : null, notes: op.notes || null, paidAt: ahora
+          };
+          if (batchId) pago.batchId = batchId;
+          batch.set(GE.ref("accountPayments", pid), pago);
+          var pagado = r2((Number(f.accountPaidAmount) || 0) + tot);
+          batch.update(GE.ref("invoices", f.id), { accountPaidAmount: pagado });
+          restante = r2(restante + Math.max(0, r2(saldos[i] - tot)));
+          var extra = function () { return { accountPaymentId: pid, routeId: ruta.id, collectionDate: ruta.serviceDate, zoneName: ruta.zoneName }; };
+          adjuntos(batch, [f], i === 0 ? sub[0] : [], "check_photo", extra);
+          adjuntos(batch, [f], i === 0 ? sub[1] : [], "transfer_photo", extra);
+        });
+        return batch.commit().then(function () { return releer(op.ids); }).then(function () { return { remainingAmount: restante, appliedInvoices: fs.length }; });
+      });
+    });
+  }
+  function guardarGasto(ruta, g) {
+    errorSi(ruta.driverId !== S.driver.id, "La ruta no pertenece a este chofer.");
+    var d = dc();
+    if (g.editId) {
+      var cambios = { category: g.cat, amount: r2(g.monto), notes: g.notas || null };
+      return GE.uno("expenses", g.editId).then(function (x) {
+        errorSi(!x, "No se encontró el gasto."); errorSi(x.driverId !== S.driver.id, "El gasto no pertenece a este chofer.");
+        return GE.actualizar("expenses", g.editId, cambios).then(function () { Object.assign(x, cambios); d.gastos = d.gastos.filter(function (e) { return e.id !== x.id; }).concat([x]); });
+      });
+    }
+    var e = {
+      id: GE.nuevoId(), routeId: ruta.id, routeName: ruta.name, serviceDate: ruta.serviceDate, pettyCashAmount: Number(ruta.pettyCashAmount) || 0,
+      driverId: S.driver.id, driverName: S.driver.name, zoneName: ruta.zoneName, category: g.cat, amount: r2(g.monto), notes: g.notas || null, spentAt: GE.ahora()
+    };
+    return GE.guardar("expenses", e).then(function () { d.gastos.push(e); });
+  }
+  function borrarGasto(id) {
+    return GE.uno("expenses", id).then(function (x) {
+      errorSi(!x, "No se encontró el gasto."); errorSi(x.driverId !== S.driver.id, "El gasto no pertenece a este chofer.");
+      return GE.borrar("expenses", id);
+    }).then(function () { var d = dc(); d.gastos = d.gastos.filter(function (e) { return e.id !== id; }); });
+  }
+  function cerrarRuta(ruta) {
+    return GE.donde("invoices", [["routeId", "==", ruta.id]]).then(function (fs) {
+      errorSi(ruta.driverId !== S.driver.id, "La ruta no pertenece a este chofer.");
+      errorSi(fs.length === 0, "La ruta no tiene facturas.");
+      errorSi(fs.some(function (f) { return f.status === "pending"; }), "Todavía quedan facturas pendientes.");
+      var cambios = { status: "completed", closedAt: GE.ahora() };
+      return GE.actualizar("routes", ruta.id, cambios).then(function () { Object.assign(ruta, cambios); });
+    });
+  }
+  function getDailyCashDetails(fecha) {
+    var extra = [["driverId", "==", S.driver.id], ["serviceDate", "==", fecha]];
+    return Promise.all([GE.donde("routes", extra), GE.donde("expenses", extra), GE.donde("cashClosures", extra)]).then(function (r) {
+      var petty = 0; r[0].forEach(function (x) { petty = Math.max(petty, Number(x.pettyCashAmount) || 0); });
+      var total = suma(r[1].map(function (e) { return e.amount; }));
+      return { routes: r[0], cierres: r[2], pettyCashAmount: petty, totalExpenses: total, balance: r2(petty - total), expenses: r[1].sort(function (a, b) { return ts(a.spentAt) - ts(b.spentAt); }) };
+    });
+  }
+
+  // ---------------- PDFs ----------------
+  function pdfBase(subtitulo) {
+    var doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+    return GE.logoDataUrl().then(function (logo) {
+      try { if (!logo) throw 0; doc.addImage(logo, "PNG", 14, 12, 18, 18); }
+      catch (e) { doc.setFillColor(13, 62, 130); doc.roundedRect(14, 12, 18, 18, 3, 3, "F"); doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.text("P", 23, 24, { align: "center" }); }
+      doc.setTextColor(15, 23, 42); doc.setFont("helvetica", "bold"); doc.setFontSize(15); doc.text("PORTAL DISTRIBUIDORA", 38, 19);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.text(subtitulo, 38, 26);
+      doc.setDrawColor(203, 213, 225); doc.line(14, 35, 196, 35);
+      return doc;
+    });
+  }
+  function pdfRecibo(ruta, cli, fs, numero, emitido) {
+    return pdfBase("Recibo de entrega y cobranza").then(function (doc) {
+      var y = 44;
+      function salto(h) { if (y + (h || 0) > 278) { doc.addPage(); y = 18; } }
+      doc.setFontSize(10); doc.setTextColor(15, 23, 42);
+      doc.text("Fecha: " + GE.fechaHora(emitido), 14, y); doc.text("N.º de recibo: " + numero, 125, y); y += 7;
+      doc.text(doc.splitTextToSize("Cliente: " + (cli.businessName || ""), 182), 14, y); y += 6;
+      var dir = doc.splitTextToSize("Dirección: " + (cli.address || "No informada"), 182); doc.text(dir, 14, y); y += 5 * dir.length + 1;
+      doc.text("Ruta: " + (ruta.name || "") + " · Zona: " + (ruta.zoneName || ""), 14, y); y += 9;
+      doc.setFont("helvetica", "bold"); doc.text("Comprobante", 14, y); doc.text("Importe / neto", 92, y); doc.text("Forma de pago", 136, y);
+      y += 2; doc.line(14, y, 196, y); y += 5; doc.setFont("helvetica", "normal");
+      var orig = 0, desc = 0, net = 0;
+      fs.forEach(function (f) {
+        var n = GE.neto(f), d = Number(f.discountAmount) || 0;
+        orig += Number(f.amount) || 0; desc += d; net += n;
+        var imp = (d > 0 ? money(f.amount) + " / " + money(n) : money(n)) + (f.deliveryType === "partial" ? " · PARCIAL" : "");
+        var comp = doc.splitTextToSize(String(f.invoiceNumber), 76), impL = doc.splitTextToSize(imp, 42), pago = doc.splitTextToSize(detallePago(f), 59);
+        var alto = Math.max(comp.length, impL.length, pago.length) * 5;
+        salto(alto);
+        doc.text(comp, 14, y); doc.text(impL, 92, y); doc.text(pago, 136, y);
+        y += alto + 2;
+      });
+      salto(20); doc.line(14, y - 2, 196, y - 2); y += 4;
+      doc.setFont("helvetica", "bold");
+      doc.text("Total original: " + money(orig), 14, y); y += 6;
+      doc.text(desc > 0.0001 ? "Descuentos: " + money(desc) + " · Total neto: " + money(net) : "Total neto: " + money(net), 14, y); y += 10;
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+      salto(6); doc.text("Documento emitido por Portal Distribuidora.", 14, y);
+      return { doc: doc, totalNeto: r2(net) };
+    });
+  }
+  function pdfCaja(fecha, det, emitido) {
+    return pdfBase("Cierre de caja chica").then(function (doc) {
+      var y = 44;
+      function salto(h) { if (y + (h || 0) > 278) { doc.addPage(); y = 18; } }
+      doc.setFontSize(10); doc.setTextColor(15, 23, 42);
+      doc.text("Emitido: " + GE.fechaHora(emitido), 14, y); y += 6;
+      doc.text("Chofer: " + S.driver.name, 14, y); y += 6;
+      doc.text("Jornada: " + GE.fechaPdf(fecha), 14, y); y += 9;
+      doc.setFont("helvetica", "bold");
+      doc.text("Caja asignada: " + money(det.pettyCashAmount), 14, y); doc.text("Gastos: " + money(det.totalExpenses), 80, y); doc.text("Saldo: " + money(det.balance), 140, y); y += 10;
+      doc.text("Gasto", 14, y); doc.text("Zona", 100, y); doc.text("Hora", 140, y); doc.text("Importe", 196, y, { align: "right" });
+      y += 2; doc.line(14, y, 196, y); y += 5; doc.setFont("helvetica", "normal");
+      if (!det.expenses.length) { doc.text("Sin gastos registrados.", 14, y); y += 6; }
+      det.expenses.forEach(function (e) {
+        var g = doc.splitTextToSize(catLabel(e.category) + (e.notes ? " · " + e.notes : ""), 82), z = doc.splitTextToSize(e.zoneName || "", 36);
+        var alto = Math.max(g.length, z.length) * 5; salto(alto);
+        doc.text(g, 14, y); doc.text(z, 100, y); doc.text(GE.hora(e.spentAt), 140, y); doc.text(money(e.amount), 196, y, { align: "right" });
+        y += alto + 1;
+      });
+      return doc;
+    });
+  }
+  function salidaPdf(doc, nombre, compartir, titulo) {
+    var blob = doc.output("blob");
+    var file = new File([blob], nombre, { type: "application/pdf" });
+    return { blob: blob, file: file, entregar: function () {
+      function bajar() { var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); return "descargado"; }
+      if (compartir && navigator.canShare && navigator.canShare({ files: [file] })) {
+        return navigator.share({ files: [file], title: titulo }).then(function () { return "compartido"; })
+          .catch(function (e) { if (e && e.name === "AbortError") return "compartido"; return bajar(); });
+      }
+      return Promise.resolve(bajar());
+    } };
+  }
+
+  // ---------------- Render principal ----------------
+  function paso() { return S.client ? 4 : S.route ? 3 : S.driver ? 2 : 1; }
+  var listo = false;
+  function sincronizarUrl() {
+    if (!listo) return;
+    var p = new URLSearchParams();
+    if (GE.PRUEBA) p.set("prueba", "1");
+    p.set("fecha", S.fecha);
+    if (S.driver) p.set("chofer", S.driver.id);
+    if (S.route) p.set("ruta", S.route);
+    if (S.client) p.set("cliente", S.client);
+    history.replaceState(null, "", location.pathname + "?" + p.toString());
+  }
+  function render() {
+    var n = paso(), ruta = rutaActual(), cli = clienteActual();
+    document.getElementById("btnCambiar").hidden = !S.driver;
+    var titulos = ["Buscá y tocá tu apellido para comenzar la jornada.", "Se muestran todas tus zonas asignadas. La fecha identifica cada jornada.", "Elegí el cliente al que vas a entregar.", "Tocá una factura para indicar entrega, pago y encuesta."];
+    var titulo = cli ? cli.businessName : ruta ? ruta.zoneName : S.driver ? "Elegí una zona asignada" : "Elegí tu apellido";
+    var html = '<section class="card wizard"><div class="fila entre"><span class="paso">Paso ' + n + ' de 4</span>' + (S.driver ? '<span class="small muted">' + esc(S.driver.name) + '</span>' : '') + '</div>' +
+      '<div class="barra"><i style="width:' + (n * 25) + '%"></i></div>' +
+      '<div class="cab">' + (n >= 2 ? '<button class="btn btn-outline btn-icon" data-acc="atras" aria-label="Volver">' + ico("atras", 20) + '</button>' : '') +
+      '<div><h1>' + esc(titulo) + '</h1><div class="muted small">' + titulos[n - 1] + '</div></div></div></section>';
+    if (n === 1) html += vistaPaso1();
+    else if (n === 2) html += vistaPaso2();
+    else if (n === 3) html += vistaPaso3();
+    else html += vistaPaso4();
+    app.innerHTML = html;
+    sincronizarUrl();
+  }
+
+  // ----- Paso 1 -----
+  var pwaEvento = null;
+  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); pwaEvento = e; if (paso() === 1) render(); });
+  function vistaPwa() {
+    var standalone = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone;
+    if (standalone || S.pwaCerrado) return "";
+    var ua = navigator.userAgent, ios = /iphone|ipad|ipod/i.test(ua), android = /android/i.test(ua), t, x, btn = "";
+    if (pwaEvento) { t = "Instalá Portal Entregas"; x = "Agregá la app a la pantalla de inicio para abrirla más rápido."; btn = '<button class="btn btn-primary btn-sm" data-acc="pwaInstalar">Instalar app</button>'; }
+    else if (ios) { t = "Instalá Portal Entregas"; x = "En Safari tocá Compartir y elegí “Agregar a pantalla de inicio”."; }
+    else if (android) { t = "Agregá Portal Entregas al inicio"; x = "En Chrome tocá ⋮ y elegí “Instalar aplicación” o “Agregar a pantalla de inicio”. Si abriste desde WhatsApp, usá primero “Abrir en Chrome”."; }
+    else return "";
+    return '<section class="card pwa"><span class="ico-pwa t-blue">' + ico("celu") + '</span><div class="cuerpo"><b>' + t + '</b><div class="small muted">' + x + '</div>' + (btn ? '<div style="margin-top:.5rem">' + btn + '</div>' : '') + '</div>' +
+      '<button class="btn btn-ghost btn-icon btn-sm" data-acc="pwaCerrar" aria-label="Cerrar aviso de instalación">' + ico("x") + '</button></section>';
+  }
+  function vistaPaso1() {
+    var r = getDailySummary(S.fecha), tarjetas;
+    if (!r) tarjetas = new Array(8).fill('<div class="skeleton"></div>').join("");
+    else {
+      var t = function (et, va, tono, acc, mas, chico) {
+        var tag = acc ? 'button data-acc="listado" data-f="' + acc + '"' : 'div';
+        return '<' + tag + ' class="res ' + tono + '"><span class="et">' + et + '</span><span class="va' + (chico ? ' chico' : '') + '">' + va + '</span>' + (mas ? '<span class="mas">' + mas + '</span>' : '') + '</' + (acc ? 'button' : 'div') + '>';
+      };
+      tarjetas = t("Zonas del día", r.zones, "t-cyan") + t("Clientes", r.clients, "t-cliente") + t("Facturas", r.invoiceCount, "t-slate") +
+        t("Importe del día", money(r.grossAmount), "t-blue", null, null, true) +
+        t("Entregadas", r.deliveredInvoices, "t-emerald", "delivered", "Ver listado completo") +
+        t("Entrega total", r.totalInvoices, "t-emerald", "delivered", "Ver entregadas") +
+        t("Entrega parcial", r.partialInvoices, "t-orange", "delivered", "Ver entregadas") +
+        t("Pendientes", r.pendingInvoices, "t-amber", "pending", "Ver listado completo") +
+        t("Encuesta", r.surveyAverage != null ? r.surveyAverage.toFixed(1) + "/5" : "—", "t-violet");
+    }
+    return vistaPwa() +
+      '<section class="card sec" aria-label="Resumen global de todas las zonas de la jornada">' +
+      '<div class="sec-cab"><div><h2>Resumen completo del día</h2><div class="muted small">' + GE.fechaChofer(S.fecha) + '</div></div>' +
+      '<div style="min-width:170px"><label for="fechaResumen" style="margin-top:0">Fecha del resumen</label><input type="date" id="fechaResumen" data-in="fecha" value="' + S.fecha + '"></div></div>' +
+      '<div class="nota">Suma todas las zonas, clientes y facturas cargadas en esta fecha. No se filtra por chofer.</div>' +
+      '<div class="res-grid">' + tarjetas + '</div></section>' +
+      '<section class="card sec"><div><h2>Elegí tu apellido</h2><div class="muted small">Buscá por apellido o abrí el padrón completo. La lista se mantiene compacta para el teléfono.</div></div>' +
+      '<input type="search" data-in="buscarChofer" placeholder="Escribí apellido o legajo" value="' + esc(S.buscarChofer) + '" autocomplete="off">' +
+      '<div id="listaChoferes">' + listaChoferes() + '</div></section>';
+  }
+  function listaChoferes() {
+    if (!C.drivers) return '<div class="vacio">Cargando lista de choferes...</div>';
+    var q = S.buscarChofer.trim().toLowerCase();
+    var fs = q ? C.drivers.filter(function (d) { return (d.name + " " + d.code).toLowerCase().indexOf(q) >= 0; }) : C.drivers;
+    var html = '<div class="fila entre" style="margin-bottom:.5rem"><span class="small muted">' + (q ? fs.length + " coincidencias" : C.drivers.length + " choferes disponibles") + '</span>' +
+      '<button class="btn btn-outline btn-sm" data-acc="verTodos">' + (S.verTodos ? "Ocultar lista" : "Ver todos") + '</button></div>';
+    if (!q && !S.verTodos) return html + '<div class="vacio"><b>Buscá tu apellido</b><div class="small">El padrón no ocupa toda la pantalla hasta que lo necesites.</div></div>';
+    if (!fs.length) return html + '<div class="vacio"><b>No encontramos choferes</b><div class="small">Probá con otro apellido o número de legajo.</div></div>';
+    return html + '<div class="lista">' + fs.map(function (d) {
+      return '<button class="item" data-acc="chofer" data-id="' + d.id + '"><span class="cuerpo"><span class="tit">' + esc(d.name) + '</span><span class="sub">Legajo ' + esc(d.code) + '</span></span>' + ico("flecha") + '</button>';
+    }).join("") + '</div>';
+  }
+
+  // ----- Paso 2 -----
+  function vistaPaso2() {
+    var d = dc();
+    if (!d) return '<section class="card"><div class="vacio">Buscando zonas abiertas...</div></section>';
+    var cajas = listDailyCashSummaries(), porFecha = {};
+    cajas.forEach(function (c) { porFecha[c.serviceDate] = c; });
+    var pend = cajas.filter(function (c) { return !c.cashClosedAt; });
+    var html = "";
+    if (pend.length) {
+      html += '<section class="card sec"><h2>Cierre de caja chica</h2>' + pend.map(function (c) {
+        var bloq = c.openRouteCount > 0, oc = S.ocupado["caja" + c.serviceDate];
+        return '<div class="grupo"><div class="fila entre"><b>Jornada ' + GE.fechaChofer(c.serviceDate) + '</b><span class="small muted">' + plural(c.routeCount, "zona", "zonas") + ' · saldo ' + money(c.balance) + '</span></div>' +
+          '<div class="small ' + (bloq ? "warn-txt" : "muted") + '">' + (bloq ? "Primero cerrá " + plural(c.openRouteCount, "ruta", "rutas") + " de esta jornada." : "Todas las rutas están cerradas. La caja no se cierra automáticamente: elegí el botón para emitir el resumen PDF.") + '</div>' +
+          '<div class="opciones c2"><button class="btn btn-primary" data-acc="cerrarCaja" data-fecha="' + c.serviceDate + '" data-share="1"' + (bloq || oc ? " disabled" : "") + '>' + (oc ? "Generando..." : ico("compartir", 16) + " Cerrar caja y compartir") + '</button>' +
+          '<button class="btn btn-outline" data-acc="cerrarCaja" data-fecha="' + c.serviceDate + '"' + (bloq || oc ? " disabled" : "") + '>' + (oc ? "Generando..." : ico("descargar", 16) + " Cerrar caja y descargar") + '</button></div></div>';
+      }).join("") + '</section>';
+    }
+    html += '<section class="card sec"><div><div class="ceja">Chofer seleccionado</div><h2>' + esc(S.driver.name) + '</h2>' +
+      '<div class="small muted">Las rutas abiertas permanecen visibles aunque ya no tengan facturas pendientes. Cuando termines, ingresá a la zona y pulsá <b>Cerrar ruta</b>.</div></div>' +
+      '<input type="search" data-in="buscarZona" placeholder="Buscar zona, ruta o fecha" value="' + esc(S.buscarZona) + '" autocomplete="off">' +
+      '<div id="listaZonas">' + listaZonas(porFecha) + '</div></section>';
+    return html;
+  }
+  function listaZonas(porFecha) {
+    if (!porFecha) { porFecha = {}; listDailyCashSummaries().forEach(function (c) { porFecha[c.serviceDate] = c; }); }
+    var zs = listZones(), q = S.buscarZona.trim().toLowerCase();
+    var fz = q ? zs.filter(function (z) { return [z.zoneName, z.zoneCode, z.routeName, z.serviceDate, GE.fechaChofer(z.serviceDate)].join(" ").toLowerCase().indexOf(q) >= 0; }) : zs;
+    var html = '<div class="small muted" style="margin-bottom:.5rem">' + fz.length + ' ' + (fz.length === 1 ? "zona abierta" : "zonas abiertas") + '</div>';
+    if (!fz.length) return html + (q ? '<div class="vacio"><b>No encontramos zonas abiertas</b><div class="small">Probá con otra zona, ruta o fecha.</div></div>' : '<div class="vacio"><b>No tenés zonas abiertas</b><div class="small">Las rutas cerradas permanecen guardadas en Administración.</div></div>');
+    var g = {};
+    fz.forEach(function (z) { (g[z.serviceDate] = g[z.serviceDate] || []).push(z); });
+    return html + '<div class="lista">' + Object.keys(g).sort().reverse().map(function (f) {
+      var c = porFecha[f] || { pettyCashAmount: 0, totalExpenses: 0, balance: 0 };
+      return '<div class="grupo"><div><b>Jornada ' + GE.fechaChofer(f) + '</b><div class="small muted">' + g[f].length + ' ' + (g[f].length === 1 ? "zona abierta" : "zonas abiertas") + ' · caja única del día</div></div>' +
+        '<div class="mini"><div class="t-blue"><div class="et">Asignada</div><div class="va">' + money(c.pettyCashAmount) + '</div></div><div class="t-amber"><div class="et">Gastos</div><div class="va">' + money(c.totalExpenses) + '</div></div>' +
+        '<div class="' + (c.balance < 0 ? "t-rose" : "t-emerald") + '"><div class="et">Saldo</div><div class="va">' + money(c.balance) + '</div></div></div>' +
+        g[f].sort(function (a, b) { return a.zoneName.localeCompare(b.zoneName, "es", { numeric: true }); }).map(function (z) {
+          var hay = z.pendingInvoices > 0;
+          return '<button class="item" data-acc="zona" data-id="' + z.routeId + '"><span class="ic ' + (hay ? "t-amber" : "t-emerald") + '">' + ico(hay ? "alerta" : "check") + '</span><span class="cuerpo"><span class="tit">' + esc(z.zoneName) + '</span>' +
+            '<span class="sub">' + esc(z.routeName) + ' · Código ' + esc(z.zoneCode) + '</span>' +
+            '<span class="estado ' + (hay ? "warn-txt" : "ok-txt") + '">' + (hay || z.partialInvoices ? plural(z.pendingInvoices, "pendiente", "pendientes") + " · " + plural(z.partialInvoices, "parcial", "parciales") : "Sin pendientes · lista para cerrar") + '</span>' +
+            (z.lastDeliveredAt ? '<span class="sub">Última entrega: ' + GE.hora(z.lastDeliveredAt) + '</span>' : '') + '</span>' + ico("flecha") + '</button>';
+        }).join("") + '</div>';
+    }).join("") + '</div>';
+  }
+
+  // ----- Paso 3 -----
+  function vistaPaso3() {
+    var ruta = rutaActual(); if (!ruta) return "";
+    var ex = getRouteExpenses(ruta.id), g = S.gasto, og = S.ocupado.gasto;
+    var html = '<section class="card sec"><div class="sec-cab"><div><h2>Gastos de esta zona</h2><div class="small muted">Cada gasto queda identificado con esta zona y descuenta de la caja única de la jornada.</div></div>' +
+      '<div class="res t-amber" style="min-width:150px"><span class="et">Gastado en esta zona</span><span class="va chico">' + money(ex.totalExpenses) + '</span></div></div>' +
+      '<div class="bloque"><h3>' + (g.editId ? "Modificar gasto" : "Registrar gasto") + '</h3>' +
+      '<select data-in="gastoCat" aria-label="Categoría del gasto">' + CATS.map(function (c) { return '<option value="' + c[0] + '"' + (g.cat === c[0] ? " selected" : "") + '>' + c[1] + '</option>'; }).join("") + '</select>' +
+      '<input type="number" inputmode="decimal" min="0.01" step="0.01" data-in="gastoMonto" placeholder="Monto del gasto" value="' + esc(g.monto) + '">' +
+      '<textarea data-in="gastoNotas" maxlength="500" rows="2" placeholder="Detalle o comprobante (opcional)">' + esc(g.notas) + '</textarea>' +
+      '<div class="fila"><button class="btn btn-primary flex1" data-acc="guardarGasto" id="btnGasto"' + (og || !(num(g.monto) > 0) ? " disabled" : "") + '>' + (og ? "Guardando..." : g.editId ? "Guardar modificación" : "Guardar gasto") + '</button>' +
+      (g.editId ? '<button class="btn btn-outline" data-acc="cancelarGasto">Cancelar modificación</button>' : '') + '</div></div>';
+    if (ex.expenses.length) {
+      html += '<div><div class="ceja">Últimos movimientos</div><div class="lista">' + ex.expenses.slice(0, 4).map(function (e) {
+        return '<div class="item" style="cursor:default"><span class="cuerpo"><span class="tit">' + esc(catLabel(e.category)) + '</span><span class="sub">' + esc(e.notes || GE.fechaHora(e.spentAt)) + '</span></span>' +
+          '<span class="der">' + money(e.amount) + '</span>' +
+          '<button class="btn btn-ghost btn-icon btn-sm" data-acc="editarGasto" data-id="' + e.id + '" aria-label="Modificar gasto">' + ico("editar", 16) + '</button>' +
+          '<button class="btn btn-ghost btn-icon btn-sm" data-acc="borrarGasto" data-id="' + e.id + '" aria-label="Eliminar gasto">' + ico("basura", 16) + '</button></div>';
+      }).join("") + '</div></div>';
+    }
+    html += '</section>';
+    var cls = listClients(ruta.id);
+    html += '<section class="card sec"><div><h2>' + esc(ruta.zoneName) + '</h2><div class="small muted">' + cls.length + ' clientes con facturas</div></div>';
+    if (!cls.length) html += '<div class="vacio"><b>No hay clientes con facturas</b><div class="small">Las facturas cargadas para esta zona aparecerán en este listado.</div></div>';
+    else html += '<div class="lista">' + cls.map(function (c) {
+      var completo = c.invoiceCount > 0 && c.pendingCount === 0 && c.partialCount === 0;
+      return '<button class="item" data-acc="cliente" data-id="' + c.id + '"><span class="ic ' + (completo ? "t-emerald" : "t-amber") + '">' + ico(completo ? "check" : "alerta") + '</span><span class="cuerpo"><span class="tit">' + esc(c.businessName) +
+        (completo ? ' <span class="badge t-emerald">Pedido completo</span>' : '') + '</span>' +
+        '<span class="sub">' + esc(c.address || "Dirección no registrada") + '</span>' +
+        '<span class="estado ' + (completo ? "ok-txt" : "warn-txt") + '">' + (completo ? "Pedido completo · " + plural(c.invoiceCount - c.pendingCount - c.partialCount, "total", "totales") : plural(c.pendingCount, "pendiente", "pendientes") + " · " + plural(c.partialCount, "parcial", "parciales")) + '</span>' +
+        (completo && c.completedAt ? '<span class="sub">Finalizó: ' + GE.fechaHora(c.completedAt) + '</span>' : '') + '</span>' + ico("flecha") + '</button>';
+    }).join("") + '</div>';
+    html += '</section>';
+    var zs = getZoneSummary(ruta.id);
+    if (zs.pendingInvoices === 0 && zs.totalInvoices > 0) {
+      html += '<section class="card sec t-emerald"><h2>Ruta lista para cerrar</h2><div class="small">No quedan facturas pendientes. Las entregas parciales quedan registradas como entregadas-parciales. Al cerrar, la ruta desaparecerá de Soy Chofer y seguirá en Administración.</div>' +
+        '<button class="btn btn-success btn-lg" data-acc="cerrarRuta"' + (S.ocupado.ruta ? " disabled" : "") + '>' + (S.ocupado.ruta ? "Cerrando ruta..." : "Cerrar ruta") + '</button></section>';
+    }
+    return html;
+  }
+
+  // ----- Paso 4 -----
+  function clienteActual() {
+    if (!S.client || !S.route) return null;
+    var fs = facturasRuta(S.route).filter(function (f) { return f.clientId === S.client; });
+    if (!fs.length) return null;
+    var c = listClients(S.route).filter(function (x) { return x.id === S.client; })[0];
+    return c;
+  }
+  function vistaPaso4() {
+    var ruta = rutaActual(), cli = clienteActual(); if (!ruta || !cli) return "";
+    var fs = listInvoices(ruta.id, cli.id);
+    var html = '<section class="card sec"><div><h2>' + esc(cli.businessName) + '</h2><div class="small muted">' + esc(ruta.zoneName) + ' · ' + esc(cli.address || "Dirección no registrada") + '</div></div>';
+    if (!fs.length) html += '<div class="vacio"><b>No hay facturas para este cliente</b><div class="small">Administración debe cargar las facturas de la jornada.</div></div>';
+    else html += '<div class="lista">' + fs.map(function (f) {
+      var est, cls, ic;
+      if (f.status === "issue") { est = "Rechazada · " + (MOTIVO[f.rejectionReason] || f.rejectionReason || "Motivo no informado"); cls = "rose-txt"; ic = "t-rose"; }
+      else if (f.status === "delivered" && f.deliveryType === "partial") { est = "Entrega parcial · tocá para corregir"; cls = "orange-txt"; ic = "t-orange"; }
+      else if (f.status === "delivered") { est = "Entrega total · tocá para quitar el tilde"; cls = "ok-txt"; ic = "t-emerald"; }
+      else { est = "Pendiente"; cls = "warn-txt"; ic = "t-amber"; }
+      var conf = f.deliveredAt || f.rejectedAt;
+      return '<button class="item" data-acc="factura" data-id="' + f.id + '"><span class="ic ' + ic + '">' + ico(f.status === "pending" ? "alerta" : f.status === "issue" ? "x" : "check") + '</span>' +
+        '<span class="cuerpo"><span class="tit">Factura ' + esc(f.invoiceNumber) + (f.source === "manual" ? ' <span class="badge t-slate">Manual</span>' : '') + '</span>' +
+        '<span class="estado ' + cls + '">' + esc(est) + '</span>' + (conf && f.status !== "pending" ? '<span class="sub">Confirmada: ' + GE.fechaHora(conf) + '</span>' : '') + '</span>' +
+        '<span class="der">' + money(f.amount) + '</span></button>';
+    }).join("") + '</div>';
+    html += '</section>';
+    // Recibo
+    if (fs.length && fs.every(function (f) { return f.status === "delivered"; })) {
+      var oc = S.ocupado.recibo;
+      html += '<section class="card sec t-emerald"><h2>Cliente finalizado</h2><div class="small">' + (cli.completedAt ? "Finalizó " + GE.fechaHora(cli.completedAt) + " · " : "") +
+        'Emití el recibo con facturas, importes y formas de pago. Las entregas parciales quedan detalladas y conservan su saldo pendiente.</div>' +
+        '<div class="opciones c2"><button class="btn btn-primary" data-acc="recibo" data-share="1"' + (oc ? " disabled" : "") + '>' + (oc ? "Emitiendo..." : ico("compartir", 16) + " Compartir") + '</button>' +
+        '<button class="btn btn-outline" data-acc="recibo"' + (oc ? " disabled" : "") + '>' + ico("descargar", 16) + ' Descargar</button></div></section>';
+    }
+    // Cuenta corriente
+    html += '<section class="card sec"><div class="sec-cab"><div><div class="ceja">Cobranza pendiente</div><h2>Facturas en Cuenta Corriente</h2><div class="small muted">Buscá una factura entregada con saldo y aplicá un pago parcial o total.</div></div>' +
+      '<div id="ccSaldo"></div></div>' +
+      '<input type="search" data-in="buscarCC" placeholder="Buscar número de factura" value="' + esc(S.buscarCC) + '" autocomplete="off">' +
+      '<div id="listaCC">' + listaCC() + '</div></section>';
+    // Factura manual
+    var m = S.manual;
+    html += '<section class="card sec"><div class="sec-cab"><div><h2>Factura manual de flete</h2><div class="small muted">Se vincula a este cliente y se suma inmediatamente a todos los totales.</div></div>' +
+      '<button class="btn btn-outline btn-sm" data-acc="manualToggle">' + (m.abierta ? "Cerrar" : "Cargar") + '</button></div>' +
+      (m.abierta ? '<div class="bloque"><input type="text" maxlength="64" data-in="manualNumero" placeholder="Número de factura o comprobante" value="' + esc(m.numero) + '">' +
+        '<input type="number" inputmode="decimal" min="0.01" step="0.01" data-in="manualImporte" placeholder="Importe de la factura" value="' + esc(m.importe) + '">' +
+        '<textarea maxlength="255" rows="2" data-in="manualDetalle" placeholder="Detalle, por ejemplo: Flete adicional">' + esc(m.detalle) + '</textarea>' +
+        '<button class="btn btn-primary" data-acc="manualGuardar"' + (S.ocupado.manual ? " disabled" : "") + '>' + (S.ocupado.manual ? "Guardando..." : "Guardar factura manual") + '</button></div>' : '') +
+      '</section>';
+    setTimeout(pintarSaldoCC, 0);
+    return html;
+  }
+  function pintarSaldoCC() {
+    var el = document.getElementById("ccSaldo"); if (!el || !S.client) return;
+    var l = listOpenAccountInvoices(S.client);
+    el.innerHTML = l ? '<div class="res t-blue" style="min-width:140px"><span class="et">Saldo</span><span class="va chico">' + money(suma(l.map(function (x) { return x.outstandingAmount; }))) + '</span></div>' : '';
+  }
+  function listaCC() {
+    var l = S.client ? listOpenAccountInvoices(S.client) : null;
+    if (!l) return '<div class="vacio">Buscando saldos...</div>';
+    var q = S.buscarCC.trim().toLowerCase();
+    var fl = q ? l.filter(function (x) { return [x.invoiceNumber, x.originZoneName, x.serviceDate, GE.fechaChofer(x.serviceDate)].join(" ").toLowerCase().indexOf(q) >= 0; }) : l;
+    if (!fl.length) return '<div class="vacio">' + (q ? "No encontramos una factura con ese número." : "Este cliente no tiene facturas pendientes en Cuenta Corriente.") + '</div>';
+    var sel = l.filter(function (x) { return S.ccSel[x.id]; });
+    var html = '<div class="lista">' + fl.map(function (x) {
+      return '<div class="ck"><input type="checkbox" data-in="ccSel" data-id="' + x.id + '"' + (S.ccSel[x.id] ? " checked" : "") + ' aria-label="Seleccionar factura ' + esc(x.invoiceNumber) + '">' +
+        '<button class="item" data-acc="ccPagar" data-id="' + x.id + '"><span class="cuerpo"><span class="tit">Factura ' + esc(x.invoiceNumber) + '</span><span class="sub">' + esc(x.originZoneName) + ' · ' + GE.fechaChofer(x.serviceDate) + '</span></span>' +
+        '<span class="der warn-txt">Pendiente ' + money(x.outstandingAmount) + '</span></button></div>';
+    }).join("") + '</div>';
+    if (sel.length > 1) html += '<button class="btn btn-primary btn-lg ancho" style="margin-top:.6rem" data-acc="ccLote">Pagar ' + sel.length + ' facturas proporcionalmente · ' + money(suma(sel.map(function (x) { return x.outstandingAmount; }))) + '</button>';
+    return html;
+  }
+
+  // ---------------- Eventos de la pantalla ----------------
+  var acciones = {
+    atras: function () {
+      if (S.client) { S.client = null; S.buscarCC = ""; S.ccSel = {}; S.manual.abierta = false; }
+      else if (S.route) { S.route = null; S.gasto = { cat: "food", monto: "", notas: "", editId: null }; cargarYMostrarChofer(); return; }
+      else { S.driver = null; }
+      render();
+    },
+    pwaCerrar: function () { S.pwaCerrado = true; render(); },
+    pwaInstalar: function () { if (!pwaEvento) return; pwaEvento.prompt(); pwaEvento.userChoice.finally(function () { pwaEvento = null; render(); }); },
+    verTodos: function () { S.verTodos = !S.verTodos; document.getElementById("listaChoferes").innerHTML = listaChoferes(); },
+    chofer: function (b) {
+      S.driver = C.drivers.filter(function (d) { return d.id === Number(b.dataset.id); })[0] || null;
+      S.route = null; S.client = null; S.buscarZona = "";
+      cargarYMostrarChofer(true);
+    },
+    listado: function (b) { abrirListado(b.dataset.f); },
+    zona: function (b) {
+      var id = Number(b.dataset.id), r = dc().rutas.filter(function (x) { return x.id === id; })[0];
+      if (!r) return;
+      S.route = id; S.client = null; S.fecha = r.serviceDate; S.gasto = { cat: "food", monto: "", notas: "", editId: null };
+      render(); window.scrollTo(0, 0);
+    },
+    cliente: function (b) {
+      S.client = Number(b.dataset.id); S.buscarCC = ""; S.ccSel = {}; S.manual = { abierta: false, numero: "", importe: "", detalle: "Flete" };
+      render(); window.scrollTo(0, 0);
+      cargarCC(S.client).then(function () { refrescarCC(); }).catch(errorToast("No se pudieron cargar los saldos."));
+    },
+    factura: function (b) { var f = facturasRuta(S.route).filter(function (x) { return x.id === Number(b.dataset.id); })[0]; if (f) abrirFactura(f); },
+    guardarGasto: function () {
+      var g = S.gasto, monto = num(g.monto);
+      if (!(isFinite(monto) && monto > 0)) { GE.toast("Ingresá un monto de gasto válido.", "error"); return; }
+      var editando = !!g.editId;
+      S.ocupado.gasto = true; render();
+      guardarGasto(rutaActual(), { cat: g.cat, monto: monto, notas: g.notas.trim(), editId: g.editId }).then(function () {
+        GE.toast(editando ? "Gasto modificado correctamente." : "Gasto guardado en la ruta.");
+        S.gasto = { cat: "food", monto: "", notas: "", editId: null };
+      }).catch(errorToast("No se pudo guardar el gasto.")).then(function () { S.ocupado.gasto = false; render(); });
+    },
+    cancelarGasto: function () { S.gasto = { cat: "food", monto: "", notas: "", editId: null }; render(); },
+    editarGasto: function (b) {
+      var e = dc().gastos.filter(function (x) { return x.id === Number(b.dataset.id); })[0]; if (!e) return;
+      S.gasto = { cat: CAT[e.category] ? e.category : "food", monto: String(e.amount), notas: e.notes || "", editId: e.id };
+      render();
+    },
+    borrarGasto: function (b) {
+      var id = Number(b.dataset.id);
+      GE.confirmar("¿Querés eliminar este gasto? El total de la caja se actualizará.", "Eliminar").then(function (ok) {
+        if (!ok) return;
+        borrarGasto(id).then(function () { GE.toast("Gasto eliminado y total actualizado."); if (S.gasto.editId === id) S.gasto = { cat: "food", monto: "", notas: "", editId: null }; render(); })
+          .catch(errorToast("No se pudo eliminar el gasto."));
+      });
+    },
+    cerrarRuta: function () {
+      var ruta = rutaActual(); if (!ruta) return;
+      S.ocupado.ruta = true; render();
+      cerrarRuta(ruta).then(function () { GE.toast("Ruta cerrada correctamente."); S.ocupado.ruta = false; verificarRuta(); render(); })
+        .catch(function (e) { S.ocupado.ruta = false; GE.toast((e && e.message) || "No se pudo cerrar la ruta.", "error"); render(); });
+    },
+    cerrarCaja: function (b) { cerrarCaja(b.dataset.fecha, !!b.dataset.share); },
+    recibo: function (b) { emitirRecibo(!!b.dataset.share); },
+    ccPagar: function (b) { var l = listOpenAccountInvoices(S.client) || [], x = l.filter(function (i) { return i.id === Number(b.dataset.id); })[0]; if (x) abrirPagoCC([x]); },
+    ccLote: function () { var l = (listOpenAccountInvoices(S.client) || []).filter(function (x) { return S.ccSel[x.id]; }); if (l.length) abrirPagoCC(l); },
+    manualToggle: function () { S.manual.abierta = !S.manual.abierta; render(); },
+    manualGuardar: function () {
+      var m = S.manual, numero = m.numero.trim(), imp = num(m.importe);
+      if (!numero) { GE.toast("Ingresá el número de factura.", "error"); return; }
+      if (!(imp > 0)) { GE.toast("Ingresá un importe mayor a cero.", "error"); return; }
+      S.ocupado.manual = true; render();
+      crearFacturaManual(rutaActual(), clienteActual(), numero, imp, m.detalle.trim() || "Flete").then(function () {
+        GE.toast("Factura manual guardada y sumada a la ruta.");
+        S.manual = { abierta: false, numero: "", importe: "", detalle: "Flete" };
+      }).catch(errorToast("No se pudo guardar la factura manual.")).then(function () { S.ocupado.manual = false; render(); });
+    }
+  };
+  function errorToast(def) { return function (e) { console.warn(e); GE.toast((e && e.message) || def, "error"); }; }
+  app.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-acc]"); if (!b || b.disabled || !app.contains(b)) return;
+    var f = acciones[b.dataset.acc]; if (f) f(b, e);
+  });
+  app.addEventListener("input", function (e) {
+    var t = e.target, k = t.dataset && t.dataset.in; if (!k) return;
+    if (k === "buscarChofer") { S.buscarChofer = t.value; document.getElementById("listaChoferes").innerHTML = listaChoferes(); }
+    else if (k === "buscarZona") { S.buscarZona = t.value; document.getElementById("listaZonas").innerHTML = listaZonas(); }
+    else if (k === "buscarCC") { S.buscarCC = t.value; document.getElementById("listaCC").innerHTML = listaCC(); }
+    else if (k === "gastoMonto") { S.gasto.monto = t.value; var bg = document.getElementById("btnGasto"); if (bg) bg.disabled = !(num(t.value) > 0) || !!S.ocupado.gasto; }
+    else if (k === "gastoNotas") S.gasto.notas = t.value;
+    else if (k === "manualNumero") S.manual.numero = t.value;
+    else if (k === "manualImporte") S.manual.importe = t.value;
+    else if (k === "manualDetalle") S.manual.detalle = t.value;
+  });
+  app.addEventListener("change", function (e) {
+    var t = e.target, k = t.dataset && t.dataset.in; if (!k) return;
+    if (k === "fecha") { if (!t.value) return; S.fecha = t.value; render(); cargarDia(S.fecha).then(function () { if (paso() === 1) render(); }).catch(errorToast("No se pudo cargar el resumen.")); }
+    else if (k === "gastoCat") S.gasto.cat = t.value;
+    else if (k === "ccSel") { if (t.checked) S.ccSel[t.dataset.id] = true; else delete S.ccSel[t.dataset.id]; refrescarCC(); }
+  });
+  function refrescarCC() { var el = document.getElementById("listaCC"); if (el) el.innerHTML = listaCC(); pintarSaldoCC(); }
+
+  function cargarYMostrarChofer(forzar) {
+    render();
+    if (!S.driver) return Promise.resolve();
+    var id = S.driver.id;
+    return cargarChofer(id, forzar).then(function () { if (S.driver && S.driver.id === id) { verificarRuta(); render(); } })
+      .catch(errorToast("No se pudieron cargar las zonas."));
+  }
+  /* Si la zona elegida ya no está abierta, se limpia la selección. */
+  function verificarRuta() {
+    if (!S.route) return;
+    var abierta = listZones().some(function (z) { return z.routeId === S.route; });
+    if (!abierta) { S.route = null; S.client = null; GE.toast("Ruta cerrada. La operación permanece guardada en Administración.", "info"); }
+  }
+  function alCambiar() {
+    // Tras cada acción: los datos tocados ya se releyeron y parchearon en la caché.
+    render();
+    refrescarCC();
+  }
+
+  // ---------------- Listado del día ----------------
+  function abrirListado(filtro) {
+    var dia = C.dia[S.fecha];
+    var m = GE.modal({ titulo: filtro === "pending" ? "Facturas pendientes" : "Facturas entregadas", html: '<p class="muted small" style="margin-top:0">' + (filtro === "pending" ? "Facturas que todavía faltan entregar en la jornada." : "Entregas totales y parciales de la jornada.") + '</p><div id="lstDia"><div class="vacio">Cargando facturas...</div></div>' });
+    (dia ? Promise.resolve(dia) : cargarDia(S.fecha)).then(function (d) {
+      var fs = d.inv.filter(function (f) { return f.status === filtro; }).sort(function (a, b) { return (a.zoneName || "").localeCompare(b.zoneName || "", "es", { numeric: true }) || (a.clientName || "").localeCompare(b.clientName || "", "es"); });
+      var el = m.el.querySelector("#lstDia"); if (!el) return;
+      el.innerHTML = fs.length ? '<div class="lista">' + fs.map(function (f) {
+        var b = f.status === "pending" ? '<span class="badge t-amber">Pendiente</span>' : f.deliveryType === "partial" ? '<span class="badge t-orange">Parcial</span>' : '<span class="badge t-emerald">Total</span>';
+        return '<div class="item" style="cursor:default"><span class="cuerpo"><span class="tit">' + esc(f.invoiceNumber) + ' · ' + esc(f.clientName) + '</span><span class="sub">' + esc(f.zoneName) + ' · ' + esc(f.clientAddress || "Sin dirección") + '</span>' +
+          (f.deliveredAt && f.status === "delivered" ? '<span class="sub">Entregada: ' + GE.fechaHora(f.deliveredAt) + '</span>' : '') + '</span><span class="der" style="display:grid;gap:.2rem;justify-items:end">' + money(f.amount) + b + '</span></div>';
+      }).join("") + '</div>' : '<div class="vacio">No hay facturas para mostrar.</div>';
+    }).catch(errorToast("No se pudieron cargar las facturas."));
+  }
+
+  // ---------------- Fotos ----------------
+  function prepararFoto(file) {
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) throw new Error("La foto debe ser JPG, PNG o WEBP.");
+    if (file.size > 20 * 1024 * 1024) throw new Error("La foto original supera 20 MB. Sacala nuevamente con menor resolución.");
+    return { file: file, url: URL.createObjectURL(file) };
+  }
+  function htmlFotos(lista, tipo, etiqueta) {
+    return '<div class="fotos">' + lista.map(function (p, i) { return '<div class="foto"><img src="' + p.url + '" alt=""><button type="button" data-d="quitarFoto" data-t="' + tipo + '" data-i="' + i + '" aria-label="Quitar foto">✕</button></div>'; }).join("") + '</div>' +
+      (lista.length < 6 ? '<label class="btn btn-outline btn-sm subir">' + ico("camara", 16) + ' ' + etiqueta + '<input type="file" accept="image/*" capture="environment" multiple data-foto="' + tipo + '"></label>' : '<div class="nota">Máximo 6 fotos.</div>');
+  }
+  function agregarFotos(st, tipo, files) {
+    var lista = st.fotos[tipo];
+    Array.prototype.forEach.call(files, function (f) {
+      if (lista.length >= 6) return;
+      try { lista.push(prepararFoto(f)); } catch (e) { GE.toast(e.message || "No se pudo preparar la foto del cheque.", "error"); }
+    });
+  }
+  function htmlCheques(st) {
+    return '<div class="grid" style="gap:.4rem">' + st.cheques.map(function (v, i) {
+      return '<div class="cheque-fila"><input type="number" inputmode="decimal" min="0.01" step="0.01" data-d="cheque" data-i="' + i + '" placeholder="Monto cheque ' + (i + 1) + '" aria-label="Monto cheque ' + (i + 1) + '" value="' + esc(v) + '">' +
+        (st.cheques.length > 1 ? '<button type="button" class="btn btn-ghost btn-icon" data-d="quitarCheque" data-i="' + i + '" aria-label="Quitar cheque">' + ico("x", 16) + '</button>' : '') + '</div>';
+    }).join("") + '<button type="button" class="btn btn-outline btn-sm" data-d="agregarCheque">' + ico("mas", 16) + ' Agregar cheque</button></div>';
+  }
+  function estrellas(k, v) {
+    var h = '<div class="estrellas" role="radiogroup">';
+    for (var i = 1; i <= 5; i++) h += '<button type="button" class="estrella' + (i <= v ? " on" : "") + '" data-d="estrella" data-k="' + k + '" data-v="' + i + '" aria-label="' + i + ' de 5">' + ico("estrella", 28) + '</button>';
+    return h + '</div>';
+  }
+
+  // ---------------- Ubicación ----------------
+  function obtenerUbicacion() {
+    return new Promise(function (ok, no) {
+      if (!navigator.geolocation) return no(new Error("Este dispositivo o navegador no permite obtener la ubicación."));
+      if (!window.isSecureContext) return no(new Error("La ubicación solo se puede solicitar desde el enlace seguro de la aplicación."));
+      function exito(p) { ok({ latitude: p.coords.latitude, longitude: p.coords.longitude, accuracyMeters: p.coords.accuracy != null ? r2(p.coords.accuracy) : null, capturedAt: GE.ahora() }); }
+      function msg(e) {
+        var m = e && e.code === 1 ? "El permiso de ubicación fue rechazado. Habilitalo para Portal Distribuidora en los ajustes del navegador."
+          : e && e.code === 2 ? "El teléfono no pudo determinar una ubicación. Activá GPS o ubicación precisa y reintentá."
+          : e && e.code === 3 ? "La ubicación tardó demasiado. Revisá GPS o señal y volvé a intentarlo."
+          : "No fue posible obtener la ubicación. Revisá los permisos y reintentá.";
+        return new Error(m);
+      }
+      navigator.geolocation.getCurrentPosition(exito, function (e) {
+        if (e && (e.code === 2 || e.code === 3)) navigator.geolocation.getCurrentPosition(exito, function (e2) { no(msg(e2)); }, { enableHighAccuracy: false, timeout: 30000, maximumAge: 60000 });
+        else no(msg(e));
+      }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+    });
+  }
+
+  // ---------------- Diálogo de factura ----------------
+  function abrirFactura(f) {
+    if (f.status !== "pending") return dlgRevertir(f);
+    return dlgEntrega(f);
+  }
+  function dlgRevertir(f) {
+    var rech = f.status === "issue", oc = false;
+    var html = '<p class="muted" style="margin-top:0">' + esc(f.clientName) + ' · Factura ' + esc(f.invoiceNumber) + '</p>' +
+      (rech ? '<div class="aviso t-rose"><b>Motivo: ' + esc(MOTIVO[f.rejectionReason] || f.rejectionReason || "Motivo no informado") + '</b>' + (f.rejectionNotes ? '<div>' + esc(f.rejectionNotes) + '</div>' : '') +
+        '<div class="small" style="margin-top:.3rem">La factura queda registrada como rechazo y no como entrega.</div></div>'
+        : '<div class="aviso t-amber">La factura volverá a pendiente y se quitarán pago, descuento, ubicación, encuesta y adjuntos.</div>' +
+          '<div class="panel" style="margin-top:.6rem"><div class="l"><span>Importe</span><b>' + money(f.amount) + '</b></div><div class="l"><span>Tipo</span><b>' + (f.deliveryType === "partial" ? "Parcial" : "Total") + '</b></div><div class="l"><span>Pago</span><b style="text-align:right">' + esc(detallePago(f)) + '</b></div></div>') +
+      '<div id="errRev"></div><div class="ge-acciones"><button class="btn btn-outline" data-r="cancelar">Cancelar</button><button class="btn btn-danger" data-r="ok">' + (rech ? "Volver a pendiente" : "Quitar tilde") + '</button></div>';
+    var m = GE.modal({ titulo: rech ? "Mercadería rechazada" : "Quitar tilde de entrega", html: html });
+    m.el.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-r]"); if (!b) return;
+      if (b.dataset.r === "cancelar") return m.cerrar();
+      if (oc) return; oc = true; b.disabled = true; b.textContent = "Revirtiendo...";
+      revertirFactura(f).then(function () { GE.toast("Factura devuelta a pendiente."); m.cerrar(); alCambiar(); })
+        .catch(function (e) { oc = false; b.disabled = false; b.textContent = rech ? "Volver a pendiente" : "Quitar tilde"; m.el.querySelector("#errRev").innerHTML = '<div class="err-dlg">' + esc(e.message || "No se pudo revertir.") + '</div>'; GE.toast(e.message || "No se pudo revertir.", "error"); });
+    });
+  }
+
+  function dlgEntrega(f) {
+    var amount = Number(f.amount) || 0, NC = amount < 0;
+    var pendCli = facturasRuta(f.routeId).filter(function (x) { return x.clientId === f.clientId && x.status === "pending"; });
+    var totalCli = suma(pendCli.map(function (x) { return x.amount; }));
+    var st = {
+      tipo: "total", loc: null, locErr: null, buscando: false, pagoTotal: false,
+      metodos: { account: true, cash: false, check: false, transfer: false }, montos: { account: String(amount), cash: "", transfer: "" },
+      cheques: [""], fotos: { check: [], transfer: [] }, descuento: "", notas: "", motivo: "", motivoNotas: "",
+      est: { p: 0, s: 0, o: 0 }, guardando: false, rechazando: false, error: null
+    };
+    var m = GE.modal({ titulo: "Confirmar entrega", html: "", ancho: "600px", onCerrar: function () {
+      ["check", "transfer"].forEach(function (t) { st.fotos[t].forEach(function (p) { URL.revokeObjectURL(p.url); }); });
+    } });
+    var caja = m.el.closest(".ge-modal");
+
+    function calc() {
+      var base = st.pagoTotal ? totalCli : amount;
+      var desc = NC ? 0 : (base > 0 ? Math.min(base - 0.01, Math.max(0, num(st.descuento))) : 0);
+      var neto = r2(base - desc);
+      var act = ["account", "cash", "check", "transfer"].filter(function (k) { return st.metodos[k]; });
+      var soloCta = act.length === 1 && act[0] === "account";
+      var acc = !st.metodos.account ? 0 : NC ? amount : (soloCta && String(st.montos.account).trim() === "") ? r2(base - desc) : r2(num(st.montos.account));
+      var cash = st.metodos.cash ? pos(st.montos.cash) : 0, transfer = st.metodos.transfer ? pos(st.montos.transfer) : 0;
+      var checks = st.metodos.check ? st.cheques.map(pos) : [], chk = suma(checks);
+      var ingresado = r2(acc + cash + chk + transfer), dif = r2(neto - ingresado);
+      return { base: base, desc: desc, neto: neto, act: act, soloCta: soloCta, acc: acc, cash: cash, transfer: transfer, checks: checks, chk: chk, ingresado: ingresado, dif: dif, bal: Math.abs(dif) < 0.01 };
+    }
+    function habilitado(c) {
+      if (st.tipo === "rechazo") return false;
+      if (!(st.est.p > 0 && st.est.s > 0 && st.est.o > 0)) return false;
+      if (st.tipo === "parcial") return c.ingresado > 0 && c.ingresado <= c.neto + 0.009;
+      if (c.neto === 0) return true;
+      if (!c.act.length) return false;
+      if (st.metodos.account && !(NC ? c.acc < 0 : c.acc > 0)) return false;
+      if (st.metodos.cash && !(c.cash > 0)) return false;
+      if (st.metodos.transfer && !(c.transfer > 0)) return false;
+      if (st.metodos.check && !(c.checks.length && c.checks.every(function (v) { return v > 0; }))) return false;
+      return c.bal;
+    }
+    function textoUbic() {
+      if (st.buscando) return "Buscando ubicación...";
+      if (st.loc) return "Ubicación obtenida." + (st.loc.accuracyMeters != null ? " Precisión ±" + Math.round(st.loc.accuracyMeters) + " m." : "");
+      if (st.locErr) return st.locErr + " Podés continuar sin ubicación volviendo a confirmar.";
+      return "Se solicitará la ubicación al confirmar.";
+    }
+    function htmlPanel() {
+      var c = calc(), msg, cls;
+      if (c.bal) { msg = st.tipo === "parcial" ? "Entrega parcial lista para guardar." : "El total está controlado y coincide."; cls = "ok-txt"; }
+      else if (c.dif > 0) { msg = "Falta asignar: " + money(c.dif); cls = "warn-txt"; }
+      else { msg = "Se excede por: " + money(-c.dif); cls = "rose-txt"; }
+      return '<div class="l"><span>' + (st.pagoTotal ? "Boletas seleccionadas" : "Factura") + '</span><b>' + money(c.base) + '</b></div>' +
+        (c.desc > 0 ? '<div class="l"><span>Descuento por importe</span><b>− ' + money(c.desc) + '</b></div>' : '') +
+        '<div class="l"><span>Total neto</span><b>' + money(c.neto) + '</b></div>' +
+        '<div class="l"><span>Pagos cargados</span><b>' + money(c.ingresado) + '</b></div>' +
+        (!st.pagoTotal && totalCli > amount + 0.009 && pendCli.length > 1 ? '<div class="l small muted"><span>Total bruto del cliente</span><b>' + money(totalCli) + '</b></div>' : '') +
+        '<div class="msg ' + cls + '">' + msg + '</div>' +
+        (st.tipo !== "parcial" && !c.bal && c.dif > 0 ? '<button type="button" class="btn btn-outline btn-sm" data-d="completarCta">Completar saldo en Cuenta Corriente</button>' : '');
+    }
+    function pintarPanel() {
+      var c = calc(), p = m.el.querySelector("#panelCobro"); if (p) p.innerHTML = htmlPanel();
+      var b = m.el.querySelector("#btnConfirmar"); if (b) b.disabled = st.guardando || !habilitado(c);
+    }
+    function toggle(k, v, sub, tono) {
+      return '<button type="button" class="opcion ' + tono + (st.metodos[k] ? " on" : "") + '" data-d="metodo" data-k="' + k + '" aria-pressed="' + st.metodos[k] + '"><b>' + v + '</b><span>' + sub + '</span></button>';
+    }
+    function cuerpo() {
+      var c = calc(), h = '<p class="muted" style="margin-top:0">' + esc(f.clientName) + ' · Factura ' + esc(f.invoiceNumber) + ' · <b>' + money(amount) + '</b></p><div class="grid">';
+      // 1. Ubicación
+      h += '<div class="bloque"><div class="fila entre"><span class="fila" style="gap:.4rem">' + ico("ubic") + '<b>Ubicación</b></span>' +
+        '<button type="button" class="btn btn-outline btn-sm" data-d="ubicar"' + (st.buscando ? " disabled" : "") + '>' + (st.buscando ? "Buscando..." : "Obtener ubicación") + '</button></div>' +
+        '<div class="small ' + (st.loc ? "ok-txt" : st.locErr ? "rose-txt" : "muted") + '">' + esc(textoUbic()) + '</div></div>';
+      // 2. Tipo
+      h += '<div class="opciones c3">' +
+        '<button type="button" class="opcion e-emerald' + (st.tipo === "total" ? " on" : "") + '" data-d="tipo" data-v="total"><b>Entrega total</b><span>Factura completa</span></button>' +
+        '<button type="button" class="opcion e-amber' + (st.tipo === "parcial" ? " on" : "") + '" data-d="tipo" data-v="parcial"><b>Entrega parcial</b><span>Queda pendiente</span></button>' +
+        '<button type="button" class="opcion e-rose' + (st.tipo === "rechazo" ? " on" : "") + '" data-d="tipo" data-v="rechazo"><b>Rechazo</b><span>El cliente no recibe</span></button></div>';
+      // 3. Pago total del cliente
+      if (pendCli.length > 1 && st.tipo !== "rechazo") {
+        h += '<button type="button" class="btn ' + (st.pagoTotal ? "btn-primary" : "btn-outline") + ' ancho" data-d="pagoTotal">' +
+          (st.pagoTotal ? "Pago total activo · " + pendCli.length + " boletas · " + money(totalCli) : "Pagar total de las " + pendCli.length + " boletas · " + money(totalCli)) + '</button>';
+      }
+      if (st.tipo === "rechazo") {
+        h += '<div class="bloque t-rose"><b>¿El cliente rechazó la mercadería?</b><div class="small">Registralo como rechazo para que quede separado de las entregas pendientes.</div>' +
+          '<select data-d="motivo"><option value="">Seleccionar motivo...</option>' + MOTIVOS.map(function (x) { return '<option value="' + x[0] + '"' + (st.motivo === x[0] ? " selected" : "") + '>' + x[1] + '</option>'; }).join("") + '</select>' +
+          (st.motivo === "other" ? '<textarea rows="2" maxlength="500" data-d="motivoNotas" placeholder="Describí el motivo">' + esc(st.motivoNotas) + '</textarea>' : '') +
+          '<button type="button" class="btn btn-danger" data-d="rechazar"' + (st.rechazando || !st.motivo ? " disabled" : "") + '>' + (st.rechazando ? "Guardando rechazo..." : "Rechazo del cliente") + '</button></div>';
+      } else {
+        // 5. Formas de pago
+        h += '<div class="bloque"><div><b>Formas de pago</b><div class="small muted">Podés seleccionar una o varias. La suma debe coincidir con el total neto.</div></div>';
+        if (NC) {
+          h += '<div class="aviso t-blue"><b>Nota de crédito:</b> se registra automáticamente como un ajuste negativo en Cuenta Corriente.</div>' +
+            '<label>Monto a cuenta corriente</label><input type="number" readonly value="' + amount + '">';
+        } else {
+          h += '<div class="opciones c2">' + toggle("account", "Cuenta corriente", "Saldo a la cuenta", "e-blue") + toggle("cash", "Efectivo", "Monto cobrado", "e-emerald") +
+            toggle("check", "Cheque", "Montos y fotos", "e-amber") + toggle("transfer", "Transferencia", "Monto transferido", "e-violet") + '</div>';
+          if (st.metodos.account) h += '<label>Monto a cuenta corriente</label><input type="number" inputmode="decimal" min="0.01" step="0.01" data-d="monto" data-k="account" placeholder="Monto a cuenta corriente" value="' + esc(st.montos.account) + '">';
+          if (st.metodos.cash) h += '<label>Monto en efectivo</label><input type="number" inputmode="decimal" min="0.01" step="0.01" data-d="monto" data-k="cash" placeholder="Monto en efectivo" value="' + esc(st.montos.cash) + '">';
+          if (st.metodos.check) h += '<label>Cheques</label>' + htmlCheques(st) + htmlFotos(st.fotos.check, "check", "Sacar o adjuntar fotos");
+          if (st.metodos.transfer) h += '<label>Monto por transferencia</label><input type="number" inputmode="decimal" min="0.01" step="0.01" data-d="monto" data-k="transfer" placeholder="Monto por transferencia" value="' + esc(st.montos.transfer) + '">' +
+            htmlFotos(st.fotos.transfer, "transfer", "Sacar o adjuntar comprobante de transferencia");
+          h += '<label>Descuento por importe</label><input type="number" inputmode="decimal" min="0" max="' + r2(c.base - 0.01) + '" step="0.01" data-d="descuento" placeholder="0,00" value="' + esc(st.descuento) + '">' +
+            '<div class="nota">Ingresá el monto exacto que se resta de la factura, no un porcentaje.</div>';
+        }
+        h += '<label>Información adicional del cobro</label><textarea rows="2" maxlength="500" data-d="notas">' + esc(st.notas) + '</textarea></div>';
+        h += '<div class="panel" id="panelCobro"></div>';
+        h += '<div class="bloque t-violet"><b>Encuesta</b>' +
+          '<div>1. Puntualidad' + estrellas("p", st.est.p) + '</div><div>2. Atención' + estrellas("s", st.est.s) + '</div><div>3. Satisfacción recibida' + estrellas("o", st.est.o) + '</div></div>';
+      }
+      if (st.error) h += '<div class="err-dlg">' + esc(st.error) + '</div>';
+      h += '</div><div class="ge-acciones sticky-acc"><button type="button" class="btn btn-outline" data-d="cancelar">Cancelar</button>' +
+        '<button type="button" class="btn btn-primary" id="btnConfirmar" data-d="confirmar">' + (st.guardando ? "Guardando..." : "Confirmar entrega") + '</button></div>';
+      return h;
+    }
+    function pintar() {
+      var y = caja.scrollTop; m.el.innerHTML = cuerpo(); pintarPanel(); caja.scrollTop = y;
+    }
+    function ubicar() {
+      st.buscando = true; pintar();
+      return obtenerUbicacion().then(function (l) { st.loc = l; st.locErr = null; }, function (e) { st.locErr = e.message; st.loc = null; })
+        .then(function () { st.buscando = false; if (document.body.contains(m.el)) pintar(); });
+    }
+    function enviar() {
+      var c = calc();
+      if (!habilitado(c)) return;
+      var activos = c.act, payment = {
+        method: activos.length > 1 ? "mixed" : (activos[0] || "mixed"), hasAccount: !!st.metodos.account,
+        account: st.metodos.account ? c.acc : 0, cash: c.cash, transfer: c.transfer, checks: st.metodos.check ? c.checks.filter(function (v) { return v > 0; }) : [],
+        discount: c.desc, notes: st.notas.trim()
+      };
+      var ids = st.pagoTotal ? pendCli.map(function (x) { return x.id; }) : [f.id];
+      st.guardando = true; st.error = null; pintar();
+      confirmarEntrega({
+        ids: ids, deliveryType: st.tipo === "parcial" ? "partial" : "total", pago: payment, loc: st.loc,
+        survey: { punctualityRating: st.est.p, serviceRating: st.est.s, overallRating: st.est.o },
+        fotosCheque: st.metodos.check ? st.fotos.check : [], fotosTransfer: st.metodos.transfer ? st.fotos.transfer : []
+      }).then(function (r) {
+        GE.toast(ids.length > 1 ? r.appliedInvoices + " entregas, cobro y trazabilidad guardados." : st.loc ? "Entrega, cobranza y ubicación guardadas." : "Entrega y cobranza guardadas sin ubicación.");
+        m.cerrar(); alCambiar();
+      }).catch(function (e) {
+        console.error(e); st.guardando = false; st.error = (e && e.message) || "No se pudo guardar la entrega.";
+        GE.toast(st.error, "error"); if (document.body.contains(m.el)) pintar();
+      });
+    }
+
+    m.el.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-d]"); if (!b || b.disabled) return;
+      var d = b.dataset.d;
+      if (d === "cancelar") return m.cerrar();
+      if (d === "ubicar") return ubicar();
+      if (d === "tipo") { st.tipo = b.dataset.v; st.motivo = ""; st.motivoNotas = ""; if (st.tipo === "rechazo") st.pagoTotal = false; st.error = null; return pintar(); }
+      if (d === "pagoTotal") {
+        st.pagoTotal = !st.pagoTotal;
+        st.metodos = { account: true, cash: false, check: false, transfer: false };
+        st.montos = { account: String(st.pagoTotal ? totalCli : amount), cash: "", transfer: "" }; st.cheques = [""]; st.descuento = "";
+        return pintar();
+      }
+      if (d === "metodo") {
+        var k = b.dataset.k, c = calc();
+        if (!st.metodos[k] && k !== "account" && c.soloCta && Math.abs(c.acc - c.neto) < 0.01) { st.metodos.account = false; st.montos.account = ""; }
+        st.metodos[k] = !st.metodos[k];
+        return pintar();
+      }
+      if (d === "agregarCheque") { st.cheques.push(""); return pintar(); }
+      if (d === "quitarCheque") { st.cheques.splice(Number(b.dataset.i), 1); return pintar(); }
+      if (d === "quitarFoto") { var l = st.fotos[b.dataset.t], p = l.splice(Number(b.dataset.i), 1)[0]; if (p) URL.revokeObjectURL(p.url); return pintar(); }
+      if (d === "estrella") { st.est[b.dataset.k] = Number(b.dataset.v); return pintar(); }
+      if (d === "completarCta") {
+        var c2 = calc(); if (c2.dif <= 0) return;
+        var prev = st.metodos.account ? c2.acc : 0;
+        st.metodos.account = true; st.montos.account = String(r2(prev + c2.dif)); return pintar();
+      }
+      if (d === "rechazar") {
+        if (!st.motivo) return;
+        if (st.motivo === "other" && !st.motivoNotas.trim()) { GE.toast("Describí el motivo del rechazo.", "error"); return; }
+        st.rechazando = true; st.error = null; pintar();
+        rechazarFactura(f, st.motivo, st.motivoNotas.trim()).then(function () { GE.toast("Rechazo del cliente guardado."); m.cerrar(); alCambiar(); })
+          .catch(function (e) { st.rechazando = false; st.error = e.message || "No se pudo guardar el rechazo."; GE.toast(st.error, "error"); pintar(); });
+        return;
+      }
+      if (d === "confirmar") {
+        if (st.guardando) return;
+        if (st.loc || st.locErr) return enviar();
+        st.buscando = true; pintar();
+        obtenerUbicacion().then(function (l) { st.loc = l; st.buscando = false; enviar(); }, function (err) { st.locErr = err.message; st.buscando = false; pintar(); });
+      }
+    });
+    m.el.addEventListener("input", function (e) {
+      var t = e.target, d = t.dataset && t.dataset.d; if (!d) return;
+      if (d === "monto") st.montos[t.dataset.k] = t.value;
+      else if (d === "cheque") st.cheques[Number(t.dataset.i)] = t.value;
+      else if (d === "descuento") {
+        st.descuento = t.value;
+        var c = calc();
+        if (c.soloCta) { st.montos.account = String(r2(c.base - c.desc)); var a = m.el.querySelector('[data-d="monto"][data-k="account"]'); if (a) a.value = st.montos.account; }
+      }
+      else if (d === "notas") st.notas = t.value;
+      else if (d === "motivoNotas") st.motivoNotas = t.value;
+      pintarPanel();
+    });
+    m.el.addEventListener("change", function (e) {
+      var t = e.target;
+      if (t.dataset.d === "motivo") { st.motivo = t.value; pintar(); }
+      if (t.dataset.foto) { agregarFotos(st, t.dataset.foto, t.files); pintar(); }
+    });
+    pintar();
+  }
+
+  // ---------------- Diálogo de pago de cuenta corriente ----------------
+  function abrirPagoCC(items) {
+    var ruta = rutaActual(), lote = items.length > 1;
+    var orig = suma(items.map(function (x) { return x.originalAccountAmount; })), pagado = suma(items.map(function (x) { return x.paidAmount; })), saldo = suma(items.map(function (x) { return x.outstandingAmount; }));
+    var st = { metodos: { cash: false, check: false, transfer: false }, montos: { cash: "", transfer: "" }, cheques: [""], fotos: { check: [], transfer: [] }, notas: "", guardando: false, error: null };
+    var m = GE.modal({ titulo: "Aplicar pago a Cuenta Corriente", html: "", ancho: "600px", onCerrar: function () { ["check", "transfer"].forEach(function (t) { st.fotos[t].forEach(function (p) { URL.revokeObjectURL(p.url); }); }); } });
+    var caja = m.el.closest(".ge-modal");
+    function calc() {
+      var cash = st.metodos.cash ? pos(st.montos.cash) : 0, transfer = st.metodos.transfer ? pos(st.montos.transfer) : 0, checks = st.metodos.check ? st.cheques.map(pos) : [];
+      var total = r2(cash + transfer + suma(checks));
+      return { cash: cash, transfer: transfer, checks: checks, total: total, restante: r2(saldo - total) };
+    }
+    function valido(c) {
+      if (!(c.total > 0) || c.restante < -0.009) return false;
+      if (st.metodos.cash && !(c.cash > 0)) return false;
+      if (st.metodos.transfer && !(c.transfer > 0)) return false;
+      if (st.metodos.check && !(c.checks.length && c.checks.every(function (v) { return v > 0; }))) return false;
+      return true;
+    }
+    function htmlPanel() {
+      var c = calc();
+      return '<div class="l"><span>Saldo pendiente</span><b>' + money(saldo) + '</b></div><div class="l"><span>Pago ingresado</span><b>' + money(c.total) + '</b></div>' +
+        '<div class="l"><span>Saldo restante</span><b>' + money(c.restante) + '</b></div>' +
+        (c.restante > 0.009 ? '<button type="button" class="btn btn-outline btn-sm" data-d="completar">Completar el saldo</button>' : '') +
+        (c.restante < -0.009 ? '<div class="msg rose-txt">El pago supera el saldo de la factura.</div>' : '');
+    }
+    function pintarPanel() { var p = m.el.querySelector("#panelCC"); if (p) p.innerHTML = htmlPanel(); var b = m.el.querySelector("#btnAplicar"); if (b) b.disabled = st.guardando || !valido(calc()); }
+    function tg(k, v, sub, tono) { return '<button type="button" class="opcion ' + tono + (st.metodos[k] ? " on" : "") + '" data-d="metodo" data-k="' + k + '" aria-pressed="' + st.metodos[k] + '"><b>' + v + '</b><span>' + sub + '</span></button>'; }
+    function cuerpo() {
+      var h = '<p class="muted" style="margin-top:0">' + esc(items[0].clientName) + ' · ' + (lote ? items.length + " facturas seleccionadas" : "Factura " + esc(items[0].invoiceNumber)) + '</p><div class="grid">' +
+        '<div class="mini"><div class="t-slate"><div class="et">Original</div><div class="va">' + money(orig) + '</div></div><div class="t-emerald"><div class="et">Ya cobrado</div><div class="va">' + money(pagado) + '</div></div><div class="t-amber"><div class="et">Saldo</div><div class="va">' + money(saldo) + '</div></div></div>' +
+        '<div class="bloque"><div><b>¿Cómo paga ahora?</b><div class="small muted">Podés combinar efectivo, cheque y transferencia.</div></div>' +
+        '<div class="opciones c3">' + tg("cash", "Efectivo", "Monto cobrado", "e-emerald") + tg("check", "Cheque", "Montos y fotos", "e-amber") + tg("transfer", "Transferencia", "Monto transferido", "e-violet") + '</div>';
+      if (st.metodos.cash) h += '<label>Monto en efectivo</label><input type="number" inputmode="decimal" min="0.01" step="0.01" data-d="monto" data-k="cash" placeholder="Monto en efectivo" value="' + esc(st.montos.cash) + '">';
+      if (st.metodos.check) h += '<label>Cheques</label>' + htmlCheques(st) + htmlFotos(st.fotos.check, "check", "Sacar o adjuntar fotos");
+      if (st.metodos.transfer) h += '<label>Monto por transferencia</label><input type="number" inputmode="decimal" min="0.01" step="0.01" data-d="monto" data-k="transfer" placeholder="Monto por transferencia" value="' + esc(st.montos.transfer) + '">' + htmlFotos(st.fotos.transfer, "transfer", "Sacar o adjuntar comprobante de transferencia");
+      h += '<label>Detalle del pago (opcional)</label><textarea rows="2" maxlength="500" data-d="notas">' + esc(st.notas) + '</textarea></div>' +
+        '<div class="panel" id="panelCC"></div>' + (st.error ? '<div class="err-dlg">' + esc(st.error) + '</div>' : '') + '</div>' +
+        '<div class="ge-acciones sticky-acc"><button type="button" class="btn btn-outline" data-d="cancelar">Cancelar</button><button type="button" class="btn btn-primary" id="btnAplicar" data-d="aplicar">' + (st.guardando ? "Guardando..." : lote ? "Aplicar pago proporcional" : "Aplicar pago") + '</button></div>';
+      return h;
+    }
+    function pintar() { var y = caja.scrollTop; m.el.innerHTML = cuerpo(); pintarPanel(); caja.scrollTop = y; }
+    m.el.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-d]"); if (!b || b.disabled) return;
+      var d = b.dataset.d;
+      if (d === "cancelar") return m.cerrar();
+      if (d === "metodo") { st.metodos[b.dataset.k] = !st.metodos[b.dataset.k]; return pintar(); }
+      if (d === "agregarCheque") { st.cheques.push(""); return pintar(); }
+      if (d === "quitarCheque") { st.cheques.splice(Number(b.dataset.i), 1); return pintar(); }
+      if (d === "quitarFoto") { var l = st.fotos[b.dataset.t], p = l.splice(Number(b.dataset.i), 1)[0]; if (p) URL.revokeObjectURL(p.url); return pintar(); }
+      if (d === "completar") {
+        var c = calc(); if (c.restante <= 0.009) return;
+        if (st.metodos.cash) st.montos.cash = String(r2(c.cash + c.restante));
+        else if (st.metodos.check) st.cheques[0] = String(r2(pos(st.cheques[0]) + c.restante));
+        else if (st.metodos.transfer) st.montos.transfer = String(r2(c.transfer + c.restante));
+        else { st.metodos.cash = true; st.montos.cash = String(c.restante); }
+        return pintar();
+      }
+      if (d === "aplicar") {
+        var c3 = calc(); if (st.guardando || !valido(c3)) return;
+        st.guardando = true; st.error = null; pintar();
+        aplicarPagoCC({ ids: items.map(function (x) { return x.id; }), cash: c3.cash, transfer: c3.transfer, checks: c3.checks.filter(function (v) { return v > 0; }), notes: st.notas.trim(),
+          fotosCheque: st.metodos.check ? st.fotos.check : [], fotosTransfer: st.metodos.transfer ? st.fotos.transfer : [] })
+          .then(function (r) {
+            GE.toast(lote ? "Pago agrupado aplicado a " + r.appliedInvoices + " facturas." : r.remainingAmount > 0.009 ? "Pago guardado. Saldo restante: " + money(r.remainingAmount) + "." : "Pago guardado. La factura quedó cancelada.");
+            S.ccSel = {}; m.cerrar(); alCambiar();
+          }).catch(function (e) { console.error(e); st.guardando = false; st.error = (e && e.message) || "No se pudo aplicar el pago."; GE.toast(st.error, "error"); pintar(); });
+      }
+    });
+    m.el.addEventListener("input", function (e) {
+      var t = e.target, d = t.dataset && t.dataset.d; if (!d) return;
+      if (d === "monto") st.montos[t.dataset.k] = t.value; else if (d === "cheque") st.cheques[Number(t.dataset.i)] = t.value; else if (d === "notas") st.notas = t.value;
+      pintarPanel();
+    });
+    m.el.addEventListener("change", function (e) { var t = e.target; if (t.dataset.foto) { agregarFotos(st, t.dataset.foto, t.files); pintar(); } });
+    pintar();
+  }
+
+  // ---------------- Recibo y cierre de caja ----------------
+  function slug(s) { return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "cliente"; }
+  function emitirRecibo(compartir) {
+    var ruta = rutaActual(), cli = clienteActual(); if (!ruta || !cli) return;
+    var fs = listInvoices(ruta.id, cli.id);
+    if (!fs.length || !fs.every(function (f) { return f.status === "delivered"; })) { GE.toast("Todas las facturas del cliente tienen que estar entregadas.", "error"); return; }
+    S.ocupado.recibo = true; render();
+    var ms = Date.now(), numero = "RC-" + ms, emitido = new Date(ms).toISOString();
+    var nombre = numero + "-recibo-" + slug(cli.businessName) + "-" + ruta.serviceDate + ".pdf";
+    pdfRecibo(ruta, cli, fs, numero, emitido).then(function (r) {
+      var out = salidaPdf(r.doc, nombre, compartir, "Recibo " + numero);
+      return GE.guardarArchivo(out.blob, "recibos", nombre).then(function (fileUrl) {
+        var id = GE.nuevoId();
+        return GE.guardar("receipts", {
+          id: id, receiptNumber: numero, routeId: ruta.id, clientId: cli.id, clientName: cli.businessName, driverId: S.driver.id, driverName: S.driver.name,
+          serviceDate: ruta.serviceDate, zoneName: ruta.zoneName, totalAmount: r.totalNeto, fileUrl: fileUrl, issuedAt: emitido,
+          paymentSummary: JSON.stringify(fs.map(function (f) {
+            return { invoiceNumber: f.invoiceNumber, amount: f.amount, status: f.status, deliveryType: f.deliveryType, paymentMethod: f.paymentMethod, accountAmount: f.accountAmount,
+              cashAmount: f.cashAmount, checkAmounts: f.checkAmounts, transferAmount: f.transferAmount, discountPercent: f.discountPercent, discountAmount: f.discountAmount, netAmount: GE.neto(f), paymentNotes: f.paymentNotes };
+          }))
+        });
+      }).then(function () { return out.entregar(); });
+    }).then(function (modo) {
+      GE.toast(modo === "compartido" ? "Recibo guardado y listo para compartir por WhatsApp." : "Recibo guardado y descargado.");
+    }).catch(function (e) { console.error(e); GE.toast("No se pudo emitir el recibo.", "error"); })
+      .then(function () { S.ocupado.recibo = false; render(); });
+  }
+  function cerrarCaja(fecha, compartir) {
+    S.ocupado["caja" + fecha] = true; render();
+    var emitido = GE.ahora();
+    getDailyCashDetails(fecha).then(function (det) {
+      errorSi(!det.routes.length, "No hay rutas en esta jornada.");
+      errorSi(det.routes.some(function (r) { return r.status !== "completed"; }), "Primero cerrá todas las rutas de esta jornada.");
+      errorSi(det.cierres.some(function (c) { return c.closedAt && !c.reopenedAt; }), "La caja de esta jornada ya estaba cerrada.");
+      return pdfCaja(fecha, det, emitido).then(function (doc) {
+        var nombre = "cierre-caja-" + slug(S.driver.name) + "-" + fecha + ".pdf";
+        var out = salidaPdf(doc, nombre, compartir, "Cierre de caja " + GE.fechaChofer(fecha));
+        return GE.guardarArchivo(out.blob, "cajas", nombre).then(function (fileUrl) {
+          var c = { id: GE.nuevoId(), driverId: S.driver.id, driverName: S.driver.name, serviceDate: fecha, pettyCashAmount: det.pettyCashAmount, totalExpenses: det.totalExpenses,
+            balance: det.balance, fileUrl: fileUrl, closedAt: emitido, reopenedAt: null, reopenReason: null };
+          return GE.guardar("cashClosures", c).then(function () { var d = dc(); if (d) d.cierres.push(c); });
+        }).then(function () { return out.entregar(); });
+      });
+    }).then(function (modo) {
+      GE.toast(modo === "compartido" ? "Caja cerrada. El PDF quedó guardado y listo para compartir." : "Caja cerrada. El PDF quedó guardado y descargado.");
+    }).catch(function (e) { console.error(e); GE.toast(e && e.message && /cerr|rutas|caja/i.test(e.message) ? e.message : "No se pudo cerrar la caja.", "error"); })
+      .then(function () { delete S.ocupado["caja" + fecha]; render(); });
+  }
+
+  // ---------------- Inicio ----------------
+  render();
+  GE.anonimo().then(function () {
+    var pDia = cargarDia(S.fecha).then(function () { if (paso() === 1) render(); }).catch(errorToast("No se pudo cargar el resumen del día."));
+    return listDrivers().then(function () {
+      var chofer = Number(Q.get("chofer"));
+      if (chofer) S.driver = C.drivers.filter(function (d) { return d.id === chofer; })[0] || null;
+      if (!S.driver) { listo = true; render(); return; }
+      render();
+      return cargarChofer(S.driver.id).catch(function (e) { listo = true; throw e; }).then(function () {
+        listo = true;
+        var ruta = Number(Q.get("ruta")), cliente = Number(Q.get("cliente")), factura = Number(Q.get("factura"));
+        var z = ruta && listZones().filter(function (x) { return x.routeId === ruta; })[0];
+        if (z) {
+          S.route = ruta; S.fecha = z.serviceDate;
+          if (cliente && facturasRuta(ruta).some(function (f) { return f.clientId === cliente; })) S.client = cliente;
+        }
+        render();
+        if (S.client) cargarCC(S.client).then(refrescarCC).catch(errorToast("No se pudieron cargar los saldos."));
+        if (S.client && factura) { var f = facturasRuta(S.route).filter(function (x) { return x.id === factura && x.clientId === S.client; })[0]; if (f) abrirFactura(f); }
+      });
+    }).then(function () { return pDia; });
+  }).catch(function (e) {
+    console.error(e);
+    app.innerHTML = '<section class="card"><div class="vacio"><b>No pudimos conectar con la base de datos.</b><div class="small">' + esc(e.message || "") + '</div></div></section>';
+  });
+})();
+</script>
+</body>
+</html>

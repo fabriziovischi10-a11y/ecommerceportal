@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#102b46">
+<title>Portal Distribuidora · Entregas</title>
+<link rel="icon" href="logo.png">
+<link rel="stylesheet" href="comun.css">
+<script src="https://fabriziovischi10-a11y.github.io/ecommerceportal/intro-portal.js"></script>
+<style>
+  .inicio { max-width: 980px; margin: 0 auto; padding: 2rem 16px; }
+  .marca { display: flex; align-items: center; gap: .9rem; margin-bottom: 1.6rem; }
+  .marca img { width: 64px; height: 64px; object-fit: contain; }
+  .marca .t1 { font-size: 1.6rem; font-weight: 800; }
+  .tarjetas { display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 760px) { .tarjetas { grid-template-columns: 1fr; } }
+  .tarjeta { display: flex; flex-direction: column; gap: .6rem; text-decoration: none; color: inherit; padding: 1.3rem; transition: transform .15s, box-shadow .15s; }
+  .tarjeta:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(16, 30, 54, .1); }
+  .tarjeta .ico { width: 44px; height: 44px; border-radius: .8rem; display: grid; place-items: center; background: var(--primary); color: #fff; }
+  .tarjeta h2 { margin: 0; }
+  .tarjeta p { margin: 0; color: var(--muted-fg); flex: 1; }
+  .tarjeta .ir { font-weight: 700; color: var(--primary); }
+  .pie { text-align: center; color: var(--muted-fg); font-size: .85rem; margin-top: 2rem; }
+</style>
+</head>
+<body>
+<main class="inicio">
+  <div class="marca">
+    <img src="logo.png" alt="Portal Distribuidora">
+    <div><div class="t1">Portal Distribuidora</div><div class="muted">Gestión integral</div></div>
+  </div>
+  <div class="tarjetas">
+    <a class="card tarjeta" href="admin.html">
+      <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></span>
+      <h2>Administrador</h2>
+      <p>Consultá entregas, cobranzas, clientes, documentos e historial.</p>
+      <span class="ir">Abrir gestión →</span>
+    </a>
+    <a class="card tarjeta" href="chofer.html">
+      <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62L18.3 8.38A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg></span>
+      <h2>Soy Chofer</h2>
+      <p>Elegí tu apellido, tu zona y confirmá entregas, gastos y cobranzas.</p>
+      <span class="ir">Ingresar como chofer →</span>
+    </a>
+    <a class="card tarjeta" href="logistica.html">
+      <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/></svg></span>
+      <h2>Logística</h2>
+      <p>Armá despachos, administrá camiones y acoplados, y controlá kilómetros, combustible y costos.</p>
+      <span class="ir">Abrir logística →</span>
+    </a>
+  </div>
+  <p class="pie">Portal Distribuidora · Administración · Entregas · Logística</p>
+</main>
+<script>
+  // Conserva el modo prueba al navegar
+  if (new URLSearchParams(location.search).get("prueba") === "1" || sessionStorage.getItem("ge_prueba") === "1") {
+    sessionStorage.setItem("ge_prueba", "1");
+    document.querySelectorAll("a.tarjeta").forEach(function (a) { a.href += "?prueba=1"; });
+  }
+</script>
+</body>
+</html>

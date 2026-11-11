@@ -1,0 +1,1222 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#102b46">
+<title>Portal Distribuidora · Logística</title>
+<link rel="icon" href="logo.png">
+<link rel="stylesheet" href="comun.css">
+<script src="https://fabriziovischi10-a11y.github.io/ecommerceportal/intro-portal.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="comun.js"></script>
+<style>
+  body { background: #f3f6f8; }
+  .lg-cab { display: flex; align-items: center; gap: .75rem; padding: .65rem 16px; background: rgba(255,255,255,.95); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; backdrop-filter: blur(6px); }
+  .lg-cab-in { max-width: 1500px; margin: 0 auto; width: 100%; display: flex; align-items: center; gap: .75rem; }
+  .lg-ico { width: 36px; height: 36px; flex: none; border-radius: .8rem; display: grid; place-items: center; background: #dff7f4; color: #0f766e; }
+  .lg-cab .t1 { font-weight: 800; font-size: .92rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lg-cab .t2 { font-size: .76rem; color: var(--muted-fg); }
+  .lg-cab .der { margin-left: auto; display: flex; gap: .4rem; }
+  @media (max-width: 560px) { .lg-cab .t2, .lg-cab .txt-m { display: none; } }
+  .lg-main { max-width: 1500px; margin: 0 auto; padding: 16px; display: grid; gap: 1.1rem; }
+  @media (min-width: 900px) { .lg-main { padding: 1.6rem; } }
+  .hero { border-radius: 1.5rem; background: #143a5a; color: #fff; overflow: hidden; box-shadow: 0 18px 40px -25px rgba(20,58,90,.8); }
+  .hero-top { display: grid; gap: 1.1rem; padding: 1.25rem; }
+  @media (min-width: 900px) { .hero-top { grid-template-columns: 1fr auto; align-items: end; padding: 1.75rem; } }
+  .hero .sobre { font-size: .72rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: rgba(207,250,254,.7); margin: 0; }
+  .hero h1 { margin: .45rem 0 0; font-size: 1.7rem; font-weight: 800; }
+  .hero p.desc { margin: .5rem 0 0; max-width: 42rem; font-size: .9rem; line-height: 1.55; color: rgba(236,254,255,.78); }
+  .hero label { color: #ecfeff; font-size: .75rem; margin-top: 0; }
+  .hero input[type=month] { border-radius: .8rem; min-height: 44px; }
+  .hero-acc { display: flex; flex-wrap: wrap; gap: .5rem; padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.05); }
+  @media (min-width: 900px) { .hero-acc { padding: 1rem 1.75rem; } }
+  .btn-cian { background: #a5f3fc; color: #0f172a; border-radius: .8rem; }
+  .btn-cian:hover { background: #cffafe; }
+  .btn-trans { background: rgba(255,255,255,.1); color: #fff; border-color: rgba(255,255,255,.3); border-radius: .8rem; }
+  .btn-trans:hover { background: rgba(255,255,255,.2); }
+  .kpis { display: grid; gap: .75rem; grid-template-columns: repeat(2, minmax(0,1fr)); }
+  @media (min-width: 760px) { .kpis { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+  @media (min-width: 1200px) { .kpis { grid-template-columns: repeat(6, minmax(0,1fr)); } }
+  .kpi { background: #fff; border: 1px solid var(--border); border-radius: 1.1rem; padding: 1rem; }
+  .kpi .ic { width: 34px; height: 34px; border-radius: .7rem; display: grid; place-items: center; background: #e7f3ff; color: #123b72; }
+  .kpi .lab { margin: .65rem 0 0; font-size: .74rem; font-weight: 700; color: var(--muted-fg); text-transform: uppercase; letter-spacing: .04em; }
+  .kpi .val { margin: .15rem 0 0; font-size: 1.3rem; font-weight: 800; color: #0f172a; word-break: break-word; }
+  .kpi .det { margin: .1rem 0 0; font-size: .78rem; color: var(--muted-fg); }
+  .cuerpo { display: grid; gap: 1.1rem; align-items: start; }
+  @media (min-width: 1100px) { .cuerpo { grid-template-columns: 380px minmax(0,1fr); } }
+  .panel { background: #fff; border: 1px solid var(--border); border-radius: 1.25rem; overflow: hidden; min-width: 0; }
+  .panel-cab { padding: 1rem 1.1rem; border-bottom: 1px solid var(--border); }
+  .panel-cab h2, .panel-cab h3 { margin: 0; }
+  .panel-cab p { margin: .2rem 0 0; font-size: .82rem; color: var(--muted-fg); }
+  .viajes { max-height: 760px; overflow: auto; }
+  .viaje { display: block; width: 100%; text-align: left; background: #fff; border: 0; border-bottom: 1px solid var(--border); padding: 1rem 1.1rem; cursor: pointer; font: inherit; color: inherit; }
+  .viaje:hover { background: #f8fafc; }
+  .viaje.sel { background: #edf5ff; }
+  .viaje .c1 { font-weight: 800; font-size: .92rem; }
+  .viaje .c2 { font-size: .78rem; color: var(--muted-fg); }
+  .viaje .c3 { font-size: .85rem; margin: .45rem 0 0; color: #334155; }
+  .minis { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: .4rem; margin-top: .6rem; }
+  .mini { background: #f1f5f9; border-radius: .6rem; padding: .35rem .5rem; }
+  .mini .l { font-size: .66rem; font-weight: 700; color: var(--muted-fg); text-transform: uppercase; }
+  .mini .v { font-size: .9rem; font-weight: 800; }
+  .est { border-radius: 999px; padding: .12rem .6rem; font-size: .72rem; font-weight: 700; white-space: nowrap; }
+  .est-draft { background: #f1f5f9; color: #334155; } .est-in_progress { background: #fef3c7; color: #92400e; }
+  .est-returning { background: #dbeafe; color: #1e40af; } .est-completed { background: #d1fae5; color: #065f46; }
+  .vacio-g { display: grid; place-items: center; text-align: center; gap: .3rem; padding: 2.5rem 1rem; color: var(--muted-fg); }
+  .vacio-g .t { font-weight: 800; color: #334155; margin: .3rem 0 0; }
+  .vacio-g p { margin: 0; font-size: .86rem; }
+  .flota { display: grid; gap: 1.1rem; }
+  @media (min-width: 900px) { .flota { grid-template-columns: 1fr 1fr; } }
+  .flota-item { padding: .7rem 1.1rem; border-bottom: 1px solid var(--border); }
+  .flota-item:last-child { border-bottom: 0; }
+  .flota-item .t { font-weight: 700; font-size: .9rem; margin: 0; }
+  .flota-item .d { font-size: .8rem; color: var(--muted-fg); margin: .1rem 0 0; }
+  .cuenta { background: var(--secondary); border-radius: 999px; padding: 0 .55rem; font-size: .75rem; font-weight: 700; }
+  /* detalle */
+  .det { display: grid; gap: 1rem; }
+  .det-sec { background: #fff; border: 1px solid var(--border); border-radius: 1.25rem; padding: 1.1rem; min-width: 0; }
+  .det-cab { display: grid; gap: 1rem; }
+  .det-cab h2 { margin: 0; font-size: 1.3rem; }
+  .det-cab p { margin: .25rem 0 0; font-size: .86rem; color: #475569; }
+  .det-acc { display: flex; flex-wrap: wrap; gap: .45rem; }
+  .det-acc .grupo { display: flex; flex-wrap: wrap; gap: .45rem; }
+  .zonas { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; margin-top: .5rem; font-size: .8rem; color: #475569; }
+  .zona-b { background: #e0f2fe; color: #075985; border-radius: 999px; padding: .1rem .55rem; font-weight: 700; font-size: .74rem; }
+  .tiles { display: grid; gap: .6rem; grid-template-columns: repeat(2, minmax(0,1fr)); }
+  @media (min-width: 760px) { .tiles.t4 { grid-template-columns: repeat(4, minmax(0,1fr)); } .tiles.t3 { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+  .tile { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: .9rem; padding: .65rem .8rem; min-width: 0; }
+  .tile .l { margin: 0; font-size: .7rem; font-weight: 700; color: var(--muted-fg); text-transform: uppercase; letter-spacing: .03em; }
+  .tile .v { margin: .15rem 0 0; font-size: 1.02rem; font-weight: 800; color: #0f172a; word-break: break-word; }
+  .dos { display: grid; gap: 1rem; }
+  @media (min-width: 1000px) { .dos { grid-template-columns: 1fr 1fr; } }
+  .blk-t { margin: 0; font-weight: 800; color: #0f172a; }
+  .blk-d { margin: .2rem 0 .75rem; font-size: .82rem; color: var(--muted-fg); }
+  .campos { display: grid; gap: .6rem; grid-template-columns: repeat(2, minmax(0,1fr)); margin-bottom: .8rem; }
+  @media (min-width: 760px) { .campos { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+  .campos label { margin-top: 0; font-size: .76rem; }
+  .ciclo { display: grid; gap: .6rem; }
+  .ciclo .fila input { flex: 1 1 180px; width: auto; }
+  .items { display: grid; }
+  .item { display: grid; grid-template-columns: auto minmax(0,1fr); gap: .75rem; padding: .85rem 0; border-bottom: 1px solid var(--border); }
+  .item:last-child { border-bottom: 0; }
+  @media (min-width: 760px) { .item { grid-template-columns: auto minmax(0,1fr) auto; align-items: start; } }
+  .item .n { width: 30px; height: 30px; border-radius: 999px; background: #123b72; color: #fff; display: grid; place-items: center; font-weight: 800; font-size: .82rem; }
+  .item p { margin: 0; }
+  .item .t { font-weight: 700; font-size: .9rem; }
+  .item .dm { font-size: .8rem; color: var(--muted-fg); }
+  .item .s { font-size: .72rem; font-weight: 800; margin-top: .25rem; }
+  .item .g { font-size: .72rem; font-weight: 700; margin-top: .15rem; }
+  .c-em { color: #047857; } .c-ro { color: #be123c; } .c-am { color: #b45309; }
+  .item .lado { grid-column: 2; display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+  @media (min-width: 760px) { .item .lado { grid-column: 3; justify-content: flex-end; max-width: 330px; } }
+  .item .lado input { width: 84px; min-height: 34px; padding: .3rem .5rem; }
+  .item .imp { font-weight: 800; font-size: .9rem; min-width: 110px; text-align: right; }
+  .fuel { display: flex; justify-content: space-between; gap: .75rem; padding: .7rem 0; border-bottom: 1px solid var(--border); }
+  .fuel:last-child { border-bottom: 0; }
+  .fuel p { margin: 0; }
+  .nota { font-size: .8rem; color: var(--muted-fg); margin: .6rem 0 0; }
+  .form2 { display: grid; gap: 0 .75rem; grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .form2 .full { grid-column: 1 / -1; }
+  @media (max-width: 520px) { .form2 { grid-template-columns: 1fr; } }
+  .rutas-chk { max-height: 220px; overflow: auto; border: 1px solid var(--border); border-radius: .7rem; padding: .3rem; }
+  .rutas-chk label { display: flex; gap: .5rem; align-items: flex-start; font-weight: 400; margin: 0; padding: .4rem .45rem; border-radius: .5rem; cursor: pointer; }
+  .rutas-chk label:hover { background: var(--muted); }
+  .rutas-chk input { width: 18px; min-height: 18px; margin-top: .15rem; flex: none; }
+  .ayuda { font-size: .76rem; color: var(--muted-fg); margin: .25rem 0 0; }
+  .ge-modal { max-width: 640px; }
+  .cargando { display: grid; place-items: center; min-height: 16rem; color: var(--muted-fg); font-size: .9rem; background: #fff; border: 1px solid var(--border); border-radius: 1.25rem; }
+</style>
+</head>
+<body>
+<header class="lg-cab">
+  <div class="lg-cab-in">
+    <a class="btn btn-outline btn-sm" id="bInicio" href="index.html">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>Inicio</a>
+    <span class="lg-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62L18.3 8.38A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg></span>
+    <div style="min-width:0"><div class="t1">Portal Distribuidora · Logística</div><div class="t2">Módulo independiente de despacho y flota</div></div>
+    <div class="der">
+      <button class="btn btn-ghost btn-sm" id="bActualizar" title="Actualizar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg><span class="txt-m">Actualizar</span></button>
+      <button class="btn btn-ghost btn-sm" id="bSalir"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>Salir</button>
+    </div>
+  </div>
+</header>
+<main class="lg-main" id="app"><div class="cargando">Cargando Logística y Despacho...</div></main>
+
+<script>
+(function () {
+  "use strict";
+  var esc = GE.esc, money = GE.money, pn = GE.num;
+  var ICO = {
+    camion: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62L18.3 8.38A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>',
+    mas: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>',
+    caja: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/></svg>',
+    ruta: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>',
+    nafta: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 22h12"/><path d="M4 9h10"/><path d="M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"/><path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 4 0V9.83a2 2 0 0 0-.59-1.42L18 5"/></svg>',
+    plata: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>',
+    costo: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+    lista: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+    acoplado: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="16" height="11" rx="1"/><path d="M18 11h4"/><circle cx="6" cy="18" r="2"/><circle cx="13" cy="18" r="2"/></svg>',
+    impr: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
+    bajar: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>',
+    arriba: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m18 15-6-6-6 6"/></svg>',
+    abajo: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg>',
+    mapa: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>'
+  };
+  var ESTADO = { draft: "Borrador", in_progress: "En viaje", returning: "Volviendo", completed: "Finalizado" };
+  var ORIGEN_DEF = { lat: -26.8241, lon: -65.2226, nombre: "San Miguel de Tucumán, Tucumán, Argentina" };
+
+  // ---------- Estado ----------
+  var hoyIso = GE.hoy();
+  var S = {
+    mes: hoyIso.slice(0, 7),
+    despachos: [], vehiculos: [], acoplados: [], choferes: [], zonas: [], rutas: [], rutasMes: null,
+    sel: null,            // id del despacho elegido
+    edit: null,           // {id, costos:{...}, odo:''} valores editados en el panel
+    unidades: {},         // itemId -> valor editado
+    ocupado: {},          // flags de acciones en curso
+    cargado: false
+  };
+
+  // ---------- Utilidades ----------
+  function n0(v) { var t = Number(v == null ? 0 : v); return isFinite(t) ? t : 0; }
+  function r2(x) { return Math.round(x * 100) / 100; }
+  function ms(v) { if (v instanceof Date) return v.getTime(); if (typeof v === "number") return v; if (typeof v === "string") { var t = Date.parse(v); return isFinite(t) ? t : 0; } return 0; }
+  function limpio(o) { return JSON.parse(JSON.stringify(o, function (k, v) { return v === undefined ? null : v; })); }
+  function rango(mes) {
+    var p = mes.split("-").map(Number), sig = new Date(p[0], p[1], 1);
+    return { from: p[0] + "-" + String(p[1]).padStart(2, "0") + "-01", to: sig.getFullYear() + "-" + String(sig.getMonth() + 1).padStart(2, "0") + "-01" };
+  }
+  function fechaDia(d) { return GE.fechaCorta(String(d || "").slice(0, 10)); }
+  function plural(n, s, p) { return n === 1 ? s : p; }
+  function ordenItems(items) { return items.slice().sort(function (a, b) { return n0(a.sequence) - n0(b.sequence) || n0(a.id) - n0(b.id); }); }
+  function despacho(id) { return S.despachos.filter(function (d) { return d.id === id; })[0] || null; }
+
+  /* Métricas del despacho (Pne del original, mismas fórmulas que el summary del servidor). */
+  function metricas(e, fuel, items, gastos) {
+    fuel = fuel || []; items = items || []; gastos = gastos || [];
+    var odoS = n0(e.odometerStart), odoE = n0(e.odometerEnd);
+    var actualKm = odoS > 0 && odoE >= odoS ? r2(odoE - odoS) : 0;
+    var plannedKm = Math.max(0, n0(e.plannedKm));
+    function sumL(arr) { return r2(arr.reduce(function (a, f) { return a + Math.max(0, n0(f.liters)); }, 0)); }
+    var liters = sumL(fuel);
+    var ownTankLiters = sumL(fuel.filter(function (f) { return f.source === "own_tank"; }));
+    var routeLiters = sumL(fuel.filter(function (f) { return f.source === "service_station"; }));
+    var fuelCost = r2(fuel.reduce(function (a, f) { return a + Math.max(0, n0(f.totalCost)); }, 0));
+    var tollCost = Math.max(0, n0(e.tollCost)), otherCost = Math.max(0, n0(e.otherCost));
+    var pettyCashCost = r2(gastos.reduce(function (a, g) { return a + Math.max(0, n0(g.amount)); }, 0));
+    var amortizationCost = Math.max(0, n0(e.amortizationCost)), gpsCost = Math.max(0, n0(e.gpsCost));
+    var driverSalaryCost = Math.max(0, n0(e.driverSalaryCost)), collectorSalaryCost = Math.max(0, n0(e.collectorSalaryCost));
+    var markupPercent = Math.max(0, n0(e.markupPercent));
+    var totalCost = r2(fuelCost + tollCost + otherCost + pettyCashCost + amortizationCost + gpsCost + driverSalaryCost + collectorSalaryCost);
+    var units = items.reduce(function (a, i) { return a + Math.max(0, Math.trunc(n0(i.units))); }, 0);
+    var invoiceAmount = r2(items.reduce(function (a, i) { return a + n0(i.amount); }, 0));
+    var markupAmount = r2(invoiceAmount * (markupPercent / 100));
+    var utility = r2(invoiceAmount - totalCost - markupAmount);
+    var dest = new Set(items.map(function (i) { return i.destinationName ? String(i.destinationName).trim() : ""; }).filter(Boolean)).size;
+    var delivered = items.filter(function (i) { return i.deliveryStatus === "delivered"; }).length;
+    var partial = items.filter(function (i) { return i.deliveryStatus === "delivered" && i.deliveryType === "partial"; }).length;
+    var issue = items.filter(function (i) { return i.deliveryStatus === "issue"; }).length;
+    var pending = Math.max(0, items.length - delivered - issue);
+    var dep = ms(e.departedAt), arr = ms(e.arrivedAt);
+    var tripHours = dep > 0 && arr >= dep ? r2((arr - dep) / 36e5) : 0;
+    return {
+      plannedKm: plannedKm, actualKm: actualKm, kmVariance: actualKm > 0 && plannedKm > 0 ? r2(actualKm - plannedKm) : 0,
+      liters: liters, ownTankLiters: ownTankLiters, routeLiters: routeLiters, fuelCost: fuelCost, tollCost: tollCost, otherCost: otherCost, totalCost: totalCost,
+      kmPerLiter: actualKm > 0 && liters > 0 ? r2(actualKm / liters) : 0, litersPer100Km: actualKm > 0 && liters > 0 ? r2(liters * 100 / actualKm) : 0,
+      costPerKm: actualKm > 0 ? r2(totalCost / actualKm) : 0, units: units, invoiceAmount: invoiceAmount, destinations: dest, invoiceCount: items.length,
+      pettyCashCost: pettyCashCost, amortizationCost: amortizationCost, gpsCost: gpsCost, driverSalaryCost: driverSalaryCost, collectorSalaryCost: collectorSalaryCost,
+      markupPercent: markupPercent, markupAmount: markupAmount, utility: utility, utilityPercent: invoiceAmount > 0 ? r2(utility * 100 / invoiceAmount) : 0,
+      deliveredInvoices: delivered, partialInvoices: partial, pendingInvoices: pending, issueInvoices: issue,
+      deliveryRate: items.length > 0 ? r2(delivered * 100 / items.length) : 0, tripHours: tripHours,
+      invoicesPerHour: tripHours > 0 ? r2(delivered / tripHours) : 0, unitsPerHour: tripHours > 0 ? r2(units / tripHours) : 0
+    };
+  }
+  function resumen(d) { return metricas(d, d.fuelLoads, d.invoices, d.driverExpenses); }
+
+  function normalizar(d) {
+    d.invoices = ordenItems(d.invoices || []);
+    d.fuelLoads = (d.fuelLoads || []).slice().sort(function (a, b) { return ms(b.loadedAt) - ms(a.loadedAt) || n0(b.id) - n0(a.id); });
+    d.driverExpenses = d.driverExpenses || [];
+    d.sourceRoutes = d.sourceRoutes || [];
+    return d;
+  }
+  function conResumen(d) { d.summary = resumen(d); d.invoiceCount = d.invoices.length; return d; }
+
+  /* Modifica un despacho en transacción: fn(doc) cambia el doc (o tira Error). Recalcula el summary y guarda. */
+  function mutar(id, fn) {
+    var ref = GE.ref("dispatches", id);
+    return GE.db.runTransaction(function (tx) {
+      return tx.get(ref).then(function (s) {
+        if (!s.exists) throw new Error("El despacho ya no existe.");
+        var d = normalizar(s.data());
+        var r = fn(d);
+        conResumen(d);
+        tx.set(ref, limpio(d));
+        return r === undefined ? d : r;
+      });
+    }).then(function (r) { return GE.uno("dispatches", id).then(function (d) { reemplazar(normalizar(d)); return r; }); });
+  }
+  function reemplazar(d) {
+    var i = S.despachos.findIndex(function (x) { return x.id === d.id; });
+    if (i >= 0) S.despachos[i] = d; else S.despachos.push(d);
+  }
+  function err(e, def) { console.warn(e); GE.toast((e && e.message && !/^\[?FirebaseError|permission|Missing or insufficient/i.test(e.message)) ? e.message : def, "error"); }
+
+  // ---------- Carga ----------
+  var flotaCargada = false;
+  function cargarFlota(forzar) {
+    if (flotaCargada && !forzar) return Promise.resolve();
+    return Promise.all([GE.todos("vehicles"), GE.todos("trailers"), GE.todos("drivers"), GE.todos("zones")]).then(function (r) {
+      var porCod = function (a, b) { return String(a.internalCode || "").localeCompare(String(b.internalCode || ""), "es", { numeric: true }) || a.id - b.id; };
+      S.vehiculos = r[0].sort(porCod); S.acoplados = r[1].sort(porCod);
+      S.choferes = r[2].filter(function (c) { return c.active !== false; }).sort(function (a, b) { return String(a.name).localeCompare(String(b.name), "es"); });
+      S.zonas = r[3].sort(function (a, b) { return String(a.name).localeCompare(String(b.name), "es", { numeric: true }); });
+      flotaCargada = true;
+    });
+  }
+  function cargarRutasMes() {
+    var r = rango(S.mes), mes = S.mes;
+    return GE.col("routes").where("serviceDate", ">=", r.from).where("serviceDate", "<", r.to).get().then(function (s) {
+      if (mes !== S.mes) return;
+      S.rutas = GE.datos(s).sort(function (a, b) { return String(b.serviceDate).localeCompare(String(a.serviceDate)) || String(a.zoneName || "").localeCompare(String(b.zoneName || ""), "es", { numeric: true }); });
+      S.rutasMes = mes;
+    });
+  }
+  function cargar(forzarFlota) {
+    return Promise.all([cargarFlota(forzarFlota), GE.todos("dispatches"), cargarRutasMes()]).then(function (r) {
+      S.despachos = r[1].map(normalizar);
+      S.cargado = true;
+      pintar();
+    });
+  }
+
+  /* Al abrir el detalle: trae el estado de entrega de las facturas vinculadas y los gastos de caja chica de las rutas fuente.
+     Si algo cambió, actualiza el despacho (items + driverExpenses + summary). */
+  var CAMPOS_FACT = [["deliveryStatus", "status"], ["deliveryType", "deliveryType"], ["paymentMethod", "paymentMethod"], ["deliveredAt", "deliveredAt"],
+    ["accountAmount", "accountAmount"], ["cashAmount", "cashAmount"], ["checkAmounts", "checkAmounts"], ["transferAmount", "transferAmount"],
+    ["discountAmount", "discountAmount"], ["netAmount", "netAmount"]];
+  function sincronizar(id) {
+    var d = despacho(id); if (!d) return Promise.resolve();
+    var ids = d.invoices.map(function (i) { return i.sourceInvoiceId; }).filter(function (x) { return x != null; });
+    var rids = d.sourceRoutes.map(function (r) { return Number(r.routeId); });
+    return Promise.all([
+      ids.length ? GE.dondeEn("invoices", "id", ids) : Promise.resolve([]),
+      rids.length ? GE.dondeEn("routes", "id", rids) : Promise.resolve([]),
+      rids.length ? GE.dondeEn("expenses", "routeId", rids) : Promise.resolve([])
+    ]).then(function (r) {
+      var porId = new Map(r[0].map(function (f) { return [f.id, f]; }));
+      var cambios = {};
+      d.invoices.forEach(function (it) {
+        var f = porId.get(it.sourceInvoiceId); if (!f) return;
+        var c = {};
+        CAMPOS_FACT.forEach(function (p) {
+          var v = f[p[1]] === undefined ? null : f[p[1]];
+          if (p[0] === "discountAmount" && it.discountAmount === undefined && !v) return;
+          if (JSON.stringify(it[p[0]] === undefined ? null : it[p[0]]) !== JSON.stringify(v)) c[p[0]] = v;
+        });
+        if (Object.keys(c).length) cambios[it.id] = c;
+      });
+      // Gastos: solo si las rutas fuente existen en esta base (si no, se conserva la copia guardada).
+      var gastos = null;
+      if (r[1].length) {
+        gastos = r[2].slice().sort(function (a, b) { return ms(a.spentAt) - ms(b.spentAt) || a.id - b.id; });
+        var antes = d.driverExpenses.map(function (g) { return g.id + ":" + g.amount; }).sort().join(",");
+        var ahora = gastos.map(function (g) { return g.id + ":" + g.amount; }).sort().join(",");
+        if (antes === ahora) gastos = null;
+      }
+      var nuevo = resumen(d), viejo = d.summary || {};
+      var faltaResumen = Object.keys(nuevo).some(function (k) { return nuevo[k] !== viejo[k]; });
+      if (!Object.keys(cambios).length && !gastos && !faltaResumen) return;
+      return mutar(id, function (doc) {
+        doc.invoices.forEach(function (it) { if (cambios[it.id]) Object.assign(it, cambios[it.id]); });
+        if (gastos) doc.driverExpenses = gastos;
+      }).then(function () { if (S.sel === id) pintarDetalle(); });
+    }).catch(function (e) { console.warn("No se pudo sincronizar el despacho", e); });
+  }
+
+  // ---------- Pintado ----------
+  function app() { return document.getElementById("app"); }
+  function despachosMes() {
+    var r = rango(S.mes);
+    return S.despachos.filter(function (d) { return d.serviceDate >= r.from && d.serviceDate < r.to; })
+      .sort(function (a, b) { return String(b.serviceDate).localeCompare(String(a.serviceDate)) || ms(b.createdAt) - ms(a.createdAt) || b.id - a.id; });
+  }
+  function totales(lista) {
+    var t = { dispatches: lista.length, completed: 0, km: 0, liters: 0, units: 0, invoiceAmount: 0, cost: 0 };
+    lista.forEach(function (d) {
+      var s = d.summary || resumen(d);
+      if (d.status === "completed") t.completed++;
+      t.km += n0(s.actualKm); t.liters += n0(s.liters); t.units += n0(s.units); t.invoiceAmount += n0(s.invoiceAmount); t.cost += n0(s.totalCost);
+    });
+    t.km = r2(t.km); t.liters = r2(t.liters); t.invoiceAmount = r2(t.invoiceAmount); t.cost = r2(t.cost);
+    t.kmPerLiter = t.km > 0 && t.liters > 0 ? r2(t.km / t.liters) : 0;
+    t.costPerKm = t.km > 0 ? r2(t.cost / t.km) : 0;
+    return t;
+  }
+  function kpi(ic, lab, val, det) {
+    return '<article class="kpi"><span class="ic">' + ic + '</span><p class="lab">' + esc(lab) + '</p><p class="val">' + esc(val) + '</p><p class="det">' + esc(det) + '</p></article>';
+  }
+  function estadoBadge(st) { return '<span class="est est-' + esc(st) + '">' + esc(ESTADO[st] || st) + '</span>'; }
+
+  function pintar() {
+    var lista = despachosMes(), t = totales(lista);
+    if (S.sel && !despacho(S.sel)) S.sel = null;
+    var html =
+      '<section class="hero"><div class="hero-top"><div>' +
+        '<p class="sobre">Nueva área operativa</p><h1>Logística y Despacho</h1>' +
+        '<p class="desc">Armá viajes con camión, acoplado, origen, destinos y facturas. Registrá odómetros, combustible y costos sin mezclarlo con la cobranza.</p>' +
+      '</div><div><label for="lgMes">Mes operativo</label><input id="lgMes" type="month" value="' + esc(S.mes) + '"></div></div>' +
+      '<div class="hero-acc">' +
+        '<button class="btn btn-cian" id="bNuevo">' + ICO.mas + 'Nuevo despacho</button>' +
+        '<button class="btn btn-trans" id="bCamion">' + ICO.camion + 'Alta camión</button>' +
+        '<button class="btn btn-trans" id="bAcoplado">' + ICO.acoplado + 'Alta acoplado</button>' +
+      '</div></section>' +
+      '<section class="kpis">' +
+        kpi(ICO.lista, "Despachos", String(t.dispatches), t.completed + " finalizados") +
+        kpi(ICO.ruta, "Km reales", pn(t.km), pn(t.kmPerLiter) + " km/L") +
+        kpi(ICO.nafta, "Combustible", pn(t.liters) + " L", "Total cargado") +
+        kpi(ICO.caja, "Unidades", pn(t.units), "Según facturas") +
+        kpi(ICO.plata, "Valor de carga", money(t.invoiceAmount), "No es cobranza") +
+        kpi(ICO.costo, "Costo viaje", money(t.cost), money(t.costPerKm) + " por km") +
+      '</section>' +
+      '<section class="cuerpo"><div class="panel"><div class="panel-cab"><h2>Viajes del mes</h2><p>Elegí un despacho para cargar facturas, combustible y odómetros.</p></div>' +
+        '<div class="viajes">' + (lista.length ? lista.map(filaViaje).join("") :
+          '<div class="vacio-g">' + ICO.camion + '<p class="t">No hay despachos este mes</p><p>Creá el primero con “Nuevo despacho”.</p></div>') + '</div></div>' +
+        '<div id="detalle" style="min-width:0"></div></section>' +
+      '<section class="flota">' +
+        listaFlota("Camiones registrados", ICO.camion, S.vehiculos.map(function (v) {
+          return { t: v.internalCode + " · " + v.licensePlate, d: (v.makeModel || "Sin modelo") + (v.capacityKg ? " · " + pn(v.capacityKg) + " kg" : "") };
+        })) +
+        listaFlota("Acoplados registrados", ICO.acoplado, S.acoplados.map(function (v) {
+          return { t: v.internalCode + " · " + v.licensePlate, d: (v.trailerType || "Sin tipo") + (v.capacityUnits ? " · " + pn(v.capacityUnits) + " unidades" : "") + (v.capacityKg ? " · " + pn(v.capacityKg) + " kg" : "") };
+        })) +
+      '</section>';
+    app().innerHTML = html;
+    document.getElementById("lgMes").onchange = function (e) {
+      if (!/^\d{4}-\d{2}$/.test(e.target.value)) return;
+      S.mes = e.target.value; S.rutasMes = null; pintar();
+      cargarRutasMes().catch(function (x) { err(x, "No se pudo cargar el módulo logístico."); });
+    };
+    document.getElementById("bNuevo").onclick = dlgNuevo;
+    document.getElementById("bCamion").onclick = dlgCamion;
+    document.getElementById("bAcoplado").onclick = dlgAcoplado;
+    app().querySelectorAll(".viaje").forEach(function (b) {
+      b.onclick = function () { elegir(Number(b.dataset.id)); };
+    });
+    pintarDetalle();
+  }
+  function filaViaje(v) {
+    var s = v.summary || resumen(v);
+    return '<button type="button" class="viaje' + (S.sel === v.id ? " sel" : "") + '" data-id="' + v.id + '">' +
+      '<div class="fila entre" style="align-items:flex-start;flex-wrap:nowrap"><div style="min-width:0">' +
+        '<p class="c1" style="margin:0">' + esc(v.code) + ' · ' + esc(v.routeSheetNumber || "Sin número") + '</p>' +
+        '<p class="c2" style="margin:.1rem 0 0">' + esc(fechaDia(v.serviceDate)) + ' · ' + esc(v.vehicleCode || "") + ' / ' + esc(v.vehiclePlate || "") + '</p></div>' +
+        estadoBadge(v.status) + '</div>' +
+      '<p class="c3">' + esc(v.originName || "") + ' → ' + esc(v.destinationName || (s.destinations + " destino" + plural(s.destinations, "", "s"))) + '</p>' +
+      '<div class="minis"><div class="mini"><div class="l">Facturas</div><div class="v">' + s.invoiceCount + '</div></div>' +
+        '<div class="mini"><div class="l">Unidades</div><div class="v">' + s.units + '</div></div>' +
+        '<div class="mini"><div class="l">Km reales</div><div class="v">' + pn(s.actualKm) + '</div></div></div>' +
+      '</button>';
+  }
+  function listaFlota(titulo, ic, items) {
+    return '<section class="panel"><div class="panel-cab fila">' + ic + '<h3>' + esc(titulo) + '</h3><span class="cuenta">' + items.length + '</span></div>' +
+      (items.length ? items.map(function (i) { return '<div class="flota-item"><p class="t">' + esc(i.t) + '</p><p class="d">' + esc(i.d) + '</p></div>'; }).join("")
+        : '<p class="muted small" style="padding:1rem 1.1rem;margin:0">Todavía no hay registros.</p>') + '</section>';
+  }
+  function elegir(id) {
+    if (S.sel !== id) { S.sel = id; S.edit = null; S.unidades = {}; }
+    app().querySelectorAll(".viaje").forEach(function (b) { b.classList.toggle("sel", Number(b.dataset.id) === id); });
+    pintarDetalle();
+    sincronizar(id);
+    if (window.innerWidth < 1100) { var el = document.getElementById("detalle"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }
+  }
+
+  // ---------- Detalle ----------
+  var COSTOS = [["tollCost", "Peajes"], ["otherCost", "Otros costos"], ["amortizationCost", "Amortización"], ["gpsCost", "GPS"],
+    ["driverSalaryCost", "Sueldo chofer"], ["collectorSalaryCost", "Sueldo cobrador/a"], ["markupPercent", "Markup sobre facturación (%)"]];
+  function editado(d) {
+    if (!S.edit || S.edit.id !== d.id) {
+      var c = {}; COSTOS.forEach(function (k) { c[k[0]] = String(d[k[0]] == null ? 0 : d[k[0]]); });
+      S.edit = { id: d.id, costos: c, odo: "" };
+    }
+    return S.edit;
+  }
+  function metricasEnVivo(d) {
+    var ed = editado(d), e = Object.assign({}, d);
+    COSTOS.forEach(function (k) { e[k[0]] = Number(ed.costos[k[0]] || 0); });
+    return metricas(e, d.fuelLoads, d.invoices, d.driverExpenses);
+  }
+  function tile(l, v) { return '<div class="tile"><p class="l">' + esc(l) + '</p><p class="v">' + esc(v) + '</p></div>'; }
+  function cobranza(d) {
+    return d.invoices.reduce(function (a, i) {
+      return { account: a.account + n0(i.accountAmount), cash: a.cash + n0(i.cashAmount), check: a.check + GE.sumaCheques(i.checkAmounts), transfer: a.transfer + n0(i.transferAmount) };
+    }, { account: 0, cash: 0, check: 0, transfer: 0 });
+  }
+  function bloquesMetricas(Y) {
+    return {
+      a: tile("Km planificados", pn(Y.plannedKm)) + tile("Km reales", pn(Y.actualKm)) +
+         tile("Rendimiento", Y.kmPerLiter ? pn(Y.kmPerLiter) + " km/L" : "Pendiente") + tile("Costo por km", Y.costPerKm ? money(Y.costPerKm) : "Pendiente"),
+      b: tile("Litros totales", pn(Y.liters) + " L") + tile("Cisterna propia", pn(Y.ownTankLiters) + " L") + tile("En ruta", pn(Y.routeLiters) + " L") + tile("Costo total", money(Y.totalCost)),
+      camion: tile("Consumo", Y.kmPerLiter ? pn(Y.kmPerLiter) + " km/L" : "Pendiente") +
+         tile("Desvío km", Y.kmVariance ? (Y.kmVariance > 0 ? "+" : "") + pn(Y.kmVariance) + " km" : "Sin dato") +
+         tile("Litros / 100 km", Y.litersPer100Km ? pn(Y.litersPer100Km) : "Pendiente") + tile("Costo por km", Y.costPerKm ? money(Y.costPerKm) : "Pendiente"),
+      reparto: tile("Cumplimiento", pn(Y.deliveryRate) + "%") + tile("Entregadas", Y.deliveredInvoices + "/" + Y.invoiceCount) + tile("Parciales", String(Y.partialInvoices)) +
+         tile("Pendientes / incidencias", Y.pendingInvoices + " / " + Y.issueInvoices) + tile("Tiempo de viaje", Y.tripHours ? pn(Y.tripHours) + " h" : "Pendiente") +
+         tile("Facturas por hora", Y.invoicesPerHour ? pn(Y.invoicesPerHour) : "Pendiente"),
+      costos: tile("Facturación", money(Y.invoiceAmount)) + tile("Caja chica", money(Y.pettyCashCost)) + tile("Amortización", money(Y.amortizationCost)) + tile("GPS", money(Y.gpsCost)) +
+         tile("Sueldo chofer", money(Y.driverSalaryCost)) + tile("Sueldo cobrador/a", money(Y.collectorSalaryCost)) + tile("Markup objetivo", pn(Y.markupPercent) + "%") + tile("Costo total", money(Y.totalCost)),
+      util: tile("Utilidad neta después de gastos", money(Y.utility)) + tile("Utilidad neta sobre facturación", pn(Y.utilityPercent) + "%") + tile("Markup calculado sobre facturación", money(Y.markupAmount))
+    };
+  }
+  function pintarDetalle() {
+    var cont = document.getElementById("detalle"); if (!cont) return;
+    var d = S.sel ? despacho(S.sel) : null;
+    if (!d) {
+      cont.innerHTML = '<div class="panel"><div class="vacio-g" style="padding:4rem 1rem">' + ICO.mapa + '<p class="t">Elegí un despacho</p><p>Acá vas a ver sus destinos, facturas, litros, kilómetros, costo y rendimiento.</p></div></div>';
+      return;
+    }
+    var ed = editado(d), Y = metricasEnVivo(d), B = bloquesMetricas(Y), K = cobranza(d);
+    var editable = d.status === "draft" || d.status === "in_progress";
+    var cobradores = Array.from(new Set(d.sourceRoutes.map(function (r) { return r.collectorName; }).filter(Boolean))).join(", ");
+    var h = '<div class="det">';
+    // Cabecera
+    h += '<section class="det-sec"><div class="det-cab"><div style="min-width:0">' +
+      '<div class="fila"><h2>' + esc(d.code) + '</h2>' + estadoBadge(d.status) + '</div>' +
+      '<p>Origen: ' + esc(d.originName || "") + (d.originLocality ? " · " + esc(d.originLocality) : "") + (d.originProvince ? ", " + esc(d.originProvince) : "") + '</p>' +
+      '<p>Destino: ' + esc(d.destinationName || "Según paradas") + (d.destinationLocality ? " · " + esc(d.destinationLocality) : "") + (d.destinationProvince ? ", " + esc(d.destinationProvince) : "") + '</p>' +
+      '<p>Camión ' + esc(d.vehicleCode || "") + ' · ' + esc(d.vehiclePlate || "") + (d.trailerPlate ? " · Acoplado " + esc(d.trailerPlate) : "") +
+        " · Chofer logística: " + esc(d.driverName || "Sin asignar") + " · Cobrador: " + esc(d.collectorName || "Sin asignar") + '</p>' +
+      (d.sourceRoutes.length ? '<p>Soy Chofer: ' + esc(cobradores || "Sin cobrador asignado") + '</p>' : '') +
+      '<p>Hoja de ruta N.º ' + esc(d.routeSheetNumber || d.code) + '</p>' +
+      (d.sourceRoutes.length ? '<div class="zonas"><span>Zonas del despacho:</span>' + d.sourceRoutes.map(function (r) { return '<span class="zona-b">' + esc(r.zoneName) + '</span>'; }).join("") + '</div>' : '') +
+      '</div><div class="det-acc">' +
+      (editable ? '<div class="grupo"><button class="btn btn-outline btn-sm" data-acc="factura">' + ICO.caja + 'Agregar factura</button>' +
+        '<button class="btn btn-outline btn-sm" data-acc="combustible">' + ICO.nafta + 'Cargar combustible</button>' +
+        '<button class="btn btn-primary btn-sm" data-acc="optimizar"' + (S.ocupado.optimizar || !d.invoices.length ? " disabled" : "") + '>' + ICO.ruta + (S.ocupado.optimizar ? "Calculando..." : "Optimizar recorrido") + '</button></div>' : '') +
+      '<div class="grupo"><button class="btn btn-outline btn-sm" data-acc="imprimir">' + ICO.impr + 'Imprimir hoja de ruta</button>' +
+        '<button class="btn btn-outline btn-sm" data-acc="enviar">' + ICO.bajar + 'Descargar / enviar</button></div>' +
+      '</div></div>' +
+      '<div class="tiles t4" style="margin-top:1rem" id="mA">' + B.a + '</div>' +
+      '<div class="tiles t4" style="margin-top:.6rem" id="mB">' + B.b + '</div></section>';
+    // Rendimiento
+    h += '<div class="dos"><section class="det-sec"><p class="blk-t">Rendimiento del camión</p><p class="blk-d">Consumo, distancia y costo del viaje registrado.</p><div class="tiles" id="mCam">' + B.camion + '</div></section>' +
+      '<section class="det-sec"><p class="blk-t">Rendimiento del reparto</p><p class="blk-d">Entregas efectivas sobre las facturas asignadas al despacho.</p><div class="tiles t3" id="mRep">' + B.reparto + '</div></section></div>';
+    // Cobranza
+    h += '<section class="det-sec"><p class="blk-t" style="margin-bottom:.75rem">Cobranza registrada por Soy Chofer</p><div class="tiles t4">' +
+      tile("Cuenta corriente", money(K.account)) + tile("Efectivo", money(K.cash)) + tile("Cheque", money(K.check)) + tile("Transferencia", money(K.transfer)) + '</div></section>';
+    // Costos
+    h += '<section class="det-sec"><p class="blk-t">Costos y rentabilidad del despacho</p><p class="blk-d">Cargá estos importes mientras agregás facturas. El markup se calcula sobre la facturación y la utilidad neta descuenta todos los gastos. Los indicadores se actualizan en línea y se guardan con el botón.</p>';
+    if (d.status !== "completed" && d.status !== "returning") {
+      h += '<div class="campos">' + COSTOS.map(function (k) {
+        return '<div><label for="c_' + k[0] + '">' + esc(k[1]) + '</label><input id="c_' + k[0] + '" data-costo="' + k[0] + '" type="number" min="0" step="0.01" value="' + esc(ed.costos[k[0]]) + '"></div>';
+      }).join("") + '<div style="display:flex;align-items:flex-end"><button class="btn btn-primary" style="width:100%" data-acc="costos"' + (S.ocupado.costos ? " disabled" : "") + '>' + (S.ocupado.costos ? "Guardando..." : "Guardar costos") + '</button></div></div>';
+    }
+    h += '<div class="tiles t4" id="mCos">' + B.costos + '</div><div class="tiles t3" style="margin-top:.6rem" id="mUti">' + B.util + '</div>' +
+      (d.driverExpenses.length ? '<p class="nota">Se replicaron ' + d.driverExpenses.length + ' gasto' + plural(d.driverExpenses.length, "", "s") + ' de caja chica de las zonas seleccionadas.</p>' : '');
+    // Ciclo de estados
+    if (d.status !== "completed") {
+      h += '<div class="ciclo" style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)"><label for="odo" style="margin:0">' + (d.status === "draft" ? "Odómetro de salida" : "Odómetro de llegada") + '</label>';
+      if (d.status === "draft" || d.status === "returning") {
+        h += '<div class="fila"><input id="odo" type="number" min="0.01" step="0.01" placeholder="Kilómetros del tablero" value="' + esc(ed.odo) + '">' +
+          '<button class="btn btn-primary" data-acc="' + (d.status === "draft" ? "salida" : "llegada") + '"' + (!ed.odo || S.ocupado.ciclo ? " disabled" : "") + '>' +
+          (d.status === "draft" ? "Registrar salida" : "Registrar llegada y finalizar regreso") + '</button></div>';
+      }
+      if (d.status === "in_progress") {
+        h += '<div><button class="btn btn-primary" data-acc="regreso"' + (S.ocupado.ciclo ? " disabled" : "") + '>' + (S.ocupado.ciclo ? "Cerrando entregas..." : "Cerrar entregas e iniciar regreso") + '</button></div>';
+      }
+      if (d.status === "in_progress" || d.status === "returning") {
+        h += '<div class="campos" style="grid-template-columns:repeat(2,minmax(0,1fr));max-width:420px;margin:0">' +
+          '<div><label for="c2_tollCost">Peajes</label><input id="c2_tollCost" data-costo="tollCost" type="number" min="0" value="' + esc(ed.costos.tollCost) + '"></div>' +
+          '<div><label for="c2_otherCost">Otros costos</label><input id="c2_otherCost" data-costo="otherCost" type="number" min="0" value="' + esc(ed.costos.otherCost) + '"></div></div>';
+      }
+      h += '</div>';
+    }
+    h += '</section>';
+    // Facturas
+    h += '<section class="det-sec"><div class="fila entre"><h3 style="margin:0">Hoja de ruta y facturas</h3><p class="muted small" style="margin:0">' +
+      Y.invoiceCount + ' facturas · ' + Y.destinations + ' destinos · ' + Y.units + ' unidades · ' + money(Y.invoiceAmount) + '</p></div>';
+    if (d.invoices.length) {
+      h += '<div class="items" style="margin-top:.4rem">' + d.invoices.map(function (L, idx) { return filaItem(d, L, idx); }).join("") + '</div>';
+    } else h += '<p class="muted small">Todavía no se agregaron facturas.</p>';
+    h += '</section>';
+    // Combustible
+    h += '<section class="det-sec"><h3 style="margin:0">Combustible</h3><p class="muted small" style="margin:.2rem 0 .4rem">Cisterna propia y estaciones de servicio quedan separadas.</p>' +
+      (d.fuelLoads.length ? d.fuelLoads.map(function (f) {
+        return '<div class="fuel"><div><p style="font-weight:700">' + esc(f.source === "own_tank" ? "Cisterna propia" : (f.stationName || "Estación de servicio")) + '</p>' +
+          '<p class="muted small">' + esc(new Date(ms(f.loadedAt)).toLocaleString("es-AR")) + (f.documentNumber ? " · Comp. " + esc(f.documentNumber) : "") + '</p></div>' +
+          '<div style="text-align:right"><p style="font-weight:800">' + pn(n0(f.liters)) + ' L</p><p class="muted small">' + money(n0(f.totalCost)) + '</p></div></div>';
+      }).join("") : '<p class="muted small">Todavía no se registró combustible.</p>') + '</section>';
+    h += '</div>';
+    cont.innerHTML = h;
+    enlazarDetalle(cont, d);
+  }
+  function filaItem(d, L, idx) {
+    var est = L.deliveryStatus === "delivered" ? '<p class="s c-em">Entregada' + (L.deliveryType === "partial" ? " · Parcial" : " · Total") + '</p>'
+      : L.deliveryStatus === "issue" ? '<p class="s c-ro">Con incidencia</p>' : '<p class="s c-am">Pendiente de entrega</p>';
+    var geo = L.geocodeStatus === "validated" ? '<p class="g c-em">Domicilio validado' + (L.geocodedAddress ? " · " + esc(L.geocodedAddress) : "") + '</p>'
+      : L.geocodeStatus === "not_found" ? '<p class="g c-ro">Domicilio no encontrado: revisar</p>'
+      : L.geocodeStatus === "needs_review" ? '<p class="g c-am">Revisar domicilio</p>' : '<p class="g c-am">Pendiente de geolocalizar</p>';
+    var uni;
+    if (d.status === "completed") uni = '<p class="small" style="font-weight:700">' + esc(L.units) + ' unidades</p>';
+    else {
+      var v = S.unidades[L.id] != null ? S.unidades[L.id] : String(L.units == null ? 0 : L.units);
+      uni = '<input type="number" min="0" aria-label="Unidades factura ' + esc(L.invoiceNumber) + '" data-uni="' + L.id + '" value="' + esc(v) + '">' +
+        '<button class="btn btn-outline btn-sm" data-guni="' + L.id + '"' + (Number(v) === Number(L.units) ? " disabled" : "") + '>Guardar</button>';
+    }
+    var orden = d.status === "draft" ? '<button class="btn btn-outline btn-sm btn-icon" style="width:34px" title="Subir parada" aria-label="Subir parada" data-mov="up" data-item="' + L.id + '"' + (S.ocupado.mover || idx === 0 ? " disabled" : "") + '>' + ICO.arriba + '</button>' +
+      '<button class="btn btn-outline btn-sm btn-icon" style="width:34px" title="Bajar parada" aria-label="Bajar parada" data-mov="down" data-item="' + L.id + '"' + (S.ocupado.mover || idx >= d.invoices.length - 1 ? " disabled" : "") + '>' + ICO.abajo + '</button>' : '';
+    return '<div class="item"><span class="n">' + esc(L.sequence) + '</span><div style="min-width:0">' +
+      '<p class="t">Factura ' + esc(L.invoiceNumber) + ' · ' + esc(L.destinationName) + '</p>' +
+      '<p class="dm">' + esc(L.destinationAddress || "Sin domicilio") + (L.destinationLocality ? " · " + esc(L.destinationLocality) : "") + (L.destinationProvince ? ", " + esc(L.destinationProvince) : "") + '</p>' +
+      est + geo + '</div><div class="lado">' + uni + '<p class="imp">' + money(n0(L.amount)) + '</p>' + orden + '</div></div>';
+  }
+  function repintarMetricas(d) {
+    var B = bloquesMetricas(metricasEnVivo(d));
+    [["mA", "a"], ["mB", "b"], ["mCam", "camion"], ["mRep", "reparto"], ["mCos", "costos"], ["mUti", "util"]].forEach(function (p) {
+      var el = document.getElementById(p[0]); if (el) el.innerHTML = B[p[1]];
+    });
+  }
+  function enlazarDetalle(cont, d) {
+    var ed = S.edit;
+    cont.querySelectorAll("[data-costo]").forEach(function (inp) {
+      inp.oninput = function () {
+        ed.costos[inp.dataset.costo] = inp.value;
+        cont.querySelectorAll('[data-costo="' + inp.dataset.costo + '"]').forEach(function (o) { if (o !== inp) o.value = inp.value; });
+        repintarMetricas(d);
+      };
+    });
+    var odo = cont.querySelector("#odo");
+    if (odo) odo.oninput = function () {
+      ed.odo = odo.value;
+      var b = cont.querySelector('[data-acc="salida"],[data-acc="llegada"]'); if (b) b.disabled = !odo.value || !!S.ocupado.ciclo;
+    };
+    cont.querySelectorAll("[data-uni]").forEach(function (inp) {
+      inp.oninput = function () {
+        var id = Number(inp.dataset.uni), it = d.invoices.filter(function (x) { return x.id === id; })[0];
+        S.unidades[id] = inp.value;
+        cont.querySelector('[data-guni="' + id + '"]').disabled = Number(inp.value) === Number(it.units);
+      };
+    });
+    cont.querySelectorAll("[data-guni]").forEach(function (b) { b.onclick = function () { guardarUnidades(d, Number(b.dataset.guni)); }; });
+    cont.querySelectorAll("[data-mov]").forEach(function (b) { b.onclick = function () { mover(d, Number(b.dataset.item), b.dataset.mov); }; });
+    cont.querySelectorAll("[data-acc]").forEach(function (b) {
+      b.onclick = function () {
+        var a = b.dataset.acc;
+        if (a === "factura") dlgFactura(d);
+        else if (a === "combustible") dlgCombustible(d);
+        else if (a === "optimizar") optimizar(d);
+        else if (a === "imprimir") imprimir(d);
+        else if (a === "enviar") enviar(d);
+        else if (a === "costos") guardarCostos(d);
+        else if (a === "salida") ciclo(d, "start");
+        else if (a === "regreso") ciclo(d, "return");
+        else if (a === "llegada") ciclo(d, "complete");
+      };
+    });
+  }
+
+  // ---------- Acciones del detalle ----------
+  function ocupar(k, v) { S.ocupado[k] = v; pintarDetalle(); }
+  function refrescarTodo() { pintar(); }
+
+  function guardarCostos(d) {
+    var c = S.edit.costos, vals = {};
+    COSTOS.forEach(function (k) { vals[k[0]] = Number(c[k[0]] || 0); });
+    if (COSTOS.some(function (k) { return !isFinite(vals[k[0]]) || vals[k[0]] < 0; })) { GE.toast("Revisá los importes: no pueden ser negativos.", "error"); return; }
+    ocupar("costos", true);
+    // updateLogisticsDispatchCosts
+    mutar(d.id, function (doc) { Object.assign(doc, vals); })
+      .then(function () { S.ocupado.costos = false; S.edit = null; GE.toast("Costos del despacho guardados."); refrescarTodo(); })
+      .catch(function (e) { S.ocupado.costos = false; pintarDetalle(); err(e, "No se pudieron guardar los costos."); });
+  }
+  function ciclo(d, paso) {
+    var ed = S.edit, odo = Number(ed.odo), c = ed.costos;
+    ocupar("ciclo", true);
+    mutar(d.id, function (doc) {
+      if (paso === "start") { // startLogisticsDispatch
+        if (doc.status !== "draft") throw new Error("El despacho ya salió.");
+        if (!(odo > 0)) throw new Error("Ingresá el odómetro de salida.");
+        doc.status = "in_progress"; doc.odometerStart = odo; doc.departedAt = GE.ahora();
+      } else if (paso === "return") { // beginLogisticsDispatchReturn
+        if (doc.status !== "in_progress") throw new Error("El despacho no está en viaje.");
+        doc.status = "returning";
+      } else { // completeLogisticsDispatch
+        if (doc.status !== "returning") throw new Error("El despacho no está volviendo.");
+        if (!(odo > 0)) throw new Error("Ingresá el odómetro de llegada.");
+        if (n0(doc.odometerStart) > 0 && odo < n0(doc.odometerStart)) throw new Error("El odómetro de llegada no puede ser menor que el de salida (" + pn(doc.odometerStart) + " km).");
+        doc.status = "completed"; doc.odometerEnd = odo; doc.arrivedAt = GE.ahora();
+        doc.tollCost = Math.max(0, Number(c.tollCost || 0)); doc.otherCost = Math.max(0, Number(c.otherCost || 0));
+      }
+    }).then(function () {
+      S.ocupado.ciclo = false; S.edit.odo = "";
+      GE.toast(paso === "start" ? "Despacho iniciado y odómetro de salida guardado." : paso === "return" ? "Entregas cerradas. El viaje figura como volviendo." : "Despacho finalizado. Kilómetros y rendimiento calculados.");
+      refrescarTodo();
+    }).catch(function (e) { S.ocupado.ciclo = false; pintarDetalle(); err(e, "No se pudo actualizar el despacho."); });
+  }
+  function guardarUnidades(d, itemId) { // updateLogisticsInvoiceUnits
+    var u = Number(S.unidades[itemId] || 0);
+    if (!isFinite(u) || u < 0) { GE.toast("Las unidades no pueden ser negativas.", "error"); return; }
+    mutar(d.id, function (doc) {
+      if (doc.status === "completed") throw new Error("El despacho ya está finalizado.");
+      var it = doc.invoices.filter(function (x) { return x.id === itemId; })[0];
+      if (!it) throw new Error("La factura ya no está en el despacho.");
+      it.units = Math.trunc(u);
+    }).then(function () { delete S.unidades[itemId]; GE.toast("Unidades actualizadas."); refrescarTodo(); })
+      .catch(function (e) { err(e, "No se pudieron guardar las unidades."); });
+  }
+  function mover(d, itemId, dir) { // moveLogisticsDispatchInvoice
+    ocupar("mover", true);
+    mutar(d.id, function (doc) {
+      if (doc.status !== "draft") throw new Error("Solo se puede cambiar el orden en borrador.");
+      var arr = ordenItems(doc.invoices);
+      var i = arr.findIndex(function (x) { return x.id === itemId; });
+      var j = dir === "up" ? i - 1 : i + 1;
+      if (i < 0 || j < 0 || j >= arr.length) return;
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+      arr.forEach(function (x, k) { x.sequence = k + 1; });
+      doc.invoices = arr;
+    }).then(function () { S.ocupado.mover = false; refrescarTodo(); })
+      .catch(function (e) { S.ocupado.mover = false; pintarDetalle(); err(e, "No se pudo cambiar el orden."); });
+  }
+
+  // ---------- Optimizar recorrido (Nominatim + vecino más cercano) ----------
+  var GEO_CACHE_KEY = "ge_geo_cache_v2";
+  var geoCache = (function () { try { return JSON.parse(localStorage.getItem(GEO_CACHE_KEY) || "{}"); } catch (e) { return {}; } })();
+  function guardarGeoCache() { try { localStorage.setItem(GEO_CACHE_KEY, JSON.stringify(geoCache)); } catch (e) { } }
+  var ultimoPedido = 0;
+  function esperar(msx) { return new Promise(function (ok) { setTimeout(ok, msx); }); }
+  /* q: texto libre o {street, city, state} (búsqueda estructurada). */
+  function nominatim(q) {
+    var params = typeof q === "string" ? "q=" + encodeURIComponent(q) : Object.keys(q).filter(function (k) { return q[k]; }).map(function (k) { return k + "=" + encodeURIComponent(q[k]); }).join("&");
+    var clave = params.toLowerCase();
+    if (geoCache[clave] !== undefined) return Promise.resolve(geoCache[clave]);
+    var espera = Math.max(0, ultimoPedido + 1100 - Date.now());
+    return esperar(espera).then(function () {
+      ultimoPedido = Date.now();
+      var url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=ar&accept-language=es&" + params;
+      return fetch(url, { headers: { Accept: "application/json" } });
+    }).then(function (r) {
+      if (!r.ok) throw new Error("Nominatim respondió " + r.status);
+      return r.json();
+    }).then(function (j) {
+      var x = j && j[0] ? { lat: Number(j[0].lat), lon: Number(j[0].lon), name: j[0].display_name, type: j[0].type, cls: j[0].category || j[0].class, rank: j[0].place_rank } : null;
+      geoCache[clave] = x; guardarGeoCache();
+      return x;
+    });
+  }
+  function partesDomicilio(it) {
+    var dir = String(it.destinationAddress || "").trim();
+    var loc = String(it.destinationLocality || "").trim(), prov = String(it.destinationProvince || "").trim();
+    var partes = dir.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+    // Los domicilios de la maestra vienen como "CALLE N°, LOCALIDAD, PROVINCIA".
+    if (!loc && partes.length >= 3) { loc = partes[partes.length - 2]; prov = prov || partes[partes.length - 1]; partes = partes.slice(0, -2); }
+    else if (!loc && partes.length === 2) { loc = partes[1]; partes = partes.slice(0, 1); }
+    var calle = partes.join(", ").replace(/\bB[°º]\s*/gi, "Barrio ").replace(/\s+/g, " ").trim();
+    return { calle: calle, loc: loc, prov: prov };
+  }
+  function geocodificar(it) {
+    var p = partesDomicilio(it);
+    var zona = [p.loc, p.prov].filter(Boolean).join(", ");
+    var completo = [p.calle, zona, "Argentina"].filter(Boolean).join(", ");
+    var calleCorta = p.calle.split(" - ")[0].replace(/\bS\/\s*N(OMBRE)?\b\.?/gi, "").trim();
+    var intento = p.calle ? nominatim(completo) : Promise.resolve(null);
+    return intento.then(function (r) {
+      if (r || !calleCorta || !p.loc) return r;
+      return nominatim({ street: calleCorta, city: p.loc, state: p.prov, country: "Argentina" });
+    }).then(function (r) {
+      if (r) return { status: r.rank >= 26 ? "validated" : "needs_review", lat: r.lat, lon: r.lon, name: r.name };
+      if (!zona) return { status: "not_found" };
+      return nominatim(zona + ", Argentina").then(function (z) {
+        return z ? { status: "needs_review", lat: z.lat, lon: z.lon, name: z.name } : { status: "not_found" };
+      });
+    });
+  }
+  function hav(a, b) {
+    var R = 6371, rad = Math.PI / 180;
+    var dLat = (b.lat - a.lat) * rad, dLon = (b.lon - a.lon) * rad;
+    var s = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * R * Math.asin(Math.sqrt(s));
+  }
+  function kmCarretera(puntos) { // OSRM público; si falla, línea recta × 1,25
+    var recta = 0; for (var i = 1; i < puntos.length; i++) recta += hav(puntos[i - 1], puntos[i]);
+    var est = r2(recta * 1.25);
+    if (puntos.length < 2 || puntos.length > 90) return Promise.resolve(est);
+    var url = "https://router.project-osrm.org/route/v1/driving/" + puntos.map(function (p) { return p.lon.toFixed(5) + "," + p.lat.toFixed(5); }).join(";") + "?overview=false";
+    return fetch(url).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      return j && j.routes && j.routes[0] ? r2(j.routes[0].distance / 1000) : est;
+    }).catch(function () { return est; });
+  }
+  function origenCoord(d) {
+    var q = [d.originLocality, d.originProvince].filter(Boolean).join(", ");
+    if (!q) return Promise.resolve(ORIGEN_DEF);
+    return nominatim(q + ", Argentina").then(function (r) { return r || ORIGEN_DEF; }).catch(function () { return ORIGEN_DEF; });
+  }
+  function optimizar(d) { // optimizeLogisticsDispatchRoute
+    if (!d.invoices.length) return;
+    ocupar("optimizar", true);
+    var items = ordenItems(d.invoices), geo = {}, faltan = items.filter(function (it) { return !(it.latitude != null && it.longitude != null && it.geocodeStatus === "validated"); });
+    var porDir = {};
+    faltan.forEach(function (it) { var k = [it.destinationAddress, it.destinationLocality, it.destinationProvince].join("|").toLowerCase(); (porDir[k] = porDir[k] || []).push(it); });
+    var claves = Object.keys(porDir), hechos = 0;
+    if (claves.length > 3) GE.toast("Geolocalizando " + claves.length + " domicilios (1 por segundo)...", "info");
+    var cadena = Promise.resolve();
+    claves.forEach(function (k) {
+      cadena = cadena.then(function () {
+        return geocodificar(porDir[k][0]).catch(function (e) { console.warn(e); return null; }).then(function (r) {
+          hechos++;
+          var b = document.querySelector('[data-acc="optimizar"]'); if (b) b.lastChild.textContent = "Calculando... " + hechos + "/" + claves.length;
+          if (r) porDir[k].forEach(function (it) { geo[it.id] = r; });
+        });
+      });
+    });
+    var origen;
+    cadena.then(function () { return origenCoord(d); }).then(function (o) {
+      origen = o;
+      return mutar(d.id, function (doc) {
+        var arr = ordenItems(doc.invoices);
+        arr.forEach(function (it) {
+          var g = geo[it.id]; if (!g) return;
+          it.geocodeStatus = g.status;
+          it.latitude = g.lat != null ? g.lat : null; it.longitude = g.lon != null ? g.lon : null;
+          it.geocodedAddress = g.name || null;
+        });
+        // Vecino más cercano desde el origen; los que no tienen coordenadas van al final en su orden actual.
+        var con = arr.filter(function (it) { return it.latitude != null && it.longitude != null; });
+        var sin = arr.filter(function (it) { return !(it.latitude != null && it.longitude != null); });
+        var orden = [], actual = { lat: origen.lat, lon: origen.lon };
+        while (con.length) {
+          var mejor = 0, dm = Infinity;
+          con.forEach(function (it, i) { var dd = hav(actual, { lat: it.latitude, lon: it.longitude }); if (dd < dm) { dm = dd; mejor = i; } });
+          var it = con.splice(mejor, 1)[0]; orden.push(it); actual = { lat: it.latitude, lon: it.longitude };
+        }
+        doc.invoices = orden.concat(sin);
+        doc.invoices.forEach(function (x, i) { x.sequence = i + 1; });
+        return {
+          ordered: doc.invoices.length,
+          validated: doc.invoices.filter(function (x) { return x.geocodeStatus === "validated"; }).length,
+          needsReview: doc.invoices.filter(function (x) { return x.geocodeStatus === "needs_review" || x.geocodeStatus === "not_found"; }).length,
+          puntos: [origen].concat(orden.map(function (x) { return { lat: x.latitude, lon: x.longitude }; }))
+        };
+      });
+    }).then(function (L) {
+      // Km teóricos: origen → paradas en orden (sin el regreso).
+      return kmCarretera(L.puntos.filter(function (p, i, a) { return i === 0 || p.lat !== a[i - 1].lat || p.lon !== a[i - 1].lon; })).then(function (km) {
+        return (L.puntos.length > 1 ? mutar(d.id, function (doc) { doc.plannedKm = km; }) : Promise.resolve()).then(function () { return L; });
+      });
+    }).then(function (L) {
+      S.ocupado.optimizar = false;
+      GE.toast(L.ordered + " paradas ordenadas. " + L.validated + " domicilios validados" + (L.needsReview ? " · " + L.needsReview + " para revisar" : "") + ".");
+      refrescarTodo();
+    }).catch(function (e) { S.ocupado.optimizar = false; pintarDetalle(); err(e, "No se pudo optimizar el recorrido."); });
+  }
+
+  // ---------- PDF «Hoja de ruta logística» (§9.2) ----------
+  var fPa = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function Pa(v) { return fPa.format(Number(v) || 0); }
+  function detallePago(e) { // rw
+    var chk = GE.cheques(e.checkAmounts), tieneChk = Array.isArray(e.checkAmounts) ? e.checkAmounts.length : chk.length;
+    var neto = Number(e.netAmount != null ? e.netAmount : e.amount);
+    var acc = e.paymentMethod === "account" && !Number(e.accountAmount) ? neto : Number(e.accountAmount || 0);
+    var p = [acc !== 0 ? "Cta. cte. " + Pa(acc) : null, Number(e.cashAmount) > 0 ? "Efectivo " + Pa(e.cashAmount) : null,
+      tieneChk ? "Cheque " + Pa(chk.reduce(function (a, b) { return a + b; }, 0)) : null, Number(e.transferAmount) > 0 ? "Transferencia " + Pa(e.transferAmount) : null].filter(Boolean);
+    return p.length ? p.join(" + ") : "Sin informar";
+  }
+  function sigPag(doc, y, alto) { alto = alto == null ? 14 : alto; if (y + alto <= 278) return y; doc.addPage(); return 18; }
+  function encabezado(doc, sub, logo) { // Xg
+    if (logo) {
+      var dim = { w: 18, h: 18 };
+      try { var pr = doc.getImageProperties(logo); var k = Math.min(22 / pr.width, 18 / pr.height); dim = { w: pr.width * k, h: pr.height * k }; } catch (e) { }
+      doc.addImage(logo, logo.indexOf("image/png") >= 0 ? "PNG" : "JPEG", 14, 12 + (18 - dim.h) / 2, dim.w, dim.h, undefined, "FAST");
+    } else {
+      doc.setFillColor(13, 62, 130); doc.roundedRect(14, 12, 18, 18, 3, 3, "F");
+      doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("P", 23, 24, { align: "center" });
+    }
+    doc.setTextColor(15, 23, 42); doc.setFontSize(15); doc.setFont("helvetica", "bold"); doc.text("PORTAL DISTRIBUIDORA", 38, 19);
+    doc.setFontSize(11); doc.setFont("helvetica", "normal"); doc.text(sub, 38, 26);
+    doc.setDrawColor(203, 213, 225); doc.line(14, 35, 196, 35);
+  }
+  function hojaRuta(d) {
+    var Y = metricasEnVivo(d), K = cobranza(d);
+    return GE.logoDataUrl().then(function (logo) {
+      var t = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+      encabezado(t, "Hoja de ruta logística", logo);
+      t.setFontSize(9);
+      t.text("Despacho: " + d.code, 14, 44);
+      t.text("Fecha: " + GE.fechaPdf(d.serviceDate), 92, 44);
+      t.text("Hoja de ruta N.º: " + (d.routeSheetNumber || d.code), 14, 51);
+      t.text("Emitido: " + new Date().toLocaleString("es-AR"), 92, 51);
+      t.text("Estado del viaje: " + (ESTADO[d.status] || "Borrador"), 14, 58);
+      t.text("Origen: " + [d.originName, d.originLocality, d.originProvince].filter(Boolean).join(" · "), 14, 65);
+      t.text("Destino: " + ([d.destinationName, d.destinationLocality, d.destinationProvince].filter(Boolean).join(" · ") || "Según paradas"), 14, 72);
+      t.text("Chofer logística: " + (d.driverName || "Sin asignar"), 14, 79);
+      t.text("Cobrador: " + (d.collectorName || "Sin asignar"), 100, 79);
+      t.text("Camión: " + ([d.vehicleCode, d.vehiclePlate].filter(Boolean).join(" · ") || "Sin asignar"), 14, 86);
+      t.text("Acoplado: " + ([d.trailerCode, d.trailerPlate].filter(Boolean).join(" · ") || "Sin acoplado"), 100, 86);
+      var zonas = d.sourceRoutes || [];
+      t.text("Caja chica asignada: " + Pa(zonas.reduce(function (a, z) { return a + Number(z.pettyCashAmount || 0); }, 0)), 14, 93);
+      var zt = zonas.map(function (z) { return z.zoneName + (z.routeName ? " · " + z.routeName : "") + (z.collectorName ? " · Cobrador: " + z.collectorName : ""); }).join(" | ") || "Sin zonas vinculadas";
+      var zl = t.splitTextToSize("Zonas: " + zt, 182);
+      t.text(zl, 14, 100);
+      var y0 = Math.max(112, 100 + zl.length * 4 + 6);
+      t.setFont("helvetica", "bold");
+      t.text("N.º", 14, y0); t.text("Factura", 25, y0); t.text("Cliente / destino", 57, y0); t.text("Unid.", 112, y0); t.text("Estado / cobro", 125, y0); t.text("Importe", 174, y0);
+      t.setFont("helvetica", "normal");
+      var n = y0 + 7;
+      d.invoices.forEach(function (f) {
+        n = sigPag(t, n, 16);
+        var dest = [f.destinationName, f.destinationAddress, f.destinationLocality, f.destinationProvince].filter(Boolean).join(" · ");
+        var m = t.splitTextToSize(dest, 54);
+        var est = f.deliveryStatus === "delivered" ? "Entregada · " + detallePago(f) : f.deliveryStatus === "issue" ? "Con incidencia" : "Pendiente";
+        var w = t.splitTextToSize(est, 46);
+        t.text(String(f.sequence), 14, n); t.text(String(f.invoiceNumber).slice(0, 18), 25, n); t.text(m, 57, n);
+        t.text(String(f.units == null ? 0 : f.units), 112, n); t.text(w, 125, n); t.text(Pa(f.amount), 174, n);
+        n += Math.max(8, m.length * 4, w.length * 4);
+      });
+      n = sigPag(t, n, 42);
+      var total = d.invoices.reduce(function (a, f) { return a + Number(f.amount || 0); }, 0);
+      var uni = d.invoices.reduce(function (a, f) { return a + Number(f.units || 0); }, 0);
+      t.setDrawColor(203, 213, 225); t.line(14, n, 196, n);
+      t.setFont("helvetica", "bold"); t.setFontSize(10);
+      t.text("Paradas: " + d.invoices.length, 14, n + 9); t.text("Unidades: " + uni, 70, n + 9); t.text("Total mercadería: " + Pa(total), 125, n + 9);
+      t.setFont("helvetica", "normal"); t.setFontSize(8);
+      var c = ["Km planificados: " + (d.plannedKm != null ? d.plannedKm : "—"), "Odómetro salida: " + (d.odometerStart != null ? d.odometerStart : "—"),
+        "Odómetro llegada: " + (d.odometerEnd != null ? d.odometerEnd : "—"), "Combustible cargado: " + (Y.liters != null ? Y.liters : "0") + " L"];
+      if (d.status === "returning" || d.status === "completed") {
+        var fuelCost = d.fuelLoads.reduce(function (a, f) { return a + n0(f.totalCost); }, 0);
+        c.push("Combustible: " + Pa(fuelCost), "Peajes: " + Pa(Y.tollCost), "Otros costos: " + Pa(Y.otherCost), "Caja chica: " + Pa(Y.pettyCashCost),
+          "Amortización: " + Pa(Y.amortizationCost), "GPS: " + Pa(Y.gpsCost), "Sueldos: " + Pa(Y.driverSalaryCost + Y.collectorSalaryCost),
+          "Costo total: " + Pa(Y.totalCost), "Utilidad: " + Pa(Y.utility) + " (" + Number(Y.utilityPercent || 0).toFixed(2) + "%)", "Markup objetivo: " + Number(Y.markupPercent || 0).toFixed(2) + "%");
+      }
+      var cl = t.splitTextToSize(c.join("   ·   "), 182);
+      t.text(cl, 14, n + 18);
+      var yl = n + 18 + cl.length * 3.5 + 4;
+      yl = sigPag(t, yl, 16);
+      t.text("Hoja de ruta emitida por Portal Distribuidora. Verificar domicilios y cantidades antes de cargar.", 14, yl);
+      t.text("Cobranza: Cta. cte. " + Pa(K.account) + " · Efectivo " + Pa(K.cash) + " · Cheque " + Pa(K.check) + " · Transferencia " + Pa(K.transfer), 14, yl + 8);
+      return t;
+    });
+  }
+  function imprimir(d) {
+    var w = window.open("", "_blank");
+    hojaRuta(d).then(function (t) {
+      t.autoPrint();
+      var url = String(t.output("bloburl"));
+      if (!w) throw new Error("El navegador bloqueó la ventana de impresión.");
+      w.location.href = url;
+      GE.toast("Hoja de ruta enviada a impresión.");
+    }).catch(function (e) { if (w) w.close(); err(e, "No se pudo imprimir la hoja de ruta."); });
+  }
+  function enviar(d) {
+    hojaRuta(d).then(function (t) {
+      var nombre = "hoja-ruta-" + d.code + ".pdf";
+      var file = new File([t.output("blob")], nombre, { type: "application/pdf" });
+      var descargar = function () {
+        var u = URL.createObjectURL(file), a = document.createElement("a");
+        a.href = u; a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 1000);
+      };
+      var p = (navigator.share && navigator.canShare && navigator.canShare({ files: [file] }))
+        ? navigator.share({ files: [file], title: "Hoja de ruta " + d.code }).catch(function (e) { if (e && e.name === "AbortError") throw e; descargar(); })
+        : Promise.resolve(descargar());
+      return p.then(function () { GE.toast("Hoja de ruta preparada para descargar o enviar."); });
+    }).catch(function (e) { if (e && e.name === "AbortError") return; err(e, "No se pudo preparar la hoja de ruta."); });
+  }
+
+  // ---------- Diálogos ----------
+  function campo(id, label, attrs, full) {
+    return '<div' + (full ? ' class="full"' : '') + '><label for="' + id + '">' + esc(label) + '</label><input id="' + id + '" ' + (attrs || "") + '></div>';
+  }
+  function selector(id, label, opciones, valor, full) {
+    return '<div' + (full ? ' class="full"' : '') + '><label for="' + id + '">' + esc(label) + '</label><select id="' + id + '">' +
+      opciones.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(o[0]) === String(valor) ? " selected" : "") + '>' + esc(o[1]) + '</option>'; }).join("") + '</select></div>';
+  }
+  function val(el, id) { var x = el.querySelector("#" + id); return x ? String(x.value).trim() : ""; }
+  function numOpc(v) { return v === "" ? null : Number(v); }
+
+  function siguienteCodigo(fecha) {
+    var base = "DESP-" + fecha.replace(/-/g, "");
+    var codigos = new Set(S.despachos.map(function (d) { return d.code; }));
+    var n = S.despachos.filter(function (d) { return String(d.code || "").indexOf(base) === 0; }).length + 1;
+    while (codigos.has(base + "-" + String(n).padStart(3, "0"))) n++;
+    return base + "-" + String(n).padStart(3, "0");
+  }
+  function siguienteHoja() {
+    var max = 0;
+    S.despachos.forEach(function (d) { var m = /^HR-(\d+)$/.exec(d.routeSheetNumber || ""); if (m) max = Math.max(max, Number(m[1])); });
+    return "HR-" + String(max + 1).padStart(8, "0");
+  }
+
+  function dlgNuevo() {
+    var choferes = [["none", "Sin asignar"]].concat(S.choferes.map(function (c) { return [c.id, c.name]; }));
+    var html = '<p class="muted small" style="margin-top:0">Definí unidad, origen y ruta. La cobranza no interviene en este módulo.</p><div class="form2">' +
+      '<div><label for="nCode">Número de despacho (automático)</label><input id="nCode" readonly placeholder="Se asigna al guardar"><p class="ayuda">Se genera un correlativo por fecha, por ejemplo DESP-20261006-001.</p></div>' +
+      campo("nFecha", "Fecha", 'type="date" value="' + esc(GE.hoy()) + '"') +
+      selector("nCamion", "Camión", [["", "Elegí camión"]].concat(S.vehiculos.filter(function (v) { return v.active !== false; }).map(function (v) { return [v.id, v.internalCode + " · " + v.licensePlate]; })), "") +
+      selector("nAcoplado", "Acoplado", [["none", "Sin acoplado"]].concat(S.acoplados.filter(function (v) { return v.active !== false; }).map(function (v) { return [v.id, v.internalCode + " · " + v.licensePlate]; })), "none") +
+      selector("nChofer", "Chofer asignado al despacho", choferes, "none") +
+      selector("nCobrador", "Cobrador de Soy Chofer", choferes, "none") +
+      selector("nZona", "Zona", [["none", "Sin zona"]].concat(S.zonas.map(function (z) { return [z.id, z.name]; })), "none") +
+      '<div class="full"><label>Traer facturas de zonas/rutas existentes</label><p class="ayuda" style="margin:0 0 .4rem">Podés seleccionar una o varias zonas para armar un único despacho.</p>' +
+        '<div class="rutas-chk" id="nRutas">' + (S.rutasMes === S.mes ? (S.rutas.length ? S.rutas.map(function (r) {
+          return '<label><input type="checkbox" value="' + r.id + '"><span><strong>' + esc(r.zoneName || "") + '</strong> · ' + esc(r.name || "") + ' <span class="muted small">' + esc(fechaDia(r.serviceDate)) + '</span></span></label>';
+        }).join("") : '<p class="muted small" style="margin:.4rem">No hay rutas cargadas en el mes operativo.</p>') : '<p class="muted small" style="margin:.4rem">Cargando rutas...</p>') + '</div>' +
+        '<p class="ayuda" id="nCuenta"></p></div>' +
+      campo("nOrigen", "Origen", 'value="Portal Distribuidora"') +
+      campo("nKm", "Km teóricos (automáticos al cargar zonas)", 'type="number" min="0" placeholder="Opcional"') +
+      campo("nDestino", "Destino principal (opcional)", 'placeholder="Se completa con la última parada"') +
+      campo("nOLoc", "Localidad origen", "") + campo("nOProv", "Provincia origen", "") +
+      campo("nDLoc", "Localidad destino", "") + campo("nDProv", "Provincia destino", "") +
+      '<div class="full"><label for="nNotas">Notas</label><textarea id="nNotas" rows="2"></textarea></div>' +
+      '</div><div class="ge-acciones"><button class="btn btn-primary" id="nCrear" disabled>Crear despacho</button></div>';
+    var m = GE.modal({ titulo: "Nuevo despacho", html: html, ancho: "720px" });
+    var el = m.el, bCrear = el.querySelector("#nCrear");
+    function rutasSel() { return Array.from(el.querySelectorAll("#nRutas input:checked")).map(function (i) { return Number(i.value); }); }
+    function act() {
+      var sel = rutasSel(), km = el.querySelector("#nKm");
+      el.querySelector("#nCuenta").textContent = sel.length ? sel.length + " zona" + plural(sel.length, "", "s") + " seleccionada" + plural(sel.length, "", "s") : "";
+      km.readOnly = sel.length > 0; km.placeholder = sel.length ? "Se calcularán con origen y destinos" : "Opcional";
+      if (sel.length) km.value = "";
+      bCrear.disabled = !val(el, "nCamion") || !val(el, "nOrigen");
+    }
+    el.addEventListener("input", act); el.addEventListener("change", act);
+    el.querySelectorAll("#nRutas input").forEach(function (cb) {
+      cb.addEventListener("change", function () {
+        if (cb.checked && el.querySelector("#nCobrador").value === "none") {
+          var r = S.rutas.filter(function (x) { return x.id === Number(cb.value); })[0];
+          if (r && r.driverId) el.querySelector("#nCobrador").value = String(r.driverId);
+        }
+      });
+    });
+    bCrear.onclick = function () {
+      bCrear.disabled = true; bCrear.textContent = "Creando...";
+      crearDespacho(el, rutasSel()).then(function (res) {
+        m.cerrar();
+        GE.toast(res.rutas ? res.code + ": " + res.imported + " facturas de " + res.zones + " zona" + plural(res.zones, "", "s") + "." : res.code + ": despacho creado. Ya podés agregar sus facturas.");
+        S.sel = res.id; S.edit = null; S.unidades = {};
+        refrescarTodo();
+      }).catch(function (e) { bCrear.disabled = false; bCrear.textContent = "Crear despacho"; err(e, "No se pudo crear el despacho."); });
+    };
+  }
+  /* createLogisticsDispatch + importLogisticsRoutesInvoices (en un solo guardado). */
+  function crearDespacho(el, rutasIds) {
+    var fecha = val(el, "nFecha") || GE.hoy();
+    var vId = Number(val(el, "nCamion")), tSel = val(el, "nAcoplado"), dSel = val(el, "nChofer"), cSel = val(el, "nCobrador"), zSel = val(el, "nZona");
+    return GE.todos("dispatches").then(function (todos) {
+      S.despachos = todos.map(normalizar); // para el correlativo
+      var v = S.vehiculos.filter(function (x) { return x.id === vId; })[0];
+      if (!v) throw new Error("Elegí un camión.");
+      var t = tSel === "none" ? null : S.acoplados.filter(function (x) { return x.id === Number(tSel); })[0];
+      var ch = dSel === "none" ? null : S.choferes.filter(function (x) { return x.id === Number(dSel); })[0];
+      var co = cSel === "none" ? null : S.choferes.filter(function (x) { return x.id === Number(cSel); })[0];
+      var z = zSel === "none" ? null : S.zonas.filter(function (x) { return x.id === Number(zSel); })[0];
+      var id = GE.nuevoId(), ahora = GE.ahora();
+      var d = {
+        id: id, code: siguienteCodigo(fecha), routeSheetNumber: siguienteHoja(), serviceDate: fecha, status: "draft",
+        vehicleId: v.id, vehicleCode: v.internalCode || null, vehiclePlate: v.licensePlate || null, vehicleModel: v.makeModel || null,
+        trailerId: t ? t.id : null, trailerCode: t ? t.internalCode : null, trailerPlate: t ? t.licensePlate : null,
+        driverId: ch ? ch.id : null, driverName: ch ? ch.name : null, collectorId: co ? co.id : null, collectorName: co ? co.name : null,
+        zoneId: z ? z.id : null, zoneName: z ? z.name : null, sourceRouteId: rutasIds.length ? rutasIds[0] : null,
+        originName: val(el, "nOrigen"), originProvince: val(el, "nOProv") || null, originLocality: val(el, "nOLoc") || null,
+        destinationName: val(el, "nDestino") || null, destinationProvince: val(el, "nDProv") || null, destinationLocality: val(el, "nDLoc") || null,
+        plannedKm: rutasIds.length ? null : numOpc(val(el, "nKm")), odometerStart: null, odometerEnd: null,
+        tollCost: 0, otherCost: 0, amortizationCost: 0, gpsCost: 0, driverSalaryCost: 0, collectorSalaryCost: 0, markupPercent: 0,
+        departedAt: null, arrivedAt: null, notes: val(el, "nNotas") || null, createdAt: ahora,
+        invoices: [], fuelLoads: [], driverExpenses: [], sourceRoutes: []
+      };
+      if (!d.originName) throw new Error("Indicá el origen.");
+      if (!rutasIds.length) return { d: d, imported: 0, zones: 0 };
+      return importarRutas(d, rutasIds);
+    }).then(function (r) {
+      conResumen(r.d);
+      return GE.ref("dispatches", r.d.id).set(limpio(r.d)).then(function () {
+        reemplazar(normalizar(r.d));
+        return { id: r.d.id, code: r.d.code, imported: r.imported, zones: r.zones, rutas: rutasIds.length };
+      });
+    });
+  }
+  function itemDesdeFactura(d, f, seq) {
+    return {
+      id: GE.nuevoId(), dispatchId: d.id, sourceInvoiceId: f.id, invoiceNumber: f.invoiceNumber,
+      destinationName: f.clientName || "", destinationAddress: f.clientAddress || null, destinationProvince: null, destinationLocality: null,
+      latitude: null, longitude: null, geocodedAddress: null, geocodeStatus: "pending",
+      units: 0, amount: n0(f.amount), sequence: seq, notes: null,
+      deliveryStatus: f.status || "pending", deliveryType: f.deliveryType || null, paymentMethod: f.paymentMethod || null, deliveredAt: f.deliveredAt || null,
+      accountAmount: f.accountAmount == null ? null : f.accountAmount, cashAmount: f.cashAmount == null ? null : f.cashAmount,
+      checkAmounts: f.checkAmounts == null ? null : f.checkAmounts, transferAmount: f.transferAmount == null ? null : f.transferAmount,
+      discountAmount: f.discountAmount == null ? null : f.discountAmount, netAmount: f.netAmount == null ? null : f.netAmount
+    };
+  }
+  function importarRutas(d, rutasIds) { // importLogisticsRoutesInvoices
+    return Promise.all([GE.dondeEn("routes", "id", rutasIds), GE.dondeEn("invoices", "routeId", rutasIds), GE.dondeEn("expenses", "routeId", rutasIds)]).then(function (r) {
+      var rutas = rutasIds.map(function (id) { return r[0].filter(function (x) { return x.id === id; })[0]; }).filter(Boolean);
+      var facturas = r[1].sort(function (a, b) {
+        return rutasIds.indexOf(a.routeId) - rutasIds.indexOf(b.routeId) || String(a.clientName || "").localeCompare(String(b.clientName || ""), "es") || String(a.invoiceNumber).localeCompare(String(b.invoiceNumber));
+      });
+      var ya = new Set(d.invoices.map(function (i) { return i.sourceInvoiceId; }));
+      var seq = d.invoices.length, nuevas = 0;
+      facturas.forEach(function (f) { if (ya.has(f.id)) return; d.invoices.push(itemDesdeFactura(d, f, ++seq)); nuevas++; });
+      rutas.forEach(function (rt, i) {
+        if (d.sourceRoutes.some(function (s) { return Number(s.routeId) === rt.id; })) return;
+        d.sourceRoutes.push({ dispatchId: d.id, routeId: rt.id, routeName: rt.name || null, zoneId: rt.zoneId || null, zoneName: rt.zoneName || null,
+          collectorId: rt.driverId || null, collectorName: rt.driverName || null, serviceDate: rt.serviceDate || null,
+          pettyCashAmount: n0(rt.pettyCashAmount), sequence: d.sourceRoutes.length + 1 });
+      });
+      var gastos = r[2].slice().sort(function (a, b) { return ms(a.spentAt) - ms(b.spentAt) || a.id - b.id; });
+      var gIds = new Set(d.driverExpenses.map(function (g) { return g.id; }));
+      gastos.forEach(function (g) { if (!gIds.has(g.id)) d.driverExpenses.push(g); });
+      if (!d.collectorId && rutas[0] && rutas[0].driverId) { d.collectorId = rutas[0].driverId; d.collectorName = rutas[0].driverName || null; }
+      return { d: d, imported: nuevas, zones: rutas.length };
+    });
+  }
+
+  function dlgCamion() {
+    var html = '<p class="muted small" style="margin-top:0">Registrá la unidad tractora que se usará en los despachos.</p><div class="form2">' +
+      campo("vCod", "Código interno", "") + campo("vPat", "Patente", 'style="text-transform:uppercase"') +
+      campo("vMod", "Marca y modelo", "") + campo("vKg", "Capacidad kg", 'type="number" min="1"') +
+      '</div><div class="ge-acciones"><button class="btn btn-primary" id="vOk" disabled>Guardar camión</button></div>';
+    var m = GE.modal({ titulo: "Alta de camión", html: html }), el = m.el, b = el.querySelector("#vOk");
+    el.querySelector("#vPat").addEventListener("input", function (e) { e.target.value = e.target.value.toUpperCase(); });
+    el.addEventListener("input", function () { b.disabled = !val(el, "vCod") || !val(el, "vPat"); });
+    b.onclick = function () {
+      b.disabled = true;
+      var ahora = GE.ahora();
+      // createVehicle
+      GE.guardar("vehicles", { id: GE.nuevoId(), internalCode: val(el, "vCod"), licensePlate: val(el, "vPat").toUpperCase(), makeModel: val(el, "vMod") || null,
+        capacityKg: numOpc(val(el, "vKg")), active: true, createdAt: ahora, updatedAt: ahora })
+        .then(function () { m.cerrar(); GE.toast("Camión agregado a la flota."); return cargarFlota(true); })
+        .then(refrescarTodo)
+        .catch(function (e) { b.disabled = false; err(e, "No se pudo guardar el camión."); });
+    };
+  }
+  function dlgAcoplado() {
+    var html = '<p class="muted small" style="margin-top:0">Registrá patente, tipo y capacidades de la unidad remolcada.</p><div class="form2">' +
+      campo("tCod", "Código interno", "") + campo("tPat", "Patente", 'style="text-transform:uppercase"') +
+      campo("tTipo", "Tipo", 'placeholder="Semirremolque, sider..."') + campo("tUni", "Capacidad unidades", 'type="number"') +
+      campo("tKg", "Capacidad kg", 'type="number"') +
+      '<div class="full"><label for="tNotas">Notas</label><textarea id="tNotas" rows="2"></textarea></div>' +
+      '</div><div class="ge-acciones"><button class="btn btn-primary" id="tOk" disabled>Guardar acoplado</button></div>';
+    var m = GE.modal({ titulo: "Alta de acoplado", html: html }), el = m.el, b = el.querySelector("#tOk");
+    el.querySelector("#tPat").addEventListener("input", function (e) { e.target.value = e.target.value.toUpperCase(); });
+    el.addEventListener("input", function () { b.disabled = !val(el, "tCod") || !val(el, "tPat"); });
+    b.onclick = function () {
+      b.disabled = true;
+      var ahora = GE.ahora();
+      // createLogisticsTrailer
+      GE.guardar("trailers", { id: GE.nuevoId(), internalCode: val(el, "tCod"), licensePlate: val(el, "tPat").toUpperCase(), trailerType: val(el, "tTipo") || null,
+        capacityUnits: numOpc(val(el, "tUni")), capacityKg: numOpc(val(el, "tKg")), notes: val(el, "tNotas") || null, active: true, createdAt: ahora, updatedAt: ahora })
+        .then(function () { m.cerrar(); GE.toast("Acoplado agregado a la flota."); return cargarFlota(true); })
+        .then(refrescarTodo)
+        .catch(function (e) { b.disabled = false; err(e, "No se pudo guardar el acoplado."); });
+    };
+  }
+
+  /* Facturas disponibles para el despacho (sourceInvoices): las de sus rutas fuente; si no tiene, las de su fecha. */
+  function facturasDisponibles(d) {
+    var rids = d.sourceRoutes.length ? d.sourceRoutes.map(function (r) { return Number(r.routeId); }) : (d.sourceRouteId ? [d.sourceRouteId] : []);
+    var p = rids.length ? GE.dondeEn("invoices", "routeId", rids) : GE.donde("invoices", [["serviceDate", "==", d.serviceDate]]);
+    return p.then(function (fs) {
+      var ya = new Set(d.invoices.map(function (i) { return i.sourceInvoiceId; }));
+      return fs.filter(function (f) { return !ya.has(f.id); })
+        .sort(function (a, b) { return String(a.clientName || "").localeCompare(String(b.clientName || ""), "es") || String(a.invoiceNumber).localeCompare(String(b.invoiceNumber)); });
+    });
+  }
+  function dlgFactura(d) {
+    var html = '<p class="muted small" style="margin-top:0">Podés traer una factura de la ruta vinculada o cargarla manualmente.</p><div class="form2">' +
+      '<div class="full"><label for="fSel">Factura existente</label><select id="fSel"><option value="manual">Carga manual</option></select><p class="ayuda" id="fCarg">Buscando facturas de la ruta...</p></div>' +
+      campo("fNum", "Número de factura", "") + campo("fDest", "Destino / cliente", "") +
+      campo("fProv", "Provincia", "") + campo("fLoc", "Localidad", "") +
+      campo("fDom", "Domicilio destino", "", true) +
+      campo("fUni", "Unidades", 'type="number" min="0"') + campo("fMonto", "Monto factura", 'type="number"') +
+      campo("fSeq", "Orden de entrega", 'type="number" min="1" value="' + (d.invoices.length + 1) + '"') + campo("fNotas", "Notas", "") +
+      '</div><div class="ge-acciones"><button class="btn btn-primary" id="fOk" disabled>Agregar a la ruta</button></div>';
+    var m = GE.modal({ titulo: "Agregar factura al despacho", html: html, ancho: "640px" }), el = m.el, b = el.querySelector("#fOk"), disp = [];
+    function act() { b.disabled = !val(el, "fNum") || !val(el, "fDest") || !val(el, "fMonto"); }
+    el.addEventListener("input", act);
+    facturasDisponibles(d).then(function (fs) {
+      disp = fs;
+      var sel = el.querySelector("#fSel");
+      fs.forEach(function (f) { var o = document.createElement("option"); o.value = f.id; o.textContent = f.invoiceNumber + " · " + (f.clientName || "") + " · " + money(n0(f.amount)); sel.appendChild(o); });
+      el.querySelector("#fCarg").textContent = fs.length ? fs.length + " factura" + plural(fs.length, "", "s") + " disponible" + plural(fs.length, "", "s") + "." : "No hay facturas disponibles de la ruta vinculada.";
+    }).catch(function (e) { console.warn(e); el.querySelector("#fCarg").textContent = "No se pudieron traer las facturas de la ruta."; });
+    el.querySelector("#fSel").onchange = function (e) {
+      var f = disp.filter(function (x) { return String(x.id) === e.target.value; })[0];
+      if (f) {
+        el.querySelector("#fNum").value = f.invoiceNumber || ""; el.querySelector("#fDest").value = f.clientName || "";
+        el.querySelector("#fDom").value = f.clientAddress || ""; el.querySelector("#fProv").value = ""; el.querySelector("#fLoc").value = "";
+        el.querySelector("#fMonto").value = String(f.amount);
+      }
+      act();
+    };
+    b.onclick = function () {
+      b.disabled = true;
+      var selV = val(el, "fSel"), f = selV === "manual" ? null : disp.filter(function (x) { return String(x.id) === selV; })[0];
+      var monto = Number(val(el, "fMonto")), seq = Math.max(1, Math.trunc(Number(val(el, "fSeq") || 1)));
+      if (!isFinite(monto)) { b.disabled = false; GE.toast("Revisá el monto.", "error"); return; }
+      // addLogisticsDispatchInvoice
+      mutar(d.id, function (doc) {
+        if (doc.status !== "draft" && doc.status !== "in_progress") throw new Error("El despacho ya no admite facturas.");
+        if (f && doc.invoices.some(function (i) { return i.sourceInvoiceId === f.id; })) throw new Error("Esa factura ya está en el despacho.");
+        var it = f ? itemDesdeFactura(doc, f, seq) : itemDesdeFactura(doc, { id: null, status: "pending" }, seq);
+        it.invoiceNumber = val(el, "fNum"); it.destinationName = val(el, "fDest"); it.destinationAddress = val(el, "fDom") || null;
+        it.destinationProvince = val(el, "fProv") || null; it.destinationLocality = val(el, "fLoc") || null;
+        it.units = Math.max(0, Math.trunc(Number(val(el, "fUni") || 0))); it.amount = monto; it.notes = val(el, "fNotas") || null;
+        // Se inserta en el orden pedido y se corre el resto.
+        var arr = ordenItems(doc.invoices);
+        arr.forEach(function (x, k) { x.sequence = k + 1; });
+        var pos = Math.min(seq, arr.length + 1);
+        arr.splice(pos - 1, 0, it);
+        arr.forEach(function (x, k) { x.sequence = k + 1; });
+        doc.invoices = arr;
+      }).then(function () { m.cerrar(); GE.toast("Factura agregada a la hoja de ruta."); refrescarTodo(); })
+        .catch(function (e) { b.disabled = false; err(e, "No se pudo agregar la factura."); });
+    };
+  }
+  function dlgCombustible(d) {
+    var html = '<p class="muted small" style="margin-top:0">Indicá si salió de la cisterna propia o de una estación en ruta.</p><div class="form2">' +
+      selector("cSrc", "Origen del combustible", [["own_tank", "Cisterna propia"], ["service_station", "Estación de servicio"]], "own_tank", true) +
+      campo("cLit", "Litros", 'type="number" min="0.01" step="0.01"') + campo("cCosto", "Costo total", 'type="number" min="0" step="0.01"') +
+      campo("cOdo", "Odómetro al cargar", 'type="number" min="0"') +
+      '<div id="cEstW" style="display:none">' + '<label for="cEst">Estación de servicio</label><input id="cEst"></div>' +
+      campo("cComp", "Comprobante", "") + campo("cNotas", "Notas", "") +
+      '</div><div class="ge-acciones"><button class="btn btn-primary" id="cOk" disabled>Guardar combustible</button></div>';
+    var m = GE.modal({ titulo: "Carga de combustible", html: html }), el = m.el, b = el.querySelector("#cOk");
+    function act() { b.disabled = !val(el, "cLit"); el.querySelector("#cEstW").style.display = val(el, "cSrc") === "service_station" ? "" : "none"; }
+    el.addEventListener("input", act); el.addEventListener("change", act);
+    b.onclick = function () {
+      var lit = Number(val(el, "cLit"));
+      if (!(lit > 0)) { GE.toast("Ingresá los litros cargados.", "error"); return; }
+      b.disabled = true;
+      var src = val(el, "cSrc"), ahora = GE.ahora();
+      // addLogisticsFuelLoad
+      mutar(d.id, function (doc) {
+        doc.fuelLoads.push({ id: GE.nuevoId(), dispatchId: doc.id, source: src, liters: lit, totalCost: Number(val(el, "cCosto") || 0),
+          odometerKm: numOpc(val(el, "cOdo")), stationName: src === "service_station" ? (val(el, "cEst") || null) : null,
+          documentNumber: val(el, "cComp") || null, loadedAt: ahora, notes: val(el, "cNotas") || null, createdAt: ahora });
+      }).then(function () { m.cerrar(); GE.toast("Carga de combustible guardada."); refrescarTodo(); })
+        .catch(function (e) { b.disabled = false; err(e, "No se pudo guardar la carga."); });
+    };
+  }
+
+  // ---------- Arranque ----------
+  GE.logistica = { metricas: metricas, hojaRuta: function (id) { return hojaRuta(despacho(id)); }, estado: S }; // para verificar desde la consola
+  document.getElementById("bSalir").onclick = function () { GE.toast("Sesión de Logística cerrada."); GE.salir(); };
+  document.getElementById("bActualizar").onclick = function () {
+    var b = this; b.disabled = true;
+    cargar(true).then(function () { if (S.sel) sincronizar(S.sel); GE.toast("Datos actualizados.", "info"); })
+      .catch(function (e) { err(e, "No se pudo cargar el módulo logístico."); })
+      .then(function () { b.disabled = false; });
+  };
+  if (GE.PRUEBA) document.getElementById("bInicio").href = "index.html?prueba=1";
+  GE.requerirAdmin({ titulo: "Logística de Portal", texto: "Ingresá con tu cuenta de Google autorizada para administrar despachos, camiones, acoplados, combustible y costos.", volver: { href: "index.html", label: "Volver al inicio" } })
+    .then(function () { return cargar(); })
+    .catch(function (e) {
+      console.error(e);
+      app().innerHTML = '<div class="cargando" style="color:var(--rose)">No se pudo cargar el módulo logístico.</div>';
+    });
+})();
+</script>
+</body>
+</html>
