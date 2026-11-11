@@ -1182,7 +1182,7 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
   };
 
   // Vehículos con detalle (medidas en unidades del modelo; 1 u ≈ 3,5 m). El color de estado va en la caja o carrocería
-  // y en una franja de la cabina; cabinas blancas, vidrios oscuros, chasis y ruedas negros.
+  // (la franja de la cabina es amarilla); cabinas blancas, vidrios oscuros, chasis y ruedas negros.
   const FORMA = {
     //         largo total, ancho, largo cabina, alto techo cabina, alto techo caja, ruedas duales atrás
     camion:   { L: 2.6, W: 0.71, cab: 0.62, hCab: 0.9, hCaja: 1.05, dual: true },
@@ -1197,6 +1197,7 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
   const geoTanque = new THREE.CylinderGeometry(0.5, 0.5, 1, 14); geoTanque.rotateX(Math.PI / 2);
   const M = (color, extra) => new THREE.MeshLambertMaterial({ color, ...extra });
   const matRueda = M(0x1B1D1F), matLlanta = M(0xB8BEC2), matChasis = M(0x26292C), matCabina = M(0xF2F3F1);
+  const matFranjaCabina = M(0xF2C200);   // franja amarilla de las cabinas
   const matVidrio = new THREE.MeshPhongMaterial({ color: 0x23323D, shininess: 80, specular: 0x8899AA });
   const matParag = M(0x3A3F44), matFaro = M(0xFFF4C2, { emissive: 0x332B10 }), matTrasera = M(0xB3261E), matMetal = M(0x9AA1A6);
   const matEst = {}, matEstOsc = {};
@@ -1239,11 +1240,11 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
       // Chasis (largueros) y paragolpes
       P(matChasis, W * 0.62, 0.07, L * 0.96, 0, piso, 0);
       P(matParag, W * 1.01, 0.09, 0.06, 0, piso + 0.02, adelante + 0.02);
-      // Cabina: cuerpo, techo un poco retirado, franja de color de estado
+      // Cabina: cuerpo, techo un poco retirado y franja amarilla (antes era del color del estado; el usuario la pidió amarilla)
       const hBase = piso + 0.04, hCuerpo = f.hCab - hBase;
       P(matCabina, W, hCuerpo * 0.62, cabL, 0, hBase + hCuerpo * 0.31, zCab);
       P(matCabina, W * 0.98, hCuerpo * 0.4, cabL * 0.86, 0, hBase + hCuerpo * 0.8, zCab - cabL * 0.06);
-      P(col, W * 1.005, 0.055, cabL * 1.002, 0, hBase + hCuerpo * 0.2, zCab);
+      P(matFranjaCabina, W * 1.005, 0.055, cabL * 1.002, 0, hBase + hCuerpo * 0.2, zCab);
       // Parabrisas, ventanillas laterales, parrilla, faros y espejos
       P(matVidrio, W * 0.84, hCuerpo * 0.34, 0.012, 0, hBase + hCuerpo * 0.74, adelante - cabL * 0.12 + 0.006);
       [-1, 1].forEach((s) => {
