@@ -3918,7 +3918,7 @@ function formPrevNom(){const M=prevMap(),by={};S.zonas.forEach(z=>{const c=Strin
     save:async()=>{const n={};$("mF").querySelectorAll("[data-pv]").forEach(i=>{if(i.value.trim())n[i.dataset.pv]=i.value.trim()});
       await C("config").doc("preventistas").set({nombres:n,updatedAt:new Date().toISOString(),updatedBy:uid})}})}
 function resFilas(){const R=UI.res;
-  return S.salidas.filter(s=>actSal(s)&&s.fecha>=R.desde&&s.fecha<=R.hasta&&(!R.canal||s.canal===R.canal)).sort((a,b)=>a.fecha.localeCompare(b.fecha)||String(a.canal).localeCompare(String(b.canal))||(a.nro||0)-(b.nro||0)).map(s=>{
+  return S.salidas.filter(s=>(s.estado==="En ruta"||s.estado==="Finalizada")&&s.fecha>=R.desde&&s.fecha<=R.hasta&&(!R.canal||s.canal===R.canal)).sort((a,b)=>a.fecha.localeCompare(b.fecha)||String(a.canal).localeCompare(String(b.canal))||(a.nro||0)-(b.nro||0)).map(s=>{
     const pv=s.canal==="Preventa",cam=get("camiones",s.camionId),ac=get("camiones",s.acopladoId);
     const zon=pv?(s.zonaIds||[]).map(zonaT).join(", "):[...new Set((s.sucursalIds||[]).map(id=>(get("sucursales",id)||{}).zonaId).filter(Boolean))].map(zonaT).join(", ");
     const dest=pv?(s.destinoLoc?locName(s.destinoLoc):(s.zonaIds||[]).length?[...new Set((s.zonaIds||[]).map(z=>(get("zonas",z)||{}).nombre).filter(Boolean).map(n=>n.replace(/^Zona \d+\s*·\s*/,"")))].join(", "):""):(s.sucursalIds||[]).map(sucT).join(", ");
@@ -3934,7 +3934,7 @@ VIEWS.resumen=function(){const F=resFilas(),R=UI.res,txt=resTexto(F);
     +'<div class="reslink"><span class="k">Link para mandar a despacho</span><input id="resUrl" readonly value="'+esc(resLink())+'" aria-label="Link del resumen">'
     +'<div class="a"><button class="btn pri" data-act="res-copy">Copiar link</button><a class="btn green" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(txt)+'">Mandar por WhatsApp</a><button class="btn" data-act="res-copytxt">Copiar resumen como texto</button></div>'
     +'<span class="s">El link abre este resumen con las mismas fechas en la página del sistema. El mensaje de WhatsApp lleva el resumen completo escrito.</span></div></section>';
-  if(!F.length)return h+emptyCard("truck","m-log","No hay viajes"+(R.canal?" de "+R.canal.toLowerCase():"")+" del "+resRng(),"Elegí otras fechas"+(R.canal?" o «Las dos»":"")+".","");
+  if(!F.length)return h+emptyCard("truck","m-log","No hay viajes"+(R.canal?" de "+R.canal.toLowerCase():"")+" del "+resRng(),"Acá salen solo los viajes que ya salieron (en viaje o que volvieron), no las órdenes de carga. Elegí otras fechas"+(R.canal?" o «Las dos»":"")+".","");
   const by=groupBy(F,r=>r.c);
   return h+Object.keys(by).map(c=>{const zc=by[c].some(r=>r.zona!=="—"),ac=true;return'<section class="pn"><div class="pnh"><h2>'+chBadge({canal:c})+esc(c)+' · '+pl(by[c].length,"viaje","viajes")+'</h2><span class="s">'+resRng()+'</span></div><div class="tw"><table class="wide"><thead><tr><th>N°</th>'+(R.desde!==R.hasta?"<th>Fecha</th>":"")+'<th>Patente</th><th>Chofer</th>'+(c==="Preventa"?"<th>Cobrador</th>":"")+(ac?"<th>Ayudante</th>":"")+'<th>Controlador</th><th>Destino</th>'+(zc?"<th>Zona</th>":"")+(c==="Preventa"?"<th>Preventista</th>":"")+'<th>Estado</th></tr></thead><tbody>'
     +by[c].map(r=>'<tr class="ck" data-act="res-hoja" data-id="'+r.s.id+'"><td class="mono"><b>'+esc(r.n)+'</b></td>'+(R.desde!==R.hasta?'<td>'+esc(r.f)+'</td>':"")+'<td class="mono"><b>'+esc(r.pat)+'</b></td><td>'+esc(r.cho)+'</td>'+(c==="Preventa"?'<td>'+esc(r.cob)+'</td>':"")+(ac?'<td>'+esc(r.ayu||"—")+'</td>':"")+'<td>'+esc(r.ctrl)+'</td><td class="wrap">'+esc(r.dest)+'</td>'+(zc?'<td class="wrap">'+esc(r.zona)+'</td>':"")+(c==="Preventa"?'<td><b>'+esc(r.prev)+'</b></td>':"")+'<td>'+estChip(r.s)+'</td></tr>').join("")+'</tbody></table></div></section>'}).join("")};
@@ -4583,14 +4583,14 @@ function vjAcc(s){const anul=s.estado==="Anulada";let b="";
   return b+dots([{a:"open-hoja",id:s.id,i:"file",t:"Abrir hoja de ruta",d:"N° "+nro(s)},{a:"open-orden",id:s.id,i:"edit",t:"Ver orden de carga"},{a:"edit-sal",id:s.id,i:"edit",t:"Editar viaje",w:1},{a:"costos",id:s.id,i:"plus",t:"Costos y combustible",w:1},{a:"informe",id:s.id,i:"file",t:"Informe del viaje"},
     {a:"nov-sal",id:s.id,i:"alert",t:"Registrar novedad",w:1},"-",{a:"anular",id:s.id,i:"pause",t:"Anular",dng:1,w:1},{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar",dng:1,w:1}])}
 VIEWS.viajes=function(){const V=UI.vj,q=(V.q||"").trim(),inR=f=>(!V.desde||f>=V.desde)&&(!V.hasta||f<=V.hasta);
-  const viajes=S.salidas.filter(s=>["Cargada","En ruta","Finalizada"].includes(s.estado));
+  const viajes=S.salidas.filter(s=>s.estado==="En ruta"||s.estado==="Finalizada");
   /* con búsqueda se busca en todos los viajes, sin importar el período */
-  const base=(q?viajes.filter(s=>vjMatch(s,q)):viajes.filter(s=>inR(s.fecha)||s.estado!=="Finalizada")).filter(canalOk);
-  const cnt={"":base.length,Cargada:0,"En ruta":0,Finalizada:0};base.forEach(s=>cnt[s.estado]++);
+  const base=(q?viajes.filter(s=>vjMatch(s,q)):viajes.filter(s=>inR(s.fecha))).filter(canalOk);
+  const cnt={"":base.length,"En ruta":0,Finalizada:0};base.forEach(s=>cnt[s.estado]++);
   const L=base.filter(s=>!V.est||s.estado===V.est);
   const ordF={fecha:(a,b)=>String(b.fecha).localeCompare(String(a.fecha))||(b.nro||0)-(a.nro||0),nro:(a,b)=>(b.nro||0)-(a.nro||0),chofer:(a,b)=>chofT(a.choferId).localeCompare(chofT(b.choferId)),km:(a,b)=>vjKm(b)-vjKm(a)};
-  L.sort((a,b)=>{const pa={"En ruta":0,Cargada:1,Finalizada:2}[a.estado],pb={"En ruta":0,Cargada:1,Finalizada:2}[b.estado];return V.ord==="fecha"&&!V.est?(pa-pb)||ordF.fecha(a,b):(ordF[V.ord]||ordF.fecha)(a,b)});
-  const fuera=viajes.filter(s=>s.estado!=="Finalizada"&&!inR(s.fecha)&&canalOk(s));
+  L.sort((a,b)=>{const pa={"En ruta":0,Finalizada:2}[a.estado],pb={"En ruta":0,Finalizada:2}[b.estado];return V.ord==="fecha"&&!V.est?(pa-pb)||ordF.fecha(a,b):(ordF[V.ord]||ordF.fecha)(a,b)});
+  const fuera=viajes.filter(s=>s.estado==="En ruta"&&!inR(s.fecha)&&canalOk(s));
   let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Viajes"]),"Viajes",'<button class="btn pri w" data-act="cie-open">'+IC.check+'Cierre del día</button><button class="btn w" data-act="res-open">'+IC.file+'Resumen para despacho</button><a class="btn w" href="#gps">'+IC.route+'Satelital</a>',"trip");
   /* buscador + período */
   /* alertas de combustible: camiones que consumen de más (últimos 30 días) y viajes que volvieron con más litros que el tanque */
@@ -4604,17 +4604,17 @@ VIEWS.viajes=function(){const V=UI.vj,q=(V.q||"").trim(),inR=f=>(!V.desde||f>=V.
   /* indicadores del listado */
   const fin=L.filter(s=>s.estado==="Finalizada"),km=L.reduce((t,s)=>t+vjKm(s),0),lit=L.reduce((t,s)=>t+(litViaje(s)||0),0),cost=L.reduce((t,s)=>t+(costoViaje(s).tot||0),0);
   const rs=fin.map(s=>({k:kmUsado(s).km,l:litViaje(s)})).filter(x=>x.k&&x.l),rP=rs.length?rs.reduce((t,x)=>t+x.k,0)/rs.reduce((t,x)=>t+x.l,0):null;
-  h+='<div class="kpis"><div class="kpi"><span class="k">Viajes</span><span class="v">'+L.length+'</span><span class="s">'+cnt["En ruta"]+' en viaje · '+cnt.Cargada+' por salir</span></div>'
+  h+='<div class="kpis"><div class="kpi"><span class="k">Viajes</span><span class="v">'+L.length+'</span><span class="s">'+cnt["En ruta"]+' en viaje · '+cnt.Finalizada+' volvieron</span></div>'
     +'<div class="kpi"><span class="k">Kilómetros</span><span class="v" style="color:var(--c-rut)">'+fN(Math.round(km))+'</span><span class="s">'+(L.length?fN(Math.round(km/L.length))+" km por viaje":"—")+'</span></div>'
     +'<div class="kpi"><span class="k">Rendimiento</span><span class="v" style="color:var(--c-viaje)">'+(rP?fKml(rP)+' <small style="font-size:13px">km/L</small>':"—")+'</span><span class="s">'+fL(lit)+' de gasoil cargados</span></div>'
     +'<div class="kpi"><span class="k">Costo de los viajes</span><span class="v" style="color:var(--c-caja)">'+fM(cost)+'</span><span class="s">'+(km?fM(cost/km)+" por km":"—")+'</span></div></div>';
   /* pestañas de estado + canal + orden + vista */
-  h+='<div class="vjtabs"><div class="seg2" role="tablist">'+[["","Todos"],["Cargada","Listos para salir"],["En ruta","En viaje"],["Finalizada","Volvieron"]].map(([k,t])=>'<button type="button" role="tab" aria-selected="'+(V.est===k)+'" class="'+(V.est===k?"on":"")+'" data-act="vj-est" data-v="'+k+'">'+t+' <b class="vjc">'+cnt[k]+'</b></button>').join("")+'</div>'
-    +canalSeg(q?viajes.filter(s=>vjMatch(s,q)):viajes.filter(s=>inR(s.fecha)||s.estado!=="Finalizada"))
+  h+='<div class="vjtabs"><div class="seg2" role="tablist">'+[["","Todos"],["En ruta","En viaje"],["Finalizada","Volvieron"]].map(([k,t])=>'<button type="button" role="tab" aria-selected="'+(V.est===k)+'" class="'+(V.est===k?"on":"")+'" data-act="vj-est" data-v="'+k+'">'+t+' <b class="vjc">'+cnt[k]+'</b></button>').join("")+'</div>'
+    +canalSeg(q?viajes.filter(s=>vjMatch(s,q)):viajes.filter(s=>inR(s.fecha)))
     +'<span class="vjr"><label class="mu">Ordenar <select data-act-ch="vj-ord" aria-label="Ordenar">'+opts([["fecha","Fecha"],["nro","N° de viaje"],["chofer","Chofer"],["km","Km"]],V.ord)+'</select></label>'
     +'<span class="chseg"><button type="button" class="'+(V.vista==="tabla"?"on":"")+'" data-act="vj-vista" data-v="tabla">Tabla</button><button type="button" class="'+(V.vista==="tarj"?"on":"")+'" data-act="vj-vista" data-v="tarj">Tarjetas</button></span></span></div>';
-  if(!q&&fuera.length)h+='<div class="banner">'+IC.alert+' '+pl(fuera.length,"viaje sin cerrar","viajes sin cerrar")+' de otros días ('+esc([...new Set(fuera.map(s=>fD(s.fecha)))].sort().join(", "))+'): aparecen igual en la lista.</div>';
-  if(!L.length)return h+'<div class="emptycard" style="padding:26px">'+(q?'No hay viajes que coincidan con «'+esc(q)+'». Probá con el número, el apellido del chofer o la patente.':"No hay viajes en este período.")+(q?' <button class="btn sm" data-act="vj-q0">Limpiar búsqueda</button>':' <button class="btn sm" data-act="vj-per" data-v="todo">Ver todos</button>')+'</div>';
+  if(!q&&fuera.length)h+='<div class="banner">'+IC.alert+' '+pl(fuera.length,"viaje que sigue en viaje","viajes que siguen en viaje")+' de otras fechas ('+esc([...new Set(fuera.map(s=>fD(s.fecha)))].sort().join(", "))+'): no se muestran porque son de otra fecha. <button class="btn sm" data-act="vj-per" data-v="todo">Ver todos</button></div>';
+  if(!L.length)return h+'<div class="emptycard" style="padding:26px">'+(q?'No hay viajes que coincidan con «'+esc(q)+'». Probá con el número, el apellido del chofer o la patente.':"No hay viajes que hayan salido en estas fechas. Las órdenes de carga que todavía no salieron están en Órdenes de carga.")+(q?' <button class="btn sm" data-act="vj-q0">Limpiar búsqueda</button>':' <button class="btn sm" data-act="vj-per" data-v="todo">Ver todos</button>')+'</div>';
   if(V.vista==="tarj")return h+'<div class="lcs">'+L.map(ordenCard).join("")+'</div>'+(V.est!=="Finalizada"&&cnt["En ruta"]?ljVivo():"");
   const hl=t=>{if(!q)return esc(t);let x=esc(t);vjNorm(q).split(/\s+/).filter(w=>w.length>1).forEach(w=>{const re=new RegExp("("+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","ig");x=x.replace(re,"<mark>$1</mark>")});return x};
   h+='<section class="pn"><div class="tw"><table class="wide vjt"><thead><tr><th>N°</th><th>Fecha</th><th>Estado</th><th>Camión</th><th>Chofer</th><th>Controlador</th><th>Destino</th><th>Salida → regreso</th><th class="num">Km</th><th class="num">km/L</th><th class="num">Costo</th><th></th></tr></thead><tbody>'
