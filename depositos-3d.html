@@ -1655,10 +1655,13 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
     const caja = (sx, sy, sz, m, x, y, z, padre) => { const o = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), m); o.position.set(x, y, z); o.castShadow = true; padre.add(o); return o; };
     // Una persona de ~1,75 m (0,53 u) con escala 1, mirando hacia +x; piernas y brazos cuelgan de pivotes para balancearlos.
     // ropa: "uniforme" (chomba roja de Portal) o "traje" (saco y pantalón gris oscuro, camisa blanca y corbata);
-    // pelo: color, o null si es pelado.
-    const persona = ({ ropa = "uniforme", pelo = 0x3B2A20, escala = 1 } = {}) => {
+    // pelo: color, o null si es pelado; piel: color de piel; gorra / chaleco: color, o null si no lleva; remera: color de la chomba.
+    const persona = ({ ropa = "uniforme", pelo = 0x3B2A20, escala = 1, piel = 0xE0AC80, gorra = null, chaleco = null, remera = null } = {}) => {
       const g = new THREE.Group(), cuerpo = new THREE.Group(); cuerpo.scale.setScalar(escala); g.add(cuerpo);
-      const deTraje = ropa === "traje", arriba = deTraje ? mat.traje : mat.remera, abajo = deTraje ? mat.traje : mat.pantalon;
+      const matDe = (c) => matPelo[c] || (matPelo[c] = M(c));   // materiales por color (se comparten)
+      mat.piel = matDe(piel);
+      const matRemera = remera === null ? mat.remera : matDe(remera);   // color de la chomba (y de las mangas)
+      const deTraje = ropa === "traje", arriba = deTraje ? mat.traje : matRemera, abajo = deTraje ? mat.traje : mat.pantalon;
       const piernas = [0.045, -0.045].map((z) => {
         const p = new THREE.Group(); p.position.set(0, 0.25, z); cuerpo.add(p);
         caja(0.06, 0.22, 0.055, abajo, 0, -0.11, 0, p);
@@ -1674,10 +1677,14 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
         caja(0.06, 0.02, 0.08, mat.blanco, 0.03, 0.425, 0, cuerpo);     // cuello
       }
       caja(0.1, 0.04, 0.17, abajo, 0, 0.255, 0, cuerpo);                 // cintura
+      if (chaleco !== null) {
+        caja(0.11, 0.15, 0.178, matDe(chaleco), 0, 0.345, 0, cuerpo);    // chaleco
+        caja(0.112, 0.018, 0.18, matDe(0xD9DDE0), 0, 0.32, 0, cuerpo);   // franja reflectiva
+      }
       const brazos = [0.1, -0.1].map((z) => {
         const b = new THREE.Group(); b.position.set(0, 0.41, z); cuerpo.add(b);
         if (deTraje) { caja(0.045, 0.16, 0.045, mat.traje, 0, -0.08, 0, b); caja(0.035, 0.035, 0.035, mat.piel, 0, -0.175, 0, b); }   // manga larga y mano
-        else { caja(0.045, 0.07, 0.045, mat.remera, 0, -0.035, 0, b); caja(0.04, 0.11, 0.04, mat.piel, 0, -0.125, 0, b); }            // manga corta y brazo
+        else { caja(0.045, 0.07, 0.045, matRemera, 0, -0.035, 0, b); caja(0.04, 0.11, 0.04, mat.piel, 0, -0.125, 0, b); }            // manga corta y brazo
         return b;
       });
       const cabeza = new THREE.Mesh(new THREE.SphereGeometry(0.048, 12, 10), mat.piel); cabeza.position.set(0, 0.48, 0); cuerpo.add(cabeza);
@@ -1685,15 +1692,20 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
         const mp = matPelo[pelo] || (matPelo[pelo] = M(pelo));
         const h = new THREE.Mesh(new THREE.SphereGeometry(0.051, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2.2), mp); h.position.set(-0.005, 0.487, 0); cuerpo.add(h);
       }
+      if (gorra !== null) {
+        const mg = matDe(gorra);
+        const copa = new THREE.Mesh(new THREE.SphereGeometry(0.054, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), mg); copa.position.set(0, 0.495, 0); cuerpo.add(copa);
+        caja(0.06, 0.008, 0.07, mg, 0.06, 0.497, 0, cuerpo);             // visera, hacia adelante
+      }
       scene.add(g);
       return { g, piernas, brazos };
     };
     const VEL = 0.55, ESPERA = 4;   // u/s (~1,8 m/s) y segundos adentro antes de volver a salir
-    const recorrido = (puntos, desfase, aspecto) => {
+    const recorrido = (puntos, desfase, aspecto, espera = ESPERA) => {
       const p = persona(aspecto);
       const tramos = []; let L = 0;
       for (let i = 1; i < puntos.length; i++) { const [ax, az] = puntos[i - 1], [bx, bz] = puntos[i]; const l = Math.hypot(bx - ax, bz - az); tramos.push({ ax, az, bx, bz, l, d: L }); L += l; }
-      const T = L / VEL + ESPERA;
+      const T = L / VEL + espera;
       return (seg) => {
         const t = (seg + desfase * T) % T, s = t * VEL;
         if (s >= L) { p.g.visible = false; return; }   // ya entró a la oficina
@@ -1717,6 +1729,11 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
       caminantes.push(recorrido([[X(360), Z(560)], [X(470), Z(420)], frente15, e15], 0.35, { ropa: "traje", pelo: 0x7B4A2A, escala: 1.15 }));
       caminantes.push(recorrido([[X(300), Z(250)], [X(460), Z(330)], frente15, e15], 0.7, { ropa: "traje", pelo: 0x1E1A18, escala: 0.98 }));
     }
+    // Depósito 3: un operario de piel oscura con gorra amarilla, chaleco azul y remera azul (sin mangas rojas), pedido del
+    // usuario (2026-11-11). Camina en vertical, de norte a sur y vuelta, por el pasillo de cabecera del lado este (entre el
+    // final de las estanterías y la pared de los portones)
+    caminantes.push(recorrido([[X(126), Z(60)], [X(126), Z(350)], [X(126), Z(60)]], 0,
+      { pelo: 0x111111, piel: 0x5A3825, gorra: 0xFFD21F, chaleco: 0x1565C0, remera: 0x1565C0 }, 0));
     // Oficina del Dep. 1: vienen del estacionamiento de la flota hasta la puerta
     if (puertaOficina1) {
       const [px, pz] = puertaOficina1, frente1 = [px, pz - 0.7], adentro1 = [px, pz + 0.4];
