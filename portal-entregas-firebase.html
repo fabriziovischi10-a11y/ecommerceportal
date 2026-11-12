@@ -741,9 +741,21 @@ const GlobalStyle = () => (
       .de-landing > p, .de-landing > button { text-align: left; margin-left: 0 !important; }
     }
 
-    /* Nov. 2026: pantalla de inicio con fondo azul Portal (pedido del usuario). Solo el inicio: las pantallas internas siguen claras. */
-    html:has(.de-landing), body:has(.de-landing) { background: #0B1B3D; }
-    .de-root:has(> .de-landing), .de-root:has(.de-landing) {
+    /* Nov. 2026: TODA la app con fondo azul Portal (pedido del usuario). Las tarjetas blancas mantienen su texto oscuro;
+       lo que va directo sobre el fondo pasa a claro (títulos, subtítulos en --slate, links en --route). */
+    html, body { background: #0B1B3D !important; }
+    .de-root { color: #EEF2FF; }
+    /* .de-claro lo pone un script (al final) en cada elemento con fondo claro: adentro el texto vuelve a sus colores originales */
+    .de-root .de-claro, .de-root input, .de-root select, .de-root textarea { color: var(--ink); }
+    .de-root [style*="color: var(--slate)"] { color: #AEB9D9 !important; }
+    .de-root .de-desk-head h2 { color: #fff; }
+    .de-root .de-desk-head p { color: #AEB9D9; }
+    .de-root .de-desk { background: transparent; }
+    .de-root [style*="color: var(--route)"] { color: var(--brand-yellow) !important; }
+    .de-root .de-claro[style*="color: var(--slate)"], .de-root .de-claro [style*="color: var(--slate)"] { color: var(--slate) !important; }
+    .de-root .de-claro[style*="color: var(--route)"], .de-root .de-claro [style*="color: var(--route)"] { color: var(--route) !important; }
+    .de-root, .de-root:has(.de-landing) {
+      min-height: 100vh;
       background:
         radial-gradient(900px 600px at 85% -10%, rgba(254,213,1,.16), transparent 60%),
         radial-gradient(700px 500px at -10% 110%, rgba(201,8,42,.16), transparent 60%),
@@ -6295,6 +6307,20 @@ body:has(.de-desk) #btn-escritorio{left:auto;right:20px}
 function ubicar(){b.style.bottom="";var r=b.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;b.style.visibility="hidden";var e=document.elementFromPoint(x,y);b.style.visibility="";
 for(var p=e;p&&p!==document.body&&p!==document.documentElement;p=p.parentElement){var cs=getComputedStyle(p);if(cs.position==="fixed"||cs.position==="sticky"){var top=p.getBoundingClientRect().top;if(top>innerHeight/2)b.style.bottom=(innerHeight-top+12)+"px";break;}}}
 addEventListener("load",function(){setTimeout(ubicar,600)});addEventListener("resize",function(){clearTimeout(ubicar.t);ubicar.t=setTimeout(ubicar,250)});})();
+</script>
+<script>
+/* Nov. 2026 (fondo azul en toda la app): marca con .de-claro cada elemento con fondo claro (tarjetas, botones blancos o amarillos,
+   modales) para que su texto conserve los colores oscuros originales; lo que queda directo sobre el fondo azul se ve claro. */
+(function(){
+  function claro(el){var c=getComputedStyle(el).backgroundColor;var m=c&&c.match(/rgba?\(([^)]+)\)/);if(!m)return false;var p=m[1].split(",").map(parseFloat);
+    if(p.length>3&&p[3]<0.5)return false;var L=(0.2126*p[0]+0.7152*p[1]+0.0722*p[2])/255;return L>0.72}
+  var pend=false;
+  function pasar(){pend=false;var r=document.querySelector(".de-root");if(!r)return;var t=r.getElementsByTagName("*");
+    for(var i=0;i<t.length;i++){var e=t[i];if(e.namespaceURI!=="http://www.w3.org/1999/xhtml")continue;var k=claro(e);if(k!==e.classList.contains("de-claro"))e.classList.toggle("de-claro",k)}}
+  function pedir(){if(!pend){pend=true;requestAnimationFrame(pasar)}}
+  new MutationObserver(pedir).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:["style","class"]});
+  addEventListener("load",pedir);pedir();
+})();
 </script>
 </body>
 </html>
