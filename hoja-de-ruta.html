@@ -4983,8 +4983,15 @@ function formSal(s,pre){
       /* disponibilidad: aviso ámbar no bloqueante bajo cada selector + panel plegable; se refresca sola si cambian los datos con el formulario abierto */
       const dispo=(full)=>{if(fin){$("f_flotaBox").hidden=true;return}["camionId","acopladoId"].forEach(k=>{const el=F.elements[k],w=F.querySelector('[data-f="'+k+'"]');if(!el||!w)return;
           if(full&&document.activeElement!==el){const val=el.value;el.innerHTML='<option value="">'+(k==="camionId"?"Elegí la unidad":"Sin acoplado")+'</option>'+opts(camOptsDisp(k==="acopladoId",sid,val||v[k]),val);el.value=val}
-          let a=w.querySelector(".dispw");if(!a){a=document.createElement("div");a.className="dispw";w.appendChild(a)}a.innerHTML=dispoAviso(el.value,sid)});
-        const fb=$("f_flotaBox"),op=fb.querySelector("details[open]");fb.innerHTML=flotaPanel(sid,true);if(op)fb.querySelector("details").open=true};
+          let a=w.querySelector(".dispw");if(!a){a=document.createElement("div");a.className="dispw";w.appendChild(a)}a.innerHTML=dispoAviso(el.value,sid);
+          /* botones con las unidades DISPONIBLES de ese tipo (camión o acoplado): tocar una la elige en el selector */
+          let ch=w.querySelector(".dispchips");if(!ch){ch=document.createElement("div");ch.className="dispchips";ch.style.cssText="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:6px;font-size:12.5px";w.appendChild(ch)}
+          const libres=S.camiones.filter(c=>c.estado!=="Baja"&&(k==="acopladoId"?isAcop(c):!isAcop(c))).map(c=>vehDispo(c,sid)).filter(d=>d.st==="ok").sort((x,y)=>String(x.c.patente).localeCompare(String(y.c.patente)));
+          ch.innerHTML='<span style="font-weight:700;color:var(--ok)">'+(libres.length?"Disponibles ("+libres.length+"):":"Sin "+(k==="acopladoId"?"acoplados":"camiones")+" disponibles ahora")+'</span>'
+            +libres.map(d=>'<button type="button" class="btn sm" data-disp-pick="'+k+'" data-v="'+esc(d.c.id)+'" title="'+esc((d.c.modelo||d.c.tipo||"")+(d.volvio?" · volvió "+d.volvio:"")+(d.bad.length?" · "+d.bad.join(", "):""))+'" style="padding:2px 8px'+(el.value===d.c.id?';background:var(--ok-soft);border-color:var(--ok);color:var(--ok)':'')+'">'+esc(d.c.patente)+(d.bad.length?" ⚠":"")+'</button>').join("")});
+        /* el panel de disponibilidad arranca abierto; si la persona lo cierra, queda cerrado mientras el formulario está abierto */
+        const fb=$("f_flotaBox");fb.innerHTML=flotaPanel(sid,true);const dd=fb.querySelector("details");if(dd){dd.open=fb.dataset.cerrado!=="1";dd.addEventListener("toggle",()=>{fb.dataset.cerrado=dd.open?"":"1"})}};
+      F.addEventListener("click",e=>{const b=e.target.closest("[data-disp-pick]");if(!b)return;const el=F.elements[b.dataset.dispPick];if(!el)return;el.value=b.dataset.v;el.dispatchEvent(new Event("change",{bubbles:true}))});
       dispo(false);MF.onData=()=>dispo(true);
       F.elements.acopladoId.addEventListener("change",()=>dispo(false));
       F.elements.camionId.addEventListener("change",()=>dispo(false));
