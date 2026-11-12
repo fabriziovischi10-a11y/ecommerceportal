@@ -741,6 +741,19 @@ const GlobalStyle = () => (
       .de-landing > p, .de-landing > button { text-align: left; margin-left: 0 !important; }
     }
 
+    /* Nov. 2026: pantalla de inicio con fondo azul Portal (pedido del usuario). Solo el inicio: las pantallas internas siguen claras. */
+    html:has(.de-landing), body:has(.de-landing) { background: #0B1B3D; }
+    .de-root:has(> .de-landing), .de-root:has(.de-landing) {
+      background:
+        radial-gradient(900px 600px at 85% -10%, rgba(254,213,1,.16), transparent 60%),
+        radial-gradient(700px 500px at -10% 110%, rgba(201,8,42,.16), transparent 60%),
+        linear-gradient(160deg, #10275a 0%, #0b1b3d 55%, #081430 100%);
+      background-attachment: fixed; }
+    .de-landing > .de-hero { box-shadow: inset 0 -6px 0 var(--brand-yellow), 0 30px 60px -30px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.08) !important; }
+    .de-landing > p { color: rgba(255,255,255,.7) !important; }
+    .de-landing > button { color: var(--brand-yellow) !important; }
+    .de-landing .de-stats > div { box-shadow: 0 10px 26px -14px rgba(0,0,0,.6) !important; }
+
     @media (prefers-reduced-motion: reduce) {
       .de-desk-main { animation: none; }
       .de-btn-primary, .de-btn-amber, .de-star { transition: none; }
