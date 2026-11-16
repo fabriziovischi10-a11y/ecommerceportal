@@ -2018,7 +2018,7 @@ function pkFusion(prev,cons,cab,now,quien){const upd={},P=(prev&&prev.pasillos)|
   const fin={};Object.keys(cons).forEach(p=>Object.keys(cons[p]).forEach(k=>{const dst=dondeEstaba[k]||p;(fin[dst]=fin[dst]||{})[k]=cons[p][k]}));
   Object.assign(upd,cab,{actualizado:now,actualizadoPor:quien});if(!prev){upd.creado=now;upd.creadoPor=quien}
   Object.keys(fin).forEach(p=>{const pp=P[p],L=(pp&&pp.lineas)||{};let toca=false;
-    if(!pp)upd["pasillos/"+p+"/estado"]="pendiente";
+    if(!pp){upd["pasillos/"+p+"/estado"]="pendiente";upd["pasillos/"+p+"/creado"]=now}   // creado = llegó a picking (espera de picking por pasillo)
     Object.keys(fin[p]).forEach(k=>{const n=fin[p][k],o=L[k],b="pasillos/"+p+"/lineas/"+k;
       if(!o){upd[b]=n;nuevas++;toca=true;return}
       ["c","d","q","ean","equi","cat"].forEach(f=>{if(o[f]!==n[f])upd[b+"/"+f]=n[f]});

@@ -209,6 +209,26 @@ body.ver-scan #scanbar{display:block}
 .m-col{display:grid;gap:10px;margin-top:14px}
 .tabla tr.dif td{background:rgba(224,38,28,.08)}
 .tabla.ancha td.wr{white-space:normal;min-width:150px;max-width:210px}
+/* esperas y pausas (2026-11-16) */
+.subtabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 2px}
+.subtabs .chip{min-height:38px;padding:.3rem .85rem;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--fg);font-weight:800;font-size:.86rem;cursor:pointer}
+.subtabs .chip.on{background:var(--amarillo);color:#0B1B3D;border-color:var(--amarillo)}
+.kpi .v.t{font-size:1.12rem;line-height:1.25;margin:2px 0}
+.eb{display:flex;height:14px;border-radius:7px;overflow:hidden;background:rgba(255,255,255,.06);min-width:24px}
+.eb i{display:block;height:100%;min-width:2px}
+.eb i.ab{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.35) 0 4px,transparent 4px 8px)!important}
+.eb-ley{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:.76rem;color:var(--muted-fg);margin:6px 2px 0}
+.eb-ley span{display:inline-flex;align-items:center;gap:5px}.eb-ley span::before{content:"";width:12px;height:8px;border-radius:2px;background:var(--c)}
+.tabla td.amb{color:var(--amber);font-weight:800}.tabla td.roj{color:var(--rose);font-weight:800}
+.tabla tr.pz-ab td{background:rgba(224,38,28,.10)}.tabla tr.pz-la td{background:rgba(255,209,0,.07)}
+.esp-sub{display:block;font-size:.72rem;color:var(--muted-fg);font-weight:400}
+.tl{list-style:none;margin:.4rem 0 .6rem;padding:0 0 0 4px}
+.tl li{position:relative;padding:0 0 10px 20px;border-left:2px solid var(--border);margin-left:6px}
+.tl li:last-child{border-left-color:transparent;padding-bottom:0}
+.tl li::before{content:"";position:absolute;left:-7px;top:2px;width:12px;height:12px;border-radius:50%;background:var(--c,var(--muted-fg));border:2px solid var(--card)}
+.tl li.no::before{background:transparent;border:2px dashed var(--muted-fg)}
+.tl .h{font-weight:800}.tl .w{display:block;font-size:.78rem;color:var(--muted-fg);margin-top:1px}
+.tl .w.amb{color:var(--amber);font-weight:800}.tl .w.roj{color:var(--rose);font-weight:800}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -262,6 +282,9 @@ body.ver-scan #scanbar{display:block}
          lo PIQUEADO (tomado), nunca contra lo pedido. «Corregir lo piqueado» cambia pasillos/<p>/lineas/<cod>/tomado (y estado) y deja
          historial en lineas/<cod>/correcciones/<push>{antes,despues,por,porId,at,etapa}.
          Etapa (ctlEtapa): picking → control1 (falta c1 terminado con todos los renglones) → controlado. El TMS usa la misma regla (pkCtl).
+       ESPERAS (2026-11-16): control.listoParaControlEn = cuando terminó el último pasillo (lo guarda «Terminar»); pasillos/<p>/creado = cuando
+         el pasillo llegó a picking (TMS en pkFusion y «Asignar a un pasillo»). Pedidos viejos: fin máximo de los pasillos / pedido.creado.
+         Cálculos en esperasDe / pausasDe (Supervisión → Tiempos → Esperas y Pausas; línea de tiempo en el detalle del pedido).
    - picking/control/integrantes/<push>{nombre,alta,prueba?}  (los controladores: grupo aparte de los pasillos)
    - picking/archivo/<salidaId>  (pedidos archivados por el supervisor)
    - picking/config/pinSupervisor  (por defecto "1234": NO es seguridad, solo evita que los chicos entren por error)
@@ -552,6 +575,8 @@ function terminar(){const x=pedidoActual(),pp=x.pasillos[ST.yo.pasillo],a=avance
     u.duracionSeg=Math.round(tm.seg);u.pausasSeg=Math.round(tm.pausaSeg);
     const uni=activas(pp2).reduce((s,l)=>s+(Number(l.tomado)||0),0),tit=pedTit(x),pas=pasDe(ST.yo.pasillo).nombre;
     guardar(pasPath(ST.pedidoId),u);
+    // ESPERAS (2026-11-16): si con este pasillo quedan TODOS listos, se guarda el momento en que el pedido pasa a esperar control
+    const xa=pedidoActual()||x;if(pasillosDePed(xa).every(p=>p===ST.yo.pasillo||xa.pasillos[p].estado==="listo"))guardar("picking/pedidos/"+xa.id+"/control",{listoParaControlEn:t});
     senal("ok");ST.vista="pedidos";ST.pedidoId=null;render();resumenFin(tit,pas,tm,a,uni)})}
 /* resumen al terminar: «Tardaste 12:34 · 18 renglones · 240 u» */
 function resumenFin(tit,pas,tm,a,uni){const K=Object.keys(tm.por).filter(k=>tm.por[k].seg>=1),rh=tm.seg>=60?a.tot/(tm.seg/3600):null;
@@ -568,7 +593,7 @@ function tomar(id,otro){const x=ST.pedidos[id];if(!x)return;const pp=x.pasillos[
   if(otro)confirmar("Tomar el pedido","Este pedido lo tiene <b>"+esc(pp.picker)+"</b>. Si lo tomás, queda a tu nombre (lo que ya cargó no se pierde) y el tiempo corre a tu nombre desde ahora.","Tomarlo",hacer);else hacer()}
 function abrirPedido(id,yaArranco){ST.pedidoId=id;ST.sel=null;ST.vista="picking";if(!yaArranco)arrancarTiempo(id,false);render();window.scrollTo(0,0);despierto(true)}
 /* pausa (almuerzo, otra tarea): el reloj se detiene hasta «Reanudar»; rutas hoja para no pisarse si se manda sin señal */
-function pausar(){const x=pedidoActual();if(!x||!tiempos(x.pasillos[ST.yo.pasillo]).corre)return;const MOT=["Almuerzo","Otra tarea","Descanso","Baño"];
+function pausar(){const x=pedidoActual();if(!x||!tiempos(x.pasillos[ST.yo.pasillo]).corre)return;const MOT=MOTIVOS_PAUSA;
   const m=modal("Pausar el tiempo",'<p class="small muted" style="margin-top:0">El cronómetro se detiene hasta que toques <b>Reanudar</b>. ¿Por qué parás?</p><div class="acc" style="margin-top:0">'+MOT.map(z=>'<button class="btn btn-lg" data-mp="'+esc(z)+'">'+esc(z)+'</button>').join("")+'</div><div class="m-acc"><button class="btn" data-a="m-cerrar">Cancelar</button></div>');
   m.querySelectorAll("[data-mp]").forEach(b=>b.onclick=()=>{cerrarModal();const k=nuevoId(),t=ahora();
     guardar(pasPath(ST.pedidoId),{["pausas/"+k+"/desde"]:t,["pausas/"+k+"/motivo"]:b.dataset.mp,["pausas/"+k+"/por"]:ST.yo.nombre,["pausas/"+k+"/porId"]:ST.yo.id});
@@ -758,7 +783,7 @@ function ctlResumenFin(tit,tm,r){const rh=tm.seg>=60?r.ren/(tm.seg/3600):null;
     +(r.sobrantes?'<p class="small" style="margin:.2rem 0">'+pl(r.sobrantes,"sobrante registrado","sobrantes registrados")+'</p>':"")
     +(rh?'<p class="muted" style="margin:.3rem 0 0">≈ '+fN(Math.round(rh))+' renglones por hora</p>':"")
     +'</div><div class="m-acc"><button class="btn btn-primary btn-lg" data-a="m-cerrar">Listo</button></div>')}
-function ctlPausar(){const A=ctlActual();if(!A||!tiempos(A.cs).corre)return;const MOT=["Almuerzo","Otra tarea","Descanso","Baño"];
+function ctlPausar(){const A=ctlActual();if(!A||!tiempos(A.cs).corre)return;const MOT=MOTIVOS_PAUSA;
   const m=modal("Pausar el tiempo",'<p class="small muted" style="margin-top:0">El cronómetro del control se detiene hasta que toques <b>Reanudar</b>. ¿Por qué parás?</p><div class="acc" style="margin-top:0">'+MOT.map(z=>'<button class="btn btn-lg" data-mp="'+esc(z)+'">'+esc(z)+'</button>').join("")+'</div><div class="m-acc"><button class="btn" data-a="m-cerrar">Cancelar</button></div>');
   m.querySelectorAll("[data-mp]").forEach(b=>b.onclick=()=>{cerrarModal();const k=nuevoId(),p=A.s+"/pausas/"+k+"/";
     guardar(ctlPath(A.x.id)+"/control",{[p+"desde"]:ahora(),[p+"motivo"]:b.dataset.mp,[p+"por"]:ST.yo.nombre,[p+"porId"]:ST.yo.id});senal("info","Tiempo en pausa");window.scrollTo(0,0)})}
@@ -804,9 +829,10 @@ function ctlIntegrantesCard(){const I=Object.keys(ctlInts()).map(id=>Object.assi
     +(I.map(i=>'<div class="fila entre" style="padding:6px 0;border-bottom:1px solid var(--border)"><span>'+esc(i.nombre)+(i.prueba?'<span class="prueba">prueba</span>':"")+'</span><span class="fila"><button class="btn btn-sm" data-a="ctl-int-ed" data-id="'+esc(i.id)+'">Editar</button><button class="btn btn-sm btn-ghost" style="color:var(--rose)" data-a="ctl-int-del" data-id="'+esc(i.id)+'">Quitar</button></span></div>').join("")||'<p class="small muted">Sin controladores.</p>')
     +'<div class="fila" style="margin-top:8px;flex-wrap:nowrap"><input id="ni-ctl" placeholder="Nombre del nuevo controlador" data-enter="ctl-int-add" data-p="ctl"><button class="btn btn-primary" data-a="ctl-int-add" data-p="ctl">Agregar</button></div></div>'}
 /* Tiempos: rendimiento de los controladores (mismo período; el filtro de pasillo no aplica) */
-function datosCtl(){const {d,hasta}=periodoTz(),now=ahoraMs(),F=Object.assign({},ST.archivo||{},ST.pedidos),I={},g=(k,nom)=>{const o=I[k]=I[k]||{k,nom:"",n:0,seg:0,ren:0,nook:0,corr:0,dif:0};if(!o.nom&&nom)o.nom=nom;return o};
+function datosCtl(){const {d,hasta}=periodoTz(),now=ahoraMs(),F=Object.assign({},ST.archivo||{},ST.pedidos),I={},g=(k,nom)=>{const o=I[k]=I[k]||{k,nom:"",n:0,seg:0,ren:0,nook:0,corr:0,dif:0,np:0,pseg:0};if(!o.nom&&nom)o.nom=nom;return o};
   Object.keys(F).forEach(id=>{const x=F[id];if(!x||!x.control)return;CTL_ETAPAS.forEach(s=>{const cs=x.control[s];if(!cs||!cs.inicio||cs.estado!=="listo")return;const tm=tiempos(cs,now);
     const ref=msDe(cs.fin);if(ref==null||ref<d||ref>=hasta)return;const toc={};
+    pausasDe(cs,now).forEach(z=>{const o=g(z.k,z.por);o.np++;o.pseg+=z.seg});
     Object.keys(tm.por).forEach(k=>{g(k,tm.por[k].nom).seg+=tm.por[k].seg;if(tm.por[k].seg>=1)toc[k]=1});
     Object.values(cs.lineas||{}).forEach(r=>{const k=r.porId||("n:"+(r.por||"")),o=g(k,r.por);o.ren++;if(!r.ok)o.nook++;if(r.accion==="corregido")o.corr++;if(r.accion==="diferencia")o.dif++;toc[k]=1});
     Object.keys(toc).forEach(k=>I[k].n++)})});
@@ -814,12 +840,12 @@ function datosCtl(){const {d,hasta}=periodoTz(),now=ahoraMs(),F=Object.assign({}
   L.sort((a,b)=>((b.rh||0)-(a.rh||0))||a.nom.localeCompare(b.nom));return L}
 function ctlTiemposHtml(){const L=datosCtl();
   return'<h3 style="margin-top:16px">Por controlador · '+esc(periodoTz().et)+'</h3>'+(!L.length?'<div class="vacio">Sin controles terminados en este período.</div>'
-    :'<div class="card" style="padding:.3rem .6rem"><div class="scroll-x"><table class="tabla ancha"><thead><tr><th>Controlador</th><th class="num">Controles</th><th class="num">Renglones</th><th class="num">Tiempo</th><th class="num">Reng./h</th><th class="num">Seg/reng.</th><th class="num">No coincidieron</th><th class="num">Corregidos</th><th class="num">Con diferencia</th></tr></thead><tbody>'
-      +L.map(o=>'<tr><td><b>'+esc(o.nom)+'</b></td><td class="num">'+fN(o.n)+'</td><td class="num">'+fN(o.ren)+'</td><td class="num mono">'+fDur(o.seg)+'</td><td class="num"><b>'+n1(o.rh)+'</b></td><td class="num">'+n1(o.spr)+'</td><td class="num">'+fN(o.nook)+'</td><td class="num"'+(o.corr?' style="color:var(--orange)"':"")+'>'+fN(o.corr)+'</td><td class="num"'+(o.dif?' style="color:var(--rose)"':"")+'>'+fN(o.dif)+'</td></tr>').join("")+'</tbody></table></div></div>'
+    :'<div class="card" style="padding:.3rem .6rem"><div class="scroll-x"><table class="tabla ancha"><thead><tr><th>Controlador</th><th class="num">Controles</th><th class="num">Renglones</th><th class="num">Tiempo</th><th class="num">Reng./h</th><th class="num">Seg/reng.</th><th class="num">No coincidieron</th><th class="num">Corregidos</th><th class="num">Con diferencia</th><th class="num">Pausas</th><th class="num">Tiempo en pausa</th></tr></thead><tbody>'
+      +L.map(o=>'<tr><td><b>'+esc(o.nom)+'</b></td><td class="num">'+fN(o.n)+'</td><td class="num">'+fN(o.ren)+'</td><td class="num mono">'+fDur(o.seg)+'</td><td class="num"><b>'+n1(o.rh)+'</b></td><td class="num">'+n1(o.spr)+'</td><td class="num">'+fN(o.nook)+'</td><td class="num"'+(o.corr?' style="color:var(--orange)"':"")+'>'+fN(o.corr)+'</td><td class="num"'+(o.dif?' style="color:var(--rose)"':"")+'>'+fN(o.dif)+'</td><td class="num">'+fN(o.np)+'</td><td class="num mono">'+(o.np?fDur(o.pseg):"—")+'</td></tr>').join("")+'</tbody></table></div></div>'
       +'<p class="small muted" style="margin:6px 2px 0"><b>Renglones por hora</b> = renglones controlados ÷ horas del control a su nombre, sin pausas. No coincidieron = el conteo no dio igual a lo piqueado en algún intento final.</p>')}
 function ctlTiemposAoa(){const r1=v=>v==null?"":Math.round(v*10)/10;
-  return[["Controlador","Controles terminados","Renglones controlados","Tiempo (h:mm:ss)","Tiempo (min)","Renglones por hora","Segundos por renglón","No coincidieron","Corregidos","Con diferencia"]]
-    .concat(datosCtl().map(o=>[o.nom,o.n,o.ren,fDur(o.seg),Math.round(o.seg/6)/10,r1(o.rh),r1(o.spr),o.nook,o.corr,o.dif]))}
+  return[["Controlador","Controles terminados","Renglones controlados","Tiempo (h:mm:ss)","Tiempo (min)","Renglones por hora","Segundos por renglón","No coincidieron","Corregidos","Con diferencia","Pausas","Tiempo en pausa (min)"]]
+    .concat(datosCtl().map(o=>[o.nom,o.n,o.ren,fDur(o.seg),Math.round(o.seg/6)/10,r1(o.rh),r1(o.spr),o.nook,o.corr,o.dif,o.np,Math.round(o.pseg/6)/10]))}
 async function exportarControles(){const P=ctlPedidosConControl(),A=[["Pedido","Fecha","Etapa","Código","Producto","Pasillo(s)","Pedido (u)","Piqueado original"].concat(CTL_ETAPAS.flatMap(s=>[ctlColT(s),"Resultado "+ctlEtTxt(s),"Controlador "+ctlEtTxt(s),"Conteos "+ctlEtTxt(s)]),["Final (piqueado)","Correcciones"])];
   const B=[["Pedido","Fecha","Etapa","Controlador","Inicio","Fin","Duración (h:mm:ss)","Duración (min)","Pausas (min)","Renglones","Correctos","Recontados","Corregidos","Con diferencia","Sobrantes","Renglones por hora"]];
   P.forEach(x=>{const e=ctlEtapa(x),et=x.archivado?"Archivado":e==="picking"?"Picking":e==="controlado"?"Controlado":"En control";
@@ -862,7 +888,7 @@ function sPedidos(){const L=Object.values(ST.pedidos).sort((a,b)=>String(b.fecha
       +'<div class="meta">'+pedMeta(x)+'</div>'+filas+ctlLineaSuper(x)
       +'<div class="fila" style="margin-top:10px"><button class="btn btn-sm" data-a="ver-ped" data-id="'+esc(x.id)+'">Detalle'+(falt?" y faltantes":"")+'</button><button class="btn btn-sm" data-a="archivar" data-id="'+esc(x.id)+'">Archivar</button><button class="btn btn-sm btn-ghost" style="color:var(--rose)" data-a="borrar-ped" data-id="'+esc(x.id)+'">Borrar</button></div></div>'}).join("")+'</div>'}
 function verPedido(id){const x=ST.pedidos[id];if(!x)return;const P=pasillosDePed(x);
-  modal("Pedido "+pedTit(x)+(x.nro?"":" · "+fFecha(x.fecha)),P.map(p=>{const pp=x.pasillos[p],ps=pasDe(p),{A}=lineasOrdenadas(pp);
+  modal("Pedido "+pedTit(x)+(x.nro?"":" · "+fFecha(x.fecha)),lineaTiempoHtml(x)+P.map(p=>{const pp=x.pasillos[p],ps=pasDe(p),{A}=lineasOrdenadas(pp);
     return'<h3 style="margin-top:.6rem;color:'+esc(ps.color)+'">'+esc(ps.nombre)+' <span class="small muted">'+esc(pp.estado||"pendiente")+(pp.picker?" · "+esc(pp.picker):"")+'</span></h3><table class="tabla"><thead><tr><th>Producto</th><th class="num">Tom./Ped.</th><th>Estado</th></tr></thead><tbody>'
       +A.map(l=>{const e=est(l);return'<tr><td>'+esc(l.d)+'<div class="small muted mono">'+esc(l.c)+' · '+esc(ubiCorta(l))+'</div>'+(l.motivo?'<div class="small" style="color:var(--rose)">'+esc(l.motivo)+'</div>':"")+'</td><td class="num mono">'+(l.tomado!=null?fN(l.tomado):"–")+'/'+fN(l.q)+'</td><td><span class="badge '+EST_T[e][1]+'">'+EST_T[e][0]+'</span></td></tr>'}).join("")+'</tbody></table>'}).join("")
     +'<div class="m-acc"><button class="btn" data-a="m-cerrar">Cerrar</button></div>')}
@@ -889,7 +915,7 @@ function sAjustes(){return'<div class="card"><h3>PIN de supervisión</h3><p clas
   +'<div class="card" style="margin-top:10px"><h3>Datos</h3><p class="small muted" style="margin:0">Ubicaciones del WMS: '+esc(ST.ubicFecha||"—")+' · Catálogo: '+fN(Object.keys(ST.cat||{}).length)+' productos.</p><button class="btn btn-sm" style="margin-top:8px" data-a="recargar-cat">Volver a bajar el catálogo</button></div>'}
 /* ---------- Tiempos: rendimiento por integrante y por pedido (pedidos activos + archivados) ---------- */
 function cargarArchivo(){ST.archivoCargando=true;
-  R("archivo").once("value").then(s=>{ST.archivo=s.val()||{}}).catch(e=>{console.error(e);ST.archivo=ST.archivo||{};toast("No se pudo leer el archivo: "+e.message,"err")})
+  return R("archivo").once("value").then(s=>{ST.archivo=s.val()||{}}).catch(e=>{console.error(e);ST.archivo=ST.archivo||{};toast("No se pudo leer el archivo: "+e.message,"err")})
     .then(()=>{ST.archivoCargando=false;if(ST.vista==="super"&&(ST.superTab==="tiempos"||ST.superTab==="controles"))render()})}
 function nombreInt(k){for(const p of Object.keys(ST.pasillos)){const i=(ST.pasillos[p].integrantes||{})[k];if(i&&i.nombre)return i.nombre}return""}
 function periodoTz(){const z=ST.tz,h=new Date();h.setHours(0,0,0,0);let d=h.getTime(),hasta=d+864e5,et="Hoy";
@@ -908,9 +934,10 @@ function datosTiempos(){const {d,hasta,et}=periodoTz(),now=ahoraMs(),F=Object.as
         const k=l.porId||(l.por?"n:"+l.por:(pp.pickerId||"n:"+(pp.picker||"")));const o=porI[k]=porI[k]||{ren:0,uni:0,falt:0,nom:l.por||""};o.ren++;o.uni+=t;if(f)o.falt++});
       filas.push({id,x:Object.assign({id},x),p,pp,tm,ren,uni,falt,tot:L.length,porI,ref,archivado:!ST.pedidos[id]})})});
   filas.sort((a,b)=>b.ref-a.ref);
-  const I={},g=(k,nom)=>{const o=I[k]=I[k]||{k,nom:"",n:0,seg:0,ren:0,uni:0,falt:0};if(!o.nom&&nom)o.nom=nom;return o};
+  const I={},g=(k,nom)=>{const o=I[k]=I[k]||{k,nom:"",n:0,seg:0,ren:0,uni:0,falt:0,np:0,pseg:0};if(!o.nom&&nom)o.nom=nom;return o};
   const T=filas.filter(f=>f.tm.listo);
   T.forEach(f=>{const toc={};Object.keys(f.tm.por).forEach(k=>{const v=f.tm.por[k];g(k,v.nom).seg+=v.seg;if(v.seg>=1)toc[k]=1});
+    pausasDe(f.pp,now).forEach(z=>{const o=g(z.k,z.por);o.np++;o.pseg+=z.seg});   // pausas: a nombre de quien la tocó
     Object.keys(f.porI).forEach(k=>{const v=f.porI[k],o=g(k,v.nom);o.ren+=v.ren;o.uni+=v.uni;o.falt+=v.falt;toc[k]=1});
     Object.keys(toc).forEach(k=>I[k].n++)});
   const ints=Object.values(I).filter(o=>o.n).map(o=>{o.nom=nombreInt(o.k)||o.nom||"(sin nombre)";const hs=o.seg/3600;
@@ -928,15 +955,19 @@ function sTiempos(){if(ST.archivo==null&&!ST.archivoCargando)cargarArchivo();
     +'<div><label for="tz-pas">Pasillo</label><select id="tz-pas" data-a2="tz-pas"><option value="">Todos</option>'+P.map(p=>'<option value="'+esc(p.id)+'"'+(z.pas===p.id?" selected":"")+'>'+esc(p.nombre)+'</option>').join("")+'</select></div>'
     +(z.per==="rango"?'<div><label for="tz-desde">Desde</label><input type="date" id="tz-desde" data-a2="tz-desde" value="'+esc(z.desde)+'"></div><div><label for="tz-hasta">Hasta</label><input type="date" id="tz-hasta" data-a2="tz-hasta" value="'+esc(z.hasta)+'"></div>':"")
     +'</div><div class="fila entre" style="margin-top:10px"><span class="small muted">'+(ST.archivoCargando||ST.archivo==null?"Cargando pedidos archivados…":"Incluye "+pl(Object.keys(ST.archivo).length,"pedido archivado","pedidos archivados"))+'</span>'
-    +'<span class="fila"><button class="btn btn-sm" data-a="tz-recargar">Actualizar</button><button class="btn btn-sm btn-primary" data-a="tz-excel"'+(D.filas.length?"":" disabled")+'>Exportar a Excel</button></span></div></div>';
+    +'<span class="fila"><button class="btn btn-sm" data-a="tz-recargar">Actualizar</button><button class="btn btn-sm btn-primary" data-a="tz-excel">Exportar a Excel</button></span></div></div>';
+  const sub=ST.tzSub||"rend";
+  h+='<div class="subtabs" role="tablist">'+[["rend","Rendimiento"],["esperas","Esperas"],["pausas","Pausas"]].map(t=>'<button class="chip'+(sub===t[0]?" on":"")+'" role="tab" aria-selected="'+(sub===t[0])+'" data-a="tz-sub" data-v="'+t[0]+'">'+t[1]+'</button>').join("")+'</div>';
+  if(sub==="esperas")return h+sEsperas();
+  if(sub==="pausas")return h+sPausas();
   h+='<div class="kpis"><div class="kpi"><span class="k">Pasillos terminados</span><span class="v">'+fN(k.n)+'</span>'+(k.curso?'<span class="small muted">+'+k.curso+' en curso</span>':"")+'</div>'
     +'<div class="kpi"><span class="k">Tiempo total</span><span class="v">'+fDur(k.seg)+'</span><span class="small muted">prom. '+(k.prom!=null?fDur(k.prom):"—")+' por pasillo</span></div>'
     +'<div class="kpi"><span class="k">Renglones / hora</span><span class="v">'+n1(k.rh)+'</span><span class="small muted">'+fN(k.ren)+' renglones</span></div>'
     +'<div class="kpi"><span class="k">Unidades</span><span class="v">'+fN(k.uni)+'</span><span class="small muted">'+(k.seg>=60?fN(Math.round(k.uni/(k.seg/3600)))+' u/hora':"—")+'</span></div></div>';
   h+='<h3 style="margin-top:6px">Por integrante · '+esc(D.et)+'</h3>';
   if(!D.ints.length)h+='<div class="vacio">Sin pasillos terminados en este período.</div>';
-  else h+='<div class="card" style="padding:.3rem .6rem"><div class="scroll-x"><table class="tabla ancha"><thead><tr><th>#</th><th>Integrante</th><th class="num">Pedidos</th><th class="num">Renglones</th><th class="num">Unidades</th><th class="num">Tiempo</th><th class="num">Prom./pedido</th><th class="num">Reng./h</th><th class="num">U/h</th><th class="num">Seg/reng.</th><th class="num">Faltantes</th></tr></thead><tbody>'
-    +D.ints.map(o=>'<tr><td class="rk">'+(o.pos||"–")+'</td><td><b>'+esc(o.nom)+'</b></td><td class="num">'+fN(o.n)+'</td><td class="num">'+fN(o.ren)+'</td><td class="num">'+fN(o.uni)+'</td><td class="num mono">'+fDur(o.seg)+'</td><td class="num mono">'+(o.prom!=null?fDur(o.prom):"—")+'</td><td class="num"><b>'+n1(o.rh)+'</b></td><td class="num">'+n1(o.uh)+'</td><td class="num">'+n1(o.spr)+'</td><td class="num"'+(o.falt?' style="color:var(--rose)"':"")+'>'+fN(o.falt)+'</td></tr>').join("")+'</tbody></table></div></div>'
+  else h+='<div class="card" style="padding:.3rem .6rem"><div class="scroll-x"><table class="tabla ancha"><thead><tr><th>#</th><th>Integrante</th><th class="num">Pedidos</th><th class="num">Renglones</th><th class="num">Unidades</th><th class="num">Tiempo</th><th class="num">Prom./pedido</th><th class="num">Reng./h</th><th class="num">U/h</th><th class="num">Seg/reng.</th><th class="num">Faltantes</th><th class="num">Pausas</th><th class="num">Tiempo en pausa</th></tr></thead><tbody>'
+    +D.ints.map(o=>'<tr><td class="rk">'+(o.pos||"–")+'</td><td><b>'+esc(o.nom)+'</b></td><td class="num">'+fN(o.n)+'</td><td class="num">'+fN(o.ren)+'</td><td class="num">'+fN(o.uni)+'</td><td class="num mono">'+fDur(o.seg)+'</td><td class="num mono">'+(o.prom!=null?fDur(o.prom):"—")+'</td><td class="num"><b>'+n1(o.rh)+'</b></td><td class="num">'+n1(o.uh)+'</td><td class="num">'+n1(o.spr)+'</td><td class="num"'+(o.falt?' style="color:var(--rose)"':"")+'>'+fN(o.falt)+'</td><td class="num">'+fN(o.np)+'</td><td class="num mono">'+(o.np?fDur(o.pseg):"—")+'</td></tr>').join("")+'</tbody></table></div></div>'
     +'<p class="small muted" style="margin:6px 2px 0">Ranking de más rápido a más lento por <b>renglones por hora</b> = renglones confirmados ÷ horas con el pasillo a su nombre, <b>sin contar pausas</b>. Renglón = producto resuelto (completo, parcial o faltante). El tiempo de cada pedido se reparte por tramos: si otro lo tomó con «Tomarlo yo», cada uno suma su parte. Con menos de 10 renglones no entra en el ranking (–). Compará dentro del mismo pasillo: no se piquea igual Bazar que Pañal.</p>';
   h+=ctlTiemposHtml();
   h+='<h3 style="margin-top:16px">Por pedido</h3>';
@@ -946,19 +977,167 @@ function sTiempos(){if(ST.archivo==null&&!ST.archivoCargando)cargarArchivo();
       +'<td>'+(f.tm.listo?esc(fHora(f.pp.fin)):'<span class="badge '+(f.tm.pausado?'t-amber">En pausa':'t-blue">En curso')+'</span>')+'</td><td class="num mono"><b>'+(f.tm.listo?fDur(f.tm.seg):cronoHtml(f.id,f.p,f.tm))+'</b></td><td class="num mono">'+(f.tm.nPausas?fDur(f.tm.pausaSeg)+' ('+f.tm.nPausas+')':"—")+'</td>'
       +'<td class="num">'+fN(f.ren)+(f.ren<f.tot?'/'+fN(f.tot):"")+(f.falt?' <span style="color:var(--rose)">('+f.falt+' falt.)</span>':"")+'</td><td class="num">'+fN(f.uni)+'</td><td class="num">'+(f.tm.listo&&f.tm.seg>=60?fN(Math.round(f.ren/(f.tm.seg/3600))):"—")+'</td></tr>'}).join("")+'</tbody></table></div></div>';
   return h}
+/* =====================================================================
+   ESPERAS Y PAUSAS (2026-11-16). Todo sale de lo que ya se guarda; hitos del pedido:
+   llegó a picking (pedido.creado; si un pasillo llegó después en un re-envío, pasillos/<p>/creado — lo pone el TMS desde 2026-11-16)
+   → tomado (pasillos/<p>/inicio) → terminado (control.listoParaControlEn, desde 2026-11-16; antes = el fin más tardío de los pasillos)
+   → control tomado (control.c1.inicio) → controlado (control.controladoEn o c1.fin) → cargado en orden (cargadoEn, lo pone el TMS).
+   Si falta un dato se muestra «—». Lo que sigue abierto se mide hasta ahora («en curso») y no entra en los promedios.
+   ===================================================================== */
+const PAUSA_LARGA_MIN=30;   // pausa larga: 30 min o más
+const ESP_UMB={pick:[30,60],ctl:[20,45],ord:[120,240],ciclo:[240,480]};   // minutos [ámbar, rojo]
+const ESP_SEG={ep:["Espera de picking","#ffd84d"],pk:["Picking","#5fa8ff"],ec:["Espera de control","#ff9a2e"],ct:["Control","#b78cff"],eo:["Espera de orden","#ff6b6b"]};
+function fEsp(seg){if(seg==null||isNaN(seg))return"—";seg=Math.max(0,Math.round(seg));if(seg<60)return seg+" s";const m=Math.round(seg/60);if(m<60)return m+" min";
+  const h=Math.floor(m/60),r=m%60;if(h<24)return h+" h "+String(r).padStart(2,"0")+" min";return Math.floor(h/24)+" d "+(h%24)+" h"}
+const nivelEsp=(seg,u)=>seg==null?"":seg/60>=u[1]?"roj":seg/60>=u[0]?"amb":"";
+/* pausas de un pasillo o de una etapa de control: [{key,d,h,seg,abierta,motivo,por,k(persona)}]. Sin «hasta» y la etapa terminada → se cierra en el fin */
+function pausasDe(o,now){o=o||{};now=now==null?ahoraMs():now;const listo=o.estado==="listo",tope=listo&&msDe(o.fin)!=null?msDe(o.fin):now;
+  return Object.keys(o.pausas||{}).map(key=>{const p=o.pausas[key]||{},d=msDe(p.desde);if(d==null)return null;let h=p.hasta?msDe(p.hasta):tope;if(h==null)h=now;
+    return{key,d,h,seg:Math.max(0,(h-d)/1000),abierta:!p.hasta&&!listo,motivo:String(p.motivo||"").trim()||"Sin motivo",por:p.por||"",k:p.porId||("n:"+(p.por||""))}}).filter(Boolean)}
+const maxN=a=>{const v=a.filter(z=>z!=null);return v.length?Math.max(...v):null},minN=a=>{const v=a.filter(z=>z!=null);return v.length?Math.min(...v):null};
+/* esperas de un pedido. pas = pasillo del filtro (las columnas de picking se calculan solo con ese pasillo; control, orden y la barra son del pedido) */
+function esperasDe(x,now,pas){now=now==null?ahoraMs():now;const Pall=pasillosDePed(x),c=x.control||{},c1=c.c1||{},zona=porZona(x),arch=!!x.archivado;
+  const crePed=msDe(x.creado),pasI=p=>{const pp=x.pasillos[p]||{},llega=msDe(pp.creado)!=null?msDe(pp.creado):crePed,ini=msDe(pp.inicio),listo=pp.estado==="listo",fin=listo?msDe(pp.fin):null,tm=tiempos(pp,now);
+    return{p,llega,ini,fin,listo,esp:llega!=null?Math.max(0,((ini!=null?ini:now)-llega)/1000):null,espAb:ini==null,neto:tm.empezo?tm.seg:null,pz:pausasDe(pp,now)}};
+  const A=Pall.map(pasI),C=pas?A.filter(a=>a.p===pas):A;
+  const r={x,zona,arch,pasL:C,cre:crePed!=null?crePed:minN(A.map(a=>a.llega))};
+  r.tomado1=minN(A.map(a=>a.ini));r.tomadoUlt=A.length&&A.every(a=>a.ini!=null)?maxN(A.map(a=>a.ini)):null;
+  r.terminado=pedListo(x)?maxN(A.map(a=>a.fin).concat([msDe(c.listoParaControlEn)])):null;
+  r.ctlIni=msDe(c1.inicio);r.controlado=pedControlado(x)?(msDe(c.controladoEn)!=null?msDe(c.controladoEn):msDe(c1.fin)):null;r.cargado=msDe(x.cargadoEn);
+  // columnas de picking (con el filtro de pasillo)
+  r.espPick=maxN(C.map(a=>a.esp));r.espPickAb=C.some(a=>a.espAb&&a.esp!=null);
+  const i1=minN(C.map(a=>a.ini)),todosC=C.length&&C.every(a=>a.listo),f1=todosC?maxN(C.map(a=>a.fin)):null;
+  r.pickBruto=i1!=null?Math.max(0,((f1!=null?f1:now)-i1)/1000):null;r.pickAb=i1!=null&&f1==null;
+  r.pickNeto=C.some(a=>a.neto!=null)?C.reduce((s,a)=>s+(a.neto||0),0):null;
+  // control
+  r.espCtl=r.terminado!=null?Math.max(0,((r.ctlIni!=null?r.ctlIni:now)-r.terminado)/1000):null;r.espCtlAb=r.terminado!=null&&r.ctlIni==null&&!arch;
+  if(r.espCtlAb===false&&r.ctlIni==null)r.espCtl=null;   // archivado sin control: no hay espera que medir
+  const tc=c1.inicio?tiempos(c1,now):null;r.ctlNeto=tc&&tc.empezo?tc.seg:null;
+  r.ctlBruto=r.ctlIni!=null?Math.max(0,((r.controlado!=null?r.controlado:now)-r.ctlIni)/1000):null;r.ctlAb=r.ctlIni!=null&&r.controlado==null&&!arch;
+  if(r.ctlIni!=null&&r.controlado==null&&arch)r.ctlBruto=null;
+  r.pzCtl=c1.inicio?pausasDe(c1,now):[];
+  // orden de carga: solo en pedidos por zona (los que vienen de una orden ya tenían orden antes del picking)
+  r.ordAplica=zona;r.espOrd=null;r.espOrdAb=false;
+  if(zona&&r.controlado!=null){if(r.cargado!=null)r.espOrd=Math.max(0,(r.cargado-r.controlado)/1000);else if(!arch){r.espOrd=(now-r.controlado)/1000;r.espOrdAb=true}}
+  // ciclo total: llegó → cargado en orden (sin orden previa: → controlado). Abierto: hasta ahora
+  let fin=zona?r.cargado:(r.controlado!=null?r.controlado:r.cargado);r.cicloAb=false;
+  if(fin==null){if(arch)fin=r.controlado!=null?r.controlado:r.terminado;else{fin=now;r.cicloAb=true}}
+  r.fin=fin;r.ciclo=r.cre!=null&&fin!=null?Math.max(0,(fin-r.cre)/1000):null;
+  // barra: tramos consecutivos de la línea de tiempo del pedido completo (si falta un hito, el hueco va al tramo anterior)
+  const pts=[r.cre,r.tomadoUlt,r.terminado,r.ctlIni,r.controlado,zona?r.cargado:null],ids=["ep","pk","ec","ct","eo"];r.segs=[];
+  if(r.cre!=null){let prev=r.cre;for(let i=0;i<5;i++){let j=i+1;while(j<=5&&pts[j]==null)j++;
+      if(j>5){if(r.cicloAb&&(i<4||zona))r.segs.push({id:ids[i],s:Math.max(0,(now-prev)/1000),ab:true});break}
+      const e=Math.max(pts[j],prev);r.segs.push({id:ids[i],s:(e-prev)/1000});prev=e;i=j-1}}
+  r.ref=r.cicloAb?now:(r.fin!=null?r.fin:r.cre);
+  return r}
+function datosEsperas(){const {d,hasta,et}=periodoTz(),now=ahoraMs(),F=Object.assign({},ST.archivo||{},ST.pedidos),pas=ST.tz.pas,L=[];
+  Object.keys(F).forEach(id=>{const x=Object.assign({id},F[id]);if(!x.pasillos)return;if(!ST.pedidos[id])x.archivado=x.archivado||true;
+    if(pas&&!pasillosDePed(x).includes(pas))return;const r=esperasDe(x,now,pas);if(r.ref==null||r.ref<d||r.ref>=hasta)return;L.push(r)});
+  L.sort((a,b)=>b.ref-a.ref);
+  const est=(val,ab)=>{const v=L.filter(r=>r[val]!=null&&!r[ab]).map(r=>r[val]);return{n:v.length,curso:L.filter(r=>r[ab]).length,prom:v.length?v.reduce((s,z)=>s+z,0)/v.length:null,min:minN(v),max:maxN(v)}};
+  return{L,et,k:{ep:est("espPick","espPickAb"),ec:est("espCtl","espCtlAb"),eo:est("espOrd","espOrdAb"),ci:est("ciclo","cicloAb")}}}
+const espCelda=(v,ab,u,sub)=>'<td class="num '+(u?nivelEsp(v,u):"")+'">'+fEsp(v)+(ab&&v!=null?' <span class="badge t-blue">en curso</span>':"")+(sub?'<span class="esp-sub">'+sub+'</span>':"")+'</td>';
+function barraEsp(r,maxC){const tot=r.segs.reduce((s,z)=>s+z.s,0);if(!tot)return'<div class="eb" aria-hidden="true"></div>';
+  return'<div class="eb" role="img" aria-label="'+esc(r.segs.map(z=>ESP_SEG[z.id][0]+" "+fEsp(z.s)).join(", "))+'" style="width:'+Math.max(18,Math.round(tot/Math.max(1,maxC)*100))+'%">'
+    +r.segs.map(z=>'<i'+(z.ab?' class="ab"':"")+' style="flex:'+Math.max(z.s,0.0001)+' 0 0;background:'+ESP_SEG[z.id][1]+'" title="'+esc(ESP_SEG[z.id][0]+": "+fEsp(z.s)+(z.ab?" (en curso)":""))+'"></i>').join("")+'</div>'}
+function sEsperas(){const D=datosEsperas(),k=D.k,maxC=maxN(D.L.map(r=>r.segs.reduce((s,z)=>s+z.s,0)))||1;
+  const kpi=(t,o)=>'<div class="kpi"><span class="k">'+t+'</span><span class="v t">'+fEsp(o.prom)+'</span><span class="small muted">'+(o.n?"mín "+fEsp(o.min)+" · máx "+fEsp(o.max):"sin datos")+'</span><span class="small muted" style="display:block">'+pl(o.n,"pedido","pedidos")+(o.curso?" · +"+o.curso+" en curso":"")+'</span></div>';
+  let h='<div class="kpis">'+kpi("Espera de picking",k.ep)+kpi("Espera de control",k.ec)+kpi("Espera de orden",k.eo)+kpi("Ciclo total",k.ci)+'</div>';
+  h+='<h3 style="margin-top:6px">Esperas por pedido · '+esc(D.et)+(ST.tz.pas?" · "+esc(pasDe(ST.tz.pas).nombre):"")+'</h3>';
+  if(!D.L.length)return h+'<div class="vacio">Sin pedidos en este período.</div>';
+  const L=D.L.slice(0,80);
+  h+='<div class="card" style="padding:.3rem .6rem"><div class="scroll-x"><table class="tabla ancha"><thead><tr><th style="min-width:180px">Pedido · dónde se fue el tiempo</th><th class="num">Espera picking</th><th class="num">Picking</th><th class="num">Espera control</th><th class="num">Control</th><th class="num">Espera orden</th><th class="num">Ciclo total</th></tr></thead><tbody>'
+    +L.map(r=>{const x=r.x,sp=r.pasL.length>1?r.pasL.map(a=>esc(pasDe(a.p).nombre)+" "+fEsp(a.esp)+(a.espAb?"…":"")).join(" · "):"";
+      return'<tr><td><b>'+esc(pedTit(x))+'</b>'+(x.prueba?'<span class="prueba">PRUEBA</span>':"")+'<div class="small muted">'+esc(fFecha(x.fecha))+(r.arch?" · archivado":"")+(x.ordenNro?" · orden "+esc(x.ordenNro):"")+'</div><div style="margin-top:5px">'+barraEsp(r,maxC)+'</div></td>'
+        +espCelda(r.espPick,r.espPickAb,ESP_UMB.pick,sp)
+        +espCelda(r.pickBruto,r.pickAb,null,r.pickNeto!=null?"neto "+fEsp(r.pickNeto):"")
+        +espCelda(r.espCtl,r.espCtlAb,ESP_UMB.ctl,"")
+        +espCelda(r.ctlBruto,r.ctlAb,null,r.ctlNeto!=null?"neto "+fEsp(r.ctlNeto):"")
+        +(r.ordAplica?espCelda(r.espOrd,r.espOrdAb,ESP_UMB.ord,r.espOrd==null&&r.controlado!=null&&r.arch?"sin orden":""):'<td class="num muted">—<span class="esp-sub">ya tenía orden</span></td>')
+        +espCelda(r.ciclo,r.cicloAb,ESP_UMB.ciclo,"")+'</tr>'}).join("")+'</tbody></table></div>'
+    +'<div class="eb-ley">'+Object.keys(ESP_SEG).map(z=>'<span style="--c:'+ESP_SEG[z][1]+'">'+ESP_SEG[z][0]+'</span>').join("")+'<span style="--c:repeating-linear-gradient(135deg,#fff 0 3px,transparent 3px 6px)">rayado = sigue corriendo</span></div></div>'
+    +(D.L.length>80?'<p class="small muted">Se ven los 80 más nuevos; el Excel trae todos.</p>':"")
+    +'<p class="small muted" style="margin:6px 2px 0"><b>Espera de picking</b> = desde que el pedido llegó a picking (o el pasillo, si llegó después en un re-envío) hasta que lo tomaron; la del pedido es la del pasillo que más esperó. <b>Picking</b> = del primer «Tomar» al último «Terminar» (con pausas); «neto» = suma del tiempo de los pasillos sin pausas. <b>Espera de control</b> = desde que terminó el último pasillo hasta que el controlador lo tomó. <b>Espera de orden</b> = desde controlado hasta que el TMS lo cargó en una orden de carga. <b>Ciclo total</b> = de que llegó a picking a que se cargó en la orden. '
+    +'<b style="color:var(--amber)">Ámbar</b> / <b style="color:var(--rose)">rojo</b>: espera de picking desde '+ESP_UMB.pick.join("/")+' min · de control desde '+ESP_UMB.ctl.join("/")+' min · de orden desde '+ESP_UMB.ord.map(m=>m/60).join("/")+' h · ciclo desde '+ESP_UMB.ciclo.map(m=>m/60).join("/")+' h. Lo «en curso» se mide hasta ahora y no entra en los promedios. La barra es la línea de tiempo del pedido completo, a la misma escala para todos.</p>';
+  return h}
+function esperasAoa(){const D=datosEsperas(),m=s=>s==null?"":Math.round(s/6)/10,f=t=>t==null?"":fHora(new Date(t).toISOString());
+  return[["Período: "+D.et+(ST.tz.pas?" · Pasillo: "+pasDe(ST.tz.pas).nombre:"")],[],["Pedido","Fecha","Estado","Llegó a picking","Último pasillo tomado","Picking terminado","Control tomado","Controlado","Cargado en orden","Orden N°",
+    "Espera de picking (min)","Picking bruto (min)","Picking neto (min)","Espera de control (min)","Control bruto (min)","Control neto (min)","Espera de orden (min)","Ciclo total (min)","Ciclo en curso","Espera de picking por pasillo","Archivado"]]
+    .concat(D.L.map(r=>{const x=r.x,e=ctlEtapa(x);return[pedTit(x),x.fecha||"",e==="picking"?"Picking":e==="controlado"?(r.cargado!=null?"Cargado en orden":"Controlado"):"En control",f(r.cre),f(r.tomadoUlt),f(r.terminado),f(r.ctlIni),f(r.controlado),f(r.cargado),x.ordenNro||"",
+      m(r.espPick),m(r.pickBruto),m(r.pickNeto),m(r.espCtl),m(r.ctlBruto),m(r.ctlNeto),r.ordAplica?m(r.espOrd):"no aplica",m(r.ciclo),r.cicloAb?"sí":"",r.pasL.map(a=>pasDe(a.p).nombre+": "+(a.esp==null?"—":Math.round(a.esp/6)/10+" min"+(a.espAb?" (en curso)":""))).join(" | "),r.arch?"sí":""]}))}
+/* pausas del período (por «desde»). Con un pasillo elegido, solo las de picking de ese pasillo. Las abiertas se listan siempre */
+const MOTIVOS_PAUSA=["Almuerzo","Otra tarea","Descanso","Baño"];
+function datosPausas(){const {d,hasta,et}=periodoTz(),now=ahoraMs(),F=Object.assign({},ST.archivo||{},ST.pedidos),pas=ST.tz.pas,todas=[];
+  Object.keys(F).forEach(id=>{const x=Object.assign({id},F[id]);if(!x.pasillos)return;const arch=!ST.pedidos[id];
+    pasillosDePed(x).forEach(p=>{if(pas&&p!==pas)return;pausasDe(x.pasillos[p],now).forEach(z=>todas.push(Object.assign(z,{x,arch,etapa:"Picking",p,dp:p})))});
+    if(!pas)CTL_ETAPAS.forEach(s=>{const cs=(x.control||{})[s];if(cs)pausasDe(cs,now).forEach(z=>todas.push(Object.assign(z,{x,arch,etapa:ctlEtTxt(s),p:"control",dp:"@"+s,ctl:true})))})});
+  const lim=PAUSA_LARGA_MIN*60;todas.forEach(z=>{z.larga=z.seg>=lim;z.nom=nombreInt(z.k)||nombreCtl(z.k)||z.por||"(sin nombre)"});
+  const L=todas.filter(z=>z.d>=d&&z.d<hasta),alertas=todas.filter(z=>z.abierta||(z.larga&&z.d>=d&&z.d<hasta)).sort((a,b)=>(b.abierta-a.abierta)||(b.seg-a.seg));
+  const ag=(key)=>{const M={};L.forEach(z=>{const k=key(z),o=M[k]=M[k]||{k,n:0,seg:0,max:0,ab:0,mot:{}};o.n++;o.seg+=z.seg;o.max=Math.max(o.max,z.seg);if(z.abierta)o.ab++;
+      const mm=o.mot[z.motivo]=o.mot[z.motivo]||{n:0,seg:0};mm.n++;mm.seg+=z.seg});return M};
+  const mot=Object.values(ag(z=>z.motivo)).sort((a,b)=>(b.n-a.n)||(b.seg-a.seg));
+  const motivos=MOTIVOS_PAUSA.filter(m=>mot.some(o=>o.k===m)).concat(mot.map(o=>o.k).filter(m=>!MOTIVOS_PAUSA.includes(m)));
+  const per=Object.values(ag(z=>z.k)).map(o=>{const z=L.find(q=>q.k===o.k);o.nom=z.nom;o.rol=[...new Set(L.filter(q=>q.k===o.k).map(q=>q.ctl?"Controlador":"Picker"))].join(" y ");return o}).sort((a,b)=>(b.seg-a.seg)||a.nom.localeCompare(b.nom));
+  const ord=k=>k==="control"?999:(pasDe(k).orden||0),etp=Object.values(ag(z=>z.p)).sort((a,b)=>ord(a.k)-ord(b.k));
+  const tot={n:L.length,seg:L.reduce((s,z)=>s+z.seg,0),ab:todas.filter(z=>z.abierta).length,largas:L.filter(z=>z.larga).length};tot.prom=tot.n?tot.seg/tot.n:null;
+  return{L,alertas,mot,motivos,per,etp,tot,et}}
+function sPausas(){const D=datosPausas(),t=D.tot,top=D.mot[0];
+  let h='<div class="kpis"><div class="kpi"><span class="k">Pausas</span><span class="v">'+fN(t.n)+'</span><span class="small muted">'+(t.ab?'<b style="color:var(--rose)">'+pl(t.ab,"abierta ahora","abiertas ahora")+'</b>':"ninguna abierta")+'</span></div>'
+    +'<div class="kpi"><span class="k">Tiempo en pausa</span><span class="v t">'+fEsp(t.n?t.seg:null)+'</span><span class="small muted">'+(t.largas?pl(t.largas,"pausa larga","pausas largas"):"sin pausas largas")+'</span></div>'
+    +'<div class="kpi"><span class="k">Promedio por pausa</span><span class="v t">'+fEsp(t.prom)+'</span><span class="small muted">larga = '+PAUSA_LARGA_MIN+' min o más</span></div>'
+    +'<div class="kpi"><span class="k">Motivo más frecuente</span><span class="v t">'+(top?esc(top.k):"—")+'</span><span class="small muted">'+(top?pl(top.n,"vez","veces")+" · "+fEsp(top.seg):"")+'</span></div></div>';
+  // pausas largas o abiertas (las abiertas de cualquier fecha: si alguien se olvidó de reanudar, aparece acá)
+  h+='<h3 style="margin-top:6px">Pausas largas o abiertas</h3>'+(!D.alertas.length?'<div class="vacio">No hay pausas abiertas ni de '+PAUSA_LARGA_MIN+' min o más en este período.</div>'
+    :'<div class="card" style="padding:.3rem .6rem"><div class="scroll-x"><table class="tabla ancha"><thead><tr><th>Estado</th><th>Pedido</th><th>Etapa</th><th>Persona</th><th>Motivo</th><th>Desde</th><th class="num">Duración</th></tr></thead><tbody>'
+      +D.alertas.map(z=>'<tr class="'+(z.abierta?"pz-ab":"pz-la")+'"><td><span class="badge '+(z.abierta?'t-rose">Abierta':'t-amber">Larga')+'</span></td><td><b>'+esc(pedTit(z.x))+'</b>'+(z.x.prueba?'<span class="prueba">PRUEBA</span>':"")+'<div class="small muted">'+esc(fFecha(z.x.fecha))+(z.arch?" · archivado":"")+'</div></td>'
+        +'<td>'+(z.ctl?esc(z.etapa):'<span style="color:'+esc(pasDe(z.p).color)+';font-weight:800">'+esc(pasDe(z.p).nombre)+'</span>')+'</td><td>'+esc(z.nom)+'</td><td>'+esc(z.motivo)+'</td><td>'+esc(fHora(new Date(z.d).toISOString()))+'</td>'
+        +'<td class="num mono '+(z.abierta||z.seg>=2*PAUSA_LARGA_MIN*60?"roj":"amb")+'">'+(z.abierta&&!z.arch?'<span data-pausa="'+esc(z.x.id)+'|'+esc(z.dp)+'">'+fDur(z.seg)+'</span>':fDur(z.seg))+'</td></tr>').join("")+'</tbody></table></div></div>'
+      +'<p class="small muted" style="margin:6px 2px 0">Las <b>abiertas</b> se ven siempre, sean del día que sean: si quedó una abierta de hace horas, alguien se olvidó de tocar «Reanudar» (el tiempo en pausa no cuenta como trabajo).</p>');
+  h+='<h3 style="margin-top:16px">Por motivo · '+esc(D.et)+'</h3>';
+  if(!D.L.length)return h+'<div class="vacio">Sin pausas en este período.</div>';
+  h+='<div class="card" style="padding:.3rem .6rem"><div class="scroll-x"><table class="tabla"><thead><tr><th>Motivo</th><th class="num">Pausas</th><th class="num">%</th><th class="num">Tiempo</th><th class="num">Promedio</th><th class="num">Más larga</th></tr></thead><tbody>'
+    +D.mot.map(o=>'<tr><td><b>'+esc(o.k)+'</b>'+(o.ab?' <span class="badge t-rose">'+o.ab+' abierta'+(o.ab>1?"s":"")+'</span>':"")+'</td><td class="num">'+fN(o.n)+'</td><td class="num">'+Math.round(o.n/D.tot.n*100)+'%</td><td class="num">'+fEsp(o.seg)+'</td><td class="num">'+fEsp(o.seg/o.n)+'</td><td class="num'+(o.max>=PAUSA_LARGA_MIN*60?" amb":"")+'">'+fEsp(o.max)+'</td></tr>').join("")+'</tbody></table></div></div>';
+  h+='<h3 style="margin-top:16px">Por etapa y pasillo</h3><div class="card" style="padding:.3rem .6rem"><div class="scroll-x"><table class="tabla"><thead><tr><th>Etapa</th><th class="num">Pausas</th><th class="num">Tiempo</th><th class="num">Promedio</th></tr></thead><tbody>'
+    +D.etp.map(o=>{const ps=pasDe(o.k);return'<tr><td style="color:'+esc(ps.color)+';font-weight:800">'+(o.k==="control"?"Control":"Picking · "+esc(ps.nombre))+'</td><td class="num">'+fN(o.n)+'</td><td class="num">'+fEsp(o.seg)+'</td><td class="num">'+fEsp(o.seg/o.n)+'</td></tr>'}).join("")+'</tbody></table></div></div>'
+    +(ST.tz.pas?'<p class="small muted" style="margin:6px 2px 0">Con un pasillo elegido se ven solo las pausas de picking de ese pasillo (las del control son del pedido completo).</p>':"");
+  h+='<h3 style="margin-top:16px">Por persona</h3><div class="card" style="padding:.3rem .6rem"><div class="scroll-x"><table class="tabla ancha"><thead><tr><th>Persona</th><th>Rol</th><th class="num">Pausas</th><th class="num">Tiempo</th><th class="num">Promedio</th>'+D.motivos.map(m=>'<th class="num">'+esc(m)+'</th>').join("")+'</tr></thead><tbody>'
+    +D.per.map(o=>'<tr><td><b>'+esc(o.nom)+'</b></td><td class="small">'+esc(o.rol)+'</td><td class="num">'+fN(o.n)+'</td><td class="num">'+fEsp(o.seg)+'</td><td class="num">'+fEsp(o.seg/o.n)+'</td>'
+      +D.motivos.map(m=>{const v=o.mot[m];return'<td class="num">'+(v?fN(v.n)+' · '+fEsp(v.seg):'<span class="muted">—</span>')+'</td>'}).join("")+'</tr>').join("")+'</tbody></table></div></div>'
+    +'<p class="small muted" style="margin:6px 2px 0">Cuenta las pausas que <b>empezaron</b> en el período (pedidos activos y archivados), de pickers y controladores. Una abierta se mide hasta ahora. En «Rendimiento», las columnas de pausas son las de los pasillos y controles terminados en el período.</p>';
+  return h}
+function pausasAoa(){const D=datosPausas(),m=s=>Math.round(s/6)/10,f=t=>fHora(new Date(t).toISOString());
+  return[["Período: "+D.et+(ST.tz.pas?" · Pasillo: "+pasDe(ST.tz.pas).nombre+" (solo picking)":"")+" · pausa larga = "+PAUSA_LARGA_MIN+" min o más"],[],["Resumen por motivo"],["Motivo","Pausas","Tiempo (min)","Promedio (min)","Más larga (min)"]]
+    .concat(D.mot.map(o=>[o.k,o.n,m(o.seg),m(o.seg/o.n),m(o.max)]),[[],["Por persona"],["Persona","Rol","Pausas","Tiempo (min)"].concat(D.motivos.flatMap(x=>[x+" (cant.)",x+" (min)"]))],
+      D.per.map(o=>[o.nom,o.rol,o.n,m(o.seg)].concat(D.motivos.flatMap(x=>o.mot[x]?[o.mot[x].n,m(o.mot[x].seg)]:[0,0]))),
+      [[],["Detalle (incluye las abiertas de cualquier fecha)"],["Pedido","Fecha","Etapa","Pasillo","Persona","Motivo","Desde","Hasta","Duración (min)","Abierta","Larga","Archivado"]],
+      D.L.concat(D.alertas.filter(z=>!D.L.includes(z))).sort((a,b)=>a.d-b.d).map(z=>[pedTit(z.x),z.x.fecha||"",z.ctl?"Control":"Picking",z.ctl?"":pasDe(z.p).nombre,z.nom,z.motivo,f(z.d),z.abierta?"":f(z.h),m(z.seg),z.abierta?"sí":"",z.larga?"sí":"",z.arch?"sí":""]))}
+/* detalle del pedido: mini línea de tiempo con las esperas entre hitos */
+function lineaTiempoHtml(x){const r=esperasDe(x),hm=t=>t==null?"":esc(fHora(new Date(t).toISOString())),pzP=[].concat(...r.pasL.map(a=>a.pz)),nP=pzP.length,sP=pzP.reduce((s,z)=>s+z.seg,0),nC=r.pzCtl.length,sC=r.pzCtl.reduce((s,z)=>s+z.seg,0);
+  const w=(txt,v,ab,u)=>v==null?"":'<span class="w '+(u?nivelEsp(v,u):"")+'">'+txt+' '+fEsp(v)+(ab?" · en curso":"")+'</span>';
+  const H=[["Llegó a picking",r.cre,ESP_SEG.ep[1],""],
+    ["Tomado"+(r.pasL.length>1&&r.tomado1!=null&&r.tomado1!==r.tomadoUlt?(r.tomadoUlt!=null?" (último pasillo; el primero "+hm(r.tomado1)+")":" ("+r.pasL.filter(a=>a.ini!=null).length+" de "+r.pasL.length+" pasillos; el primero "+hm(r.tomado1)+")"):""),r.tomadoUlt,ESP_SEG.pk[1],w("Espera de picking",r.espPick,r.espPickAb,ESP_UMB.pick)],
+    ["Picking terminado",r.terminado,ESP_SEG.ec[1],w("Picking",r.pickBruto,r.pickAb)+(r.pickNeto!=null?'<span class="w">neto '+fEsp(r.pickNeto)+(nP?" · "+pl(nP,"pausa","pausas")+" "+fEsp(sP):"")+'</span>':"")],
+    ["Control tomado",r.ctlIni,ESP_SEG.ct[1],w("Espera de control",r.espCtl,r.espCtlAb,ESP_UMB.ctl)],
+    ["Controlado",r.controlado,ESP_SEG.eo[1],w("Control",r.ctlBruto,r.ctlAb)+(r.ctlNeto!=null?'<span class="w">neto '+fEsp(r.ctlNeto)+(nC?" · "+pl(nC,"pausa","pausas")+" "+fEsp(sC):"")+'</span>':"")]];
+  if(r.ordAplica)H.push(["Cargado en orden"+(x.ordenNro?" N° "+esc(x.ordenNro):""),r.cargado,"var(--emerald)",w("Espera de orden",r.espOrd,r.espOrdAb,ESP_UMB.ord)]);
+  return'<div class="card" style="margin:.2rem 0 .6rem;padding:.7rem .8rem"><div class="fila entre"><b>Línea de tiempo</b><span class="small">Ciclo '+fEsp(r.ciclo)+(r.cicloAb?" · en curso":"")+'</span></div><ul class="tl">'
+    +H.map(z=>'<li class="'+(z[1]==null?"no":"")+'" style="--c:'+z[2]+'"><span class="h">'+z[0]+'</span> <span class="small muted">'+(z[1]!=null?hm(z[1]):"pendiente")+'</span>'+z[3]+'</li>').join("")+'</ul>'
+    +(r.segs.length?'<div style="margin-top:2px">'+barraEsp(r,r.segs.reduce((s,z)=>s+z.s,0))+'</div>':"")+'</div>'}
 function cargarXLSX(){if(window.XLSX)return Promise.resolve();return new Promise((ok,mal)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";s.onload=()=>window.XLSX?ok():mal(new Error("SheetJS no cargó"));s.onerror=()=>mal(new Error("no se pudo bajar SheetJS"));document.head.appendChild(s)})}
-async function exportarTiempos(){const D=datosTiempos(),r1=v=>v==null?"":Math.round(v*10)/10,min=s=>Math.round(s/6)/10;
-  const A=[["Puesto","Integrante","Pedidos/pasillos terminados","Renglones","Unidades","Tiempo (h:mm:ss)","Tiempo (min)","Promedio por pedido (min)","Renglones por hora","Unidades por hora","Segundos por renglón","Renglones con faltante"]]
-    .concat(D.ints.map(o=>[o.pos||"",o.nom,o.n,o.ren,o.uni,fDur(o.seg),min(o.seg),o.prom!=null?min(o.prom):"",r1(o.rh),r1(o.uh),r1(o.spr),o.falt]));
+async function exportarTiempos(){if(ST.archivo==null)await cargarArchivo();   // que el Excel traiga también los archivados
+  const D=datosTiempos(),r1=v=>v==null?"":Math.round(v*10)/10,min=s=>Math.round(s/6)/10;
+  const A=[["Puesto","Integrante","Pedidos/pasillos terminados","Renglones","Unidades","Tiempo (h:mm:ss)","Tiempo (min)","Promedio por pedido (min)","Renglones por hora","Unidades por hora","Segundos por renglón","Renglones con faltante","Pausas","Tiempo en pausa (min)"]]
+    .concat(D.ints.map(o=>[o.pos||"",o.nom,o.n,o.ren,o.uni,fDur(o.seg),min(o.seg),o.prom!=null?min(o.prom):"",r1(o.rh),r1(o.uh),r1(o.spr),o.falt,o.np,min(o.pseg)]));
   const B=[["Pedido","Fecha","Pasillo","Picker(s)","Inicio","Fin","Estado","Duración (h:mm:ss)","Duración (min)","Pausas (min)","Cant. pausas","Renglones","Unidades","Renglones con faltante","Renglones por hora","Archivado"]]
     .concat(D.filas.map(f=>[pedTit(f.x),f.x.fecha||"",pasDe(f.p).nombre,pickersDe(f),fHora(f.pp.inicio),f.tm.listo?fHora(f.pp.fin):"",f.tm.listo?"Terminado":f.tm.pausado?"En pausa":"En curso",fDur(f.tm.seg),min(f.tm.seg),min(f.tm.pausaSeg),f.tm.nPausas,f.ren,f.uni,f.falt,f.tm.listo&&f.tm.seg>=60?r1(f.ren/(f.tm.seg/3600)):"",f.archivado?"sí":""]));
   const nom="picking-tiempos-"+new Date().toISOString().slice(0,10)+(ST.tz.pas?"-"+ST.tz.pas:"");
   try{await cargarXLSX();const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Período: "+D.et+(ST.tz.pas?" · Pasillo: "+pasDe(ST.tz.pas).nombre:"")]].concat([[]],A)),"Por integrante");
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(B),"Por pedido");XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(ctlTiemposAoa()),"Controladores");XLSX.writeFile(wb,nom+".xlsx");toast("Excel descargado")}
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(B),"Por pedido");XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(ctlTiemposAoa()),"Controladores");
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(esperasAoa()),"Esperas");XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(pausasAoa()),"Pausas");XLSX.writeFile(wb,nom+".xlsx");toast("Excel descargado")}
   catch(e){console.warn(e);   // sin SheetJS: CSV con ; y BOM (Excel lo abre con acentos bien)
     const c=v=>{v=typeof v==="number"?String(v).replace(".",","):String(v==null?"":v);return/[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-    const txt="﻿"+["Período: "+D.et,""].concat(A.map(r=>r.map(c).join(";")),["",""],B.map(r=>r.map(c).join(";")),["",""],ctlTiemposAoa().map(r=>r.map(c).join(";"))).join("\r\n");
+    const txt="﻿"+["Período: "+D.et,""].concat(A.map(r=>r.map(c).join(";")),["",""],B.map(r=>r.map(c).join(";")),["",""],ctlTiemposAoa().map(r=>r.map(c).join(";")),["",""],esperasAoa().map(r=>r.map(c).join(";")),["",""],pausasAoa().map(r=>r.map(c).join(";"))).join("\r\n");
     const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/csv;charset=utf-8"}));a.download=nom+".csv";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);toast("Bajado como CSV (no se pudo armar el .xlsx)","info")}}
 async function reasignar(id){const x=ST.pedidos[id];if(!x||!x.pasillos.sinpasillo)return;const L=activas(x.pasillos.sinpasillo),P=listaPasillos();
   const m=modal("Asignar a pasillo",'<p class="small muted" style="margin-top:0">Elegí el pasillo de cada producto. Con «recordar» la categoría queda asignada para los próximos pedidos.</p>'
@@ -968,7 +1147,7 @@ async function reasignar(id){const x=ST.pedidos[id];if(!x||!x.pasillos.sinpasill
   m.querySelector("#ra-ok").onclick=async()=>{const upd={},recordar=m.querySelector("#ra-rec").checked,cats={};
     m.querySelectorAll("select[data-k]").forEach(s=>{if(!s.value)return;const l=L.find(z=>z.k===s.dataset.k);if(!l)return;const o=Object.assign({},x.pasillos.sinpasillo.lineas[l.k]);
       upd["pasillos/"+s.value+"/lineas/"+l.k]=o;upd["pasillos/sinpasillo/lineas/"+l.k]=null;
-      const dst=x.pasillos[s.value];if(!dst)upd["pasillos/"+s.value+"/estado"]="pendiente";else if(dst.estado==="listo"){upd["pasillos/"+s.value+"/estado"]=dst.picker?"en curso":"pendiente";upd["pasillos/"+s.value+"/fin"]=null}
+      const dst=x.pasillos[s.value];if(!dst){upd["pasillos/"+s.value+"/estado"]="pendiente";upd["pasillos/"+s.value+"/creado"]=ahora()}else if(dst.estado==="listo"){upd["pasillos/"+s.value+"/estado"]=dst.picker?"en curso":"pendiente";upd["pasillos/"+s.value+"/fin"]=null}
       if(recordar&&l.cat)(cats[s.value]=cats[s.value]||[]).push(l.cat)});
     if(!Object.keys(upd).length){cerrarModal();return}
     try{await db.ref("picking/pedidos/"+id).update(upd);for(const p of Object.keys(cats))await agregarCats(p,cats[p]);cerrarModal();toast("Productos asignados")}catch(e){toast("No se pudo: "+e.message,"err")}}}
@@ -1003,6 +1182,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]")
     case"reanudar":reanudar();break;
     case"tz-recargar":cargarArchivo();render();break;
     case"tz-excel":exportarTiempos();break;
+    case"tz-sub":ST.tzSub=b.dataset.v;render();break;
     case"camara":abrirCamara();break;
     case"cerrar-cam":cerrarCamara();break;
     case"teclado":{const s=$("#scan");ST.tecleando=s.inputMode!=="numeric";s.inputMode=ST.tecleando?"numeric":"none";s.placeholder=ST.tecleando?"Escribí el código y Enter":"Escaneá el producto";b.classList.toggle("btn-primary",ST.tecleando);s.blur();setTimeout(()=>s.focus(),50);break}
