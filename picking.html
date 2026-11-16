@@ -1061,9 +1061,9 @@ function sEsperas(){const D=datosEsperas(),k=D.k,maxC=maxN(D.L.map(r=>r.segs.red
     +'<b style="color:var(--amber)">Ámbar</b> / <b style="color:var(--rose)">rojo</b>: espera de picking desde '+ESP_UMB.pick.join("/")+' min · de control desde '+ESP_UMB.ctl.join("/")+' min · de orden desde '+ESP_UMB.ord.map(m=>m/60).join("/")+' h · ciclo desde '+ESP_UMB.ciclo.map(m=>m/60).join("/")+' h. Lo «en curso» se mide hasta ahora y no entra en los promedios. La barra es la línea de tiempo del pedido completo, a la misma escala para todos.</p>';
   return h}
 function esperasAoa(){const D=datosEsperas(),m=s=>s==null?"":Math.round(s/6)/10,f=t=>t==null?"":fHora(new Date(t).toISOString());
-  return[["Período: "+D.et+(ST.tz.pas?" · Pasillo: "+pasDe(ST.tz.pas).nombre:"")],[],["Pedido","Fecha","Estado","Llegó a picking","Último pasillo tomado","Picking terminado","Control tomado","Controlado","Cargado en orden","Orden N°",
+  return[["Período: "+D.et+(ST.tz.pas?" · Pasillo: "+pasDe(ST.tz.pas).nombre:"")],[],["Pedido","Fecha","Estado","Excel subido (llegó a picking)","Subido por","Último pasillo tomado","Picking terminado","Control tomado","Controlado","Cargado en orden","Orden N°",
     "Espera de picking (min)","Picking bruto (min)","Picking neto (min)","Espera de control (min)","Control bruto (min)","Control neto (min)","Espera de orden (min)","Ciclo total (min)","Ciclo en curso","Espera de picking por pasillo","Archivado"]]
-    .concat(D.L.map(r=>{const x=r.x,e=ctlEtapa(x);return[pedTit(x),x.fecha||"",e==="picking"?"Picking":e==="controlado"?(r.cargado!=null?"Cargado en orden":"Controlado"):"En control",f(r.cre),f(r.tomadoUlt),f(r.terminado),f(r.ctlIni),f(r.controlado),f(r.cargado),x.ordenNro||"",
+    .concat(D.L.map(r=>{const x=r.x,e=ctlEtapa(x);return[pedTit(x),x.fecha||"",e==="picking"?"Picking":e==="controlado"?(r.cargado!=null?"Cargado en orden":"Controlado"):"En control",f(r.cre),x.creadoPor||"",f(r.tomadoUlt),f(r.terminado),f(r.ctlIni),f(r.controlado),f(r.cargado),x.ordenNro||"",
       m(r.espPick),m(r.pickBruto),m(r.pickNeto),m(r.espCtl),m(r.ctlBruto),m(r.ctlNeto),r.ordAplica?m(r.espOrd):"no aplica",m(r.ciclo),r.cicloAb?"sí":"",r.pasL.map(a=>pasDe(a.p).nombre+": "+(a.esp==null?"—":Math.round(a.esp/6)/10+" min"+(a.espAb?" (en curso)":""))).join(" | "),r.arch?"sí":""]}))}
 /* pausas del período (por «desde»). Con un pasillo elegido, solo las de picking de ese pasillo. Las abiertas se listan siempre */
 const MOTIVOS_PAUSA=["Almuerzo","Otra tarea","Descanso","Baño"];
@@ -1114,7 +1114,7 @@ function pausasAoa(){const D=datosPausas(),m=s=>Math.round(s/6)/10,f=t=>fHora(ne
 /* detalle del pedido: mini línea de tiempo con las esperas entre hitos */
 function lineaTiempoHtml(x){const r=esperasDe(x),hm=t=>t==null?"":esc(fHora(new Date(t).toISOString())),pzP=[].concat(...r.pasL.map(a=>a.pz)),nP=pzP.length,sP=pzP.reduce((s,z)=>s+z.seg,0),nC=r.pzCtl.length,sC=r.pzCtl.reduce((s,z)=>s+z.seg,0);
   const w=(txt,v,ab,u)=>v==null?"":'<span class="w '+(u?nivelEsp(v,u):"")+'">'+txt+' '+fEsp(v)+(ab?" · en curso":"")+'</span>';
-  const H=[["Llegó a picking",r.cre,ESP_SEG.ep[1],""],
+  const H=[["Excel subido · llegó a picking"+(x.creadoPor?" (por "+esc(x.creadoPor)+")":"")+(x.archivo?" · "+esc(x.archivo):""),r.cre,ESP_SEG.ep[1],""],
     ["Tomado"+(r.pasL.length>1&&r.tomado1!=null&&r.tomado1!==r.tomadoUlt?(r.tomadoUlt!=null?" (último pasillo; el primero "+hm(r.tomado1)+")":" ("+r.pasL.filter(a=>a.ini!=null).length+" de "+r.pasL.length+" pasillos; el primero "+hm(r.tomado1)+")"):""),r.tomadoUlt,ESP_SEG.pk[1],w("Espera de picking",r.espPick,r.espPickAb,ESP_UMB.pick)],
     ["Picking terminado",r.terminado,ESP_SEG.ec[1],w("Picking",r.pickBruto,r.pickAb)+(r.pickNeto!=null?'<span class="w">neto '+fEsp(r.pickNeto)+(nP?" · "+pl(nP,"pausa","pausas")+" "+fEsp(sP):"")+'</span>':"")],
     ["Control tomado",r.ctlIni,ESP_SEG.ct[1],w("Espera de control",r.espCtl,r.espCtlAb,ESP_UMB.ctl)],
