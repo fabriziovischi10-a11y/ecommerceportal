@@ -3901,6 +3901,7 @@ INF.splice(INF.findIndex(r=>r.id==="ordenes")+1,0,{id:"costos",cat:"Operación",
 Object.assign(GACT,{
   "salio":(el,id)=>{const s=get("salidas",id);if(s&&canWrite)formSalio(s);else if(!canWrite)toast("Acceso de solo lectura")},
   "costos":(el,id)=>{const s=get("salidas",id);if(!s)return;if(canWrite)formCostos(s);else{UI.hojaId=id;location.hash="#hoja"}},
+  "nc":(el,id)=>{const s=get("salidas",id);if(!s)return;if(canWrite)formNC(s);else informeViaje(s)},
   "cc-new":()=>{if(canWrite)formCaja(null)},
   "cc-edit":(el,id)=>{const x=get("cajachica",id);if(x)formCaja(x)},
   "cc-imp":()=>{if(canWrite)formCajaImp();else toast("Acceso de solo lectura")},
@@ -4773,8 +4774,8 @@ const combBanner=s=>{const A=combAlertas(s).concat(camAlertas(s.camionId));retur
 function formCierre(s){const fin=s.estado==="Finalizada",vg=viajeGas(s)||{},km0=hayN(s.kmSalida)?s.kmSalida:(vg.km0||null),F0=kmFuentes(s),f0=kmUsado(s).k;
   openForm({title:(fin?"Editar cierre · viaje N° ":"Cerrar viaje N° ")+nro(s),color:"c-viaje",wide:true,ok:fin?"Cierre actualizado":"Viaje cerrado",saveLabel:fin?"Guardar y ver informe":"Cerrar viaje y ver informe",focus:"kmRegreso",
     values:Object.assign({},s,{horaRegreso:s.horaRegreso||nowHM(),kmSalida:km0,fuente:KMF[f0],kmMano:F0.mano}),
-    extra:'<button type="button" class="btn" id="rgCost">'+IC.plus+'Cargar combustible o costos</button>',
-    fields:[{k:"comb",type:"html",cls:"recbox"},
+    extra:'<button type="button" class="btn" id="rgCost">'+IC.plus+'Cargar combustible o costos</button><button type="button" class="btn" id="rgNC">'+IC.up+'Notas de crédito</button>',
+    fields:[{k:"comb",type:"html",cls:"recbox"},{k:"x9",type:"sec",label:"Notas de crédito de la vuelta"},{k:"ncres",type:"html",cls:"recbox"},
       {k:"x0",type:"sec",label:"Horario y odómetro"},{k:"horaSalida",label:"Hora de salida",type:"time"},{k:"horaRegreso",label:"Hora de regreso",type:"time",req:true},
       {k:"kmSalida",label:"Odómetro al salir",type:"number",help:vg.km0&&!hayN(s.kmSalida)?"Tomado de la carga de combustible":""},{k:"kmRegreso",label:"Odómetro al volver",type:"number"},
       {k:"x1",type:"sec",label:"Km para el rendimiento"},{k:"fuente",label:"Tomar los km de",type:"seg",options:Object.values(KMF),full:true},{k:"kmMano",label:"Km recorridos (a mano)",type:"number"},
@@ -4785,6 +4786,8 @@ function formCierre(s){const fin=s.estado==="Finalizada",vg=viajeGas(s)||{},km0=
       if(recepT(s))$("f_comb").innerHTML+='<span>'+recepT(s)+'</span>';
       if(combAlertas(s).length)$("f_comb").innerHTML+='<span style="color:var(--bad);font-weight:700">⚠ '+combAlertas(s).map(esc).join(" · ")+'</span>';
       $("rgCost").onclick=()=>{closeForm();formCostos(get("salidas",s.id)||s)};
+      $("f_ncres").innerHTML=ncResumen(s)+'<span><button type="button" class="btn sm" id="rgNC2">'+IC.up+'Cargar notas de crédito (Excel o a mano)</button></span>';
+      const goNC=()=>{closeForm();formNC(get("salidas",s.id)||s,x=>formCierre(x))};$("rgNC").onclick=goNC;$("rgNC2").onclick=goNC;
       const num=n=>{const v=F.elements[n].value;return v===""?null:Number(v)};
       const fk=()=>{const t=(F.querySelector('input[name="fuente"]:checked')||{}).value;return Object.keys(KMF).find(k=>KMF[k]===t)||"mano"};
       const up=()=>{const k=fk(),FF=kmFuentes(s,{kmSalida:num("kmSalida"),kmRegreso:num("kmRegreso"),kmMano:num("kmMano")}),km=FF[k];F.querySelector('[data-f="kmMano"]').hidden=k!=="mano";
@@ -4805,6 +4808,86 @@ function formCierre(s){const fin=s.estado==="Finalizada",vg=viajeGas(s)||{},km0=
       await C("salidas").doc(s.id).update(Object.assign(u,{estado:"Finalizada",cerradoAt:s.cerradoAt||new Date().toISOString(),updatedAt:new Date().toISOString(),updatedBy:uid}));
       MF.ok=(fin?"Cierre actualizado":"Viaje cerrado")+(u.rendKml?" · "+fKml(u.rendKml)+" km/L":"");setTimeout(()=>{const x=get("salidas",s.id);if(x)informeViaje(Object.assign({},x,u))},500)}})}
 formRegreso=formCierre;
+
+/* ---- notas de crédito del viaje (a la vuelta): se cargan a mano o subiendo un Excel; quedan en la salida (notasCredito) ---- */
+const ncList=s=>Array.isArray(s&&s.notasCredito)?s.notasCredito:[];
+const ncTot=s=>ncList(s).reduce((t,x)=>t+(Number(x.importe)||0),0);
+const ncFe=v=>v&&/^\d{4}-\d{2}-\d{2}/.test(v)?v.slice(8,10)+"/"+v.slice(5,7)+"/"+v.slice(0,4):(v||"—");
+function ncISO(v){if(v==null||v==="")return"";const p2=n=>String(n).padStart(2,"0");
+  if(v instanceof Date&&!isNaN(v)){const d=new Date(v.getTime()+12*36e5);return d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate())}
+  if(typeof v==="number"&&v>20000&&v<80000){const d=new Date(Math.round((v-25569)*864e5)+12*36e5);return d.getUTCFullYear()+"-"+p2(d.getUTCMonth()+1)+"-"+p2(d.getUTCDate())}
+  const s=String(v).trim();let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return m[1]+"-"+p2(m[2])+"-"+p2(m[3]);
+  m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);if(m){const y=m[3].length===2?"20"+m[3]:m[3];return y+"-"+p2(m[2])+"-"+p2(m[1])}return""}
+const NC_H={nro:["nro nc","n° nc","nº nc","numero nc","nro_nc","nronc","nc","nota de credito","nro","numero","nro.","n°","nº","num","comprobante","nro comprobante","numero comprobante","nro_comp","nrocomp","documento","nro documento"],
+  fecha:["fecha","fecha nc","fecha_nc","fec","fecha comprobante","fecha_comp"],
+  cliente:["cliente","razon social","razon_social","nombre cliente","nom_cli","nombre","sucursal","destino","cli","denominacion"],
+  motivo:["motivo","concepto","causa","motivo nc","observacion","observaciones","obs"],
+  importe:["importe","importe nc","importe total","total","total nc","monto","imp_total","imptotal","neto","total $","$"]};
+async function ncLeerExcel(file){const wb=await readBook(file),out=[];
+  for(const sn of wb.SheetNames){const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:""});
+    const find=(H,ks)=>{for(const k of ks){const i=H.indexOf(k);if(i>=0)return i}for(const k of ks){if(k.length<4)continue;const i=H.findIndex(h=>h.includes(k));if(i>=0)return i}return-1};
+    let hi=-1,I=null;
+    for(let r=0;r<Math.min(rows.length,15);r++){const H=rows[r].map(x=>normH(x).replace(/\s+/g," "));const J={};Object.keys(NC_H).forEach(k=>J[k]=find(H,NC_H[k]));
+      if(J.importe>=0&&(J.nro>=0||J.cliente>=0)){hi=r;I=J;break}}
+    if(hi<0)continue;
+    const val=(r,i)=>i>=0?String(r[i]??"").trim():"",G={};
+    rows.slice(hi+1).forEach(r=>{const imp=typeof r[I.importe]==="number"?r[I.importe]:arNum(r[I.importe]),nro=val(r,I.nro),cli=val(r,I.cliente);
+      if((imp==null||imp===0)&&!nro)return;if(/^total/i.test(nro)||/^total/i.test(cli))return;
+      const key=nro||("fila"+out.length+Object.keys(G).length);let x=G[key];
+      if(!x){x=G[key]={nro,fecha:ncISO(r[I.fecha]),cliente:cli,motivo:val(r,I.motivo),importe:0,lineas:0}}
+      x.importe=Math.round((x.importe+Math.abs(Number(imp)||0))*100)/100;x.lineas++;
+      const mo=val(r,I.motivo);if(mo&&!String(x.motivo).includes(mo))x.motivo=x.motivo?x.motivo+" · "+mo:mo;if(!x.cliente&&cli)x.cliente=cli;if(!x.fecha)x.fecha=ncISO(r[I.fecha])});
+    Object.values(G).forEach(x=>out.push(x))}
+  if(!out.length)throw new Error("No encontré las columnas. El Excel tiene que tener al menos el importe y el N° de nota de crédito o el cliente (podés bajar la planilla modelo).");
+  return out}
+async function ncModelo(){if(!downloads){toast("La descarga no está disponible en esta vista");return}await loadXLSX();
+  const ws=XLSX.utils.aoa_to_sheet([["N° NC","Fecha","Cliente","Motivo","Importe"],["0003-00012345",today().split("-").reverse().join("/"),"Cliente o sucursal","Devolución / rechazo",15000]]);ws["!cols"]=[{wch:16},{wch:12},{wch:30},{wch:30},{wch:12}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Notas de crédito");try{await downloads.save({filename:"modelo-notas-de-credito.xlsx",data:new Blob([XLSX.write(wb,{bookType:"xlsx",type:"array"})])})}catch(e){}}
+/** en qué otros viajes ya está cargada esa NC (para avisar duplicados) */
+const ncEnOtro=(nro,salId)=>{if(!nro)return null;const k=String(nro).replace(/\D/g,"");if(!k)return null;return S.salidas.find(x=>x.id!==salId&&ncList(x).some(n=>String(n.nro||"").replace(/\D/g,"")===k))||null};
+function ncResumen(s){const L=ncList(s);if(!L.length)return'<span class="mu">Sin notas de crédito en este viaje. Si volvió con NC, cargalas con «Notas de crédito» (a mano o subiendo el Excel).</span>';
+  return'<span><b>'+pl(L.length,"nota de crédito","notas de crédito")+' · '+fM(ncTot(s))+'</b>'+(s.ncArchivo?' <span class="mu">(Excel '+esc(s.ncArchivo)+')</span>':"")+'</span>'+L.slice(0,6).map(n=>'<span>'+esc(n.nro||"s/n")+' · '+esc(n.cliente||"—")+(n.motivo?' · <span class="mu">'+esc(n.motivo)+'</span>':"")+' · <b>'+fM(n.importe)+'</b></span>').join("")+(L.length>6?'<span class="mu">y '+(L.length-6)+' más…</span>':"")}
+function ncTabla(s){const L=ncList(s);if(!L.length)return'<p class="mu">Sin notas de crédito en este viaje.</p>';
+  return'<div class="tw"><table class="wide" style="min-width:560px"><thead><tr><th>N° NC</th><th>Fecha</th><th>Cliente</th><th>Motivo</th><th class="num">Importe</th></tr></thead><tbody>'
+    +L.map(n=>'<tr><td class="mono">'+esc(n.nro||"s/n")+'</td><td class="nw">'+ncFe(n.fecha)+'</td><td>'+esc(n.cliente||"—")+'</td><td>'+esc(n.motivo||"")+'</td><td class="num mono">'+fM(n.importe)+'</td></tr>').join("")
+    +'</tbody><tfoot><tr><td colspan="4"><b>Total</b>'+(s.ncPor?' <span class="mu">· cargó '+esc(s.ncPor)+(s.ncAt?" el "+ncFe(String(s.ncAt).slice(0,10)):"")+'</span>':"")+'</td><td class="num mono"><b>'+fM(ncTot(s))+'</b></td></tr></tfoot></table></div>'}
+function formNC(s,volver){let rows=ncList(s).map(x=>Object.assign({},x)),archivo=s.ncArchivo||"",aviso="";
+  const cliOpts=[...new Set((destT(s)||"").split(/\s*[,·]\s*/).filter(Boolean))];
+  const draw=()=>{const box=$("f_ncrows"),inp=(i,k,ty,v,ph,st)=>'<input data-ncr="'+i+'" data-k="'+k+'" type="'+ty+'"'+(ty==="number"?' step="any" min="0" inputmode="decimal" style="text-align:right"':"")+(k==="cliente"?' list="dlNcCli"':"")+' value="'+esc(v??"")+'" placeholder="'+esc(ph||"")+'"'+(st?' style="'+st+'"':"")+'>';
+    const dup=rows.map(r=>ncEnOtro(r.nro,s.id));
+    box.innerHTML='<datalist id="dlNcCli">'+cliOpts.map(x=>'<option value="'+esc(x)+'">').join("")+'</datalist>'
+      +(aviso?'<div class="banner" style="margin-bottom:8px">'+aviso+'</div>':"")
+      +(rows.length?'<div class="tw"><table class="wide" style="min-width:700px"><thead><tr><th>N° NC</th><th>Fecha</th><th>Cliente</th><th>Motivo</th><th class="num">Importe ($)</th><th></th></tr></thead><tbody>'
+        +rows.map((r,i)=>'<tr><td>'+inp(i,"nro","text",r.nro,"0003-00001234")+(dup[i]?'<div class="sub" style="color:var(--bad);font-weight:700">⚠ ya está en el viaje N° '+esc(nro(dup[i]))+'</div>':"")+'</td><td>'+inp(i,"fecha","date",r.fecha)+'</td><td>'+inp(i,"cliente","text",r.cliente,"cliente o sucursal")+'</td><td>'+inp(i,"motivo","text",r.motivo,"rechazo, devolución…")+'</td><td>'+inp(i,"importe","number",r.importe)+'</td><td><button type="button" class="btn sm ghost icon" data-ncrx="'+i+'" aria-label="Quitar">'+IC.trash+'</button></td></tr>').join("")
+        +'</tbody><tfoot><tr><td colspan="4"><b>'+pl(rows.length,"nota de crédito","notas de crédito")+'</b></td><td class="num mono"><b>'+fM(rows.reduce((t,r)=>t+(Number(r.importe)||0),0))+'</b></td><td></td></tr></tfoot></table></div>'
+        :'<span class="mu">Todavía no hay notas de crédito. Subí el Excel o agregalas a mano.</span>')
+      +'<div class="pa" style="margin-top:8px"><label class="btn sm pri">'+IC.up+'Subir Excel de notas de crédito<input type="file" id="ncFile" accept=".xls,.xlsx,.csv" hidden></label><button type="button" class="btn sm" id="ncAddR">'+IC.plus+'Agregar a mano</button><button type="button" class="btn sm ghost" id="ncTpl">'+IC.dl+'Planilla modelo</button>'
+      +(rows.length?'<button type="button" class="btn sm ghost" id="ncClr">'+IC.trash+'Borrar todas</button>':"")+'</div>'
+      +'<span class="mu" style="display:block;margin-top:6px">El Excel puede venir del sistema: busco solas las columnas de N° de NC, fecha, cliente, motivo e importe. Si una NC viene en varios renglones (un renglón por artículo), se suma en una sola.</span>';
+    $("ncAddR").onclick=()=>{rows.push({nro:"",fecha:today(),cliente:"",motivo:"",importe:null});aviso="";draw();const q=box.querySelectorAll('[data-k="nro"]');q[q.length-1].focus()};
+    $("ncTpl").onclick=ncModelo;
+    const cl=$("ncClr");if(cl)cl.onclick=()=>{if(!confirm("¿Borrar todas las notas de crédito de la lista?"))return;rows=[];archivo="";aviso="";draw()};
+    $("ncFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;aviso="Leyendo "+esc(f.name)+"…";draw();
+      try{const N=await ncLeerExcel(f),ya=new Set(rows.map(r=>String(r.nro||"").replace(/\D/g,"")).filter(Boolean));let rep=0,add=0;
+        N.forEach(n=>{const k=String(n.nro||"").replace(/\D/g,"");if(k&&ya.has(k)){rep++;return}ya.add(k);rows.push({nro:n.nro,fecha:n.fecha||today(),cliente:n.cliente,motivo:n.motivo,importe:n.importe});add++});
+        archivo=f.name;aviso='<b>'+esc(f.name)+'</b>: '+pl(add,"nota de crédito sumada","notas de crédito sumadas")+(rep?" · "+pl(rep,"ya estaba","ya estaban")+" en la lista (no se duplicó)":"")+'. Revisá y tocá Guardar.'}
+      catch(err){aviso='<span style="color:var(--bad)">'+esc(err.message==="xlsx"?"No se pudo abrir el lector de Excel (¿sin internet?).":err.message||"No se pudo leer el Excel.")+'</span>'}
+      draw()}};
+  openForm({title:"Notas de crédito · viaje N° "+nro(s),color:"c-viaje",wide:true,values:{},ok:"Notas de crédito guardadas",saveLabel:"Guardar",
+    fields:[{k:"nci",type:"html",cls:"recbox"},{k:"ncrows",type:"html"}],
+    after:()=>{$("f_nci").innerHTML='<span><b>'+esc(destT(s)||"—")+'</b> · '+fDL(s.fecha)+' · '+camP(s.camionId)+' · '+chofN(s.choferId)+'</span><span class="mu">Cargá las notas de crédito con las que volvió el viaje (rechazos, devoluciones, faltantes).</span>';
+      draw();const box=$("f_ncrows");
+      box.addEventListener("input",e=>{const i=e.target.dataset.ncr;if(i==null)return;const k=e.target.dataset.k,v=e.target.value;rows[i][k]=k==="importe"?(v===""?null:Number(v)):v;
+        if(k==="importe"){const t=box.querySelector("tfoot .num b");if(t)t.textContent=fM(rows.reduce((a,r)=>a+(Number(r.importe)||0),0))}});
+      box.addEventListener("change",e=>{if(e.target.dataset.k==="nro")draw()});
+      box.addEventListener("click",e=>{const b=e.target.closest("[data-ncrx]");if(!b)return;rows.splice(Number(b.dataset.ncrx),1);draw()})},
+    save:async()=>{const L=rows.filter(r=>(r.nro||"").trim()||(r.cliente||"").trim()||r.importe).map(r=>({nro:(r.nro||"").trim(),fecha:r.fecha||"",cliente:(r.cliente||"").trim(),motivo:(r.motivo||"").trim(),importe:Number(r.importe)||0}));
+      if(L.some(r=>!r.importe)){ferr("Falta el importe de alguna nota de crédito.");return false}
+      const vistos=new Set();for(const r of L){const k=r.nro.replace(/\D/g,"");if(k&&vistos.has(k)){ferr("La NC "+r.nro+" está dos veces en la lista.");return false}if(k)vistos.add(k)}
+      const tot=Math.round(L.reduce((t,r)=>t+r.importe,0)*100)/100;
+      await C("salidas").doc(s.id).update({notasCredito:L,ncTotal:tot,ncArchivo:L.length?archivo:"",ncAt:new Date().toISOString(),ncPor:pkQuien(),updatedAt:new Date().toISOString(),updatedBy:uid});
+      MF.ok=L.length?pl(L.length,"nota de crédito guardada","notas de crédito guardadas")+" · "+fM(tot):"Notas de crédito borradas";
+      if(volver)setTimeout(()=>{const x=get("salidas",s.id);if(x)volver(x)},500)}})}
 
 /* ---- costos del viaje: caja chica, otros costos y combustible (se acumula; nunca pisa las cargas de la planilla) ---- */
 formCostos=function(s){let rows=(s.costos||[]).map(x=>Object.assign({},x));const cm=cajaMatch(s),cs=conceptos(),nuevas=[];
@@ -4849,6 +4932,7 @@ function informeHtml(s){const p=plan(s),pv=s.canal==="Preventa",c=costoViaje(s),
     +[["gps","LoJack (satelital)"],["odo","Odómetro"+(hayN(s.kmSalida)?" ("+fN(s.kmSalida)+(hayN(s.kmRegreso)?" → "+fN(s.kmRegreso):"")+")":"")],["prev","Previstos en la hoja de ruta"],["mano","Cargados a mano"]].filter(([k])=>k!=="mano"||F.mano).map(([k,t])=>'<tr'+(U.k===k?' style="background:var(--ok-soft)"':"")+'><td>'+t+(U.k===k?" · <b>usado para el rendimiento</b>":"")+'</td><td class="num mono"><b>'+(F[k]?fN(F[k])+" km":"—")+'</b></td></tr>').join("")+'</tbody></table></div>'
     +'<h3 style="margin:12px 0 6px">Combustible</h3>'+combBanner(s)+(recepT(s)?'<p>'+recepT(s)+'</p>':"")+(A.length?'<div class="tw"><table class="wide" style="min-width:520px"><thead><tr><th>Fecha</th><th>Combustible</th><th class="num">Cantidad</th><th class="num">Importe</th><th class="num">Odómetro</th><th>Origen</th></tr></thead><tbody>'+A.map(g=>'<tr><td>'+fDL(g.fecha)+(g.hora?" "+esc(g.hora):"")+'</td><td>'+esc(combT(g))+'</td><td class="num mono">'+fL(g.litros)+'</td><td class="num mono">'+fM(gasImp(g))+'</td><td class="num mono">'+(g.km?fN(g.km):"—")+'</td><td>'+esc(g.origen||g.lugar||"")+'</td></tr>').join("")+'</tbody><tfoot><tr><td colspan="2"><b>Total</b> <span class="mu">(gasoil '+fL(lit)+')</span></td><td></td><td class="num mono"><b>'+fM(A.reduce((t,g)=>t+gasImp(g),0))+'</b></td><td colspan="2"></td></tr></tfoot></table></div>'
       +(r?'<p><b>'+fN(U.km)+' km ÷ '+fL(lit)+' = '+fKml(r)+' km/L</b> · '+fKml(lit*100/U.km)+' L cada 100 km</p>':""):'<p class="mu">Sin cargas de combustible en este viaje.</p>')
+    +'<h3 style="margin:12px 0 6px">Notas de crédito de la vuelta</h3>'+ncTabla(s)
     +'<h3 style="margin:12px 0 6px">Costos</h3><div class="tw"><table class="wide" style="min-width:420px"><tbody>'+c.L.map(x=>'<tr><td>'+esc(x.t)+(x.d?'<div class="sub">'+esc(x.d)+'</div>':"")+'</td><td class="num mono">'+fM(x.m)+'</td></tr>').join("")+'</tbody><tfoot><tr><td><b>Total del viaje</b></td><td class="num mono"><b>'+fM(c.tot)+'</b></td></tr></tfoot></table></div>'
     +'<div class="tw" style="margin-top:8px"><table class="wide" style="min-width:420px"><tbody>'+row(pv?"Facturado que llevó":"Mercadería que llevó",c.val?fM(c.val):"—")+row("Costo sobre lo "+(pv?"facturado":"despachado"),fPct(c.pct))+row("Costo por km",c.porKm?fM(c.porKm):"—")+row(pv?"Clientes":"Paradas",String(c.paradas))
       +(pv?row("Facturas · entregas",fN(cs.reduce((t,x)=>t+(x.nFacturas||0),0))+" · "+p.stops.filter(x=>x.ent==="Entregado").length+"/"+p.stops.length+" entregados"):row("Guías",G.length+" · "+fN(G.reduce((t,g)=>t+gUnid(g),0))+" u."))+row("Novedades",nov.length?nov.length+" ("+nov.filter(n=>n.estado!=="Resuelta").length+" sin resolver)":"ninguna")+'</tbody></table></div>'}
@@ -4882,7 +4966,7 @@ function vjAcc(s){const anul=s.estado==="Anulada";let b="";
   if(canWrite&&!anul){if(porSalir(s))b='<button class="btn sm pri w" data-act="salio" data-id="'+s.id+'">'+IC.truck+'Marcar salida</button>';
     else if(s.estado==="En ruta")b='<button class="btn sm pri w" data-act="volvio" data-id="'+s.id+'">Cerrar viaje</button>';
     else if(s.estado==="Finalizada")b='<button class="btn sm" data-act="informe" data-id="'+s.id+'">Informe</button>'}
-  return b+dots([{a:"open-hoja",id:s.id,i:"file",t:"Abrir hoja de ruta",d:"N° "+nro(s)},{a:"open-orden",id:s.id,i:"edit",t:"Ver orden de carga"},{a:"edit-sal",id:s.id,i:"edit",t:"Editar viaje",w:1},{a:"costos",id:s.id,i:"plus",t:"Costos y combustible",w:1},{a:"informe",id:s.id,i:"file",t:"Informe del viaje"},
+  return b+dots([{a:"open-hoja",id:s.id,i:"file",t:"Abrir hoja de ruta",d:"N° "+nro(s)},{a:"open-orden",id:s.id,i:"edit",t:"Ver orden de carga"},{a:"edit-sal",id:s.id,i:"edit",t:"Editar viaje",w:1},{a:"costos",id:s.id,i:"plus",t:"Costos y combustible",w:1},{a:"nc",id:s.id,i:"up",t:"Notas de crédito",d:ncList(s).length?pl(ncList(s).length,"cargada","cargadas")+" · "+fM(ncTot(s)):"",w:1},{a:"informe",id:s.id,i:"file",t:"Informe del viaje"},
     {a:"nov-sal",id:s.id,i:"alert",t:"Registrar novedad",w:1},"-",{a:"anular",id:s.id,i:"pause",t:"Anular",dng:1,w:1},{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar",dng:1,w:1}])}
 VIEWS.viajes=function(){const V=UI.vj,q=(V.q||"").trim(),inR=f=>(!V.desde||f>=V.desde)&&(!V.hasta||f<=V.hasta);
   /* van a Viajes desde que se graba la hoja de ruta: Por salir → En viaje → Volvieron */
@@ -4931,7 +5015,7 @@ VIEWS.viajes=function(){const V=UI.vj,q=(V.q||"").trim(),inR=f=>(!V.desde||f>=V.
         +'<td data-l="Controlador">'+(s.controladorId?hl(persT(s.controladorId)):'<span class="mu">—</span>')+'</td>'
         +'<td class="wrap" data-l="Destino">'+hl(destT(s)||"—")+'</td><td class="nw mono" data-l="Salida → regreso">'+vjHora(s)+'</td>'
         +'<td class="num mono" data-l="Km">'+(vjKm(s)?fN(Math.round(vjKm(s))):"—")+'<div class="sub">'+(s.estado==="Finalizada"&&u.km?({gps:"LoJack",odo:"odómetro",prev:"previstos",mano:"a mano"}[u.k]||""):"previstos")+'</div></td>'
-        +'<td class="num mono" data-l="km/L"><b>'+(r?fKml(r):"—")+'</b>'+(combAlertas(s).length?'<div class="sub" style="color:var(--bad);font-weight:700" title="'+esc(combAlertas(s).join(" · "))+'">⚠ revisar</div>':"")+'</td><td class="num mono" data-l="Costo">'+(c.tot?fM(c.tot):"—")+'</td>'
+        +'<td class="num mono" data-l="km/L"><b>'+(r?fKml(r):"—")+'</b>'+(combAlertas(s).length?'<div class="sub" style="color:var(--bad);font-weight:700" title="'+esc(combAlertas(s).join(" · "))+'">⚠ revisar</div>':"")+'</td><td class="num mono" data-l="Costo">'+(c.tot?fM(c.tot):"—")+(ncList(s).length?'<div class="sub" title="Notas de crédito de la vuelta">NC '+fM(ncTot(s))+'</div>':"")+'</td>'
         +'<td class="r nw" data-l="">'+vjAcc(s)+'</td></tr>'}).join("")+'</tbody></table></div></section>';
   return h+(V.est!=="Finalizada"&&cnt["En ruta"]&&!q?ljVivo():"")};
 Object.assign(GACT,{
