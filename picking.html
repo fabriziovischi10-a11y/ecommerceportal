@@ -324,7 +324,7 @@ function ubiHtml(l,grande){const u=ubiDe(l.c);if(!u)return'<div class="ubi"><spa
   return'<div class="ubi"><span class="big">'+(p?esc(p.cara)+'·'+p.pos+'·N'+p.niv:esc(u[0][0]))+'</span><span class="tx">'+(p?"Cara <b>"+esc(p.cara)+"</b> · posición <b>"+p.pos+"</b> · nivel <b>"+p.niv+"</b>"+(p.dep!=="3"?" · <b>Dep. "+p.dep+"</b>":""):"Zona "+esc(u[0][0]))
     +'<br>'+fN(u[0][1])+' u en la posición'+(otras?' · también: '+otras:"")+'</span></div>'}
 function ubiCorta(l){const u=ubiDe(l.c);if(!u)return"sin ubicación";const p=partesUbi(u[0][0]);return p?p.cara+"·"+p.pos+"·N"+p.niv+(p.dep!=="3"?" (Dep. "+p.dep+")":""):u[0][0]}
-function equiTxt(q,equi){q=Number(q)||0;equi=Number(equi)||1;if(equi<=1||q<equi)return equi>1?"bulto de "+equi+" u":"";
+function equiTxt(q,equi){return ""; /* 2026-11-16: todo en unidades (pedido del usuario) */ q=Number(q)||0;equi=Number(equi)||1;if(equi<=1||q<equi)return equi>1?"bulto de "+equi+" u":"";
   const b=Math.floor(q/equi),r=q%equi;return fN(q)+" u = "+pl(b,"bulto","bultos")+" de "+equi+(r?" + "+fN(r)+" u":"")}
 
 /* ---------- tiempos: cronómetro por pasillo, tramos por integrante y pausas ---------- */
@@ -486,7 +486,7 @@ function pedirCantidad(l){const q=Number(l.q)||0,equi=Number(l.equi)||1;let n=l.
   const m=modal("¿Cuántas tomaste?",'<div class="small muted mono">Cód. '+esc(l.c)+'</div><div style="font:800 1.1rem/1.25 var(--f-disp);margin:.2rem 0 .4rem">'+esc(l.d)+'</div>'
     +'<div class="small">Pide <b>'+fN(q)+' u</b>'+(equiTxt(q,equi)?' · '+esc(equiTxt(q,equi).replace(/^[\d.]+ u = /,"")):"")+'</div>'
     +'<div class="qsel"><button class="btn" id="q-menos" aria-label="Una menos">−</button><input id="q-n" type="number" inputmode="numeric" min="0" value="'+n+'"><button class="btn" id="q-mas" aria-label="Una más">+</button></div>'
-    +'<div class="chips" style="justify-content:center">'+(equi>1?'<button class="chip" id="q-bm">− bulto</button><button class="chip" id="q-bp">+ bulto ('+equi+')</button>':"")+'<button class="chip" id="q-todo">Todo ('+fN(q)+')</button><button class="chip" id="q-cero">0</button></div>'
+    +'<div class="chips" style="justify-content:center">'+(false?'<button class="chip" id="q-bm">− bulto</button><button class="chip" id="q-bp">+ bulto ('+equi+')</button>':"")+'<button class="chip" id="q-todo">Todo ('+fN(q)+')</button><button class="chip" id="q-cero">0</button></div>'
     +'<div id="q-av" class="small" style="text-align:center;margin-top:8px;min-height:1.2em"></div>'
     +'<div class="m-acc"><button class="btn btn-lg" data-a="m-cerrar">Cancelar</button><button class="btn btn-lg btn-success" id="q-ok">Confirmar</button></div>');
   const inp=m.querySelector("#q-n"),av=m.querySelector("#q-av");
@@ -494,7 +494,7 @@ function pedirCantidad(l){const q=Number(l.q)||0,equi=Number(l.equi)||1;let n=l.
   set(n);inp.oninput=()=>set(inp.value);
   m.querySelector("#q-menos").onclick=()=>set(n-1);m.querySelector("#q-mas").onclick=()=>set(n+1);
   m.querySelector("#q-todo").onclick=()=>set(q);m.querySelector("#q-cero").onclick=()=>set(0);
-  if(equi>1){m.querySelector("#q-bm").onclick=()=>set(n-equi);m.querySelector("#q-bp").onclick=()=>set(n+equi)}
+  if(false){m.querySelector("#q-bm").onclick=()=>set(n-equi);m.querySelector("#q-bp").onclick=()=>set(n+equi)}
   m.querySelector("#q-ok").onclick=()=>{cerrarModal();const e=n>=q?"ok":n>0?"parcial":"faltante";guardarLinea(l,n,e,n<q?(l.motivo||null):null);
     senal(e==="ok"?"ok":"info",e==="ok"?"✓ "+fN(n)+" u cargadas":e==="parcial"?"Parcial: "+fN(n)+" de "+fN(q):"Marcado como faltante");setTimeout(siguiente,60)}}
 function noHay(l){const MOT=["No hay stock","No lo encuentro","Roto / vencido","Hay menos"];let mot="";
