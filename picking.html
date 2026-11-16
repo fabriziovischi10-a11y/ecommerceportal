@@ -505,7 +505,7 @@ function vPicking(){const x=pedidoActual();if(!x){ST.vista="pedidos";return vPed
     return h+'<div class="pausa-pant" role="alert"><div style="font-size:2.6rem;line-height:1">☕</div><div class="gr">EN PAUSA</div>'
       +'<p style="font-weight:800;font-size:1.1rem;margin:.7rem 0 .2rem">'+esc(tm.pausa.motivo||"Pausa")+' · desde las '+esc(fHM(tm.pausa.desde))+(tm.pausa.por&&tm.pausa.porId!==ST.yo.id?' · '+esc(tm.pausa.por):"")+'</p>'
       +'<p class="muted" style="margin:0">Hace <b class="mono" data-pausa="'+esc(x.id)+'|'+esc(ST.yo.pasillo)+'">'+fDur((ahoraMs()-msDe(tm.pausa.desde))/1000)+'</b> · el tiempo del pedido está detenido</p>'
-      +'<button class="btn btn-success btn-lg btn-block" style="margin-top:20px;min-height:88px;font-size:1.45rem" data-a="reanudar">▶ Reanudar</button>'
+      +'<button class="btn btn-success btn-lg btn-block" style="margin-top:20px;min-height:88px;font-size:1.45rem" data-a="reanudar">▶ Reanudar</button><button class="btn btn-outline btn-lg btn-block" style="margin-top:12px;min-height:60px" data-a="ir" data-v="pedidos">‹ Volver a la lista de pedidos</button><p class="muted small" style="margin:6px 0 0">La pausa sigue corriendo hasta que toques Reanudar.</p>'
       +'<p class="small muted" style="margin:.8rem 0 0">Cuando vuelvas, tocá <b>Reanudar</b> y seguí piqueando.</p></div>'}
   if(pp.estado==="listo")h+='<div class="hint" style="background:var(--emerald-bg);color:var(--emerald)">Este pasillo ya está terminado.</div>';
   if(l){const e=est(l),et=EST_T[e];
@@ -680,7 +680,7 @@ function vControl(){const A=ctlActual();if(!A){ST.vista="ctl-pedidos";ST.pedidoI
     return h+'<div class="pausa-pant" role="alert"><div style="font-size:2.6rem;line-height:1">☕</div><div class="gr">EN PAUSA</div>'
       +'<p style="font-weight:800;font-size:1.1rem;margin:.7rem 0 .2rem">'+esc(tm.pausa.motivo||"Pausa")+' · desde las '+esc(fHM(tm.pausa.desde))+'</p>'
       +'<p class="muted" style="margin:0">Hace <b class="mono" data-pausa="'+esc(x.id)+'|@'+esc(s)+'">'+fDur((ahoraMs()-msDe(tm.pausa.desde))/1000)+'</b> · el tiempo del control está detenido</p>'
-      +'<button class="btn btn-success btn-lg btn-block" style="margin-top:20px;min-height:88px;font-size:1.45rem" data-a="ctl-reanudar">▶ Reanudar</button></div>'}
+      +'<button class="btn btn-success btn-lg btn-block" style="margin-top:20px;min-height:88px;font-size:1.45rem" data-a="ctl-reanudar">▶ Reanudar</button><button class="btn btn-outline btn-lg btn-block" style="margin-top:12px;min-height:60px" data-a="ir" data-v="ctl-pedidos">‹ Volver a la lista de controles</button><p class="muted small" style="margin:6px 0 0">La pausa sigue corriendo hasta que toques Reanudar.</p></div>'}
   if(l){const r=reg(l.k),e=ctlEst(r),et=CTL_T[e];
     h+='<div class="actual ctl '+e+'"><div class="fila entre"><span class="badge '+et[1]+'">'+et[0]+'</span><span class="cods mono">Cód. '+esc(l.c)+(l.ean?' · '+esc(l.ean):"")+'</span></div>'
       +'<div class="desc">'+esc(l.d)+'</div>'
