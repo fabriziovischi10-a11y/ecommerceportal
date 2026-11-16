@@ -3901,7 +3901,8 @@ INF.splice(INF.findIndex(r=>r.id==="ordenes")+1,0,{id:"costos",cat:"Operación",
 Object.assign(GACT,{
   "salio":(el,id)=>{const s=get("salidas",id);if(s&&canWrite)formSalio(s);else if(!canWrite)toast("Acceso de solo lectura")},
   "costos":(el,id)=>{const s=get("salidas",id);if(!s)return;if(canWrite)formCostos(s);else{UI.hojaId=id;location.hash="#hoja"}},
-  "nc":(el,id)=>{const s=get("salidas",id);if(!s)return;if(canWrite)formNC(s);else informeViaje(s)},
+  "nc":(el,id)=>{const s=get("salidas",id);if(!s)return;if(!canWrite){informeViaje(s);return}
+    if(s.estado==="Finalizada")formNC(s);else if(s.estado==="En ruta"){toast("Las notas de crédito se cargan cuando el camión vuelve: cerrá el viaje primero");formCierre(s)}else toast("Las notas de crédito se cargan cuando el camión vuelve del viaje")},
   "cc-new":()=>{if(canWrite)formCaja(null)},
   "cc-edit":(el,id)=>{const x=get("cajachica",id);if(x)formCaja(x)},
   "cc-imp":()=>{if(canWrite)formCajaImp();else toast("Acceso de solo lectura")},
@@ -4965,9 +4966,9 @@ const vjHora=s=>{const a=salidaDT(s),b=regresoDT(s);return(a?hmF(a):"—")+" →
 function vjAcc(s){const anul=s.estado==="Anulada";let b="";
   if(canWrite&&!anul){if(porSalir(s))b='<button class="btn sm pri w" data-act="salio" data-id="'+s.id+'">'+IC.truck+'Marcar salida</button>';
     else if(s.estado==="En ruta")b='<button class="btn sm pri w" data-act="volvio" data-id="'+s.id+'">Cerrar viaje</button>';
-    else if(s.estado==="Finalizada")b='<button class="btn sm" data-act="informe" data-id="'+s.id+'">Informe</button>'}
-  return b+dots([{a:"open-hoja",id:s.id,i:"file",t:"Abrir hoja de ruta",d:"N° "+nro(s)},{a:"open-orden",id:s.id,i:"edit",t:"Ver orden de carga"},{a:"edit-sal",id:s.id,i:"edit",t:"Editar viaje",w:1},{a:"costos",id:s.id,i:"plus",t:"Costos y combustible",w:1},{a:"nc",id:s.id,i:"up",t:"Notas de crédito",d:ncList(s).length?pl(ncList(s).length,"cargada","cargadas")+" · "+fM(ncTot(s)):"",w:1},{a:"informe",id:s.id,i:"file",t:"Informe del viaje"},
-    {a:"nov-sal",id:s.id,i:"alert",t:"Registrar novedad",w:1},"-",{a:"anular",id:s.id,i:"pause",t:"Anular",dng:1,w:1},{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar",dng:1,w:1}])}
+    else if(s.estado==="Finalizada")b='<button class="btn sm" data-act="nc" data-id="'+s.id+'" title="Notas de crédito de la vuelta">'+IC.up+(ncList(s).length?"NC ("+ncList(s).length+")":"Cargar NC")+'</button><button class="btn sm" data-act="informe" data-id="'+s.id+'">Informe</button>'}
+  return b+dots([{a:"open-hoja",id:s.id,i:"file",t:"Abrir hoja de ruta",d:"N° "+nro(s)},{a:"open-orden",id:s.id,i:"edit",t:"Ver orden de carga"},{a:"edit-sal",id:s.id,i:"edit",t:"Editar viaje",w:1},{a:"costos",id:s.id,i:"plus",t:"Costos y combustible",w:1}].concat(s.estado==="Finalizada"?[{a:"nc",id:s.id,i:"up",t:"Notas de crédito",d:ncList(s).length?pl(ncList(s).length,"cargada","cargadas")+" · "+fM(ncTot(s)):"",w:1}]:[]).concat([{a:"informe",id:s.id,i:"file",t:"Informe del viaje"},
+    {a:"nov-sal",id:s.id,i:"alert",t:"Registrar novedad",w:1},"-",{a:"anular",id:s.id,i:"pause",t:"Anular",dng:1,w:1},{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar",dng:1,w:1}]))}
 VIEWS.viajes=function(){const V=UI.vj,q=(V.q||"").trim(),inR=f=>(!V.desde||f>=V.desde)&&(!V.hasta||f<=V.hasta);
   /* van a Viajes desde que se graba la hoja de ruta: Por salir → En viaje → Volvieron */
   const viajes=S.salidas.filter(s=>vjEstado(s)),ps=s=>vjEstado(s)==="Por salir";
