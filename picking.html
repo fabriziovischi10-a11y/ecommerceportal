@@ -516,9 +516,9 @@ function vPicking(){const x=pedidoActual();if(!x){ST.vista="pedidos";return vPed
       +'<div class="desc">'+esc(l.d)+'</div>'+ubiHtml(l,true)
       +'<div class="cant"><span class="q">'+fN(l.q)+'</span><span class="u">unidades</span>'+(equiTxt(l.q,l.equi)?'<span class="eq">'+esc(equiTxt(l.q,l.equi))+'</span>':"")+'</div>'
       +(l.tomado!=null||l.estado==="faltante"?'<div class="small" style="margin-top:4px">Tomaste <b>'+fN(l.tomado||0)+'</b>'+(l.motivo?' · '+esc(l.motivo):"")+(l.por?' · '+esc(l.por):"")+(e==="cambio"?' · <b style="color:var(--orange)">ahora piden '+fN(l.q)+' (antes '+fN(l.qVista)+')</b>':"")+'</div>':"")
-      +(resuelta(e)?"":'<div class="hint"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M11 8v8M15 8v8"/></svg>'+(l.ean?"Escaneá el producto para verificarlo":"Sin código de barras: escribí el código interno o confirmá abajo")+'</div>')
+      +(resuelta(e)?"":'<div class="hint"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M11 8v8M15 8v8"/></svg>'+(l.ean?"Escaneá el producto para verificarlo":"Sin código de barras: ingresá el código interno del producto")+'</div>')
       +'<div class="acc"><button class="btn btn-lg" data-a="no-hay" style="border-color:rgba(224,38,28,.6);color:var(--rose)">No hay</button>'
-      +(resuelta(e)?'<button class="btn btn-lg" data-a="cantidad">Corregir</button>':l.ean?'<button class="btn btn-lg" data-a="saltar">Saltear ›</button>':'<button class="btn btn-lg btn-primary" data-a="sin-escanear">Confirmar</button>')+'</div></div>'}
+      +(resuelta(e)?'<button class="btn btn-lg" data-a="cantidad">Corregir</button>':l.ean?'<button class="btn btn-lg" data-a="saltar">Saltear ›</button>':'<button class="btn btn-lg btn-primary" data-a="sin-escanear">Ingresar código</button>')+'</div></div>'}
   if(listo&&pp.estado!=="listo")h+='<button class="btn btn-success btn-lg btn-block" style="margin-top:14px;min-height:66px;font-size:1.2rem" data-a="terminar">✓ Terminar pasillo</button>';
   h+='<div class="sep">Recorrido · '+pl(A.length,"renglón","renglones")+' · '+fN(a.uni)+' u</div><div class="lista" style="margin-top:0;gap:8px">'
     +A.map(z=>{const e=est(z);return'<button class="lin '+e+(z.k===ST.sel?" sel":"")+'" data-a="sel" data-id="'+esc(z.k)+'"><span class="ic">'+EST_IC[e]+'</span><span class="tx"><span class="t">'+esc(z.d)+'</span><span class="d mono">'+esc(ubiCorta(z))+' · '+esc(z.c)+'</span></span><span class="q">'+(resuelta(e)||e==="cambio"?fN(z.tomado||0)+'/':"")+fN(z.q)+'</span></button>'}).join("")+'</div>';
@@ -681,6 +681,21 @@ function ctlFiltrar(){const i=document.getElementById("ctl-q");if(!i)return;ST.c
   document.querySelectorAll("#ctl-lista [data-q]").forEach(e=>{const ok=!q||e.dataset.q.includes(q);e.style.display=ok?"":"none";if(ok)n++});
   const c=document.getElementById("ctl-qn");if(c)c.textContent=q?(n?n+(n===1?" resultado":" resultados"):"Sin resultados"):""}
 document.addEventListener("input",e=>{if(e.target&&e.target.id==="ctl-q")ctlFiltrar()});
+/* CÓDIGO INTERNO (2026-11-17): si el producto no tiene código de barras, hay que escribir su código interno para confirmarlo o contarlo */
+function pedirCodInterno(l,ok){let v="";
+  const m=modal("Ingresá el código interno",'<div style="font:800 1.15rem/1.25 var(--f-disp);margin:0 0 .3rem">'+esc(l.d)+'</div><p class="small muted" style="margin:0">Este producto no tiene código de barras. Buscá el código interno en la etiqueta o en la caja y escribilo.</p>'
+    +'<div class="qsel"><input id="ci-n" inputmode="none" autocomplete="off" placeholder="Código interno" aria-label="Código interno" style="font-size:1.6rem"></div><div id="ci-err" class="small" style="color:var(--rose);min-height:1.2em;text-align:center"></div>'
+    +'<div class="teclado">'+[1,2,3,4,5,6,7,8,9].map(d=>'<button class="btn" data-k="'+d+'">'+d+'</button>').join("")+'<button class="btn" data-k="c" style="font-size:.95rem">Borrar</button><button class="btn" data-k="0">0</button><button class="btn" data-k="b" aria-label="Borrar un número">⌫</button></div>'
+    +'<button class="btn btn-ghost btn-sm" id="ci-tec" style="margin-top:6px">Usar el teclado del celular (letras)</button>'
+    +'<div class="m-acc"><button class="btn btn-lg" data-a="m-cerrar">Cancelar</button><button class="btn btn-lg btn-success" id="ci-ok" disabled>Confirmar</button></div>',{fijo:true});
+  const inp=m.querySelector("#ci-n"),b=m.querySelector("#ci-ok"),er=m.querySelector("#ci-err");
+  const set=t=>{v=String(t).replace(/\s+/g,"").slice(0,20);inp.value=v;b.disabled=!v;er.textContent=""};
+  inp.oninput=()=>set(inp.value);
+  m.querySelectorAll("[data-k]").forEach(x=>x.onclick=()=>{const k=x.dataset.k;set(k==="b"?v.slice(0,-1):k==="c"?"":v+k);try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}});
+  m.querySelector("#ci-tec").onclick=()=>{inp.setAttribute("inputmode","text");inp.blur();setTimeout(()=>inp.focus(),30)};
+  const probar=()=>{if(!v)return;if(normCod(v)===normCod(l.c)){senal("ok");cerrarModal();ok()}else{senal("err");er.textContent="Ese código no corresponde a este producto. Fijate bien y volvé a escribirlo.";inp.value="";v="";b.disabled=true}};
+  b.onclick=probar;inp.onkeydown=e=>{if(e.key==="Enter")probar()};
+  setTimeout(()=>{try{inp.focus({preventScroll:true})}catch(e){}},60)}
 function ctlActual(){const x=ST.pedidos[ST.pedidoId];if(!x||!ST.ctlS||ctlS(x)!==ST.ctlS)return null;const s=ST.ctlS;return{x,s,cs:(x.control||{})[s]||{},L:ctlLineas(x)}}
 function ctlLineaSel(){const A=ctlActual();return(A&&A.L.find(l=>l.k===ST.sel))||null}
 /* pantalla de control: SIN cantidades */
@@ -710,9 +725,9 @@ function vControl(){const A=ctlActual();if(!A){ST.vista="ctl-pedidos";ST.pedidoI
       +'<div>'+l.partes.map(pt=>'<span class="ctl-pas" style="--c:'+esc(pasDe(pt.p).color)+'">'+esc(pasDe(pt.p).nombre)+'</span>').join("")+'</div>'
       +ubiHtml(l,true)
       +(r?'<div class="small" style="margin-top:6px">'+(e==="ok"?"Controlado":e==="corregido"?"Corregiste lo piqueado":"Quedó con diferencia para el supervisor")+(r.por?' · '+esc(r.por):"")+' · '+esc(fHM(r.at))+'</div>'
-        :'<div class="hint" style="background:var(--violeta-bg);color:#d9c4ff">'+SVG_SCAN+(l.ean?"Escaneá el producto y contá las unidades":"Sin código de barras: escribí el código interno o tocá «Contar»")+'</div>')
+        :'<div class="hint" style="background:var(--violeta-bg);color:#d9c4ff">'+SVG_SCAN+(l.ean?"Escaneá el producto y contá las unidades":"Sin código de barras: ingresá el código interno del producto")+'</div>')
       +'<div class="acc"><button class="btn btn-lg" data-a="ctl-nohay" style="border-color:rgba(224,38,28,.6);color:var(--rose)">No hay</button>'
-      +'<button class="btn btn-lg'+(r||l.ean?"":" btn-primary")+'" data-a="ctl-contar">'+(r?"↻ Volver a contar":"Contar ›")+'</button></div></div>'}
+      +'<button class="btn btn-lg'+(r||l.ean?"":" btn-primary")+'" data-a="ctl-contar">'+(r?"↻ Volver a contar":l.ean?"Contar ›":"Ingresar código ›")+'</button></div></div>'}
   if(listo&&!enPk.length)h+='<button class="btn btn-success btn-lg btn-block" style="margin-top:14px;min-height:66px;font-size:1.2rem" data-a="ctl-terminar">✓ Terminar control</button>';
   const bq=ctlNorm(ST.ctlQ||""),bOk=z=>!bq||ctlNorm(z.d+" "+z.c+" "+(z.ean||"")).includes(bq);
   h+='<div class="sep">Renglones del pedido · '+tot+'</div><div class="ctl-buscar"><input id="ctl-q" type="search" placeholder="Buscar por nombre, código o código de barras" value="'+esc(ST.ctlQ||"")+'" autocomplete="off" aria-label="Buscar producto"><span id="ctl-qn" class="small muted"></span></div><div class="lista" id="ctl-lista" style="margin-top:0;gap:8px">'
@@ -1224,7 +1239,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]")
     case"sel":ST.sel=id;render();window.scrollTo({top:0,behavior:"smooth"});break;
     case"saltar":siguiente();break;
     case"cantidad":{const l=lineaSel();if(l)pedirCantidad(l);break}
-    case"sin-escanear":{const l=lineaSel();if(l)pedirCantidad(l);break}
+    case"sin-escanear":{const l=lineaSel();if(l)pedirCodInterno(l,()=>pedirCantidad(l));break}
     case"no-hay":{const l=lineaSel();if(l)noHay(l);break}
     case"terminar":terminar();break;
     case"pausa":pausar();break;
@@ -1260,7 +1275,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]")
     case"ctl-abrir":ctlAbrir(id);break;
     case"ctl-sel":ST.sel=id;ST.ctlQ="";render();window.scrollTo({top:0,behavior:"smooth"});break;
     case"ctl-buscar":{const i=document.getElementById("ctl-q");if(i){i.scrollIntoView({behavior:"smooth",block:"start"});setTimeout(()=>{try{i.focus({preventScroll:true})}catch(e){}},250)}break}
-    case"ctl-contar":{const l=ctlLineaSel();if(l)ctlContar(l,[]);break}
+    case"ctl-contar":{const l=ctlLineaSel();if(!l)break;const A=ctlActual(),r=A&&(A.cs.lineas||{})[l.k];if(!l.ean&&!r)pedirCodInterno(l,()=>ctlContar(l,[]));else ctlContar(l,[]);break}
     case"ctl-nohay":{const l=ctlLineaSel();if(l)ctlConfirmar(l,0,[]);break}
     case"ctl-terminar":ctlTerminar();break;
     case"ctl-pausa":ctlPausar();break;
