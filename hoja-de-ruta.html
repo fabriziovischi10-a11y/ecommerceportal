@@ -1518,6 +1518,7 @@ VIEWS.hoja=function(){
       +(nn.length?'<div class="list">'+nn.map(n=>'<div class="li" data-act="edit-nov" data-id="'+n.id+'" style="cursor:pointer"><div><div class="t">'+esc(n.sucursalId?sucT(n.sucursalId):"Sin sucursal")+' · '+esc(n.tipo)+(n.producto?' · '+esc(n.producto)+(n.cantidad?' ('+fN(n.cantidad)+')':""):"")+'</div><div class="d">'+esc(n.descripcion)+(n.origen==="WhatsApp"?'<span class="tag wa">WhatsApp</span>':"")+'</div></div><div class="r">'+chip(n.estado,novEstCls[n.estado]||"mute")+'</div></div>').join("")+'</div>'
         :'<div class="none">Sin observaciones todavía. Cuando los encargados manden su mensaje, pegalo acá.</div>')+'</section>'}
   if(!pv)h+=guiasHojaSec(s);else{h+=pvResumen(s,p);if(guiasDe(s).some(g=>g.salidaId===s.id))h+=guiasHojaSec(s)}
+  if(pv&&!guiasDe(s).some(g=>g.salidaId===s.id))h+=pkHojaSec(s);
   h+=gpsSec(s)+costoSec(s);
   if(pv){
     h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-rut)"></span>Zonas de esta hoja</h2><button class="btn pri w" data-act="imp-hoja" data-id="'+s.id+'">'+IC.up+(cs.length?"Agregar Excel":"Cargar Excel de zonas")+'</button></div>';
@@ -1960,9 +1961,33 @@ function guiaPicker(sucs,sid,ck){
   return h;
 }
 
+/* ---- PEDIDOS DE PICKING EN LA HOJA DE RUTA (2026-11-17): tildar los pedidos piqueados/controlados de las sucursales o zonas
+   de esta hoja y sumarlos al camión sin abrir la orden. Al guardar usa pkVincular (arma la guía PK con lo piqueado; destildar = liberar). */
+function pkHojaSec(s,dentro){if(!s||s.estado==="Anulada")return"";const sel=s.canal==="Preventa"?(s.zonaIds||[]):(s.sucursalIds||[]);if(!sel.length)return"";
+  setTimeout(()=>{pkCargarLista(false).then(()=>{const el=$("pkHoja");if(el&&el.dataset.sid===s.id)el.innerHTML=pkHojaInner(get("salidas",s.id)||s)})},0);
+  const box='<div id="pkHoja" data-sid="'+esc(s.id)+'">'+(UI.pk.peds?pkHojaInner(s):'<span class="mu">Buscando pedidos de picking…</span>')+'</div>';
+  if(dentro)return'<div class="pnb" style="border-bottom:1px solid var(--line,rgba(127,127,127,.2))"><div class="fsec" style="margin-top:0">Pedidos de picking <span class="mu" style="font-weight:500">· tildá los controlados que van en este camión</span></div>'+box+'</div>';
+  return'<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-log)"></span>Pedidos de picking</h2><span class="s">tildá los controlados que van en este camión</span></div><div class="pnb" id="pkHoja" data-sid="'+esc(s.id)+'">'+(UI.pk.peds?pkHojaInner(s):'<span class="mu">Buscando pedidos de picking…</span>')+'</div></section>'}
+function pkHojaInner(s){const canal=s.canal,sel=canal==="Preventa"?(s.zonaIds||[]):(s.sucursalIds||[]),fin=s.estado==="Finalizada",ed=canWrite&&!fin;
+  if(!UI.pk.peds)return'<span class="mu" style="color:var(--warn)">No se pudieron leer los pedidos de picking'+(UI.pk.err?" ("+esc(UI.pk.err)+")":"")+'.</span>';
+  const L=pkCandidatos(UI.pk.peds,canal,sel,s.id).map(p=>({p,r:pkResumen(p)})).sort((a,b)=>(b.p.ordenId===s.id)-(a.p.ordenId===s.id)||b.r.controlado-a.r.controlado);
+  if(!L.length)return'<span class="mu">No hay pedidos de picking libres para '+(canal==="Preventa"?"esta zona":"estas sucursales")+'. Se cargan en <a href="#pkguias">Cargar guías de Excel</a>.</span>';
+  return'<div class="gsuc">'+L.map(({p,r})=>{const va=p.ordenId===s.id,st=va?chip("Va en este camión","info"):chip(pkCtlTxt(r),r.controlado?"ok":/^control/.test(r.etapa)?"vio":"warn"),PM=pkMotivos(p);
+      return'<label class="gck"><input type="checkbox" name="pkhoja" value="'+esc(p.id)+'"'+(va?" checked":"")+(ed?"":" disabled")+'><span><b>'+esc(pkDestN(p))+'</b></span><span class="mu">'+fDL(p.fecha)+(p.archivo?" · "+esc(p.archivo):"")+'</span>'
+        +'<span class="mu">'+pl(r.lin,"renglón","renglones")+' · '+fN(r.tom)+' de '+fN(r.uni)+' u. piqueadas</span>'+st+(r.falt?chip(pl(r.falt,"faltante","faltantes"),"bad"):"")
+        +(r.controlado&&r.controladores.length?'<span class="mu">Controló: '+esc(r.controladores.join(" y "))+'</span>':"")
+        +(!va&&!r.controlado?'<span class="mu" style="color:var(--warn);flex-basis:100%">'+(!r.listo?"Todavía en picking: "+r.N+" de "+r.M+" pasillos.":"Piqueado pero todavía sin controlar.")+' Si lo tildás, sale con lo piqueado hasta ahora.</span>':"")
+        +(PM.length?'<span style="flex-basis:100%">'+pkMotivosHtml(PM,4)+'</span>':"")+'</label>'}).join("")+'</div>'
+    +(ed?'<div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn pri" data-act="pk-hoja-ok" data-id="'+esc(s.id)+'">'+IC.check+'Guardar pedidos en este camión</button><span class="mu">Se arma la guía de cada pedido con lo que realmente se piqueó. Si destildás uno que ya iba, vuelve a quedar libre.</span></div>'
+      :fin?'<p class="mu" style="margin-top:10px">El viaje está finalizado: no se pueden cambiar los pedidos.</p>':"")}
+async function pkHojaGuardar(el,id){if(!canWrite){toast("Acceso de solo lectura");return}const s=get("salidas",id);if(!s||!UI.pk.peds)return;
+  const ids=[...document.querySelectorAll('#pkHoja input[name="pkhoja"]:checked')].map(i=>i.value);
+  if(el){el.disabled=true;el.textContent="Guardando…"}
+  try{const r=await pkVincular(id,ids,UI.pk.peds,s.guiaIds||[]);toast(r.n||r.libres?pl(r.n,"pedido cargado","pedidos cargados")+" en este camión"+(r.libres?" · "+pl(r.libres,"liberado","liberados"):""):"Sin cambios");UI.pk.t=0;await pkCargarLista(true);render()}
+  catch(e){console.error(e);toast(e.message||"No se pudieron guardar los pedidos")}finally{if(el&&el.isConnected){el.disabled=false;el.innerHTML=IC.check+"Guardar pedidos en este camión"}}}
 /* ---- sección en la hoja de ruta ---- */
 function guiasHojaSec(s){const G=guiasDe(s),pvk=s.canal==="Preventa",anul=s.estado==="Anulada"||pvk;   // en preventa solo se muestran las guías PK (picking), sin planilla de sucursales
-  let h='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-nov)"></span>'+(pvk?"Mercadería piqueada (picking)":"Guías de mercadería")+'</h2><span class="pa">'+(G.length?'<span class="s">'+pl(G.filter(g=>g.salidaId===s.id).length,"guía","guías")+' · '+fN(G.filter(g=>g.salidaId===s.id).reduce((t,g)=>t+gUnid(g),0))+' unidades</span>':"")+(G.some(g=>g.salidaId===s.id)?pkUI(s):"")+(anul?"":'<button class="btn pri w" data-act="g-imp" data-id="'+s.id+'">'+IC.up+'Cargar planilla de guías</button>'+(G.length?'<button class="btn w" data-act="edit-sal" data-id="'+s.id+'">'+IC.edit+'Quitar o sumar guías</button>':""))+'</span></div>';
+  let h='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-nov)"></span>'+(pvk?"Mercadería piqueada (picking)":"Guías de mercadería")+'</h2><span class="pa">'+(G.length?'<span class="s">'+pl(G.filter(g=>g.salidaId===s.id).length,"guía","guías")+' · '+fN(G.filter(g=>g.salidaId===s.id).reduce((t,g)=>t+gUnid(g),0))+' unidades</span>':"")+(G.some(g=>g.salidaId===s.id)?pkUI(s):"")+(anul?"":'<button class="btn pri w" data-act="g-imp" data-id="'+s.id+'">'+IC.up+'Cargar planilla de guías</button>'+(G.length?'<button class="btn w" data-act="edit-sal" data-id="'+s.id+'">'+IC.edit+'Quitar o sumar guías</button>':""))+'</span></div>'+(pvk?"":pkHojaSec(s,true));
   if(!G.length)return h+'<div class="pnb">'+emptyCard("excel","m-nov","Cargá la planilla de guías","Subí el Excel de guías que sacás del sistema. Se cargan solo las guías de las sucursales de esta hoja ("+esc((s.sucursalIds||[]).map(sucT).join(", ")||"elegí las sucursales en la orden")+"), con cantidad, producto y rubro. Al cargarla tildás cuáles salen en este viaje; las que no, quedan pendientes para el próximo.",anul?"":'<button class="btn pri" data-act="g-imp" data-id="'+s.id+'">'+IC.up+'Cargar planilla de guías</button>')+gPendHoja(s,G)+'</div></section>';
   const by={};G.forEach(g=>(by[gKey(g)]=by[gKey(g)]||[]).push(g));
   const va=G.filter(g=>g.salidaId===s.id),hayImp=G.some(gTieneImp);
@@ -2209,6 +2234,7 @@ VIEWS.guias=function(){
 /* ---- acciones ---- */
 const GACT={
   "g-imp":(el,id)=>formImpGuias(id?get("salidas",id):null),
+  "pk-hoja-ok":(el,id)=>pkHojaGuardar(el,id),
   "g-ver":(el,id)=>{const g=get("guias",id);if(g)formGuia(g)},
   "g-suc":el=>{UI.gui.suc=el.dataset.v||"";render()},
   "g-orden":(el,id)=>formSal(null,{fecha:today(),canal:"Sucursales",origenLoc:depId(),sucPick:[id]}),
