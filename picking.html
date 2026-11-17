@@ -1273,6 +1273,7 @@ cargarCatalogo();cargarUbicaciones();setInterval(cargarUbicaciones,10*60e3);
 @media print{#btn-escritorio{display:none!important}}
 /* Picking: el botón del escritorio solo en el inicio y en Supervisión (en las pantallas de trabajo tapaba el botón de escanear) */
 body:not(.v-inicio) #btn-escritorio{display:none!important}
+#btn-escritorio{left:auto!important;right:16px}
 </style>
 <script>
 /* Si debajo del botón hay una barra fija (por ej. la barra de pestañas del celular), lo sube por encima. */
