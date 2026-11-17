@@ -617,14 +617,15 @@ const SVG_SCAN='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stro
 /* renglones del PEDIDO COMPLETO consolidados por código (si un código está en 2 pasillos se suman q y tomado) */
 function ctlLineas(x){const M={};pasillosDePed(x).forEach(p=>activas(x.pasillos[p]).forEach(l=>{const o=M[l.k]=M[l.k]||{k:l.k,c:l.c,d:l.d,ean:l.ean||"",q:0,tomado:0,partes:[]};
     o.q+=Number(l.q)||0;o.tomado+=Number(l.tomado)||0;if(!o.ean&&l.ean)o.ean=l.ean;o.partes.push({p,l})}));
-  Object.values(M).forEach(o=>{o.pk=o.partes.every(pt=>(x.pasillos[pt.p]||{}).estado==="listo")});   // CONTROL PARCIAL (2026-11-17)
+  Object.values(M).forEach(o=>{o.pk=o.partes.every(pt=>ctlPkParte(x,pt))});   // CONTROL PARCIAL (2026-11-17): por pasillo terminado o por producto ya confirmado
   return Object.values(M).sort((a,b)=>claveRec(a).localeCompare(claveRec(b)))}
 /* etapa del pedido: picking (algún pasillo sin terminar) → control1 … → controlado. Una etapa está hecha si quedó «listo» con TODOS los renglones */
 function ctlEtapa(x){if(!x||!x.pasillos||!pedListo(x))return"picking";const c=x.control||{},L=ctlLineas(x);
   for(const s of CTL_ETAPAS){const cs=c[s]||{};if(cs.estado!=="listo"||L.some(l=>!(cs.lineas||{})[l.k]))return ctlEtNom(s)}return"controlado"}
 /* CONTROL PARCIAL (2026-11-17): el pedido se puede empezar a controlar apenas termina el PRIMER pasillo; se controla lo de los pasillos
    ya terminados y lo demás espera. «Terminar control» sigue pidiendo TODO piqueado y TODO controlado (ctlEtapa no cambia: el TMS igual). */
-const ctlParcial=x=>!!(x&&x.pasillos&&!x.archivado&&!pedListo(x)&&pasillosDePed(x).some(p=>x.pasillos[p].estado==="listo"));
+const ctlPkParte=(x,pt)=>(x.pasillos[pt.p]||{}).estado==="listo"||resuelta(est(pt.l));   // el pasillo terminó o el pickeador ya confirmó ese producto
+const ctlParcial=x=>!!(x&&x.pasillos&&!x.archivado&&!pedListo(x)&&pasillosDePed(x).some(p=>x.pasillos[p].estado==="listo"||activas(x.pasillos[p]).some(l=>resuelta(est(l)))));
 const ctlS=x=>{const e=ctlEtapa(x);return/^control\d$/.test(e)?"c"+e.slice(7):e==="picking"&&ctlParcial(x)?CTL_ETAPAS[0]:null};
 const pasEnPicking=x=>pasillosDePed(x).filter(p=>x.pasillos[p].estado!=="listo");
 const pedControlado=x=>ctlEtapa(x)==="controlado";
@@ -647,7 +648,7 @@ function vCtlPedidos(){const yo=ST.yo,L=ctlEspera();
   let h='<div class="paso" style="color:#d9c4ff">Control a ciegas</div><h1>Pedidos para controlar</h1>';
   const pie='<div style="text-align:center;margin-top:28px"><button class="btn btn-ghost btn-sm muted" data-a="super">Supervisión</button></div>';
   if(!ST.cargado.ped)return h+'<div class="vacio">Cargando pedidos…</div>';
-  if(!L.length)return h+'<div class="vacio" style="margin-top:12px"><div style="font-size:2rem">✓</div>No hay pedidos esperando control.<br>Cuando un pedido termina el picking en algún pasillo, aparece acá solo y ya podés controlar lo de ese pasillo.</div>'+pie;
+  if(!L.length)return h+'<div class="vacio" style="margin-top:12px"><div style="font-size:2rem">✓</div>No hay pedidos esperando control.<br>Apenas un pickeador confirma un producto, el pedido aparece acá y ya podés controlar lo piqueado.</div>'+pie;
   return h+'<div class="lista">'+L.map(x=>{const s=ctlS(x),cs=(x.control||{})[s]||{},Ls=ctlLineas(x),hechos=Ls.filter(l=>(cs.lineas||{})[l.k]).length,tm=tiempos(cs),
       enCurso=cs.estado==="en curso"&&cs.controladorId,mio=enCurso&&cs.controladorId===yo.id,otro=enCurso&&!mio,pk=pickersPed(x);
     return'<div class="ped"><div class="fila entre"><span class="nro">'+esc(pedTit(x))+'</span>'+(x.prueba?'<span class="prueba">PRUEBA</span>':"")
@@ -684,7 +685,7 @@ function vControl(){const A=ctlActual();if(!A){ST.vista="ctl-pedidos";ST.pedidoI
     +'<div class="r2">'+cronoHtml(x.id,"@"+s,tm,true)+(tm.corre?'<button class="btn btn-sm btn-pausa" data-a="ctl-pausa">❚❚ Pausa</button>':"")+'</div>'
     +'<div class="small" style="font-weight:800;margin-bottom:5px">'+hechos+' de '+tot+' '+(tot===1?"renglón controlado":"renglones controlados")+'</div>'
     +'<div class="bar"><i style="width:'+pct+'%;background:var(--violeta)"></i></div></div>'
-    +(enPk.length?'<div class="hint" style="background:rgba(245,159,0,.12);color:var(--amber);margin-top:8px">⏳ Todavía se está piqueando en <b>'+esc(enPk.map(p=>pasDe(p).nombre).join(", "))+'</b>. Controlá lo que ya está piqueado: lo demás se habilita solo cuando terminen.</div>':"");
+    +(enPk.length?'<div class="hint" style="background:rgba(245,159,0,.12);color:var(--amber);margin-top:8px">⏳ Todavía se está piqueando en <b>'+esc(enPk.map(p=>pasDe(p).nombre).join(", "))+'</b>. Controlá lo que ya está piqueado: cada producto se habilita solo apenas lo confirman.</div>':"");
   if(tm.pausado){ST.enPausa=true;
     return h+'<div class="pausa-pant" role="alert"><div style="font-size:2.6rem;line-height:1">☕</div><div class="gr">EN PAUSA</div>'
       +'<p style="font-weight:800;font-size:1.1rem;margin:.7rem 0 .2rem">'+esc(tm.pausa.motivo||"Pausa")+' · desde las '+esc(fHM(tm.pausa.desde))+'</p>'
@@ -710,7 +711,7 @@ function vControl(){const A=ctlActual();if(!A){ST.vista="ctl-pedidos";ST.pedidoI
 /* escaneo en el control */
 function ctlProcesarCodigo(cod){const A=ctlActual();if(!A)return;const n=normCod(cod),co=z=>(z.ean&&normCod(z.ean)===n)||normCod(z.c)===n;
   const sel=A.L.find(z=>z.k===ST.sel),l=sel&&co(sel)?sel:A.L.find(co);
-  if(l&&!l.pk&&!(A.cs.lineas||{})[l.k]){senal("err");toast("Ese producto todavía se está piqueando en "+l.partes.filter(pt=>(A.x.pasillos[pt.p]||{}).estado!=="listo").map(pt=>pasDe(pt.p).nombre).join(", ")+": controlalo cuando terminen","err");return}
+  if(l&&!l.pk&&!(A.cs.lineas||{})[l.k]){senal("err");toast("Ese producto todavía se está piqueando en "+l.partes.filter(pt=>!ctlPkParte(A.x,pt)).map(pt=>pasDe(pt.p).nombre).join(", ")+": se habilita cuando lo confirmen","err");return}
   if(l){const r=(A.cs.lineas||{})[l.k];if(l.k!==ST.sel){ST.sel=l.k;render();window.scrollTo({top:0})}senal("ok",r?"Ya estaba controlado: lo volvés a contar":null);ctlContar(l,[]);return}
   const ck=ST.eanIdx[n]||(ST.cat&&ST.cat[cod]?cod:null),it=ck&&ST.cat[ck];senal("err");ctlNoEsta(cod,ck,it)}
 function ctlNoEsta(cod,ck,it){
