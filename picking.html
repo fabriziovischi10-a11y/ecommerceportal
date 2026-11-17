@@ -456,6 +456,7 @@ function render(){const m=$("#main");
   if(yo)$("#yo-t").textContent=pasDe(yo.pasillo).nombre+" · "+yo.nombre;
   if(!ST.cargado.pas){m.innerHTML='<div class="vacio">Conectando con la base…</div>';return}
   const v={ingreso:vIngreso,integrantes:vIntegrantes,pedidos:vPedidos,picking:vPicking,super:vSuper,"ctl-integrantes":vCtlIntegrantes,"ctl-pedidos":vCtlPedidos,control:vControl}[ST.vista]||vIngreso;
+  document.body.classList.toggle("v-inicio",!ST.vista||ST.vista==="ingreso"||ST.vista==="super");
   ST.enPausa=false;const y=window.scrollY;m.innerHTML=v();if(ST.vista===ST._ultVista)window.scrollTo(0,y);ST._ultVista=ST.vista;
   actualizarScanbar()}
 function actualizarScanbar(){const ver=(ST.vista==="picking"||ST.vista==="control")&&!ST.modalAbierto&&!ST.enPausa&&!$("#cam").classList.contains("on");document.body.classList.toggle("ver-scan",ver);
@@ -1270,6 +1271,8 @@ cargarCatalogo();cargarUbicaciones();setInterval(cargarUbicaciones,10*60e3);
 #btn-escritorio:hover,#btn-escritorio:focus-visible{opacity:1;transform:translateY(-2px);gap:8px;outline:none}
 #btn-escritorio:hover span,#btn-escritorio:focus-visible span{max-width:100px}
 @media print{#btn-escritorio{display:none!important}}
+/* Picking: el botón del escritorio solo en el inicio y en Supervisión (en las pantallas de trabajo tapaba el botón de escanear) */
+body:not(.v-inicio) #btn-escritorio{display:none!important}
 </style>
 <script>
 /* Si debajo del botón hay una barra fija (por ej. la barra de pestañas del celular), lo sube por encima. */
