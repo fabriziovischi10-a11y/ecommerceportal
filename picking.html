@@ -476,8 +476,14 @@ function vIntegrantes(){const p=pasDe(ST.pasSel),I=Object.keys(p.integrantes||{}
       :'<div class="vacio" style="margin-top:12px">Este pasillo todavía no tiene integrantes.<br>Pedile al supervisor que te agregue.</div>')}
 
 /* b) Pedidos del pasillo */
+/* OTROS PASILLOS (2026-11-17): si el pickeador también está en otros pasillos (mismo nombre), muestra sus pedidos pendientes y deja cambiar con un toque */
+function otrosPasHtml(yo){if(!yo||yo.rol==="control")return"";const nom=String(yo.nombre||"").trim().toLowerCase(),O=[];
+  Object.keys(ST.pasillos||{}).forEach(p=>{if(p===yo.pasillo)return;const I=(ST.pasillos[p]||{}).integrantes||{};const k=Object.keys(I).find(k=>String(I[k].nombre||"").trim().toLowerCase()===nom);if(k)O.push({p,k,n:pedidosDe(p).length})});
+  if(!O.length)return"";O.sort((a,b)=>b.n-a.n);
+  return'<div class="card" style="margin:8px 0 12px;padding:10px 12px"><div class="small" style="font-weight:800;margin-bottom:8px">También estás en otros pasillos:</div><div class="fila" style="flex-wrap:wrap;gap:8px">'+O.map(o=>'<button class="btn btn-sm'+(o.n?" btn-primary":"")+'" style="border-left:6px solid '+esc(pasDe(o.p).color||"#2f6bd1")+'" data-a="otro-pas" data-p="'+esc(o.p)+'" data-id="'+esc(o.k)+'">'+esc(pasDe(o.p).nombre)+' · '+(o.n?pl(o.n,"pedido","pedidos"):"sin pedidos")+'</button>').join("")+'</div></div>'}
 function vPedidos(){if(ST.yo&&ST.yo.rol==="control"){ST.vista="ctl-pedidos";return vCtlPedidos()}const yo=ST.yo,p=pasDe(yo.pasillo),L=pedidosDe(yo.pasillo);
   let h='<div class="fila entre"><div><div class="paso">'+esc(p.nombre)+'</div><h1>Pedidos para piquear</h1></div></div>';
+  h+=otrosPasHtml(yo);
   const pie='<div style="text-align:center;margin-top:28px"><button class="btn btn-ghost btn-sm muted" data-a="super">Supervisión</button></div>';
   if(!ST.cargado.ped)return h+'<div class="vacio">Cargando pedidos…</div>';
   if(!L.length)return h+'<div class="vacio" style="margin-top:12px"><div style="font-size:2rem">✓</div>No hay pedidos pendientes en tu pasillo.<br>Cuando carguen una guía con su zona (o salga una orden), aparece acá sola.</div>'+pie;
@@ -1232,6 +1238,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]")
     case"m-cerrar":cerrarModal();break;
     case"ir":ST.vista=b.dataset.v;if(ST.vista!=="picking")ST.pedidoId=null;render();window.scrollTo(0,0);break;
     case"elegir-pas":ST.pasSel=id;ST.vista="integrantes";render();window.scrollTo(0,0);break;
+    case"otro-pas":{const p=b.dataset.p,i=((pasDe(p).integrantes)||{})[id];if(!i)return;ST.yo={pasillo:p,id,nombre:i.nombre};LS.set("pk-yo",ST.yo);ST.vista="pedidos";ST.pedidoId=null;render();window.scrollTo(0,0);beep("ok");break}
     case"elegir-int":{const p=pasDe(ST.pasSel),i=(p.integrantes||{})[id];if(!i)return;ST.yo={pasillo:ST.pasSel,id,nombre:i.nombre};LS.set("pk-yo",ST.yo);ST.vista="pedidos";render();despierto(true);beep("ok");break}
     case"cambiar":confirmar("Cambiar de usuario","¿Querés salir y elegir otro pasillo o integrante?","Cambiar",()=>{ST.yo=null;LS.del("pk-yo");ST.vista="ingreso";ST.pedidoId=null;render()});break;
     case"tomar":tomar(id,b.dataset.otro);break;
