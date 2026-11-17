@@ -187,6 +187,8 @@ body.ver-scan #scanbar{display:block}
 .tabla.ancha{min-width:720px}.tabla.ancha td,.tabla.ancha th{white-space:nowrap}
 .tabla .rk{font:900 1rem var(--f-disp);color:var(--amarillo)}
 /* control a ciegas (2026-11-16) */
+.ctl-falta{margin-top:10px;padding:10px 12px;border-radius:14px;background:var(--violeta-bg);border:1px solid rgba(183,140,255,.35)}.ctl-falta .bar.gruesa{height:16px;margin:6px 0 4px;border-radius:9px}.ctl-falta .bar.gruesa i{border-radius:9px}
+#ctl-q{width:100%;min-height:52px;padding:0 14px;border-radius:12px;border:1px solid rgba(183,140,255,.45);background:rgba(255,255,255,.06);color:inherit;font-size:1.05rem}.ctl-buscar{margin:0 0 10px;scroll-margin-top:12px}.ctl-buscar .small{display:block;margin-top:4px}.lin.enpk{opacity:.5}
 :root{--violeta:#b78cff;--violeta-bg:rgba(183,140,255,.16)}
 .t-violet{background:var(--violeta-bg);color:#d9c4ff}
 .pas.ctl-card{width:100%;margin-top:14px;min-height:104px;border-color:rgba(183,140,255,.45);background:linear-gradient(135deg,rgba(183,140,255,.22),rgba(255,255,255,.05) 70%)}
@@ -673,6 +675,12 @@ function ctlArrancar(id,forzar){const x=ST.pedidos[id],s=x&&ctlS(x);if(!s)return
   if(cs.estado==="listo")Object.assign(u,{fin:null,duracionSeg:null,pausasSeg:null});   // se reabre (p. ej. el TMS sumó un renglón después)
   Object.assign(u,updTramo(cs,ST.yo,t));const o={etapa:ctlEtNom(s)};Object.keys(u).forEach(k=>{o[s+"/"+k]=u[k]});
   guardar(ctlPath(id)+"/control",o)}
+/* BUSCADOR DEL CONTROL (2026-11-17): filtra la lista sin volver a dibujar (no pierde el foco) */
+const ctlNorm=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+function ctlFiltrar(){const i=document.getElementById("ctl-q");if(!i)return;ST.ctlQ=i.value;const q=ctlNorm(i.value.trim());let n=0;
+  document.querySelectorAll("#ctl-lista [data-q]").forEach(e=>{const ok=!q||e.dataset.q.includes(q);e.style.display=ok?"":"none";if(ok)n++});
+  const c=document.getElementById("ctl-qn");if(c)c.textContent=q?(n?n+(n===1?" resultado":" resultados"):"Sin resultados"):""}
+document.addEventListener("input",e=>{if(e.target&&e.target.id==="ctl-q")ctlFiltrar()});
 function ctlActual(){const x=ST.pedidos[ST.pedidoId];if(!x||!ST.ctlS||ctlS(x)!==ST.ctlS)return null;const s=ST.ctlS;return{x,s,cs:(x.control||{})[s]||{},L:ctlLineas(x)}}
 function ctlLineaSel(){const A=ctlActual();return(A&&A.L.find(l=>l.k===ST.sel))||null}
 /* pantalla de control: SIN cantidades */
@@ -685,7 +693,12 @@ function vControl(){const A=ctlActual();if(!A){ST.vista="ctl-pedidos";ST.pedidoI
     +'<div class="r2">'+cronoHtml(x.id,"@"+s,tm,true)+(tm.corre?'<button class="btn btn-sm btn-pausa" data-a="ctl-pausa">❚❚ Pausa</button>':"")+'</div>'
     +'<div class="small" style="font-weight:800;margin-bottom:5px">'+hechos+' de '+tot+' '+(tot===1?"renglón controlado":"renglones controlados")+'</div>'
     +'<div class="bar"><i style="width:'+pct+'%;background:var(--violeta)"></i></div></div>'
-    +(enPk.length?'<div class="hint" style="background:rgba(245,159,0,.12);color:var(--amber);margin-top:8px">⏳ Todavía se está piqueando en <b>'+esc(enPk.map(p=>pasDe(p).nombre).join(", "))+'</b>. Controlá lo que ya está piqueado: cada producto se habilita solo apenas lo confirman.</div>':"");
+    +(()=>{const falta=tot-hechos,fp=tot?Math.round(falta/tot*100):0,nPk=L.filter(z=>!z.pk&&!reg(z.k)).length;
+      return'<div class="ctl-falta"><div class="fila entre"><b>'+(falta?'Falta controlar <span style="font-size:1.35em;color:#d9c4ff">'+fp+'%</span>':'<span style="color:var(--emerald)">✓ Todo controlado</span>')+'</b><span class="small">'+pct+'% hecho</span></div>'
+        +'<div class="bar gruesa"><i style="width:'+pct+'%;background:linear-gradient(90deg,#8b5cf6,#b78cff)"></i></div>'
+        +'<div class="small muted">'+(falta?pl(falta,"renglón","renglones")+' por controlar'+(nPk?' · '+nPk+' todavía en picking':''):'Controlaste los '+tot+' renglones')+'</div></div>'})()
+    +'<button class="btn btn-block" data-a="ctl-buscar" style="margin-top:8px">🔍 Buscar producto</button>'
+    +(enPk.length?'<div class="hint" style="background:rgba(245,159,0,.12);color:var(--amber);margin-top:8px"><span>⏳ Todavía se está piqueando en <b>'+esc(enPk.map(p=>pasDe(p).nombre).join(", "))+'</b>. Controlá lo que ya está piqueado: cada producto se habilita solo apenas lo confirman.</span></div>':"");
   if(tm.pausado){ST.enPausa=true;
     return h+'<div class="pausa-pant" role="alert"><div style="font-size:2.6rem;line-height:1">☕</div><div class="gr">EN PAUSA</div>'
       +'<p style="font-weight:800;font-size:1.1rem;margin:.7rem 0 .2rem">'+esc(tm.pausa.motivo||"Pausa")+' · desde las '+esc(fHM(tm.pausa.desde))+'</p>'
@@ -701,8 +714,9 @@ function vControl(){const A=ctlActual();if(!A){ST.vista="ctl-pedidos";ST.pedidoI
       +'<div class="acc"><button class="btn btn-lg" data-a="ctl-nohay" style="border-color:rgba(224,38,28,.6);color:var(--rose)">No hay</button>'
       +'<button class="btn btn-lg'+(r||l.ean?"":" btn-primary")+'" data-a="ctl-contar">'+(r?"↻ Volver a contar":"Contar ›")+'</button></div></div>'}
   if(listo&&!enPk.length)h+='<button class="btn btn-success btn-lg btn-block" style="margin-top:14px;min-height:66px;font-size:1.2rem" data-a="ctl-terminar">✓ Terminar control</button>';
-  h+='<div class="sep">Renglones del pedido · '+tot+'</div><div class="lista" style="margin-top:0;gap:8px">'
-    +L.map(z=>{const e=ctlEst(reg(z.k));if(!z.pk&&!reg(z.k))return'<div class="lin pendiente" style="opacity:.5"><span class="ic">⏳</span><span class="tx"><span class="t">'+esc(z.d)+'</span><span class="d mono">'+esc(ubiCorta(z))+' · '+esc(z.partes.map(pt=>pasDe(pt.p).nombre).join(" + "))+' · '+esc(z.c)+'</span></span><span class="est" style="color:var(--amber)">En picking</span></div>';return'<button class="lin '+e+(z.k===ST.sel?" sel":"")+'" data-a="ctl-sel" data-id="'+esc(z.k)+'"><span class="ic">'+CTL_T[e][2]+'</span><span class="tx"><span class="t">'+esc(z.d)+'</span><span class="d mono">'+esc(ubiCorta(z))+' · '+esc(z.partes.map(pt=>pasDe(pt.p).nombre).join(" + "))+' · '+esc(z.c)+'</span></span><span class="est" style="color:'+({ok:"var(--emerald)",corregido:"var(--orange)",diferencia:"var(--rose)"}[e]||"var(--muted-fg)")+'">'+(e==="pendiente"?"Pendiente":CTL_T[e][0])+'</span></button>'}).join("")+'</div>';
+  const bq=ctlNorm(ST.ctlQ||""),bOk=z=>!bq||ctlNorm(z.d+" "+z.c+" "+(z.ean||"")).includes(bq);
+  h+='<div class="sep">Renglones del pedido · '+tot+'</div><div class="ctl-buscar"><input id="ctl-q" type="search" placeholder="Buscar por nombre, código o código de barras" value="'+esc(ST.ctlQ||"")+'" autocomplete="off" aria-label="Buscar producto"><span id="ctl-qn" class="small muted"></span></div><div class="lista" id="ctl-lista" style="margin-top:0;gap:8px">'
+    +L.map(z=>{const e=ctlEst(reg(z.k)),dq=' data-q="'+esc(ctlNorm(z.d+" "+z.c+" "+(z.ean||"")))+'"'+(bOk(z)?"":' style="display:none"');if(!z.pk&&!reg(z.k))return'<div class="lin pendiente enpk"'+dq+'><span class="ic">⏳</span><span class="tx"><span class="t">'+esc(z.d)+'</span><span class="d mono">'+esc(ubiCorta(z))+' · '+esc(z.partes.map(pt=>pasDe(pt.p).nombre).join(" + "))+' · '+esc(z.c)+'</span></span><span class="est" style="color:var(--amber)">En picking</span></div>';return'<button class="lin '+e+(z.k===ST.sel?" sel":"")+'"'+dq+' data-a="ctl-sel" data-id="'+esc(z.k)+'"><span class="ic">'+CTL_T[e][2]+'</span><span class="tx"><span class="t">'+esc(z.d)+'</span><span class="d mono">'+esc(ubiCorta(z))+' · '+esc(z.partes.map(pt=>pasDe(pt.p).nombre).join(" + "))+' · '+esc(z.c)+'</span></span><span class="est" style="color:'+({ok:"var(--emerald)",corregido:"var(--orange)",diferencia:"var(--rose)"}[e]||"var(--muted-fg)")+'">'+(e==="pendiente"?"Pendiente":CTL_T[e][0])+'</span></button>'}).join("")+'</div>';
   const SB=Object.values(cs.sobrantes||{});
   if(SB.length)h+='<div class="sep">Sobrantes no pedidos · '+SB.length+'</div><div class="lista" style="margin-top:0;gap:8px">'+SB.map(o=>'<div class="lin diferencia"><span class="ic">+</span><span class="tx"><span class="t">'+esc(o.d||"Código "+o.cod)+'</span><span class="d mono">'+esc(o.cod)+' · '+fN(o.cantidad)+' u de más · '+esc(o.por||"")+'</span></span></div>').join("")+'</div>';
   if(!listo&&tot)h+='<p class="muted small" style="text-align:center;margin-top:18px">Faltan '+pl(tot-hechos,"renglón","renglones")+' para terminar el control'+(enPk.length?' (algunos todavía se están piqueando)':"")+'</p>';
@@ -898,11 +912,34 @@ function sPedidos(){const L=Object.values(ST.pedidos).sort((a,b)=>String(b.fecha
         +'<span class="sub">'+(p==="sinpasillo"?'<a href="#" data-a="reasignar" data-id="'+esc(x.id)+'" style="color:var(--amber);font-weight:800">Asignar a un pasillo ›</a>':pp.estado==="listo"?"✓ Listo"+(pp.terminadoPor?" · "+esc(pp.terminadoPor):"")+" "+esc(fHora(pp.fin))+(tiempos(pp).empezo?" · ⏱ "+fDur(tiempos(pp).seg):""):pp.picker?(tiempos(pp).pausado?"En pausa · ":"En curso · ")+esc(pp.picker)+(tiempos(pp).empezo?" · ⏱ "+cronoHtml(x.id,p,tiempos(pp)):""):"Pendiente")+(a.falt?' · <b style="color:var(--rose)">'+a.falt+' faltante'+(a.falt>1?"s":"")+'</b>':"")+'</span></div>'}).join("");
     return'<div class="ped"><div class="fila entre"><span class="nro">'+esc(pedTit(x))+'</span>'+(x.prueba?'<span class="prueba">PRUEBA</span>':"")+ctlBadge(x)+'</div>'
       +'<div class="meta">'+pedMeta(x)+'</div>'+filas+ctlLineaSuper(x)
-      +'<div class="fila" style="margin-top:10px"><button class="btn btn-sm" data-a="ver-ped" data-id="'+esc(x.id)+'">Detalle'+(falt?" y faltantes":"")+'</button><button class="btn btn-sm" data-a="archivar" data-id="'+esc(x.id)+'">Archivar</button><button class="btn btn-sm btn-ghost" style="color:var(--rose)" data-a="borrar-ped" data-id="'+esc(x.id)+'">Borrar</button></div></div>'}).join("")+'</div>'}
-function verPedido(id){const x=ST.pedidos[id];if(!x)return;const P=pasillosDePed(x);
-  modal("Pedido "+pedTit(x)+(x.nro?"":" · "+fFecha(x.fecha)),lineaTiempoHtml(x)+P.map(p=>{const pp=x.pasillos[p],ps=pasDe(p),{A}=lineasOrdenadas(pp);
+      +'<div class="fila" style="margin-top:10px"><button class="btn btn-sm" data-a="ver-ped" data-id="'+esc(x.id)+'">Detalle'+(falt?" y faltantes":"")+'</button>'+(()=>{const n=ctlIncidencias(x).length;return n?'<span class="badge t-rose" style="align-self:center">⚠ '+n+' incidencia'+(n>1?"s":"")+' del control</span>':""})()+'<button class="btn btn-sm" data-a="archivar" data-id="'+esc(x.id)+'">Archivar</button><button class="btn btn-sm btn-ghost" style="color:var(--rose)" data-a="borrar-ped" data-id="'+esc(x.id)+'">Borrar</button></div></div>'}).join("")+'</div>'}
+/* INCIDENCIAS DEL CONTROL (2026-11-17): lo que el control encontró, para el detalle del pedido.
+   recontado = el controlador contó mal y al recontar coincidió (mal contado) · corregido = lo piqueado estaba mal y se corrigió (mal piqueado)
+   diferencia = no coincidió y quedó sin corregir · sobrante = apareció un producto que no estaba en el pedido */
+const CTL_INC={recontado:["Mal contado","t-amber"],corregido:["Mal piqueado","t-rose"],diferencia:["Diferencia sin resolver","t-rose"],sobrante:["Sobrante no pedido","t-amber"]};
+function ctlIncidencias(x){const c=(x&&x.control)||{},L={},R=[];ctlLineas(x).forEach(l=>{L[l.k]=l});
+  CTL_ETAPAS.forEach(s=>{const cs=c[s]||{};
+    Object.keys(cs.lineas||{}).forEach(k=>{const r=cs.lineas[k];if(!r||!CTL_INC[r.accion])return;const l=L[k]||{k,c:k,d:"Código "+k,partes:[]};
+      const pk=[...new Set(l.partes.map(pt=>pt.l.por||(x.pasillos[pt.p]||{}).terminadoPor||(x.pasillos[pt.p]||{}).picker).filter(Boolean))];
+      const piq=Number(r.piqueado)||0,cont=Number(r.contado)||0,dif=cont-piq,cn=(r.conteos||[]).map(fN);
+      let det;
+      if(r.accion==="recontado")det="Contó "+cn.slice(0,-1).join(" y ")+" · al recontar dio "+fN(cont)+", igual a lo piqueado";
+      else det="Piqueado "+fN(piq)+" · contado "+fN(cont)+" → "+(dif>0?"había "+fN(dif)+" de más":(-dif===1?"faltaba 1":"faltaban "+fN(-dif)))+(r.accion==="corregido"?" · se corrigió a "+fN(cont):" · quedó como estaba")+(cn.length>1?" · conteos: "+cn.join(" · "):"");
+      R.push({s,k,tipo:r.accion,l,det,pk,ctl:r.por||cs.terminadoPor||cs.controlador||"",at:r.at})});
+    Object.values(cs.sobrantes||{}).forEach(o=>R.push({s,k:"+"+o.cod,tipo:"sobrante",l:{c:o.cod,d:o.d||"Código "+o.cod,partes:[]},det:fN(o.cantidad)+" u que no estaban en el pedido",pk:[],ctl:o.por||"",at:o.at}))});
+  const ord={corregido:0,diferencia:1,recontado:2,sobrante:3};return R.sort((a,b)=>ord[a.tipo]-ord[b.tipo])}
+function ctlIncidenciasHtml(x){const c=(x&&x.control)||{};if(!CTL_ETAPAS.some(s=>c[s]&&c[s].inicio))return"";const R=ctlIncidencias(x);
+  const n=t=>R.filter(r=>r.tipo===t).length;
+  let h='<h3 style="margin-top:.8rem;color:#d9c4ff">Incidencias del control'+(R.length?' · '+R.length:"")+'</h3>';
+  if(!R.length)return h+'<p class="small" style="color:var(--emerald);margin:.2rem 0 .6rem">✓ Sin incidencias: todo lo controlado coincidió al primer conteo.</p>';
+  h+='<p class="small muted" style="margin:.1rem 0 .4rem">'+[["corregido","mal piqueado","mal piqueados"],["diferencia","sin resolver","sin resolver"],["recontado","mal contado","mal contados"],["sobrante","sobrante","sobrantes"]].filter(([t])=>n(t)).map(([t,a,b])=>'<b>'+n(t)+'</b> '+(n(t)===1?a:b)).join(" · ")+'</p>';
+  return h+'<table class="tabla"><thead><tr><th>Producto</th><th>Incidencia</th></tr></thead><tbody>'+R.map(r=>'<tr><td>'+esc(r.l.d)+'<div class="small muted mono">'+esc(r.l.c)+(r.l.partes.length?' · '+esc(r.l.partes.map(pt=>pasDe(pt.p).nombre).join(" + ")):"")+'</div></td>'
+    +'<td><span class="badge '+CTL_INC[r.tipo][1]+'">'+CTL_INC[r.tipo][0]+'</span><div class="small" style="margin-top:3px">'+esc(r.det)+'</div>'
+    +'<div class="small muted">'+(r.pk.length&&r.tipo!=="recontado"&&r.tipo!=="sobrante"?'Piqueó '+esc(r.pk.join(", "))+' · ':"")+(r.ctl?'Controló '+esc(r.ctl):"")+(r.at?' · '+esc(fHM(r.at)):"")+'</div></td></tr>').join("")+'</tbody></table>'}
+function verPedido(id){const x=ST.pedidos[id]||(ST.archivo||{})[id];if(!x)return;const P=pasillosDePed(x);const INC={};ctlIncidencias(x).forEach(r=>{if(r.tipo!=="sobrante")INC[r.k]=r});
+  modal("Pedido "+pedTit(x)+(x.nro?"":" · "+fFecha(x.fecha)),lineaTiempoHtml(x)+ctlIncidenciasHtml(x)+P.map(p=>{const pp=x.pasillos[p],ps=pasDe(p),{A}=lineasOrdenadas(pp);
     return'<h3 style="margin-top:.6rem;color:'+esc(ps.color)+'">'+esc(ps.nombre)+' <span class="small muted">'+esc(pp.estado||"pendiente")+(pp.picker?" · "+esc(pp.picker):"")+'</span></h3><table class="tabla"><thead><tr><th>Producto</th><th class="num">Tom./Ped.</th><th>Estado</th></tr></thead><tbody>'
-      +A.map(l=>{const e=est(l);return'<tr><td>'+esc(l.d)+'<div class="small muted mono">'+esc(l.c)+' · '+esc(ubiCorta(l))+'</div>'+(l.motivo?'<div class="small" style="color:var(--rose)">'+esc(l.motivo)+'</div>':"")+'</td><td class="num mono">'+(l.tomado!=null?fN(l.tomado):"–")+'/'+fN(l.q)+'</td><td><span class="badge '+EST_T[e][1]+'">'+EST_T[e][0]+'</span></td></tr>'}).join("")+'</tbody></table>'}).join("")
+      +A.map(l=>{const e=est(l);return'<tr><td>'+esc(l.d)+'<div class="small muted mono">'+esc(l.c)+' · '+esc(ubiCorta(l))+'</div>'+(l.motivo?'<div class="small" style="color:var(--rose)">'+esc(l.motivo)+'</div>':"")+'</td><td class="num mono">'+(l.tomado!=null?fN(l.tomado):"–")+'/'+fN(l.q)+'</td><td><span class="badge '+EST_T[e][1]+'">'+EST_T[e][0]+'</span>'+(INC[l.k]?'<div style="margin-top:3px"><span class="badge '+CTL_INC[INC[l.k].tipo][1]+'">⚠ '+CTL_INC[INC[l.k].tipo][0]+'</span></div>':"")+'</td></tr>'}).join("")+'</tbody></table>'}).join("")
     +'<div class="m-acc"><button class="btn" data-a="m-cerrar">Cerrar</button></div>')}
 function sFaltantes(){const F=[];Object.values(ST.pedidos).forEach(x=>pasillosDePed(x).forEach(p=>activas(x.pasillos[p]).forEach(l=>{const e=est(l);if(e==="parcial"||e==="faltante")F.push({x,p,l,e})})));
   if(!F.length)return'<div class="vacio">Sin faltantes en los pedidos activos.</div>';
@@ -1221,7 +1258,8 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]")
     case"ctl-elegir":{const i=ctlInts()[id];if(!i)return;ST.yo={rol:"control",pasillo:"control",id,nombre:i.nombre};LS.set("pk-yo",ST.yo);ST.vista="ctl-pedidos";render();despierto(true);beep("ok");break}
     case"ctl-tomar":ctlTomar(id,b.dataset.otro);break;
     case"ctl-abrir":ctlAbrir(id);break;
-    case"ctl-sel":ST.sel=id;render();window.scrollTo({top:0,behavior:"smooth"});break;
+    case"ctl-sel":ST.sel=id;ST.ctlQ="";render();window.scrollTo({top:0,behavior:"smooth"});break;
+    case"ctl-buscar":{const i=document.getElementById("ctl-q");if(i){i.scrollIntoView({behavior:"smooth",block:"start"});setTimeout(()=>{try{i.focus({preventScroll:true})}catch(e){}},250)}break}
     case"ctl-contar":{const l=ctlLineaSel();if(l)ctlContar(l,[]);break}
     case"ctl-nohay":{const l=ctlLineaSel();if(l)ctlConfirmar(l,0,[]);break}
     case"ctl-terminar":ctlTerminar();break;
