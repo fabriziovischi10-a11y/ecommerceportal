@@ -1,4 +1,5 @@
-<!doctype html><html><head><script src="https://fabriziovischi10-a11y.github.io/ecommerceportal/intro-portal.js"></script><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><script src="https://fabriziovischi10-a11y.github.io/ecommerceportal/intro-portal.js"></script><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}.pkmot{margin-top:10px;padding:10px 12px;border-radius:12px;border:1px solid rgba(245,159,0,.4);background:rgba(245,159,0,.07);font-size:13px}.pkmot>b{display:block;margin-bottom:6px}.pkmot>div{display:grid;grid-template-columns:1fr auto minmax(120px,40%);gap:10px;padding:4px 0;border-top:1px solid rgba(127,127,127,.15)}
+</style></head><body>
 <title>TMS - Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1918,7 +1919,7 @@ function gPendHoja(s,G){if(!canWrite||s.estado==="Anulada"||s.canal==="Preventa"
 /* ---- detalle de una guía ---- */
 function gTable(items,imp){const by={};(items||[]).forEach(i=>(by[i.r||"Sin rubro"]=by[i.r||"Sin rubro"]||[]).push(i));
   return Object.keys(by).sort().map(r=>'<tr class="locrow"><td colspan="'+(imp?6:4)+'" style="--rt:var(--c-nov)">'+esc(r)+' <span class="mu">· '+pl(by[r].length,"renglón","renglones")+' · '+fN(by[r].reduce((t,i)=>t+(Number(i.q)||0),0))+' u.'+(imp?' · '+fM(by[r].reduce((t,i)=>t+iImp(i),0)):"")+'</span></td></tr>'
-    +by[r].sort((a,b)=>String(a.sr).localeCompare(String(b.sr))||String(a.d).localeCompare(String(b.d))).map(i=>'<tr><td class="num mono"><b>'+fN(i.q)+'</b>'+(i.pedido!=null?'<div class="sub">de '+fN(i.pedido)+'</div>':"")+'</td><td>'+esc(i.d)+(i.sinPiquear?' '+chip("sin piquear","warn"):"")+'<div class="sub mono">'+esc(i.c)+'</div></td><td>'+esc(i.r||"")+'</td><td class="mu">'+esc(i.sr||"")+'</td>'+(imp?'<td class="num mono">'+(i.p!=null?fM(i.p):"—")+'</td><td class="num mono">'+fM(iImp(i))+'</td>':"")+'</tr>').join("")).join("")}
+    +by[r].sort((a,b)=>String(a.sr).localeCompare(String(b.sr))||String(a.d).localeCompare(String(b.d))).map(i=>'<tr><td class="num mono"><b>'+fN(i.q)+'</b>'+(i.pedido!=null?'<div class="sub">de '+fN(i.pedido)+'</div>':"")+'</td><td>'+esc(i.d)+(i.sinPiquear?' '+chip("sin piquear","warn"):"")+'<div class="sub mono">'+esc(i.c)+'</div>'+(i.motivo?'<div class="sub" style="color:var(--warn)">Motivo: '+esc(i.motivo)+'</div>':"")+'</td><td>'+esc(i.r||"")+'</td><td class="mu">'+esc(i.sr||"")+'</td>'+(imp?'<td class="num mono">'+(i.p!=null?fM(i.p):"—")+'</td><td class="num mono">'+fM(iImp(i))+'</td>':"")+'</tr>').join("")).join("")}
 function formGuia(g){const st=guiaSt(g),s=st.sal;
   const hist=(g.hist||[]).map(h=>{const x=get("salidas",h.salidaId);return'<span class="tag">Volvió de la orden '+(x?"N° "+nro(x):"(eliminada)")+' · '+fDL(h.fecha)+'</span>'}).join(" ");
   const btns=[];
@@ -1929,7 +1930,7 @@ function formGuia(g){const st=guiaSt(g),s=st.sal;
     del:canWrite&&st.k!=="curso"?(()=>del("guias",g.id)):null,
     after:()=>{$("f_gd").innerHTML='<div class="doc-grid" style="margin-bottom:10px"><div><small>'+(g.zonaId&&!g.sucursalId?"Zona":"Sucursal")+'</small><b>'+esc(gDestT(gKey(g)))+'</b><div class="sub">'+(g.picking?"armada con lo piqueado · pedido de picking"+(g.picking.sinPiquear?" · "+g.picking.sinPiquear+" sin piquear":"")+(g.picking.faltantes?" · "+g.picking.faltantes+" con faltante":"")+(pkCtlGuia(g)?" · "+esc(pkCtlGuia(g)):""):"depósito "+esc(g.depde||"—")+" → "+esc(g.depa||"—"))+'</div></div><div><small>Fecha</small><b>'+fDL(g.fecha)+'</b><div class="sub">'+agingChip(gDias(g))+'</div></div><div><small>Estado</small><b>'+chip(st.t,st.c)+'</b>'+(s?'<div class="sub"><a href="#" data-act="open-hoja" data-id="'+s.id+'">ver hoja de ruta</a></div>':"")+'</div><div><small>Cargó</small><b>'+esc(g.usuario||"—")+'</b><div class="sub">'+esc(g.concepto||"")+'</div></div></div>'
       +(hist?'<p>'+hist+'</p>':"")
-      +(()=>{const imp=gTieneImp(g);return'<div class="tw"><table class="wide" style="min-width:520px"><thead><tr><th class="num" style="width:70px">Cant.</th><th>Descripción del producto</th><th>Rubro</th><th>Subrubro</th>'+(imp?'<th class="num">Precio</th><th class="num">Importe</th>':"")+'</tr></thead><tbody>'+gTable(g.items,imp)+'</tbody><tfoot><tr><td class="num mono"><b>'+fN(gUnid(g))+'</b></td><td colspan="3"><b>'+pl((g.items||[]).length,"renglón","renglones")+'</b></td>'+(imp?'<td></td><td class="num mono"><b>'+fM(gImp(g))+'</b></td>':"")+'</tr></tfoot></table></div>'})();
+      +(()=>{const imp=gTieneImp(g);return'<div class="tw"><table class="wide" style="min-width:520px"><thead><tr><th class="num" style="width:70px">Cant.</th><th>Descripción del producto</th><th>Rubro</th><th>Subrubro</th>'+(imp?'<th class="num">Precio</th><th class="num">Importe</th>':"")+'</tr></thead><tbody>'+gTable(g.items,imp)+'</tbody><tfoot><tr><td class="num mono"><b>'+fN(gUnid(g))+'</b></td><td colspan="3"><b>'+pl((g.items||[]).length,"renglón","renglones")+'</b></td>'+(imp?'<td></td><td class="num mono"><b>'+fM(gImp(g))+'</b></td>':"")+'</tr></tfoot></table></div>'})()+(g.picking&&(g.picking.parciales||[]).length?pkMotivosHtml(g.picking.parciales):"");
       const b=id=>$(id);
       if(b("gVolvio"))b("gVolvio").onclick=async()=>{await guiaVolvio(g);closeForm();toast("La guía volvió a pendientes")};
       if(b("gOrden"))b("gOrden").onclick=()=>{closeForm();formSal(null,{fecha:today(),canal:"Sucursales",origenLoc:depId(),sucPick:[g.sucursalId],guiaPick:[g.id]})};
@@ -2100,14 +2101,25 @@ async function pkActEnviar(el,id){if(!canWrite){toast("Acceso de solo lectura");
   catch(e){console.error(e);toast(e.message||"No se pudo enviar a picking")}
   finally{if(el&&el.isConnected){el.disabled=false;el.innerHTML=IC.list+"Re-enviar a picking (desde la orden)"}}}
 
+/* MOTIVOS DE LOS PARCIALES (2026-11-17): el control de picking define por qué un renglón va con menos de lo pedido
+   (control/<etapa>/lineas/<cod>/motivoFalta; si no, el motivo del pickeador). Se guardan en la guía PK (picking.parciales) y se ven en el TMS. */
+function pkCtlLineas(p){const c=(p&&p.control)||{},ult=PK_CTL_ETAPAS.map(s=>c[s]).filter(Boolean).pop();return(ult&&ult.lineas)||{}}
+function pkMotivos(p){const CL=pkCtlLineas(p),M={};
+  Object.values((p&&p.pasillos)||{}).forEach(x=>Object.entries((x&&x.lineas)||{}).forEach(([k,l])=>{if(!l||l.quitada)return;const o=M[k]=M[k]||{c:String(l.c==null?k:l.c),d:String(l.d||""),pedido:0,va:0,motP:"",porP:""};
+    o.pedido+=Number(l.q)||0;o.va+=l.tomado!=null?Math.max(0,Number(l.tomado)||0):l.estado==="faltante"?0:Number(l.q)||0;if(l.motivo&&!o.motP){o.motP=String(l.motivo);o.porP=l.por||""}}));
+  return Object.keys(M).map(k=>{const o=M[k],r=CL[k];let va=o.va;if(r&&r.accion==="diferencia")va=Number(r.contado)||0;
+    return{c:o.c,d:o.d,pedido:o.pedido,va,falta:Math.max(0,o.pedido-va),motivo:(r&&r.motivoFalta)||o.motP||"",por:(r&&r.motivoFalta?(r.motivoPor||""):o.porP)||"",def:!!(r&&r.motivoFalta)}})
+    .filter(o=>o.falta>0).sort((a,b)=>b.falta-a.falta||a.d.localeCompare(b.d))}
+function pkMotivosHtml(L,max){if(!L||!L.length)return"";const v=L.slice(0,max||99);
+  return'<div class="pkmot"><b>Parciales y faltantes · '+L.length+'</b>'+v.map(o=>'<div><span>'+esc(o.d)+' <span class="mu mono">'+esc(o.c)+'</span></span><span class="mono">'+fN(o.va)+' de '+fN(o.pedido)+'</span><span style="color:'+(o.motivo?"var(--warn)":"var(--bad)")+'">'+(o.motivo?esc(o.motivo):"Sin motivo")+(o.por?' <span class="mu">· '+esc(o.por)+'</span>':"")+'</span></div>').join("")+(L.length>v.length?'<div class="mu">y '+(L.length-v.length)+' más</div>':"")+'</div>'}
 /* ---- guía de la orden armada con lo PIQUEADO (puro) ----
    cantidad = tomado; los faltantes (tomado 0) no van; si un renglón no tiene «tomado» porque el pedido seguía en picking, va con q y sinPiquear:true. */
-function pkGuiaItems(p){const out=[];let sinTomar=0,faltantes=0;
-  Object.keys((p&&p.pasillos)||{}).forEach(pid=>Object.values((p.pasillos[pid]||{}).lineas||{}).forEach(l=>{if(!l||l.quitada)return;
+function pkGuiaItems(p){const out=[];let sinTomar=0,faltantes=0;const CL=pkCtlLineas(p);
+  Object.keys((p&&p.pasillos)||{}).forEach(pid=>Object.entries((p.pasillos[pid]||{}).lineas||{}).forEach(([lk,l])=>{if(!l||l.quitada)return;
     const q=Number(l.q)||0,cat=String(l.cat||"").split(">");let n,marca=false;
     if(l.tomado!=null)n=Math.max(0,Number(l.tomado)||0);else if(l.estado==="faltante")n=0;else{n=q;marca=true}
     if(n<q)faltantes++;if(n<=0)return;
-    const it={c:String(l.c==null?"":l.c),d:String(l.d||""),q:n,r:cat[0]||"",sr:cat[1]||""};if(n!==q)it.pedido=q;if(marca){it.sinPiquear=true;sinTomar++}out.push(it)}));
+    const it={c:String(l.c==null?"":l.c),d:String(l.d||""),q:n,r:cat[0]||"",sr:cat[1]||""};if(n!==q)it.pedido=q;if(n<q){const m=(CL[lk]&&CL[lk].motivoFalta)||l.motivo;if(m)it.motivo=String(m)}if(marca){it.sinPiquear=true;sinTomar++}out.push(it)}));
   out.sort((a,b)=>String(a.r).localeCompare(String(b.r))||String(a.d).localeCompare(String(b.d)));return{items:out,sinTomar,faltantes}}
 const pkDestN=p=>p?(p.zona||(p.destinos||[])[0]||(p.zonaId?zonaT(p.zonaId):p.sucursalId?sucT(p.sucursalId):p.id)):"";
 const pkGuiaNro=p=>"PK-"+(slug(pkDestN(p)).slice(0,28)||"PEDIDO")+"-"+String(p.fecha||"").split("-").reverse().join("-");
@@ -2115,7 +2127,7 @@ const pkGuiaId=pedId=>"g-pk-"+slug(pedId);
 function pkGuiaDoc(p,salId,quien){const r=pkGuiaItems(p),its=r.items,k=pkCtl(p);
   return{nro:pkGuiaNro(p),fecha:p.fecha||today(),depde:"",depa:"",sucursalId:p.sucursalId||"",zonaId:p.zonaId||"",concepto:"Picking"+(p.archivo?" · "+p.archivo:""),usuario:quien||"",items:its,
     rubros:[...new Set(its.map(i=>i.r).filter(Boolean))],unidades:its.reduce((t,i)=>t+(Number(i.q)||0),0),importe:0,lineas:its.length,archivo:p.archivo||"",
-    picking:{pedidoId:p.id,sinPiquear:r.sinTomar,faltantes:r.faltantes,guiasNro:(p.guiasNro||[]).slice(0,60),controladores:k.controladores,controlEtapa:k.etapa,controlDif:k.dif,controlCorr:k.corr},estado:"Asignada",salidaId:salId}}
+    picking:{pedidoId:p.id,sinPiquear:r.sinTomar,faltantes:r.faltantes,guiasNro:(p.guiasNro||[]).slice(0,60),controladores:k.controladores,controlEtapa:k.etapa,controlDif:k.dif,controlCorr:k.corr,parciales:pkMotivos(p).slice(0,120).map(o=>({c:o.c,d:o.d,pedido:o.pedido,va:o.va,motivo:o.motivo,por:o.por}))},estado:"Asignada",salidaId:salId}}
 /* «Controló: Ana» de una guía PK (vacío si no tiene control) */
 const pkCtlGuia=g=>g&&g.picking&&(g.picking.controladores||[]).length?"Controló: "+g.picking.controladores.join(" y ")+(g.picking.controlEtapa&&g.picking.controlEtapa!=="controlado"?" (control sin terminar)":""):"";
 /* candidatos para la orden: pedidos de Excel de esas zonas (Preventa) o sucursales (Sucursales), libres o ya vinculados a esta orden */
@@ -2134,6 +2146,7 @@ function pkPanel(peds,err,canal,sel,sid,ck){const qu=canal==="Preventa"?"esta zo
     const st=p.ordenId&&p.ordenId===sid?chip("Ya va en esta orden","info"):chip(pkCtlTxt(r),r.controlado?"ok":/^control/.test(r.etapa)?"vio":"warn");
     return'<label class="gck"><input type="checkbox" name="pkped" value="'+esc(p.id)+'"'+(on?" checked":"")+'><span><b>'+esc(pkDestN(p))+'</b></span><span class="mu">'+fDL(p.fecha)+(p.archivo?" · "+esc(p.archivo):"")+'</span>'
       +'<span class="mu">'+pl(r.lin,"renglón","renglones")+' · '+fN(r.tom)+' de '+fN(r.uni)+' u. piqueadas</span>'+st+(r.falt?chip(pl(r.falt,"faltante","faltantes"),"bad"):"")
+      +(()=>{const PM=pkMotivos(p);return PM.length?'<span style="flex-basis:100%">'+pkMotivosHtml(PM,6)+'</span>':""})()
       +(r.controlado&&r.controladores.length?'<span class="mu">Controló: '+esc(r.controladores.join(" y "))+(r.ctlCorr?" · "+pl(r.ctlCorr,"corregido","corregidos"):"")+(r.ctlDif?" · "+r.ctlDif+" con diferencia":"")+'</span>':"")
       +(!r.listo&&!(p.ordenId&&p.ordenId===sid)?'<span class="mu" style="color:var(--warn);flex-basis:100%">Todavía en picking: '+r.N+' de '+r.M+' pasillos. Si lo tildás, los renglones sin piquear van con la cantidad pedida y quedan marcados.</span>'
         :!r.controlado&&!(p.ordenId&&p.ordenId===sid)?'<span class="mu" style="color:var(--warn);flex-basis:100%">Piqueado pero todavía sin controlar. Si lo tildás, la guía sale con lo piqueado hasta ahora; si el control corrige algo, volvé a grabar la orden para actualizarla.</span>':"")+'</label>'}).join("")+'</div>'}
