@@ -187,6 +187,8 @@ body.ver-scan #scanbar{display:block}
 .tabla.ancha{min-width:720px}.tabla.ancha td,.tabla.ancha th{white-space:nowrap}
 .tabla .rk{font:900 1rem var(--f-disp);color:var(--amarillo)}
 /* control a ciegas (2026-11-16) */
+.ctl-motivo{margin-top:10px;padding:10px;border-radius:12px;background:rgba(245,159,0,.1);border:1px solid rgba(245,159,0,.45)}.ctl-motivo.ok{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.4)}.ctl-motivo .chip.on{background:var(--amber);color:#0b1b3d;border-color:var(--amber)}
+.ctl-parc{margin-top:14px;padding:12px;border-radius:14px;border:2px solid var(--amber);background:rgba(245,159,0,.08)}.ctl-parc-it{padding:8px 0;border-top:1px solid rgba(255,255,255,.08)}
 .ctl-falta{margin-top:10px;padding:10px 12px;border-radius:14px;background:var(--violeta-bg);border:1px solid rgba(183,140,255,.35)}.ctl-falta .bar.gruesa{height:16px;margin:6px 0 4px;border-radius:9px}.ctl-falta .bar.gruesa i{border-radius:9px}
 #ctl-q{width:100%;min-height:52px;padding:0 14px;border-radius:12px;border:1px solid rgba(183,140,255,.45);background:rgba(255,255,255,.06);color:inherit;font-size:1.05rem}.ctl-buscar{margin:0 0 10px;scroll-margin-top:12px}.ctl-buscar .small{display:block;margin-top:4px}.lin.enpk{opacity:.5}
 :root{--violeta:#b78cff;--violeta-bg:rgba(183,140,255,.16)}
@@ -702,6 +704,21 @@ function pedirCodInterno(l,ok){let v="";
   const probar=()=>{if(!v)return;if(normCod(v)===normCod(l.c)){senal("ok");cerrarModal();ok()}else{senal("err");er.textContent="Ese código no corresponde a este producto. Fijate bien y volvé a escribirlo.";inp.value="";v="";b.disabled=true}};
   b.onclick=probar;inp.onkeydown=e=>{if(e.key==="Enter")probar()};
   setTimeout(()=>{try{inp.focus({preventScroll:true})}catch(e){}},60)}
+/* PARCIALES DEL CONTROL (2026-11-17): si después del control un renglón queda con MENOS de lo pedido, el controlador tiene que
+   definir el motivo (control/<s>/lineas/<cod>/motivoFalta) antes de poder terminar. Sugiere el motivo que puso el pickeador. */
+const CTL_MOT=["Falta de stock","No se encontró","Roto / dañado","Vencido","Otro"];
+function ctlFinal(z,r){return r&&r.accion==="diferencia"?Number(r.contado)||0:Number(z.tomado)||0}
+function ctlFalta(z,r){return r?Math.max(0,(Number(z.q)||0)-ctlFinal(z,r)):0}
+function ctlSinMotivo(L,cs){return L.filter(z=>{const r=((cs&&cs.lineas)||{})[z.k];return r&&ctlFalta(z,r)>0&&!r.motivoFalta})}
+function ctlMotivoHtml(z,r){const fa=ctlFalta(z,r);if(!fa)return"";const sug=z.partes.map(pt=>pt.l.motivo).filter(Boolean)[0]||"";
+  return'<div class="ctl-motivo'+(r.motivoFalta?" ok":"")+'"><div class="small" style="font-weight:800;margin-bottom:6px">'+(r.motivoFalta?'✓ Parcial definido: <span style="color:var(--amber)">'+esc(r.motivoFalta)+'</span>':'⚠ Va '+fN(ctlFinal(z,r))+' de '+fN(z.q)+' · faltan '+fN(fa)+' u. ¿Por qué?')+'</div>'
+    +'<div class="chips">'+CTL_MOT.map(m=>'<button class="chip'+(r.motivoFalta===m||(!r.motivoFalta&&({"No hay stock":"Falta de stock","Hay menos":"Falta de stock","No lo encuentro":"No se encontró","Roto / vencido":"Roto / dañado"})[sug]===m)?" on":"")+'" data-a="ctl-motivo" data-id="'+esc(z.k)+'" data-m="'+esc(m)+'">'+esc(m)+'</button>').join("")+'</div>'
+    +(sug&&!r.motivoFalta?'<div class="small muted" style="margin-top:4px">El pickeador puso: '+esc(sug)+'</div>':"")+'</div>'}
+function ctlGuardarMotivo(k,m){const A=ctlActual();if(!A)return;const {x,s}=A;
+  const ok=v=>{v=String(v||"").trim();if(!v)return;guardar(ctlPath(x.id)+"/control/"+s+"/lineas/"+k,{motivoFalta:v,motivoPor:ST.yo.nombre,motivoPorId:ST.yo.id,motivoAt:ahora()});senal("ok","Parcial definido: "+v)};
+  if(m!=="Otro")return ok(m);
+  const md=modal("¿Qué pasó con lo que falta?",'<input id="mo-t" placeholder="Escribí el motivo" style="width:100%"><div class="m-acc"><button class="btn btn-lg" data-a="m-cerrar">Cancelar</button><button class="btn btn-lg btn-primary" id="mo-ok">Guardar</button></div>',{fijo:true});
+  const i=md.querySelector("#mo-t");md.querySelector("#mo-ok").onclick=()=>{const v=i.value.trim();if(!v){i.focus();return}cerrarModal();ok("Otro: "+v)};setTimeout(()=>i.focus(),60)}
 function ctlActual(){const x=ST.pedidos[ST.pedidoId];if(!x||!ST.ctlS||ctlS(x)!==ST.ctlS)return null;const s=ST.ctlS;return{x,s,cs:(x.control||{})[s]||{},L:ctlLineas(x)}}
 function ctlLineaSel(){const A=ctlActual();return(A&&A.L.find(l=>l.k===ST.sel))||null}
 /* pantalla de control: SIN cantidades */
@@ -731,13 +748,15 @@ function vControl(){const A=ctlActual();if(!A){ST.vista="ctl-pedidos";ST.pedidoI
       +'<div>'+l.partes.map(pt=>'<span class="ctl-pas" style="--c:'+esc(pasDe(pt.p).color)+'">'+esc(pasDe(pt.p).nombre)+'</span>').join("")+'</div>'
       +ubiHtml(l,true)
       +(r?'<div class="small" style="margin-top:6px">'+(e==="ok"?"Controlado":e==="corregido"?"Corregiste lo piqueado":"Quedó con diferencia para el supervisor")+(r.por?' · '+esc(r.por):"")+' · '+esc(fHM(r.at))+'</div>'
-        :'<div class="hint" style="background:var(--violeta-bg);color:#d9c4ff">'+SVG_SCAN+(l.ean?"Escaneá el producto y contá las unidades":"Sin código de barras: ingresá el código interno del producto")+'</div>')
+        :'')+(r?ctlMotivoHtml(l,r):(''))+(r?'':'<div class="hint" style="background:var(--violeta-bg);color:#d9c4ff">'+SVG_SCAN+(l.ean?"Escaneá el producto y contá las unidades":"Sin código de barras: ingresá el código interno del producto")+'</div>')
       +'<div class="acc"><button class="btn btn-lg" data-a="ctl-nohay" style="border-color:rgba(224,38,28,.6);color:var(--rose)">No hay</button>'
       +'<button class="btn btn-lg'+(r||l.ean?"":" btn-primary")+'" data-a="ctl-contar">'+(r?"↻ Volver a contar":l.ean?"Contar ›":"Ingresar código ›")+'</button></div></div>'}
-  if(listo&&!enPk.length)h+='<button class="btn btn-success btn-lg btn-block" style="margin-top:14px;min-height:66px;font-size:1.2rem" data-a="ctl-terminar">✓ Terminar control</button>';
+  const PARC=ctlSinMotivo(L,cs);
+  if(listo&&!enPk.length&&PARC.length)h+='<div class="ctl-parc"><b>⚠ Antes de terminar, definí '+(PARC.length===1?'el parcial':'los '+PARC.length+' parciales')+'</b><div class="small" style="margin:4px 0 8px">Hay productos que van con menos de lo pedido. Elegí qué pasó con cada uno.</div>'+PARC.map(z=>'<div class="ctl-parc-it"><div style="font-weight:800">'+esc(z.d)+' <span class="small muted mono">'+esc(z.c)+'</span></div>'+ctlMotivoHtml(z,reg(z.k))+'</div>').join("")+'</div>';
+  if(listo&&!enPk.length&&!PARC.length)h+='<button class="btn btn-success btn-lg btn-block" style="margin-top:14px;min-height:66px;font-size:1.2rem" data-a="ctl-terminar">✓ Terminar control</button>';
   const bq=ctlNorm(ST.ctlQ||""),bOk=z=>!bq||ctlNorm(z.d+" "+z.c+" "+(z.ean||"")).includes(bq);
   h+='<div class="sep">Renglones del pedido · '+tot+'</div><div class="ctl-buscar"><input id="ctl-q" type="search" placeholder="Buscar por nombre, código o código de barras" value="'+esc(ST.ctlQ||"")+'" autocomplete="off" aria-label="Buscar producto"><span id="ctl-qn" class="small muted"></span></div><div class="lista" id="ctl-lista" style="margin-top:0;gap:8px">'
-    +L.map(z=>{const e=ctlEst(reg(z.k)),dq=' data-q="'+esc(ctlNorm(z.d+" "+z.c+" "+(z.ean||"")))+'"'+(bOk(z)?"":' style="display:none"');if(!z.pk&&!reg(z.k))return'<div class="lin pendiente enpk"'+dq+'><span class="ic">⏳</span><span class="tx"><span class="t">'+esc(z.d)+'</span><span class="d mono">'+esc(ubiCorta(z))+' · '+esc(z.partes.map(pt=>pasDe(pt.p).nombre).join(" + "))+' · '+esc(z.c)+'</span></span><span class="est" style="color:var(--amber)">En picking</span></div>';return'<button class="lin '+e+(z.k===ST.sel?" sel":"")+'"'+dq+' data-a="ctl-sel" data-id="'+esc(z.k)+'"><span class="ic">'+CTL_T[e][2]+'</span><span class="tx"><span class="t">'+esc(z.d)+'</span><span class="d mono">'+esc(ubiCorta(z))+' · '+esc(z.partes.map(pt=>pasDe(pt.p).nombre).join(" + "))+' · '+esc(z.c)+'</span></span><span class="est" style="color:'+({ok:"var(--emerald)",corregido:"var(--orange)",diferencia:"var(--rose)"}[e]||"var(--muted-fg)")+'">'+(e==="pendiente"?"Pendiente":CTL_T[e][0])+'</span></button>'}).join("")+'</div>';
+    +L.map(z=>{const e=ctlEst(reg(z.k)),dq=' data-q="'+esc(ctlNorm(z.d+" "+z.c+" "+(z.ean||"")))+'"'+(bOk(z)?"":' style="display:none"');if(!z.pk&&!reg(z.k))return'<div class="lin pendiente enpk"'+dq+'><span class="ic">⏳</span><span class="tx"><span class="t">'+esc(z.d)+'</span><span class="d mono">'+esc(ubiCorta(z))+' · '+esc(z.partes.map(pt=>pasDe(pt.p).nombre).join(" + "))+' · '+esc(z.c)+'</span></span><span class="est" style="color:var(--amber)">En picking</span></div>';return'<button class="lin '+e+(z.k===ST.sel?" sel":"")+'"'+dq+' data-a="ctl-sel" data-id="'+esc(z.k)+'"><span class="ic">'+CTL_T[e][2]+'</span><span class="tx"><span class="t">'+esc(z.d)+'</span><span class="d mono">'+esc(ubiCorta(z))+' · '+esc(z.partes.map(pt=>pasDe(pt.p).nombre).join(" + "))+' · '+esc(z.c)+'</span></span><span class="est" style="color:'+({ok:"var(--emerald)",corregido:"var(--orange)",diferencia:"var(--rose)"}[e]||"var(--muted-fg)")+'">'+(e==="pendiente"?"Pendiente":(()=>{const rr=reg(z.k);return ctlFalta(z,rr)>0&&!rr.motivoFalta?'<span style="color:var(--amber)">Definir parcial</span>':CTL_T[e][0]})())+'</span></button>'}).join("")+'</div>';
   const SB=Object.values(cs.sobrantes||{});
   if(SB.length)h+='<div class="sep">Sobrantes no pedidos · '+SB.length+'</div><div class="lista" style="margin-top:0;gap:8px">'+SB.map(o=>'<div class="lin diferencia"><span class="ic">+</span><span class="tx"><span class="t">'+esc(o.d||"Código "+o.cod)+'</span><span class="d mono">'+esc(o.cod)+' · '+fN(o.cantidad)+' u de más · '+esc(o.por||"")+'</span></span></div>').join("")+'</div>';
   if(!listo&&tot)h+='<p class="muted small" style="text-align:center;margin-top:18px">Faltan '+pl(tot-hechos,"renglón","renglones")+' para terminar el control'+(enPk.length?' (algunos todavía se están piqueando)':"")+'</p>';
@@ -811,7 +830,7 @@ function ctlRegistrar(A,l,reg,corregirA){const t=ahora(),s=A.s,u={};Object.assig
   guardar(ctlPath(A.x.id),u);ctlArrancar(A.x.id,false)}
 function ctlSiguiente(){const A=ctlActual();if(!A)return;const reg=k=>(A.cs.lineas||{})[k],i=A.L.findIndex(l=>l.k===ST.sel);
   const sig=A.L.slice(i+1).concat(A.L.slice(0,Math.max(0,i))).find(l=>!reg(l.k));if(sig)ST.sel=sig.k;render();window.scrollTo({top:0,behavior:"smooth"})}
-function ctlTerminar(){const A=ctlActual();if(!A)return;const {x,s,cs,L}=A;if(!pedListo(x)){toast("Todavía se está piqueando en "+pasEnPicking(x).map(p=>pasDe(p).nombre).join(", "),"err");return}if(L.some(l=>!(cs.lineas||{})[l.k])){toast("Faltan renglones por controlar","err");return}
+function ctlTerminar(){const A=ctlActual();if(!A)return;const {x,s,cs,L}=A;if(!pedListo(x)){toast("Todavía se está piqueando en "+pasEnPicking(x).map(p=>pasDe(p).nombre).join(", "),"err");return}if(L.some(l=>!(cs.lineas||{})[l.k])){toast("Faltan renglones por controlar","err");return}if(ctlSinMotivo(L,cs).length){toast("Definí el motivo de los parciales antes de terminar","err");render();return}
   const r=ctlResumenDe(cs),i=CTL_ETAPAS.indexOf(s),sig=CTL_ETAPAS[i+1];
   confirmar("Terminar control",'<b>'+r.ren+'</b> renglones · <b style="color:var(--emerald)">'+(r.ok+r.recontados)+' correctos</b>'+(r.corregidos?' · <b style="color:var(--orange)">'+r.corregidos+' corregidos</b>':"")+(r.diferencias?' · <b style="color:var(--rose)">'+r.diferencias+' con diferencia</b>':"")+(r.sobrantes?' · '+pl(r.sobrantes,"sobrante","sobrantes"):"")
     +'.<br>El pedido '+esc(pedTit(x))+(sig?' pasa al '+esc(ctlEtTxt(sig)):' queda <b>controlado</b>, listo para cargarlo en la orden de carga')+'.',"Terminar",()=>{
@@ -957,10 +976,10 @@ function ctlIncidenciasHtml(x){const c=(x&&x.control)||{};if(!CTL_ETAPAS.some(s=
   return h+'<table class="tabla"><thead><tr><th>Producto</th><th>Incidencia</th></tr></thead><tbody>'+R.map(r=>'<tr><td>'+esc(r.l.d)+'<div class="small muted mono">'+esc(r.l.c)+(r.l.partes.length?' · '+esc(r.l.partes.map(pt=>pasDe(pt.p).nombre).join(" + ")):"")+'</div></td>'
     +'<td><span class="badge '+CTL_INC[r.tipo][1]+'">'+CTL_INC[r.tipo][0]+'</span><div class="small" style="margin-top:3px">'+esc(r.det)+'</div>'
     +'<div class="small muted">'+(r.pk.length&&r.tipo!=="recontado"&&r.tipo!=="sobrante"?'Piqueó '+esc(r.pk.join(", "))+' · ':"")+(r.ctl?'Controló '+esc(r.ctl):"")+(r.at?' · '+esc(fHM(r.at)):"")+'</div></td></tr>').join("")+'</tbody></table>'}
-function verPedido(id){const x=ST.pedidos[id]||(ST.archivo||{})[id];if(!x)return;const P=pasillosDePed(x);const INC={};ctlIncidencias(x).forEach(r=>{if(r.tipo!=="sobrante")INC[r.k]=r});
+function verPedido(id){const x=ST.pedidos[id]||(ST.archivo||{})[id];if(!x)return;const P=pasillosDePed(x);const INC={};ctlIncidencias(x).forEach(r=>{if(r.tipo!=="sobrante")INC[r.k]=r});const MF={};CTL_ETAPAS.forEach(s=>{const LL=(((x.control||{})[s]||{}).lineas)||{};Object.keys(LL).forEach(k=>{if(LL[k]&&LL[k].motivoFalta)MF[k]=LL[k]})});
   modal("Pedido "+pedTit(x)+(x.nro?"":" · "+fFecha(x.fecha)),lineaTiempoHtml(x)+ctlIncidenciasHtml(x)+P.map(p=>{const pp=x.pasillos[p],ps=pasDe(p),{A}=lineasOrdenadas(pp);
     return'<h3 style="margin-top:.6rem;color:'+esc(ps.color)+'">'+esc(ps.nombre)+' <span class="small muted">'+esc(pp.estado||"pendiente")+(pp.picker?" · "+esc(pp.picker):"")+'</span></h3><table class="tabla"><thead><tr><th>Producto</th><th class="num">Tom./Ped.</th><th>Estado</th></tr></thead><tbody>'
-      +A.map(l=>{const e=est(l);return'<tr><td>'+esc(l.d)+'<div class="small muted mono">'+esc(l.c)+' · '+esc(ubiCorta(l))+'</div>'+(l.motivo?'<div class="small" style="color:var(--rose)">'+esc(l.motivo)+'</div>':"")+'</td><td class="num mono">'+(l.tomado!=null?fN(l.tomado):"–")+'/'+fN(l.q)+'</td><td><span class="badge '+EST_T[e][1]+'">'+EST_T[e][0]+'</span>'+(INC[l.k]?'<div style="margin-top:3px"><span class="badge '+CTL_INC[INC[l.k].tipo][1]+'">⚠ '+CTL_INC[INC[l.k].tipo][0]+'</span></div>':"")+'</td></tr>'}).join("")+'</tbody></table>'}).join("")
+      +A.map(l=>{const e=est(l);return'<tr><td>'+esc(l.d)+'<div class="small muted mono">'+esc(l.c)+' · '+esc(ubiCorta(l))+'</div>'+(l.motivo?'<div class="small" style="color:var(--rose)">'+esc(l.motivo)+'</div>':"")+'</td><td class="num mono">'+(l.tomado!=null?fN(l.tomado):"–")+'/'+fN(l.q)+'</td><td><span class="badge '+EST_T[e][1]+'">'+EST_T[e][0]+'</span>'+(INC[l.k]?'<div style="margin-top:3px"><span class="badge '+CTL_INC[INC[l.k].tipo][1]+'">⚠ '+CTL_INC[INC[l.k].tipo][0]+'</span></div>':"")+(MF[l.k]?'<div class="small" style="margin-top:3px;color:var(--amber)">Parcial: '+esc(MF[l.k].motivoFalta)+(MF[l.k].motivoPor?' · '+esc(MF[l.k].motivoPor):"")+'</div>':"")+'</td></tr>'}).join("")+'</tbody></table>'}).join("")
     +'<div class="m-acc"><button class="btn" data-a="m-cerrar">Cerrar</button></div>')}
 function sFaltantes(){const F=[];Object.values(ST.pedidos).forEach(x=>pasillosDePed(x).forEach(p=>activas(x.pasillos[p]).forEach(l=>{const e=est(l);if(e==="parcial"||e==="faltante")F.push({x,p,l,e})})));
   if(!F.length)return'<div class="vacio">Sin faltantes en los pedidos activos.</div>';
@@ -1285,6 +1304,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]")
     case"ctl-contar":{const l=ctlLineaSel();if(!l)break;const A=ctlActual(),r=A&&(A.cs.lineas||{})[l.k];if(!l.ean&&!r)pedirCodInterno(l,()=>ctlContar(l,[]));else ctlContar(l,[]);break}
     case"ctl-nohay":{const l=ctlLineaSel();if(l)ctlConfirmar(l,0,[]);break}
     case"ctl-terminar":ctlTerminar();break;
+    case"ctl-motivo":ctlGuardarMotivo(id,b.dataset.m);break;
     case"ctl-pausa":ctlPausar();break;
     case"ctl-reanudar":ctlReanudar();break;
     case"ctl-excel":exportarControles();break;
