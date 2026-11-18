@@ -1278,6 +1278,7 @@ VIEWS.logistica=function(){
   +'<div class="flow">'+[["1","f1","Órdenes emitidas","esperan carga",c("Programada")],["2","f2","Cargadas","listas para salir",c("Cargada")],["3","f3","En viaje","en la ruta",c("En ruta")],["4","f4","Volvieron","viajes cerrados",c("Finalizada")]]
     .map(([n,cl,t,d,v])=>'<div class="fs '+cl+(v?" on":"")+'"><span class="n">'+n+'</span><div><b data-count="'+v+'">'+v+'</b><span>'+t+' · '+d+'</span></div></div>').join("")+'</div>'
   +'<div class="tiles">'
+  +tile({href:"#ecofirmas",cls:"m-viaje",ill:"truck",t:"Entregas Ecommerce · firmas",p:"Hora de entrega y firma del cliente de cada factura de Ecommerce, por día",meta:["Firma digital del cliente"]})
   +tile({href:"#pkguias",cls:"m-nov",ill:"excel",t:"Cargar guías de Excel",p:"Paso 1: Excel de la guía + zona → picking. Cuando termina, lo sumás en la orden de carga",meta:UI.pk.peds?(()=>{const A=Object.values(UI.pk.peds).filter(p=>p&&p.origen==="excel"&&!p.ordenId),R=A.map(pkResumen),l=R.filter(r=>r.controlado).length,c=R.filter(r=>r.listo&&!r.controlado).length;return[(A.length-l-c)+" en picking",c+" en control",l+" controlados"]})():["Excel → picking → orden"]})
   +tile({href:"#ordenes",cls:"m-log wide",ill:"orden",t:"Órdenes de carga",p:"Lo programado que falta emitir: camión, chofer, cobrador, origen y destino",meta:[porCargar(today()).n+" por emitir",S.salidas.filter(s=>s.estado==="Programada"&&s.hojaEmitida===false).length+" sin hoja de ruta"]})
   +tile({href:"#hojas",cls:"m-hoja",ill:"sheet",t:"Hojas de ruta",p:"Cargar guías o facturas, grabar y pasar a Viajes",meta:[S.salidas.filter(s=>s.estado==="Programada"&&s.hojaEmitida!==false).length+" por completar"]})
@@ -2340,6 +2341,45 @@ function formPkImp(prev){let files=[],M=null,mErr="";
       MF.ok=(f.nuevo?"Pedido enviado a picking · ":"Picking actualizado · ")+pl(f.pasillos,"pasillo","pasillos")+(f.nuevo?"":[f.nuevas?" · "+pl(f.nuevas,"línea nueva","líneas nuevas"):"",f.cambiadas?" · "+f.cambiadas+" con otra cantidad":"",f.quitadas?" · "+pl(f.quitadas,"quitada","quitadas"):""].join(""));
       if(UI.route!=="pkguias")location.hash="#pkguias"}});
 }
+/* ---- ENTREGAS ECOMMERCE · FIRMAS (2026-11-18): lee la app Ecommerce (portal-entregas-firebase, misma base Firestore "default",
+   colecciones de primer nivel) SOLO cuando se abre esta vista: meta/zonas, facturas_por_zona (activas) e historial_dias del día (cerradas).
+   Muestra por día cada factura entregada con su hora, aclaración y la firma del cliente (entregas_fotos/<id>, se lee cuando se muestra). */
+UI.eco={fecha:today(),z:"",L:null,err:"",busy:false,k:"",img:{}};
+const ecoDia=iso=>{const d=new Date(iso);if(isNaN(d))return"";const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())};
+const ecoHora=iso=>{const d=new Date(iso);return isNaN(d)?"":String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")};
+async function ecoCargar(force){const U=UI.eco,k=U.fecha;if(U.busy||(!force&&U.k===k&&U.L))return;if(!window.ECO){U.err="sin conexión con la base";return}
+  U.busy=true;U.err="";
+  try{const zs=await ECO.doc("meta/zonas").get(),Z={};((zs.exists&&zs.data().list)||[]).forEach(z=>{if(z&&z.id)Z[z.id]=z.nombre||z.id});
+    const M={},add=(f,origen)=>{if(!f||f.estado!=="entregado"||!f.fechaHora||ecoDia(f.fechaHora)!==k)return;const id=f.id||(f.factura+"|"+f.cliente);if(M[id]&&M[id].origen==="activa")return;
+      M[id]={id,factura:f.factura||"",cliente:f.cliente||"",importe:f.importe,zona:Z[f.zonaId]||f.zonaNombre||f.zonaId||"",hora:f.fechaHora,firmaId:f.firmaId||"",firmaHora:f.firmaHora||"",acl:f.firmaAclaracion||"",fotoId:f.fotoId||"",ubi:f.ubicacion||null,origen}};
+    const fa=await ECO.col("facturas_por_zona").get();fa.docs.forEach(d=>((d.data()||{}).list||[]).forEach(f=>add(f,"activa")));
+    const hi=await ECO.col("historial_dias").where("fecha","==",k).get();hi.docs.forEach(d=>{const x=d.data()||{};(x.facturas||[]).forEach(f=>add(Object.assign({zonaNombre:x.zonaNombre},f),"cerrada"))});
+    if(UI.eco.fecha===k){U.L=Object.values(M).sort((a,b)=>String(a.hora).localeCompare(String(b.hora)));U.k=k}}
+  catch(e){console.error(e);U.err=(e&&(e.code||e.message))||String(e)}
+  finally{U.busy=false;if(UI.route==="ecofirmas")render()}}
+function ecoImg(id){const U=UI.eco;if(!id||!/^fs:/.test(id))return null;const k=id.slice(3);if(U.img[k]!==undefined)return U.img[k];U.img[k]=null;
+  ECO.doc("entregas_fotos/"+k).get().then(s=>{U.img[k]=(s.exists&&s.data().img)||"";if(UI.route==="ecofirmas")render()}).catch(()=>{U.img[k]="";});return null}
+function ecoVerImg(src,tit){const w=window.open("","_blank");if(w)w.document.write('<title>'+esc(tit||"Firma")+'</title><body style="margin:0;background:#fff;display:grid;place-items:center;min-height:100vh"><img src="'+src+'" style="max-width:100%"></body>')}
+GRP.ecofirmas="logistica";MOD.ecofirmas="m-viaje";PARENT.ecofirmas="logistica";
+VIEWS.ecofirmas=function(){const U=UI.eco;ecoCargar(false);
+  let h=ph(crumb(["Inicio","inicio"],["Logística","logistica"],["Entregas Ecommerce · firmas"]),"Entregas Ecommerce · firmas",'<button class="btn" data-act="eco-ref">'+IC.list+'Actualizar</button><a class="btn" href="portal-entregas-firebase.html" target="_blank" rel="noopener">Abrir Ecommerce</a>',"truck");
+  const zonas=[...new Set((U.L||[]).map(x=>x.zona).filter(Boolean))].sort();
+  h+='<div class="flt"><input type="date" data-ui="eco.fecha" value="'+esc(U.fecha)+'" aria-label="Día"><select data-ui="eco.z" aria-label="Zona">'+opts([["","Todas las zonas"]].concat(zonas.map(z=>[z,z])),U.z)+'</select></div>';
+  if(U.err)h+='<div class="banner" style="--b:var(--warn)">'+IC.alert+' <span>No se pudieron leer las entregas de Ecommerce ('+esc(U.err)+'). Tocá «Actualizar».</span></div>';
+  if(!U.L||U.k!==U.fecha)return h+'<section class="pn"><div class="none">'+(U.busy||!U.err?"Leyendo las entregas de Ecommerce…":"Sin datos.")+'</div></section>';
+  const L=U.L.filter(x=>!U.z||x.zona===U.z),fir=L.filter(x=>x.firmaId).length;
+  h+='<div class="kpis"><div class="kpi"><span class="k">Entregadas</span><span class="v">'+L.length+'</span><span class="s">'+fDL(U.fecha)+'</span></div><div class="kpi"><span class="k">Con firma</span><span class="v" style="color:var(--ok)">'+fir+'</span><span class="s">del cliente</span></div><div class="kpi"><span class="k">Sin firma</span><span class="v" style="color:'+(L.length-fir?"var(--warn)":"var(--ok)")+'">'+(L.length-fir)+'</span><span class="s">'+(L.length-fir?"sin firma del cliente":"todas firmadas")+'</span></div></div>';
+  h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-log)"></span>Facturas entregadas · '+L.length+'</h2><span class="s">Hora de entrega y firma del cliente en el celular del chofer</span></div>'
+    +(L.length?'<div class="tw"><table class="wide" style="min-width:640px"><thead><tr><th>Hora</th><th>Cliente</th><th>Factura</th><th>Zona</th><th>Firma</th></tr></thead><tbody>'
+      +L.map(x=>{const src=x.firmaId?ecoImg(x.firmaId):null;
+        return'<tr><td class="mono"><b>'+esc(ecoHora(x.hora))+'</b>'+(x.ubi&&x.ubi.lat?'<div class="sub"><a href="https://www.google.com/maps?q='+encodeURIComponent(x.ubi.lat+","+x.ubi.lng)+'" target="_blank" rel="noopener">ubicación</a></div>':"")+'</td><td><b>'+esc(x.cliente)+'</b></td><td class="mono">'+esc(x.factura)+'</td><td>'+esc(x.zona||"—")+(x.origen==="cerrada"?'<div class="sub">día cerrado</div>':"")+'</td>'
+          +'<td>'+(x.firmaId?(src?'<img src="'+src+'" alt="Firma" data-act="eco-img" data-id="'+esc(x.firmaId)+'" style="height:52px;max-width:160px;background:#fff;border-radius:8px;border:1px solid var(--line,rgba(127,127,127,.3));cursor:zoom-in">':'<span class="mu">'+(src===""?"No se pudo leer":"Cargando…")+'</span>')
+            +'<div class="sub">Firmó '+esc(x.acl||"el cliente")+(x.firmaHora?' · '+esc(ecoHora(x.firmaHora))+' h':"")+'</div>':chip("Sin firma","warn"))+'</td></tr>'}).join("")+'</tbody></table></div>'
+      :'<div class="none">No hubo entregas de Ecommerce '+(U.z?"en esa zona ":"")+'ese día.</div>')+'</section>';
+  return h};
+Object.assign(GACT,{
+  "eco-ref":()=>{UI.eco.k="";UI.eco.L=null;ecoCargar(true);render()},
+  "eco-img":(el,id)=>{const s=UI.eco.img[String(id).slice(3)];if(s)ecoVerImg(s,"Firma del cliente")}});
 function pkEstTxt(p){const r=pkResumen(p),s=p.ordenId&&get("salidas",p.ordenId);
   if(p.ordenId)return s&&s.estado!=="Anulada"?{t:"Cargado en orden N° "+nro(s),c:"info",k:"orden"}:{t:"Su orden N° "+(p.ordenNro||"?")+" ya no existe",c:"bad",k:"huerfano"};
   if(r.controlado)return{t:"Controlado · esperando orden",c:"ok",k:"listo"};if(r.listo)return{t:pkCtlTxt(r),c:"vio",k:"control"};
@@ -6104,6 +6144,7 @@ async function conectarFirebase(){
   try{fs.settings({experimentalAutoDetectLongPolling:true,ignoreUndefinedProperties:true,merge:true})}catch(e){}
   const api={collection:c=>envolverCol(fs.collection(RAIZ+c)),doc:p=>envolverDoc(fs.doc(RAIZ+p))};
   // para el programa de LoJack de la PC de la oficina: leer pedidos y guardar posiciones con el mismo formato que la base de Claude
+  window.ECO={col:c=>fs.collection(c),doc:p=>fs.doc(p)};   // app Ecommerce (colecciones de primer nivel): solo lectura, vista «Entregas Ecommerce · firmas»
   window.HR={leer:async c=>(await fs.collection(RAIZ+c).get()).docs.map(d=>Object.assign({id:d.id},fsDec(d.data()))),guardar:(c,id,obj)=>envolverDoc(fs.doc(RAIZ+c+"/"+id)).set(obj)};
   return api;
 }
