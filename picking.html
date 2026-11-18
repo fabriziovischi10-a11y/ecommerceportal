@@ -319,14 +319,16 @@ const fHora=iso=>{if(!iso)return"";const d=new Date(iso);return isNaN(d)?"":d.to
 const iniciales=n=>String(n||"?").trim().split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase();
 /* pedido: con N° de orden (flujo viejo, desde una orden del TMS) o por ZONA / sucursal (Excel + zona, sin orden todavía) */
 const porZona=x=>!x.nro&&(x.origen==="excel"||x.zona);
-const pedTit=x=>x.nro?"N° "+x.nro:(x.zona||(x.destinos||[]).join(", ")||x.id);
+/* 2026-11-18: número de guía (lo pone el TMS al cargar el Excel de una sucursal: guiaNro; o las guías del Excel: guiasNro) */
+const guiaTxt=x=>{if(!x)return"";if(x.guiaNro)return String(x.guiaNro);const G=x.guiasNro||[];return G.slice(0,3).join(", ")+(G.length>3?" …":"")};
+const pedTit=x=>x.nro?"N° "+x.nro:(x.zona||(x.destinos||[]).join(", ")||x.id)+(guiaTxt(x)?" · Guía "+guiaTxt(x):"");
 const pedOrd=x=>String(x.nro||x.zona||x.id||"");
 /* datos secundarios: fecha, destino (si el título es el N°), camión, chofer, orden de carga en que se cargó */
 function pedMeta(x,corto){const m=['<span><b>'+esc(fFecha(x.fecha)||"sin fecha")+'</b></span>'];
   if(x.nro)m.push('<span><b>'+esc((x.destinos||[]).join(", ")||"—")+'</b></span>');else m.push('<span>'+(x.sucursalId&&!x.zonaId?"Sucursal":"Zona")+'</span>');
   if(x.camion)m.push('<span>Camión <b>'+esc(x.camion)+'</b></span>');if(x.chofer&&!corto)m.push('<span>'+esc(x.chofer)+'</span>');
   if(!x.nro&&x.ordenId)m.push('<span style="color:var(--emerald)">En orden N° <b>'+esc(x.ordenNro||"…")+'</b></span>');
-  if(!corto&&(x.guiasNro||[]).length)m.push('<span>'+pl(x.guiasNro.length,"guía","guías")+'</span>');return m.join("")}
+  if(!corto&&!x.guiaNro&&(x.guiasNro||[]).length>3)m.push('<span>'+pl(x.guiasNro.length,"guía","guías")+'</span>');return m.join("")}
 /* pedido por zona listo que todavía no se cargó en una orden: sigue en picking/pedidos esperando al TMS */
 const esperaTMS=x=>porZona(x)&&!x.ordenId;
 
@@ -926,23 +928,23 @@ function ctlIntegrantesCard(){const I=Object.keys(ctlInts()).map(id=>Object.assi
     +(I.map(i=>'<div class="fila entre" style="padding:6px 0;border-bottom:1px solid var(--border)"><span>'+esc(i.nombre)+(i.prueba?'<span class="prueba">prueba</span>':"")+'</span><span class="fila"><button class="btn btn-sm" data-a="ctl-int-ed" data-id="'+esc(i.id)+'">Editar</button><button class="btn btn-sm btn-ghost" style="color:var(--rose)" data-a="ctl-int-del" data-id="'+esc(i.id)+'">Quitar</button></span></div>').join("")||'<p class="small muted">Sin controladores.</p>')
     +'<div class="fila" style="margin-top:8px;flex-wrap:nowrap"><input id="ni-ctl" placeholder="Nombre del nuevo controlador" data-enter="ctl-int-add" data-p="ctl"><button class="btn btn-primary" data-a="ctl-int-add" data-p="ctl">Agregar</button></div></div>'}
 /* Tiempos: rendimiento de los controladores (mismo período; el filtro de pasillo no aplica) */
-function datosCtl(){const {d,hasta}=periodoTz(),now=ahoraMs(),F=Object.assign({},ST.archivo||{},ST.pedidos),I={},g=(k,nom)=>{const o=I[k]=I[k]||{k,nom:"",n:0,seg:0,ren:0,nook:0,corr:0,dif:0,np:0,pseg:0};if(!o.nom&&nom)o.nom=nom;return o};
+function datosCtl(){const {d,hasta}=periodoTz(),now=ahoraMs(),F=Object.assign({},ST.archivo||{},ST.pedidos),I={},g=(k,nom)=>{const o=I[k]=I[k]||{k,nom:"",n:0,seg:0,ren:0,nook:0,corr:0,dif:0,np:0,pseg:0,emas:0,emen:0};if(!o.nom&&nom)o.nom=nom;return o};
   Object.keys(F).forEach(id=>{const x=F[id];if(!x||!x.control)return;CTL_ETAPAS.forEach(s=>{const cs=x.control[s];if(!cs||!cs.inicio||cs.estado!=="listo")return;const tm=tiempos(cs,now);
     const ref=msDe(cs.fin);if(ref==null||ref<d||ref>=hasta)return;const toc={};
     pausasDe(cs,now).forEach(z=>{const o=g(z.k,z.por);o.np++;o.pseg+=z.seg});
     Object.keys(tm.por).forEach(k=>{g(k,tm.por[k].nom).seg+=tm.por[k].seg;if(tm.por[k].seg>=1)toc[k]=1});
-    Object.values(cs.lineas||{}).forEach(r=>{const k=r.porId||("n:"+(r.por||"")),o=g(k,r.por);o.ren++;if(!r.ok)o.nook++;if(r.accion==="corregido")o.corr++;if(r.accion==="diferencia")o.dif++;toc[k]=1});
+    Object.values(cs.lineas||{}).forEach(r=>{const k=r.porId||("n:"+(r.por||"")),o=g(k,r.por);o.ren++;if(!r.ok)o.nook++;if(r.accion==="corregido")o.corr++;if(r.accion==="diferencia")o.dif++;ctlErrCtl(r).forEach(e=>{if(e.d>0)o.emas++;else o.emen++});toc[k]=1});
     Object.keys(toc).forEach(k=>I[k].n++)})});
   const L=Object.values(I).filter(o=>o.n).map(o=>{o.nom=nombreCtl(o.k)||o.nom||"(sin nombre)";o.rh=o.seg>=60?o.ren/(o.seg/3600):null;o.spr=o.ren&&o.seg?o.seg/o.ren:null;return o});
   L.sort((a,b)=>((b.rh||0)-(a.rh||0))||a.nom.localeCompare(b.nom));return L}
 function ctlTiemposHtml(){const L=datosCtl();
   return'<h3 style="margin-top:16px">Por controlador · '+esc(periodoTz().et)+'</h3>'+(!L.length?'<div class="vacio">Sin controles terminados en este período.</div>'
-    :'<div class="card" style="padding:.3rem .6rem"><div class="scroll-x"><table class="tabla ancha"><thead><tr><th>Controlador</th><th class="num">Controles</th><th class="num">Renglones</th><th class="num">Tiempo</th><th class="num">Reng./h</th><th class="num">Seg/reng.</th><th class="num">No coincidieron</th><th class="num">Corregidos</th><th class="num">Con diferencia</th><th class="num">Pausas</th><th class="num">Tiempo en pausa</th></tr></thead><tbody>'
-      +L.map(o=>'<tr><td><b>'+esc(o.nom)+'</b></td><td class="num">'+fN(o.n)+'</td><td class="num">'+fN(o.ren)+'</td><td class="num mono">'+fDur(o.seg)+'</td><td class="num"><b>'+n1(o.rh)+'</b></td><td class="num">'+n1(o.spr)+'</td><td class="num">'+fN(o.nook)+'</td><td class="num"'+(o.corr?' style="color:var(--orange)"':"")+'>'+fN(o.corr)+'</td><td class="num"'+(o.dif?' style="color:var(--rose)"':"")+'>'+fN(o.dif)+'</td><td class="num">'+fN(o.np)+'</td><td class="num mono">'+(o.np?fDur(o.pseg):"—")+'</td></tr>').join("")+'</tbody></table></div></div>'
-      +'<p class="small muted" style="margin:6px 2px 0"><b>Renglones por hora</b> = renglones controlados ÷ horas del control a su nombre, sin pausas. No coincidieron = el conteo no dio igual a lo piqueado en algún intento final.</p>')}
+    :'<div class="card" style="padding:.3rem .6rem"><div class="scroll-x"><table class="tabla ancha"><thead><tr><th>Controlador</th><th class="num">Controles</th><th class="num">Renglones</th><th class="num">Tiempo</th><th class="num">Reng./h</th><th class="num">Seg/reng.</th><th class="num">No coincidieron</th><th class="num">Contó de más</th><th class="num">Contó de menos</th><th class="num">Corregidos</th><th class="num">Con diferencia</th><th class="num">Pausas</th><th class="num">Tiempo en pausa</th></tr></thead><tbody>'
+      +L.map(o=>'<tr><td><b>'+esc(o.nom)+'</b></td><td class="num">'+fN(o.n)+'</td><td class="num">'+fN(o.ren)+'</td><td class="num mono">'+fDur(o.seg)+'</td><td class="num"><b>'+n1(o.rh)+'</b></td><td class="num">'+n1(o.spr)+'</td><td class="num">'+fN(o.nook)+'</td><td class="num"'+(o.emas?' style="color:var(--amber)"':"")+'>'+fN(o.emas)+'</td><td class="num"'+(o.emen?' style="color:var(--amber)"':"")+'>'+fN(o.emen)+'</td><td class="num"'+(o.corr?' style="color:var(--orange)"':"")+'>'+fN(o.corr)+'</td><td class="num"'+(o.dif?' style="color:var(--rose)"':"")+'>'+fN(o.dif)+'</td><td class="num">'+fN(o.np)+'</td><td class="num mono">'+(o.np?fDur(o.pseg):"—")+'</td></tr>').join("")+'</tbody></table></div></div>'
+      +'<p class="small muted" style="margin:6px 2px 0"><b>Renglones por hora</b> = renglones controlados ÷ horas del control a su nombre, sin pausas. No coincidieron = el conteo no dio igual a lo piqueado en algún intento final. Contó de más / de menos = errores del controlador: conteos que después corrigió al recontar.</p>')}
 function ctlTiemposAoa(){const r1=v=>v==null?"":Math.round(v*10)/10;
-  return[["Controlador","Controles terminados","Renglones controlados","Tiempo (h:mm:ss)","Tiempo (min)","Renglones por hora","Segundos por renglón","No coincidieron","Corregidos","Con diferencia","Pausas","Tiempo en pausa (min)"]]
-    .concat(datosCtl().map(o=>[o.nom,o.n,o.ren,fDur(o.seg),Math.round(o.seg/6)/10,r1(o.rh),r1(o.spr),o.nook,o.corr,o.dif,o.np,Math.round(o.pseg/6)/10]))}
+  return[["Controlador","Controles terminados","Renglones controlados","Tiempo (h:mm:ss)","Tiempo (min)","Renglones por hora","Segundos por renglón","No coincidieron","Contó de más (errores)","Contó de menos (errores)","Corregidos","Con diferencia","Pausas","Tiempo en pausa (min)"]]
+    .concat(datosCtl().map(o=>[o.nom,o.n,o.ren,fDur(o.seg),Math.round(o.seg/6)/10,r1(o.rh),r1(o.spr),o.nook,o.emas,o.emen,o.corr,o.dif,o.np,Math.round(o.pseg/6)/10]))}
 async function exportarControles(){const P=ctlPedidosConControl(),A=[["Pedido","Fecha","Etapa","Código","Producto","Pasillo(s)","Pedido (u)","Piqueado original"].concat(CTL_ETAPAS.flatMap(s=>[ctlColT(s),"Resultado "+ctlEtTxt(s),"Controlador "+ctlEtTxt(s),"Conteos "+ctlEtTxt(s)]),["Final (piqueado)","Correcciones"])];
   const B=[["Pedido","Fecha","Etapa","Controlador","Inicio","Fin","Duración (h:mm:ss)","Duración (min)","Pausas (min)","Renglones","Correctos","Recontados","Corregidos","Con diferencia","Sobrantes","Renglones por hora"]];
   P.forEach(x=>{const e=ctlEtapa(x),et=x.archivado?"Archivado":e==="picking"?"Picking":e==="controlado"?"Controlado":"En control";
@@ -994,29 +996,35 @@ function sPedidos(){const L=Object.values(ST.pedidos).sort((a,b)=>String(b.fecha
 /* INCIDENCIAS DEL CONTROL (2026-11-17): lo que el control encontró, para el detalle del pedido.
    recontado = el controlador contó mal y al recontar coincidió (mal contado) · corregido = lo piqueado estaba mal y se corrigió (mal piqueado)
    diferencia = no coincidió y quedó sin corregir · sobrante = apareció un producto que no estaba en el pedido */
-const CTL_INC={exceso:["Más de lo pedido","t-rose"],recontado:["Mal contado","t-amber"],corregido:["Mal piqueado","t-rose"],diferencia:["Diferencia sin resolver","t-rose"],sobrante:["Sobrante no pedido","t-amber"]};
+/* ERRORES DEL CONTROLADOR (2026-11-18): cada conteo que no dio igual al conteo final aceptado (ok, recontado o corregido).
+   Contó de más = contó más unidades de las que había; contó de menos = contó menos. Con «diferencia» no hay valor cierto: no se cuenta. */
+function ctlErrCtl(r){if(!r||r.accion==="diferencia"||r.contado==null)return[];const fin=Number(r.contado);return(r.conteos||[]).slice(0,-1).map(Number).filter(c=>c!==fin).map(c=>({c,d:c-fin}))}
+const ctlErrTxt=E=>E.map(e=>"contó "+fN(e.c)+" ("+(e.d>0?fN(e.d)+" de más":fN(-e.d)+" de menos")+")").join(", ");
+const CTL_INC={errmas:["Controlador: contó de más","t-amber"],errmenos:["Controlador: contó de menos","t-amber"],exceso:["Más de lo pedido","t-rose"],recontado:["Mal contado","t-amber"],corregido:["Mal piqueado","t-rose"],diferencia:["Diferencia sin resolver","t-rose"],sobrante:["Sobrante no pedido","t-amber"]};
 function ctlIncidencias(x){const c=(x&&x.control)||{},L={},R=[];ctlLineas(x).forEach(l=>{L[l.k]=l});
   CTL_ETAPAS.forEach(s=>{const cs=c[s]||{};
-    Object.keys(cs.lineas||{}).forEach(k=>{const r=cs.lineas[k];if(!r||!CTL_INC[r.accion])return;const l=L[k]||{k,c:k,d:"Código "+k,partes:[]};
+    Object.keys(cs.lineas||{}).forEach(k=>{const r=cs.lineas[k];if(!r||!(CTL_INC[r.accion]||ctlErrCtl(r).length))return;const l=L[k]||{k,c:k,d:"Código "+k,partes:[]};
       const pk=[...new Set(l.partes.map(pt=>pt.l.por||(x.pasillos[pt.p]||{}).terminadoPor||(x.pasillos[pt.p]||{}).picker).filter(Boolean))];
       const piq=Number(r.piqueado)||0,cont=Number(r.contado)||0,dif=cont-piq,cn=(r.conteos||[]).map(fN);
       let det;
       if(r.excedente&&r.excedenteRetirado)det="Pedido "+fN(l.q||0)+" · contó "+fN(cont)+" → se sacaron "+fN(r.excedente)+" de más y quedó en lo pedido"+(cn.length>1?" · conteos: "+cn.join(" · "):"");
       else if(r.excedente&&r.excesoAutorizado)det="Pedido "+fN(l.q||0)+" · salen "+fN(cont)+": "+fN(r.excedente)+" de más AUTORIZADO por "+(r.autorizadoPor||"Supervisión");
-      else if(r.accion==="recontado")det="Contó "+cn.slice(0,-1).join(" y ")+" · al recontar dio "+fN(cont)+", igual a lo piqueado";
+      else if(r.accion==="recontado")det="";
       else det="Piqueado "+fN(piq)+" · contado "+fN(cont)+" → "+(dif>0?"había "+fN(dif)+" de más":(-dif===1?"faltaba 1":"faltaban "+fN(-dif)))+(r.accion==="corregido"?" · se corrigió a "+fN(cont):" · quedó como estaba")+(cn.length>1?" · conteos: "+cn.join(" · "):"");
-      R.push({s,k,tipo:r.excedente?"exceso":r.accion,l,det,pk,ctl:r.por||cs.terminadoPor||cs.controlador||"",at:r.at})});
+      const ctlN=r.por||cs.terminadoPor||cs.controlador||"",E=ctlErrCtl(r);
+      if(det)R.push({s,k,tipo:r.excedente?"exceso":r.accion,l,det,pk,ctl:ctlN,at:r.at});
+      if(E.length){const mas=E.filter(e=>e.d>0).length>=E.filter(e=>e.d<0).length;R.push({s,k:k+"#c",tipo:mas?"errmas":"errmenos",l,det:ctlErrTxt(E)+" → el conteo bueno fue "+fN(cont),pk:[],ctl:ctlN,at:r.at})}});
     Object.values(cs.sobrantes||{}).forEach(o=>R.push({s,k:"+"+o.cod,tipo:"sobrante",l:{c:o.cod,d:o.d||"Código "+o.cod,partes:[]},det:fN(o.cantidad)+" u que no estaban en el pedido",pk:[],ctl:o.por||"",at:o.at}))});
-  const ord={exceso:0,corregido:1,diferencia:2,recontado:3,sobrante:4};return R.sort((a,b)=>ord[a.tipo]-ord[b.tipo])}
+  const ord={exceso:0,corregido:1,diferencia:2,errmas:3,errmenos:4,recontado:5,sobrante:6};return R.sort((a,b)=>ord[a.tipo]-ord[b.tipo])}
 function ctlIncidenciasHtml(x){const c=(x&&x.control)||{};if(!CTL_ETAPAS.some(s=>c[s]&&c[s].inicio))return"";const R=ctlIncidencias(x);
   const n=t=>R.filter(r=>r.tipo===t).length;
   let h='<h3 style="margin-top:.8rem;color:#d9c4ff">Incidencias del control'+(R.length?' · '+R.length:"")+'</h3>';
   if(!R.length)return h+'<p class="small" style="color:var(--emerald);margin:.2rem 0 .6rem">✓ Sin incidencias: todo lo controlado coincidió al primer conteo.</p>';
-  h+='<p class="small muted" style="margin:.1rem 0 .4rem">'+[["exceso","con más de lo pedido","con más de lo pedido"],["corregido","mal piqueado","mal piqueados"],["diferencia","sin resolver","sin resolver"],["recontado","mal contado","mal contados"],["sobrante","sobrante","sobrantes"]].filter(([t])=>n(t)).map(([t,a,b])=>'<b>'+n(t)+'</b> '+(n(t)===1?a:b)).join(" · ")+'</p>';
+  h+='<p class="small muted" style="margin:.1rem 0 .4rem">'+[["errmas","error del controlador (contó de más)","errores del controlador (contó de más)"],["errmenos","error del controlador (contó de menos)","errores del controlador (contó de menos)"],["exceso","con más de lo pedido","con más de lo pedido"],["corregido","mal piqueado","mal piqueados"],["diferencia","sin resolver","sin resolver"],["recontado","mal contado","mal contados"],["sobrante","sobrante","sobrantes"]].filter(([t])=>n(t)).map(([t,a,b])=>'<b>'+n(t)+'</b> '+(n(t)===1?a:b)).join(" · ")+'</p>';
   return h+'<table class="tabla"><thead><tr><th>Producto</th><th>Incidencia</th></tr></thead><tbody>'+R.map(r=>'<tr><td>'+esc(r.l.d)+'<div class="small muted mono">'+esc(r.l.c)+(r.l.partes.length?' · '+esc(r.l.partes.map(pt=>pasDe(pt.p).nombre).join(" + ")):"")+'</div></td>'
     +'<td><span class="badge '+CTL_INC[r.tipo][1]+'">'+CTL_INC[r.tipo][0]+'</span><div class="small" style="margin-top:3px">'+esc(r.det)+'</div>'
-    +'<div class="small muted">'+(r.pk.length&&r.tipo!=="recontado"&&r.tipo!=="sobrante"?'Piqueó '+esc(r.pk.join(", "))+' · ':"")+(r.ctl?'Controló '+esc(r.ctl):"")+(r.at?' · '+esc(fHM(r.at)):"")+'</div></td></tr>').join("")+'</tbody></table>'}
-function verPedido(id){const x=ST.pedidos[id]||(ST.archivo||{})[id];if(!x)return;const P=pasillosDePed(x);const INC={};ctlIncidencias(x).forEach(r=>{if(r.tipo!=="sobrante")INC[r.k]=r});const MF={};CTL_ETAPAS.forEach(s=>{const LL=(((x.control||{})[s]||{}).lineas)||{};Object.keys(LL).forEach(k=>{if(LL[k]&&LL[k].motivoFalta)MF[k]=LL[k]})});
+    +'<div class="small muted">'+(r.pk.length&&!/^(recontado|sobrante|errmas|errmenos)$/.test(r.tipo)?'Piqueó '+esc(r.pk.join(", "))+' · ':"")+(r.ctl?'Controló '+esc(r.ctl):"")+(r.at?' · '+esc(fHM(r.at)):"")+'</div></td></tr>').join("")+'</tbody></table>'}
+function verPedido(id){const x=ST.pedidos[id]||(ST.archivo||{})[id];if(!x)return;const P=pasillosDePed(x);const INC={};ctlIncidencias(x).forEach(r=>{const kk=r.k.replace(/#c$/,"");if(r.tipo!=="sobrante"&&!INC[kk])INC[kk]=r});const MF={};CTL_ETAPAS.forEach(s=>{const LL=(((x.control||{})[s]||{}).lineas)||{};Object.keys(LL).forEach(k=>{if(LL[k]&&LL[k].motivoFalta)MF[k]=LL[k]})});
   modal("Pedido "+pedTit(x)+(x.nro?"":" · "+fFecha(x.fecha)),lineaTiempoHtml(x)+ctlIncidenciasHtml(x)+P.map(p=>{const pp=x.pasillos[p],ps=pasDe(p),{A}=lineasOrdenadas(pp);
     return'<h3 style="margin-top:.6rem;color:'+esc(ps.color)+'">'+esc(ps.nombre)+' <span class="small muted">'+esc(pp.estado||"pendiente")+(pp.picker?" · "+esc(pp.picker):"")+'</span></h3><table class="tabla"><thead><tr><th>Producto</th><th class="num">Tom./Ped.</th><th>Estado</th></tr></thead><tbody>'
       +A.map(l=>{const e=est(l);return'<tr><td>'+esc(l.d)+'<div class="small muted mono">'+esc(l.c)+' · '+esc(ubiCorta(l))+'</div>'+(l.motivo?'<div class="small" style="color:var(--rose)">'+esc(l.motivo)+'</div>':"")+'</td><td class="num mono">'+(l.tomado!=null?fN(l.tomado):"–")+'/'+fN(l.q)+'</td><td><span class="badge '+EST_T[e][1]+'">'+EST_T[e][0]+'</span>'+(INC[l.k]?'<div style="margin-top:3px"><span class="badge '+CTL_INC[INC[l.k].tipo][1]+'">⚠ '+CTL_INC[INC[l.k].tipo][0]+'</span></div>':"")+(MF[l.k]?'<div class="small" style="margin-top:3px;color:var(--amber)">Parcial: '+esc(MF[l.k].motivoFalta)+(MF[l.k].motivoPor?' · '+esc(MF[l.k].motivoPor):"")+'</div>':"")+'</td></tr>'}).join("")+'</tbody></table>'}).join("")
