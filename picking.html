@@ -669,6 +669,7 @@ function vCtlPedidos(){const yo=ST.yo,L=ctlEspera();
       +'<div class="fila entre small" style="margin-bottom:6px"><span>'+hechos+' de '+Ls.length+' controlados</span></div>'
       +'<div class="bar"><i style="width:'+(Ls.length?Math.round(hechos/Ls.length*100):0)+'%;background:var(--violeta)"></i></div>'
       +(otro?'<div class="small" style="margin-top:8px;color:var(--amber)">Lo está controlando <b>'+esc(cs.controlador)+'</b></div>':"")
+      +(ctlSobPend(x,s).length?'<div class="small" style="margin-top:8px;color:var(--rose);font-weight:800">⛔ Sobrantes esperando el OK de Supervisión</div>':"")
       +(ctlPiqueoYo(x).length&&!ctlAutorizado(x,s)?'<div class="small" style="margin-top:8px;color:var(--rose)">Piqueaste '+esc(ctlPiqueoYo(x).join(", "))+': lo tiene que controlar otra persona</div>':"")
       +'<div style="margin-top:12px">'+(mio?'<button class="btn btn-primary btn-lg btn-block" data-a="ctl-abrir" data-id="'+esc(x.id)+'">Seguir controlando</button>'
         :otro?'<button class="btn btn-block" data-a="ctl-tomar" data-id="'+esc(x.id)+'" data-otro="1">Ayudar / tomarlo yo</button>'
@@ -686,6 +687,16 @@ function ctlBloqueoMismo(id,seguir){const x=ST.pedidos[id],s=x&&ctlS(x);if(!s)re
   m.querySelector("#aut-mismo").onclick=()=>{cerrarModal();pedirPin(()=>{guardar(ctlPath(id)+"/control/"+s+"/autorizaciones/"+nuevoId(),{tipo:"mismo",controlador:ST.yo.nombre,controladorId:ST.yo.id,pasillos:P,at:ahora()});
     const c=(x.control=x.control||{}),cs=(c[s]=c[s]||{});cs.autorizaciones=cs.autorizaciones||{};cs.autorizaciones["l"+Date.now()]={tipo:"mismo",controladorId:ST.yo.id};toast("Autorizado por el supervisor","ok");seguir()})};
   return true}
+/* SOBRANTES CON OK DE SUPERVISIÓN (2026-11-18): todo sobrante (producto que no está en el pedido o unidades de más que lo pedido)
+   frena el cierre del control hasta que Supervisión lo apruebe: control/<s>/sobrantesOk={n,por,at}. Si aparecen sobrantes nuevos después, vuelve a pedir el OK. */
+function ctlSobrantesDe(x,s){const cs=((x&&x.control)||{})[s]||{},L=[];
+  Object.values(cs.sobrantes||{}).forEach(o=>L.push({tipo:"no",d:o.d||("Código "+o.cod),c:o.cod,u:Number(o.cantidad)||0,por:o.por}));
+  const LL=ctlLineas(x);Object.keys(cs.lineas||{}).forEach(k=>{const r=cs.lineas[k];if(r&&r.excedente>0){const l=LL.find(z=>z.k===k)||{d:k,c:k};L.push({tipo:"mas",d:l.d,c:l.c,u:r.excedente,ret:!!r.excedenteRetirado,aut:!!r.excesoAutorizado,por:r.por})}});return L}
+function ctlSobPend(x,s){const L=ctlSobrantesDe(x,s),ok=(((x.control||{})[s]||{}).sobrantesOk)||null;return L.length&&!(ok&&Number(ok.n)>=L.length)?L:[]}
+function ctlSobListaHtml(L){return'<div class="lista" style="gap:6px;margin-top:6px">'+L.map(o=>'<div class="lin diferencia"><span class="ic">+</span><span class="tx"><span class="t">'+esc(o.d)+'</span><span class="d mono">'+esc(o.c||"")+' · '+fN(o.u)+' u '+(o.tipo==="no"?"que no están en el pedido":o.ret?"de más (se sacaron)":o.aut?"de más (autorizadas con PIN)":"de más")+(o.por?' · '+esc(o.por):"")+'</span></span></div>').join("")+'</div>'}
+function ctlAprobarSob(id,conPin){const x=ST.pedidos[id];if(!x)return;const s=CTL_ETAPAS.find(e=>ctlSobPend(x,e).length);if(!s)return;const L=ctlSobrantesDe(x,s);
+  const ok=()=>{guardar(ctlPath(id)+"/control/"+s,{sobrantesOk:{n:L.length,por:conPin?"Supervisión (PIN en el celular de "+ST.yo.nombre+")":"Supervisión",at:ahora()}});const c=(x.control=x.control||{});(c[s]=c[s]||{}).sobrantesOk={n:L.length};toast("Sobrantes aprobados por Supervisión","ok");render()};
+  confirmar("Aprobar sobrantes",'Revisá lo que sobró en el pedido '+esc(pedTit(x))+':'+ctlSobListaHtml(L)+'<p class="small muted" style="margin-top:8px">Al aprobar, el controlador puede terminar el control y el pedido avanza al TMS.</p>',"Aprobar",()=>{if(conPin)pedirPin(ok);else ok()})}
 function ctlTomar(id,otro){const x=ST.pedidos[id],s=x&&ctlS(x);if(!s){toast("Este pedido ya no espera control","info");return}const cs=(x.control||{})[s]||{};
   if(ctlBloqueoMismo(id,()=>ctlTomar(id,otro)))return;
   const hacer=()=>{ctlArrancar(id,true);ctlAbrir(id,true)};
@@ -768,7 +779,9 @@ function vControl(){const A=ctlActual();if(!A){ST.vista="ctl-pedidos";ST.pedidoI
       +'<button class="btn btn-lg'+(r||l.ean?"":" btn-primary")+'" data-a="ctl-contar">'+(r?"↻ Volver a contar":l.ean?"Contar ›":"Ingresar código ›")+'</button></div></div>'}
   const PARC=ctlSinMotivo(L,cs);
   if(listo&&!enPk.length&&PARC.length)h+='<div class="ctl-parc"><b>⚠ Antes de terminar, definí '+(PARC.length===1?'el parcial':'los '+PARC.length+' parciales')+'</b><div class="small" style="margin:4px 0 8px">Hay productos que van con menos de lo pedido. Elegí qué pasó con cada uno.</div>'+PARC.map(z=>'<div class="ctl-parc-it"><div style="font-weight:800">'+esc(z.d)+' <span class="small muted mono">'+esc(z.c)+'</span></div>'+ctlMotivoHtml(z,reg(z.k))+'</div>').join("")+'</div>';
-  if(listo&&!enPk.length&&!PARC.length)h+='<button class="btn btn-success btn-lg btn-block" style="margin-top:14px;min-height:66px;font-size:1.2rem" data-a="ctl-terminar">✓ Terminar control</button>';
+  const SOB=ctlSobPend(x,s);
+  if(listo&&!enPk.length&&!PARC.length&&SOB.length)h+='<div class="ctl-parc" style="border-color:var(--rose);background:rgba(224,38,28,.08)"><b>⛔ Hay sobrantes: falta el OK de Supervisión</b><div class="small" style="margin:4px 0 6px">No se puede terminar el control hasta que Supervisión revise y apruebe lo que sobró. Separá la mercadería sobrante.</div>'+ctlSobListaHtml(SOB)+'<button class="btn btn-lg btn-block" style="margin-top:10px" data-a="ctl-sob-pin" data-id="'+esc(x.id)+'">Supervisor: aprobar con PIN</button></div>';
+  if(listo&&!enPk.length&&!PARC.length&&!SOB.length)h+='<button class="btn btn-success btn-lg btn-block" style="margin-top:14px;min-height:66px;font-size:1.2rem" data-a="ctl-terminar">✓ Terminar control</button>';
   const bq=ctlNorm(ST.ctlQ||""),bOk=z=>!bq||ctlNorm(z.d+" "+z.c+" "+(z.ean||"")).includes(bq);
   h+='<div class="sep">Renglones del pedido · '+tot+'</div><div class="ctl-buscar"><input id="ctl-q" type="search" placeholder="Buscar por nombre, código o código de barras" value="'+esc(ST.ctlQ||"")+'" autocomplete="off" aria-label="Buscar producto"><span id="ctl-qn" class="small muted"></span></div><div class="lista" id="ctl-lista" style="margin-top:0;gap:8px">'
     +L.map(z=>{const e=ctlEst(reg(z.k)),dq=' data-q="'+esc(ctlNorm(z.d+" "+z.c+" "+(z.ean||"")))+'"'+(bOk(z)?"":' style="display:none"');if(!z.pk&&!reg(z.k))return'<div class="lin pendiente enpk"'+dq+'><span class="ic">⏳</span><span class="tx"><span class="t">'+esc(z.d)+'</span><span class="d mono">'+esc(ubiCorta(z))+' · '+esc(z.partes.map(pt=>pasDe(pt.p).nombre).join(" + "))+' · '+esc(z.c)+'</span></span><span class="est" style="color:var(--amber)">En picking</span></div>';return'<button class="lin '+e+(z.k===ST.sel?" sel":"")+'"'+dq+' data-a="ctl-sel" data-id="'+esc(z.k)+'"><span class="ic">'+CTL_T[e][2]+'</span><span class="tx"><span class="t">'+esc(z.d)+'</span><span class="d mono">'+esc(ubiCorta(z))+' · '+esc(z.partes.map(pt=>pasDe(pt.p).nombre).join(" + "))+' · '+esc(z.c)+'</span></span><span class="est" style="color:'+({ok:"var(--emerald)",corregido:"var(--orange)",diferencia:"var(--rose)"}[e]||"var(--muted-fg)")+'">'+(e==="pendiente"?"Pendiente":(()=>{const rr=reg(z.k);return ctlFalta(z,rr)>0&&!rr.motivoFalta?'<span style="color:var(--amber)">Definir parcial</span>':CTL_T[e][0]})())+'</span></button>'}).join("")+'</div>';
@@ -860,7 +873,7 @@ function ctlRegistrar(A,l,reg,corregirA){const t=ahora(),s=A.s,u={};Object.assig
   guardar(ctlPath(A.x.id),u);ctlArrancar(A.x.id,false)}
 function ctlSiguiente(){const A=ctlActual();if(!A)return;const reg=k=>(A.cs.lineas||{})[k],i=A.L.findIndex(l=>l.k===ST.sel);
   const sig=A.L.slice(i+1).concat(A.L.slice(0,Math.max(0,i))).find(l=>!reg(l.k));if(sig)ST.sel=sig.k;render();window.scrollTo({top:0,behavior:"smooth"})}
-function ctlTerminar(){const A=ctlActual();if(!A)return;const {x,s,cs,L}=A;if(!pedListo(x)){toast("Todavía se está piqueando en "+pasEnPicking(x).map(p=>pasDe(p).nombre).join(", "),"err");return}if(L.some(l=>!(cs.lineas||{})[l.k])){toast("Faltan renglones por controlar","err");return}if(ctlSinMotivo(L,cs).length){toast("Definí el motivo de los parciales antes de terminar","err");render();return}
+function ctlTerminar(){const A=ctlActual();if(!A)return;const {x,s,cs,L}=A;if(!pedListo(x)){toast("Todavía se está piqueando en "+pasEnPicking(x).map(p=>pasDe(p).nombre).join(", "),"err");return}if(L.some(l=>!(cs.lineas||{})[l.k])){toast("Faltan renglones por controlar","err");return}if(ctlSinMotivo(L,cs).length){toast("Definí el motivo de los parciales antes de terminar","err");render();return}if(ctlSobPend(x,s).length){toast("Hay sobrantes: falta el OK de Supervisión","err");render();return}
   const r=ctlResumenDe(cs),i=CTL_ETAPAS.indexOf(s),sig=CTL_ETAPAS[i+1];
   confirmar("Terminar control",'<b>'+r.ren+'</b> renglones · <b style="color:var(--emerald)">'+(r.ok+r.recontados)+' correctos</b>'+(r.corregidos?' · <b style="color:var(--orange)">'+r.corregidos+' corregidos</b>':"")+(r.diferencias?' · <b style="color:var(--rose)">'+r.diferencias+' con diferencia</b>':"")+(r.sobrantes?' · '+pl(r.sobrantes,"sobrante","sobrantes"):"")
     +'.<br>El pedido '+esc(pedTit(x))+(sig?' pasa al '+esc(ctlEtTxt(sig)):' queda <b>controlado</b>, listo para cargarlo en la orden de carga')+'.',"Terminar",()=>{
@@ -895,7 +908,8 @@ function ctlLineaSuper(x){const c=x.control||{},tot=ctlLineas(x).length;
   return CTL_ETAPAS.map(s=>{const cs=c[s];if(!cs||!cs.inicio)return"";const r=ctlResumenDe(cs),tm=tiempos(cs);
     return'<div class="pp" style="--c:var(--violeta)"><span class="nm">'+esc(ctlEtTxt(s))+'</span><div class="bar"><i style="width:'+(tot?Math.round(r.ren/tot*100):0)+'%;background:var(--violeta)"></i></div><span class="small mono">'+r.ren+'/'+tot+'</span>'
       +'<span class="sub">'+(cs.estado==="listo"?"✓ "+esc(cs.terminadoPor||cs.controlador||"")+" "+esc(fHora(cs.fin))+" · ⏱ "+fDur(tm.seg):(tm.pausado?"En pausa · ":"En curso · ")+esc(cs.controlador||"")+" · ⏱ "+cronoHtml(x.id,"@"+s,tm))
-      +(r.corregidos?' · <b style="color:var(--orange)">'+pl(r.corregidos,"corregido","corregidos")+'</b>':"")+(r.diferencias?' · <b style="color:var(--rose)">'+r.diferencias+' con diferencia</b>':"")+(r.sobrantes?' · '+pl(r.sobrantes,"sobrante","sobrantes"):"")+'</span></div>'}).join("")}
+      +(r.corregidos?' · <b style="color:var(--orange)">'+pl(r.corregidos,"corregido","corregidos")+'</b>':"")+(r.diferencias?' · <b style="color:var(--rose)">'+r.diferencias+' con diferencia</b>':"")+(r.sobrantes?' · '+pl(r.sobrantes,"sobrante","sobrantes"):"")+'</span></div>'
+      +(ctlSobPend(x,s).length?'<div style="margin:6px 0 2px"><button class="btn btn-sm" style="border-color:var(--rose);color:var(--rose)" data-a="ctl-sob-ok" data-id="'+esc(x.id)+'">⛔ Aprobar '+pl(ctlSobPend(x,s).length,"sobrante","sobrantes")+'</button></div>':(cs.sobrantesOk?'<div class="small" style="color:var(--emerald);margin:4px 0">✓ Sobrantes aprobados por '+esc(cs.sobrantesOk.por||"Supervisión")+(cs.sobrantesOk.at?' · '+esc(fHM(cs.sobrantesOk.at)):"")+'</div>':""))}).join("")}
 /* filas del detalle: piqueado original (antes de la 1.ª corrección), contado en cada etapa, final y correcciones */
 function ctlFilas(x){const c=x.control||{};return ctlLineas(x).map(l=>{let orig=0;const cor=[];
   l.partes.forEach(pt=>{const C=Object.values(pt.l.correcciones||{}).sort((a,b)=>String(a.at).localeCompare(String(b.at)));orig+=C.length?Number(C[0].antes)||0:Number(pt.l.tomado)||0;
@@ -1337,6 +1351,8 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]")
     case"ctl-nohay":{const l=ctlLineaSel();if(l)ctlConfirmar(l,0,[]);break}
     case"ctl-terminar":ctlTerminar();break;
     case"ctl-motivo":ctlGuardarMotivo(id,b.dataset.m);break;
+    case"ctl-sob-pin":ctlAprobarSob(id,true);break;
+    case"ctl-sob-ok":ctlAprobarSob(id,false);break;
     case"ctl-pausa":ctlPausar();break;
     case"ctl-reanudar":ctlReanudar();break;
     case"ctl-excel":exportarControles();break;
