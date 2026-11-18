@@ -978,7 +978,7 @@ function supParaAprobar(){const L=supPendientes();if(!L.length)return'<div class
   return'<div class="card sup-pend"><h3 style="margin:0 0 8px">⛔ Para aprobar · '+L.length+'</h3>'+L.map(x=>{const s=CTL_ETAPAS.find(e=>ctlSobPend(x,e).length),cs=(x.control||{})[s]||{},P=ctlSobPend(x,s);
     return'<div class="sup-it"><div><b>'+esc(pedTit(x))+'</b><div class="small muted">Controla '+esc(cs.controlador||"—")+' · '+pl(P.length,"sobrante","sobrantes")+': '+esc(P.slice(0,3).map(o=>fN(o.u)+" u "+o.d).join(" · "))+(P.length>3?"…":"")+'</div></div><button class="btn btn-sm" style="border-color:var(--rose);color:var(--rose)" data-a="ctl-sob-ok" data-id="'+esc(x.id)+'">Revisar y aprobar</button></div>'}).join("")+'</div>'}
 function vSuper(){const T=[["pedidos","Pedidos"],["controles","Controles"],["tiempos","Tiempos"],["faltantes","Faltantes"],["integrantes","Integrantes"],["categorias","Categorías"],["ajustes","Ajustes"]];
-  let h='<div class="fila entre"><h1>Supervisión</h1><div class="fila" style="gap:6px">'+(ST.supNombre?'<span class="small muted" style="align-self:center">'+esc(ST.supNombre)+'</span>':"")+'<button class="btn btn-sm btn-ghost" data-a="sup-logout" title="La próxima vez te pide Google de nuevo">Cerrar sesión</button><button class="btn btn-sm" data-a="salir-super">Salir</button></div></div>'
+  let h='<div class="fila entre"><h1>Supervisión</h1><div class="fila" style="gap:6px">'+(ST.supNombre?'<span class="small muted" style="align-self:center">'+esc(ST.supNombre)+'</span>':"")+'<button class="btn btn-sm" data-a="salir-super">Salir</button></div></div>'
     +supParaAprobar()+'<div class="tabs">'+T.map(t=>'<button class="tab'+(ST.superTab===t[0]?" on":"")+'" data-a="stab" data-v="'+t[0]+'">'+t[1]+'</button>').join("")+'</div>';
   return h+({pedidos:sPedidos,controles:sControles,tiempos:sTiempos,faltantes:sFaltantes,integrantes:sIntegrantes,categorias:sCategorias,ajustes:sAjustes}[ST.superTab]||sPedidos)()}
 const pasillosDePed=x=>Object.keys(x.pasillos||{}).filter(p=>activas(x.pasillos[p]).length).sort((a,b)=>(pasDe(a).orden||0)-(pasDe(b).orden||0));
@@ -1326,7 +1326,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]")
     case"teclado":{const s=$("#scan");ST.tecleando=s.inputMode!=="numeric";s.inputMode=ST.tecleando?"numeric":"none";s.placeholder=ST.tecleando?"Escribí el código y Enter":"Escaneá el producto";b.classList.toggle("btn-primary",ST.tecleando);s.blur();setTimeout(()=>s.focus(),50);break}
     case"super":pedirPin();break;
     case"sup-logout":supCerrarSesion();break;
-    case"salir-super":ST.vista=ST.yo?vistaInicio():"ingreso";render();break;
+    case"salir-super":ST.superOk=false;ST.vista=ST.yo?vistaInicio():"ingreso";render();break;
     case"stab":ST.superTab=b.dataset.v;render();break;
     case"ver-ped":verPedido(id);break;
     case"reasignar":reasignar(id);break;
@@ -1394,8 +1394,46 @@ const supListo=()=>new Promise(res=>{let a;try{a=supAuth()}catch(e){res(null);re
 const supEntrar=sp=>{ST.supNombre=sp.nombre;ST.superOk=true;ST.vista="super";render();window.scrollTo(0,0)};
 async function supCerrarSesion(){try{await supAuth().signOut()}catch(e){}ST.superOk=false;ST.supNombre="";ST.vista="ingreso";render();toast("Sesión de Supervisión cerrada","info")}
 function pedirPin(cb){   // (nombre histórico) pide la cuenta de Google de un supervisor autorizado
-  if(!cb&&!pedirPin.ya){pedirPin.ya=1;supListo().then(u=>{pedirPin.ya=0;const sp=u&&supDe(u.email);if(sp){senal("ok","Hola, "+sp.nombre);supEntrar(sp)}else pedirPin.modal(cb)});return}
+  if(!cb){supClaveModal();return}
   pedirPin.modal(cb)}
+/* CONTRASEÑA DE SUPERVISIÓN (2026-11-18): para ENTRAR a Supervisión cada supervisor usa una contraseña que elige él.
+   La primera vez (o si se la olvida) verifica con su Google y la elige. Se guarda solo el hash PBKDF2 con sal en picking/config/supClaves/<id>
+   (nunca la contraseña). Las autorizaciones en el celular del controlador siguen pidiendo Google cada vez. */
+const supId=sp=>String(sp.nombre).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-");
+const supClave=sp=>(((ST.config||{}).supClaves)||{})[supId(sp)]||null;
+async function supHash(pass,salt){const enc=new TextEncoder(),k=await crypto.subtle.importKey("raw",enc.encode(pass),"PBKDF2",false,["deriveBits"]);
+  const b=await crypto.subtle.deriveBits({name:"PBKDF2",salt:enc.encode(salt),iterations:150000,hash:"SHA-256"},k,256);return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+let SUP_FALLOS=0,SUP_ESPERA=0;
+function supClaveModal(selId){const ult=selId||LS.get("pk-sup",SUPERVISORES[0].nombre),sp=SUPERVISORES.find(x=>x.nombre===ult)||SUPERVISORES[0],cl=supClave(sp);
+  const m=modal("Supervisión",'<div class="small muted" style="margin:0 0 6px">¿Quién sos?</div><div class="fila" style="gap:6px;flex-wrap:wrap;margin-bottom:10px">'
+    +SUPERVISORES.map(x=>'<button class="btn btn-sm'+(x===sp?" btn-primary":"")+'" data-sup="'+esc(x.nombre)+'">'+esc(x.nombre)+'</button>').join("")+'</div>'
+    +(cl?'<label class="small" for="sup-pw" style="font-weight:700">Tu contraseña</label><input id="sup-pw" type="password" autocomplete="current-password" class="inp" style="width:100%;margin:4px 0 2px;font-size:1.2rem;padding:.6rem">'
+       +'<div id="sup-err" class="small" style="color:var(--rose);min-height:1.2em"></div><div class="m-acc"><button class="btn" data-a="m-cerrar">Cancelar</button><button class="btn btn-primary" id="sup-ok">Entrar</button></div>'
+       +'<button class="btn btn-sm btn-ghost" id="sup-olv" style="margin-top:8px">Me la olvidé: verificar con Google y elegir otra</button>'
+     :'<p class="small" style="margin:0 0 8px"><b>'+esc(sp.nombre)+'</b>, todavía no elegiste tu contraseña. La primera vez verificás que sos vos con tu cuenta de Google y después elegís la contraseña. Desde ahí, para entrar solo te pide esa contraseña.</p>'
+       +'<div id="sup-err" class="small" style="color:var(--rose);min-height:1.2em"></div><div class="m-acc"><button class="btn" data-a="m-cerrar">Cancelar</button><button class="btn btn-primary" id="sup-crear">Verificar con Google</button></div>'));
+  m.querySelectorAll("[data-sup]").forEach(b=>b.onclick=()=>{LS.set("pk-sup",b.dataset.sup);supClaveModal(b.dataset.sup)});
+  const er=m.querySelector("#sup-err"),pw=m.querySelector("#sup-pw");
+  if(pw){setTimeout(()=>pw.focus(),50);const ok=async()=>{const now=Date.now();if(now<SUP_ESPERA){er.textContent="Demasiados intentos: esperá "+Math.ceil((SUP_ESPERA-now)/1000)+" s.";return}
+      const v=pw.value;if(!v){er.textContent="Escribí tu contraseña.";return}const c=supClave(sp);if(!c){supClaveModal(sp.nombre);return}
+      if(await supHash(v,c.salt)===c.h){SUP_FALLOS=0;LS.set("pk-sup",sp.nombre);cerrarModal();senal("ok","Hola, "+sp.nombre);supEntrar(sp)}
+      else{SUP_FALLOS++;senal("err");pw.value="";er.textContent="Contraseña incorrecta.";if(SUP_FALLOS>=5){SUP_FALLOS=0;SUP_ESPERA=Date.now()+60000;er.textContent="Contraseña incorrecta 5 veces: esperá 1 minuto."}}};
+    m.querySelector("#sup-ok").onclick=ok;pw.addEventListener("keydown",e=>{if(e.key==="Enter")ok()});
+    m.querySelector("#sup-olv").onclick=()=>supVerificarGoogle(sp,m)}
+  const cr=m.querySelector("#sup-crear");if(cr)cr.onclick=()=>supVerificarGoogle(sp,m)}
+async function supVerificarGoogle(sp,m){const er=m.querySelector("#sup-err");er.textContent="";
+  try{const a=supAuthUnaVez(),p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});const r=await a.signInWithPopup(p),mail=String((r.user&&r.user.email)||"").toLowerCase();try{await a.signOut()}catch(e){}
+    if(supDe(mail)!==sp){er.textContent="Esa cuenta no es la de "+sp.nombre+".";senal("err");return}supElegirClave(sp)}
+  catch(e){er.textContent=/popup-closed|cancelled-popup/.test(e.code||"")?"Se cerró la ventana de Google.":"No se pudo verificar: "+(e.message||e.code)}}
+function supElegirClave(sp){const m=modal("Elegí tu contraseña",'<p class="small muted" style="margin-top:0">'+esc(sp.nombre)+', esta contraseña es para entrar a Supervisión. Mínimo 4 caracteres. No la compartas.</p>'
+    +'<input id="sup-p1" type="password" autocomplete="new-password" placeholder="Contraseña nueva" class="inp" style="width:100%;margin:4px 0;font-size:1.2rem;padding:.6rem"><input id="sup-p2" type="password" autocomplete="new-password" placeholder="Repetila" class="inp" style="width:100%;margin:4px 0;font-size:1.2rem;padding:.6rem">'
+    +'<div id="sup-err" class="small" style="color:var(--rose);min-height:1.2em"></div><div class="m-acc"><button class="btn" data-a="m-cerrar">Cancelar</button><button class="btn btn-primary" id="sup-guardar">Guardar y entrar</button></div>',{fijo:true});
+  const er=m.querySelector("#sup-err");setTimeout(()=>m.querySelector("#sup-p1").focus(),50);
+  m.querySelector("#sup-guardar").onclick=async()=>{const a=m.querySelector("#sup-p1").value,b=m.querySelector("#sup-p2").value;
+    if(a.length<4){er.textContent="Tiene que tener al menos 4 caracteres.";return}if(a!==b){er.textContent="Las dos no coinciden.";return}
+    const salt=[...crypto.getRandomValues(new Uint8Array(16))].map(x=>x.toString(16).padStart(2,"0")).join(""),hh=await supHash(a,salt),reg={h:hh,salt,at:ahora(),nombre:sp.nombre};
+    try{await R("config/supClaves/"+supId(sp)).set(reg)}catch(e){er.textContent="No se pudo guardar: "+(e.message||e);return}
+    ST.config=ST.config||{};(ST.config.supClaves=ST.config.supClaves||{})[supId(sp)]=reg;LS.set("pk-sup",sp.nombre);cerrarModal();toast("Contraseña guardada","ok");supEntrar(sp)}}
 pedirPin.modal=function(cb){
   const m=modal(cb?"Autorización de Supervisión":"Supervisión",'<p class="small muted" style="margin-top:0">Solo pueden '+(cb?"autorizar":"entrar")+' '+SUPERVISORES.map(x=>x.nombre).join(", ").replace(/, ([^,]*)$/," y $1")+', con su cuenta de Google.</p><div id="sup-err" class="small" style="color:var(--rose);min-height:1.2em"></div><div class="m-acc"><button class="btn" data-a="m-cerrar">Cancelar</button><button class="btn btn-primary" id="sup-g">Ingresar con Google</button></div>');
   m.querySelector("#sup-g").onclick=async()=>{const er=m.querySelector("#sup-err"),b=m.querySelector("#sup-g");er.textContent="";b.disabled=true;
