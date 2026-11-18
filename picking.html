@@ -195,6 +195,9 @@ body.ver-scan #scanbar{display:block}
 .t-violet{background:var(--violeta-bg);color:#d9c4ff}
 .pas.ctl-card{width:100%;margin-top:14px;min-height:104px;border-color:rgba(183,140,255,.45);background:linear-gradient(135deg,rgba(183,140,255,.22),rgba(255,255,255,.05) 70%)}
 .pas.ctl-card .n{font-size:1.35rem}
+.sup-card{width:100%;margin-top:12px;min-height:96px;border-color:rgba(255,209,0,.35);background:linear-gradient(135deg,rgba(255,209,0,.14),rgba(255,255,255,.04) 70%)}.sup-card .n{font-size:1.3rem}
+.sup-card.hay{border-color:var(--rose);background:linear-gradient(135deg,rgba(224,38,28,.25),rgba(255,255,255,.04) 70%)}.sup-card.hay .cnt b{color:var(--rose)}
+.sup-pend{border-left:6px solid var(--rose);margin:10px 0}.sup-ok{margin:10px 0;color:var(--emerald);font-weight:800}.sup-it{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 0;border-top:1px solid rgba(255,255,255,.08)}
 .ctl-pas{display:inline-flex;align-items:center;gap:5px;font-size:.78rem;font-weight:800;border-radius:999px;padding:.15rem .55rem;background:rgba(255,255,255,.08);margin:0 4px 4px 0}
 .ctl-pas::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
 .actual.ctl{border-color:var(--violeta);background:linear-gradient(180deg,rgba(183,140,255,.12),rgba(255,255,255,.04))}
@@ -469,7 +472,7 @@ function actualizarScanbar(){const ver=(ST.vista==="picking"||ST.vista==="contro
 /* a) Ingreso: pasillo */
 function vIngreso(){const P=listaPasillos();
   return'<div class="paso">Paso 1 de 2</div><h1>¿En qué pasillo trabajás?</h1><p class="muted" style="margin:.2rem 0 0">Tocá tu pasillo y después tu nombre.</p>'
-    +ctlTarjeta()+'<div class="pasillos">'+P.map(p=>{const n=pedidosDe(p.id).length;return'<button class="pas" style="--c:'+esc(p.color||"#2f6bd1")+'" data-a="elegir-pas" data-id="'+esc(p.id)+'"><span class="n">'+esc(p.nombre)+'</span><span class="u">'+esc(p.ubicacion||"")+'</span><span class="cnt"><b>'+n+'</b>'+(n===1?"pedido":"pedidos")+'</span></button>'}).join("")+'</div>'
+    +ctlTarjeta()+supTarjeta()+'<div class="pasillos">'+P.map(p=>{const n=pedidosDe(p.id).length;return'<button class="pas" style="--c:'+esc(p.color||"#2f6bd1")+'" data-a="elegir-pas" data-id="'+esc(p.id)+'"><span class="n">'+esc(p.nombre)+'</span><span class="u">'+esc(p.ubicacion||"")+'</span><span class="cnt"><b>'+n+'</b>'+(n===1?"pedido":"pedidos")+'</span></button>'}).join("")+'</div>'
     +'<div style="text-align:center;margin-top:28px"><button class="btn btn-ghost btn-sm muted" data-a="super">Supervisión</button></div>'}
 /* a2) Ingreso: integrante */
 function vIntegrantes(){const p=pasDe(ST.pasSel),I=Object.keys(p.integrantes||{}).map(id=>Object.assign({id},p.integrantes[id])).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre)));
@@ -981,9 +984,16 @@ function cerrarCamara(){if(CAM){CAM.on=false;try{CAM.st.getTracks().forEach(t=>t
 /* =====================================================================
    d) SUPERVISIÓN (PIN simple: NO es seguridad, solo para que nadie entre por error)
    ===================================================================== */
+/* CASILLA SUPERVISIÓN (2026-11-18): en el inicio muestra cuántas aprobaciones esperan (hoy: sobrantes); arriba de Supervisión, la lista «Para aprobar» */
+function supPendientes(){return Object.values(ST.pedidos||{}).filter(x=>x&&x.control&&CTL_ETAPAS.some(s=>ctlSobPend(x,s).length))}
+function supTarjeta(){const n=supPendientes().length;
+  return'<button class="pas sup-card'+(n?" hay":"")+'" data-a="super"><span class="n">🛡 Supervisión</span><span class="u">Aprobaciones de sobrantes y autorizaciones</span><span class="cnt"><b>'+n+'</b>'+(n===1?"supervisión para aprobar":"supervisiones para aprobar")+'</span></button>'}
+function supParaAprobar(){const L=supPendientes();if(!L.length)return'<div class="card sup-ok">✓ No hay nada para aprobar.</div>';
+  return'<div class="card sup-pend"><h3 style="margin:0 0 8px">⛔ Para aprobar · '+L.length+'</h3>'+L.map(x=>{const s=CTL_ETAPAS.find(e=>ctlSobPend(x,e).length),cs=(x.control||{})[s]||{},P=ctlSobPend(x,s);
+    return'<div class="sup-it"><div><b>'+esc(pedTit(x))+'</b><div class="small muted">Controla '+esc(cs.controlador||"—")+' · '+pl(P.length,"sobrante","sobrantes")+': '+esc(P.slice(0,3).map(o=>fN(o.u)+" u "+o.d).join(" · "))+(P.length>3?"…":"")+'</div></div><button class="btn btn-sm" style="border-color:var(--rose);color:var(--rose)" data-a="ctl-sob-ok" data-id="'+esc(x.id)+'">Revisar y aprobar</button></div>'}).join("")+'</div>'}
 function vSuper(){const T=[["pedidos","Pedidos"],["controles","Controles"],["tiempos","Tiempos"],["faltantes","Faltantes"],["integrantes","Integrantes"],["categorias","Categorías"],["ajustes","Ajustes"]];
   let h='<div class="fila entre"><h1>Supervisión</h1><button class="btn btn-sm" data-a="salir-super">Salir</button></div>'
-    +'<div class="tabs">'+T.map(t=>'<button class="tab'+(ST.superTab===t[0]?" on":"")+'" data-a="stab" data-v="'+t[0]+'">'+t[1]+'</button>').join("")+'</div>';
+    +supParaAprobar()+'<div class="tabs">'+T.map(t=>'<button class="tab'+(ST.superTab===t[0]?" on":"")+'" data-a="stab" data-v="'+t[0]+'">'+t[1]+'</button>').join("")+'</div>';
   return h+({pedidos:sPedidos,controles:sControles,tiempos:sTiempos,faltantes:sFaltantes,integrantes:sIntegrantes,categorias:sCategorias,ajustes:sAjustes}[ST.superTab]||sPedidos)()}
 const pasillosDePed=x=>Object.keys(x.pasillos||{}).filter(p=>activas(x.pasillos[p]).length).sort((a,b)=>(pasDe(a).orden||0)-(pasDe(b).orden||0));
 const pedListo=x=>{const P=pasillosDePed(x);return P.length&&P.every(p=>x.pasillos[p].estado==="listo")};
