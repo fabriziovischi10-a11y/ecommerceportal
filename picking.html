@@ -696,7 +696,7 @@ function ctlSobrantesDe(x,s){const cs=((x&&x.control)||{})[s]||{},L=[];
   Object.values(cs.sobrantes||{}).forEach(o=>L.push({tipo:"no",d:o.d||("Código "+o.cod),c:o.cod,u:Number(o.cantidad)||0,por:o.por}));
   const LL=ctlLineas(x);Object.keys(cs.lineas||{}).forEach(k=>{const r=cs.lineas[k];if(r&&r.excedente>0){const l=LL.find(z=>z.k===k)||{d:k,c:k};L.push({tipo:"mas",d:l.d,c:l.c,u:r.excedente,ret:!!r.excedenteRetirado,aut:!!r.excesoAutorizado,por:r.por})}});return L}
 function ctlSobPend(x,s){const L=ctlSobrantesDe(x,s),ok=(((x.control||{})[s]||{}).sobrantesOk)||null;return L.length&&!(ok&&Number(ok.n)>=L.length)?L:[]}
-function ctlSobListaHtml(L){return'<div class="lista" style="gap:6px;margin-top:6px">'+L.map(o=>'<div class="lin diferencia"><span class="ic">+</span><span class="tx"><span class="t">'+esc(o.d)+'</span><span class="d mono">'+esc(o.c||"")+' · '+fN(o.u)+' u '+(o.tipo==="no"?"que no están en el pedido":o.ret?"de más (se sacaron)":o.aut?"de más (autorizadas con PIN)":"de más")+(o.por?' · '+esc(o.por):"")+'</span></span></div>').join("")+'</div>'}
+function ctlSobListaHtml(L,ciego){return'<div class="lista" style="gap:6px;margin-top:6px">'+L.map(o=>'<div class="lin diferencia"><span class="ic">+</span><span class="tx"><span class="t">'+esc(o.d)+'</span><span class="d mono">'+esc(o.c||"")+' · '+(ciego&&o.tipo!=="no"?"":fN(o.u)+" u ")+(o.tipo==="no"?"que no están en el pedido":o.ret?"de más (se sacaron)":o.aut?"de más (autorizadas con PIN)":"de más")+(o.por?' · '+esc(o.por):"")+'</span></span></div>').join("")+'</div>'}
 function ctlAprobarSob(id,conPin){const x=ST.pedidos[id];if(!x)return;const s=CTL_ETAPAS.find(e=>ctlSobPend(x,e).length);if(!s)return;const L=ctlSobrantesDe(x,s);
   const ok=()=>{guardar(ctlPath(id)+"/control/"+s,{sobrantesOk:{n:L.length,por:conPin?"Supervisión (PIN en el celular de "+ST.yo.nombre+")":"Supervisión",at:ahora()}});const c=(x.control=x.control||{});(c[s]=c[s]||{}).sobrantesOk={n:L.length};toast("Sobrantes aprobados por Supervisión","ok");render()};
   confirmar("Aprobar sobrantes",'Revisá lo que sobró en el pedido '+esc(pedTit(x))+':'+ctlSobListaHtml(L)+'<p class="small muted" style="margin-top:8px">Al aprobar, el controlador puede terminar el control y el pedido avanza al TMS.</p>',"Aprobar",()=>{if(conPin)pedirPin(ok);else ok()})}
@@ -740,7 +740,7 @@ function ctlFinal(z,r){return r&&r.accion==="diferencia"?Number(r.contado)||0:Nu
 function ctlFalta(z,r){return r?Math.max(0,(Number(z.q)||0)-ctlFinal(z,r)):0}
 function ctlSinMotivo(L,cs){return L.filter(z=>{const r=((cs&&cs.lineas)||{})[z.k];return r&&ctlFalta(z,r)>0&&!r.motivoFalta})}
 function ctlMotivoHtml(z,r){const fa=ctlFalta(z,r);if(!fa)return"";const sug=z.partes.map(pt=>pt.l.motivo).filter(Boolean)[0]||"";
-  return'<div class="ctl-motivo'+(r.motivoFalta?" ok":"")+'"><div class="small" style="font-weight:800;margin-bottom:6px">'+(r.motivoFalta?'✓ Parcial definido: <span style="color:var(--amber)">'+esc(r.motivoFalta)+'</span>':'⚠ Va '+fN(ctlFinal(z,r))+' de '+fN(z.q)+' · faltan '+fN(fa)+' u. ¿Por qué?')+'</div>'
+  return'<div class="ctl-motivo'+(r.motivoFalta?" ok":"")+'"><div class="small" style="font-weight:800;margin-bottom:6px">'+(r.motivoFalta?'✓ Parcial definido: <span style="color:var(--amber)">'+esc(r.motivoFalta)+'</span>':'⚠ Va con menos de lo pedido. ¿Por qué?')+'</div>'
     +'<div class="chips">'+CTL_MOT.map(m=>'<button class="chip'+(r.motivoFalta===m||(!r.motivoFalta&&({"No hay stock":"Falta de stock","Hay menos":"Falta de stock","No lo encuentro":"No se encontró","Roto / vencido":"Roto / dañado"})[sug]===m)?" on":"")+'" data-a="ctl-motivo" data-id="'+esc(z.k)+'" data-m="'+esc(m)+'">'+esc(m)+'</button>').join("")+'</div>'
     +(sug&&!r.motivoFalta?'<div class="small muted" style="margin-top:4px">El pickeador puso: '+esc(sug)+'</div>':"")+'</div>'}
 function ctlGuardarMotivo(k,m){const A=ctlActual();if(!A)return;const {x,s}=A;
@@ -783,7 +783,7 @@ function vControl(){const A=ctlActual();if(!A){ST.vista="ctl-pedidos";ST.pedidoI
   const PARC=ctlSinMotivo(L,cs);
   if(listo&&!enPk.length&&PARC.length)h+='<div class="ctl-parc"><b>⚠ Antes de terminar, definí '+(PARC.length===1?'el parcial':'los '+PARC.length+' parciales')+'</b><div class="small" style="margin:4px 0 8px">Hay productos que van con menos de lo pedido. Elegí qué pasó con cada uno.</div>'+PARC.map(z=>'<div class="ctl-parc-it"><div style="font-weight:800">'+esc(z.d)+' <span class="small muted mono">'+esc(z.c)+'</span></div>'+ctlMotivoHtml(z,reg(z.k))+'</div>').join("")+'</div>';
   const SOB=ctlSobPend(x,s);
-  if(listo&&!enPk.length&&!PARC.length&&SOB.length)h+='<div class="ctl-parc" style="border-color:var(--rose);background:rgba(224,38,28,.08)"><b>⛔ Hay sobrantes: falta el OK de Supervisión</b><div class="small" style="margin:4px 0 6px">No se puede terminar el control hasta que Supervisión revise y apruebe lo que sobró. Separá la mercadería sobrante.</div>'+ctlSobListaHtml(SOB)+'<button class="btn btn-lg btn-block" style="margin-top:10px" data-a="ctl-sob-pin" data-id="'+esc(x.id)+'">Supervisor: aprobar con PIN</button></div>';
+  if(listo&&!enPk.length&&!PARC.length&&SOB.length)h+='<div class="ctl-parc" style="border-color:var(--rose);background:rgba(224,38,28,.08)"><b>⛔ Hay sobrantes: falta el OK de Supervisión</b><div class="small" style="margin:4px 0 6px">No se puede terminar el control hasta que Supervisión revise y apruebe lo que sobró. Separá la mercadería sobrante.</div>'+ctlSobListaHtml(SOB,true)+'<button class="btn btn-lg btn-block" style="margin-top:10px" data-a="ctl-sob-pin" data-id="'+esc(x.id)+'">Supervisor: aprobar con PIN</button></div>';
   if(listo&&!enPk.length&&!PARC.length&&!SOB.length)h+='<button class="btn btn-success btn-lg btn-block" style="margin-top:14px;min-height:66px;font-size:1.2rem" data-a="ctl-terminar">✓ Terminar control</button>';
   const bq=ctlNorm(ST.ctlQ||""),bOk=z=>!bq||ctlNorm(z.d+" "+z.c+" "+(z.ean||"")).includes(bq);
   h+='<div class="sep">Renglones del pedido · '+tot+'</div><div class="ctl-buscar"><input id="ctl-q" type="search" placeholder="Buscar por nombre, código o código de barras" value="'+esc(ST.ctlQ||"")+'" autocomplete="off" aria-label="Buscar producto"><span id="ctl-qn" class="small muted"></span></div><div class="lista" id="ctl-lista" style="margin-top:0;gap:8px">'
@@ -825,45 +825,28 @@ function ctlContar(l,conteos){let v="";
   ok.onclick=()=>{if(v==="")return;cerrarModal();ctlConfirmar(l,Number(v),conteos)};
   setTimeout(()=>{try{inp.focus({preventScroll:true})}catch(e){}},60)}
 /* compara SIEMPRE contra lo piqueado (tomado, ya corregido), nunca contra lo pedido */
-function ctlConfirmar(l,n,conteos){const A=ctlActual();if(!A)return;const cur=A.L.find(z=>z.k===l.k)||l,piq=Number(cur.tomado)||0;conteos=conteos.concat([n]);
-  if(n===piq&&piq>(Number(cur.q)||0)){senal("err");ctlExceso(cur,n,piq,conteos);return}
-  if(n===piq){ctlRegistrar(A,cur,{contado:n,piqueado:piq,ok:true,intentos:conteos.length,conteos,accion:conteos.length>1?"recontado":"ok"});
+/* CONTROL CIEGO SIN NÚMEROS (2026-11-18): el controlador nunca ve cantidades de la guía. Se compara contra lo esperado
+   (lo piqueado, pero nunca más que lo pedido). Si no coincide solo se le dice «tenés de más» o «te faltan»; recuenta hasta que dé exacto (✓ verde).
+   Si recontando sigue distinto puede corregir a lo que contó (nunca por encima de lo pedido sin el supervisor) o dejarlo con diferencia. */
+function ctlConfirmar(l,n,conteos){const A=ctlActual();if(!A)return;const cur=A.L.find(z=>z.k===l.k)||l,piq=Number(cur.tomado)||0,q=Number(cur.q)||0,esp=Math.min(piq,q);conteos=conteos.concat([n]);
+  if(n===esp){if(piq>q){ctlRegistrar(A,cur,{contado:n,piqueado:piq,ok:false,intentos:conteos.length,conteos,accion:"corregido",excedente:piq-q,excedenteRetirado:true},q)}
+    else ctlRegistrar(A,cur,{contado:n,piqueado:piq,ok:true,intentos:conteos.length,conteos,accion:conteos.length>1?"recontado":"ok"});
     senal("ok",conteos.length>1?"✓ Ahora sí: correcto":"✓ Correcto");setTimeout(ctlSiguiente,60);return}
-  senal("err");if(conteos.length===1)ctlNoCoincide(cur,n,piq,conteos);else ctlRevelar(cur,n,piq,conteos)}
-/* 1.er conteo distinto: alerta SIN revelar lo piqueado, solo si sobra o falta */
-/* lo piqueado ya era más de lo pedido y el conteo coincide: hay que sacar el excedente o autorizarlo con PIN */
-function ctlExceso(l,n,piq,conteos){const q=Number(l.q)||0,ex=n-q;
-  const m=modal("Hay más de lo pedido",'<div class="ctl-alerta" role="alert"><div class="small" style="font-weight:700;margin-bottom:.3rem">'+esc(l.d)+'</div><div class="gr">Sobran '+fN(ex)+'</div>'
-    +'<div class="ctl-cmp"><div><span class="small muted">Pedido</span><b>'+fN(q)+'</b></div><div><span class="small muted">Contaste</span><b>'+fN(n)+'</b></div></div></div>'
-    +'<p class="small muted">No puede salir más de lo pedido. Sacá las '+fN(ex)+' unidades de más y devolvelas a su lugar.</p>'
-    +'<div class="m-col"><button class="btn btn-lg btn-primary" id="ex-ok">Listo: dejé '+fN(q)+' y saqué '+fN(ex)+'</button><button class="btn" id="ex-pin">Autorizar '+fN(n)+' con PIN del supervisor</button><button class="btn" id="ex-re">↻ Volver a contar</button></div>',{fijo:true});
-  const fin=(extra,cor)=>{cerrarModal();const A=ctlActual();if(!A)return;ctlRegistrar(A,l,Object.assign({contado:n,piqueado:piq,ok:false,intentos:conteos.length,conteos,accion:"corregido",excedente:ex},extra),cor);setTimeout(ctlSiguiente,60)};
-  m.querySelector("#ex-ok").onclick=()=>{fin({excedenteRetirado:true},q);senal("ok","Queda en "+fN(q))};
-  m.querySelector("#ex-pin").onclick=()=>{cerrarModal();pedirPin(()=>{fin({excesoAutorizado:true,autorizadoAt:ahora()},null);senal("ok","Exceso autorizado por el supervisor")})};
-  m.querySelector("#ex-re").onclick=()=>{cerrarModal();ctlContar(l,conteos)}}
-function ctlNoCoincide(l,n,piq,conteos){const mas=n>piq;
-  const m=modal("No coincide",'<div class="ctl-alerta'+(mas?" ambar":"")+'" role="alert"><div class="gr">No coincide</div><div style="margin:.5rem 0 .1rem;font-weight:800">Contaste</div><div class="q">'+fN(n)+'</div>'
-    +'<div style="font:900 1.35rem var(--f-disp);margin-top:.5rem">Hay '+(mas?"DE MÁS":"DE MENOS")+'</div><div class="small" style="margin-top:.2rem">'+(mas?"Contaste más unidades de las que se piquearon":"Contaste menos unidades de las que se piquearon")+'</div></div>'
-    +'<p class="small muted" style="margin:.8rem 0 0">'+esc(l.d)+'</p>'
-    +'<div class="m-col"><button class="btn btn-lg btn-primary" id="nc-re">↻ Volver a contar</button><button class="btn" id="nc-ver">Ver lo piqueado y decidir</button></div>',{fijo:true});
+  senal("err");ctlNoCoincide(cur,n,esp,piq,conteos)}
+function ctlNoCoincide(l,n,esp,piq,conteos){const mas=n>esp,q=Number(l.q)||0,varias=conteos.length>1;
+  const m=modal("No coincide",'<div class="ctl-alerta'+(mas?" ambar":"")+'" role="alert"><div class="small" style="font-weight:700;margin-bottom:.3rem">'+esc(l.d)+'</div><div style="font-weight:800">Contaste</div><div class="q">'+fN(n)+'</div>'
+    +'<div style="font:900 1.45rem var(--f-disp);margin-top:.5rem">'+(mas?"Tenés unidades DE MÁS":"Te FALTAN unidades")+'</div>'
+    +'<div class="small" style="margin-top:.3rem">'+(mas?"Sacá las que sobran, devolvelas a su lugar y volvé a contar.":"Buscá las que faltan y volvé a contar.")+'</div>'
+    +(varias?'<div class="small" style="margin-top:.4rem">Tus conteos: '+conteos.map(fN).join(" · ")+'</div>':"")+'</div>'
+    +'<div class="m-col"><button class="btn btn-lg btn-primary" id="nc-re">↻ Volver a contar</button>'
+    +(varias?(n<=q?'<button class="btn" id="nc-cor">Corregir a lo que conté ('+fN(n)+')</button>':'<button class="btn" id="nc-pin">Autorizar lo que conté (supervisor)</button>')
+      +'<button class="btn" id="nc-dej" style="border-color:rgba(224,38,28,.6);color:var(--rose)">No puedo resolverlo: queda con diferencia</button>':"")
+    +'</div>',{fijo:true});
+  const fin=(extra,cor)=>{cerrarModal();const A=ctlActual();if(!A)return;ctlRegistrar(A,l,Object.assign({contado:n,piqueado:piq,ok:false,intentos:conteos.length,conteos},extra),cor);setTimeout(ctlSiguiente,60)};
   m.querySelector("#nc-re").onclick=()=>{cerrarModal();ctlContar(l,conteos)};
-  m.querySelector("#nc-ver").onclick=()=>{cerrarModal();ctlRevelar(l,n,piq,conteos)}}
-/* 2.º conteo distinto (o si eligió ver): muestra lo piqueado y deja corregirlo o dejarlo con diferencia */
-function ctlRevelar(l,n,piq,conteos){const d=n-piq;
-  const m=modal("Diferencia",'<div class="ctl-alerta'+(d>0?" ambar":"")+'" role="alert"><div class="small" style="font-weight:700;margin-bottom:.3rem">'+esc(l.d)+'</div><div class="gr">'+(d>0?"Hay "+fN(d)+" de más":"Faltan "+fN(-d))+'</div>'
-    +'<div class="ctl-cmp"><div><span class="small muted">Piqueado</span><b>'+fN(piq)+'</b></div><div><span class="small muted">Contaste</span><b>'+fN(n)+'</b></div></div>'
-    +(conteos.length>1?'<div class="small">Tus conteos: '+conteos.map(fN).join(" · ")+'</div>':"")+'</div>'
-    +(n>(Number(l.q)||0)?'<div class="hint" style="background:rgba(224,38,28,.12);color:var(--rose)">Pidieron '+fN(l.q)+': no puede salir más de lo pedido sin autorización.</div>':"")
-    +'<div class="m-col">'+(n>(Number(l.q)||0)?'<button class="btn btn-lg btn-primary" id="rv-tope">Dejar '+fN(l.q)+' (lo pedido) y sacar '+fN(n-(Number(l.q)||0))+' de más</button><button class="btn" id="rv-pin">Autorizar '+fN(n)+' con PIN del supervisor</button>':'<button class="btn btn-lg btn-primary" id="rv-cor">Corregir lo piqueado a '+fN(n)+'</button>')
-    +'<button class="btn btn-lg" id="rv-dej" style="border-color:rgba(224,38,28,.6);color:var(--rose)">Dejar como estaba (queda con diferencia)</button>'
-    +'<button class="btn" id="rv-re">↻ Volver a contar otra vez</button></div>',{fijo:true});
-  const fin=(accion,cor)=>{cerrarModal();const A=ctlActual();if(!A)return;ctlRegistrar(A,l,{contado:n,piqueado:piq,ok:false,intentos:conteos.length,conteos,accion},cor);setTimeout(ctlSiguiente,60)};
-  const qP=Number(l.q)||0,finX=(extra,cor)=>{cerrarModal();const A=ctlActual();if(!A)return;ctlRegistrar(A,l,Object.assign({contado:n,piqueado:piq,ok:false,intentos:conteos.length,conteos,accion:"corregido"},extra),cor);setTimeout(ctlSiguiente,60)};
-  if(m.querySelector("#rv-cor"))m.querySelector("#rv-cor").onclick=()=>{fin("corregido",n);senal("ok","Piqueado corregido a "+fN(n))};
-  if(m.querySelector("#rv-tope"))m.querySelector("#rv-tope").onclick=()=>{finX({excedente:n-qP,excedenteRetirado:true},qP);senal("ok","Queda en "+fN(qP)+": sacá "+fN(n-qP)+" de más")};
-  if(m.querySelector("#rv-pin"))m.querySelector("#rv-pin").onclick=()=>{cerrarModal();pedirPin(()=>{finX({excedente:n-qP,excesoAutorizado:true,autorizadoAt:ahora()},n);senal("ok","Exceso autorizado por el supervisor")})};
-  m.querySelector("#rv-dej").onclick=()=>{fin("diferencia");senal("info","Queda con diferencia para el supervisor")};
-  m.querySelector("#rv-re").onclick=()=>{cerrarModal();ctlContar(l,conteos)}}
+  const c=m.querySelector("#nc-cor");if(c)c.onclick=()=>{fin(Object.assign({accion:"corregido"},piq>q?{excedente:piq-q,excedenteRetirado:true}:{}),n);senal("ok","Corregido a lo que contaste")};
+  const p=m.querySelector("#nc-pin");if(p)p.onclick=()=>{cerrarModal();pedirPin(()=>{fin({accion:"corregido",excedente:n-q,excesoAutorizado:true,autorizadoPor:ST.supNombre||"",autorizadoAt:ahora()},n);senal("ok","Autorizado por el supervisor")})};
+  const d=m.querySelector("#nc-dej");if(d)d.onclick=()=>{fin({accion:"diferencia"});senal("info","Queda con diferencia para el supervisor")}}
 /* guarda el renglón del control y, si corresponde, corrige lo piqueado (con historial). Un solo update: todo o nada.
    Código en 2 pasillos: lo que sobra se suma al primero; lo que falta se descuenta desde el último. */
 function ctlRegistrar(A,l,reg,corregirA){const t=ahora(),s=A.s,u={};Object.assign(reg,{at:t,por:ST.yo.nombre,porId:ST.yo.id});
