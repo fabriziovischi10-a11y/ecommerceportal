@@ -978,7 +978,7 @@ function supParaAprobar(){const L=supPendientes();if(!L.length)return'<div class
   return'<div class="card sup-pend"><h3 style="margin:0 0 8px">⛔ Para aprobar · '+L.length+'</h3>'+L.map(x=>{const s=CTL_ETAPAS.find(e=>ctlSobPend(x,e).length),cs=(x.control||{})[s]||{},P=ctlSobPend(x,s);
     return'<div class="sup-it"><div><b>'+esc(pedTit(x))+'</b><div class="small muted">Controla '+esc(cs.controlador||"—")+' · '+pl(P.length,"sobrante","sobrantes")+': '+esc(P.slice(0,3).map(o=>fN(o.u)+" u "+o.d).join(" · "))+(P.length>3?"…":"")+'</div></div><button class="btn btn-sm" style="border-color:var(--rose);color:var(--rose)" data-a="ctl-sob-ok" data-id="'+esc(x.id)+'">Revisar y aprobar</button></div>'}).join("")+'</div>'}
 function vSuper(){const T=[["pedidos","Pedidos"],["controles","Controles"],["tiempos","Tiempos"],["faltantes","Faltantes"],["integrantes","Integrantes"],["categorias","Categorías"],["ajustes","Ajustes"]];
-  let h='<div class="fila entre"><h1>Supervisión</h1><button class="btn btn-sm" data-a="salir-super">Salir</button></div>'
+  let h='<div class="fila entre"><h1>Supervisión</h1><div class="fila" style="gap:6px">'+(ST.supNombre?'<span class="small muted" style="align-self:center">'+esc(ST.supNombre)+'</span>':"")+'<button class="btn btn-sm btn-ghost" data-a="sup-logout" title="La próxima vez te pide Google de nuevo">Cerrar sesión</button><button class="btn btn-sm" data-a="salir-super">Salir</button></div></div>'
     +supParaAprobar()+'<div class="tabs">'+T.map(t=>'<button class="tab'+(ST.superTab===t[0]?" on":"")+'" data-a="stab" data-v="'+t[0]+'">'+t[1]+'</button>').join("")+'</div>';
   return h+({pedidos:sPedidos,controles:sControles,tiempos:sTiempos,faltantes:sFaltantes,integrantes:sIntegrantes,categorias:sCategorias,ajustes:sAjustes}[ST.superTab]||sPedidos)()}
 const pasillosDePed=x=>Object.keys(x.pasillos||{}).filter(p=>activas(x.pasillos[p]).length).sort((a,b)=>(pasDe(a).orden||0)-(pasDe(b).orden||0));
@@ -1325,6 +1325,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]")
     case"cerrar-cam":cerrarCamara();break;
     case"teclado":{const s=$("#scan");ST.tecleando=s.inputMode!=="numeric";s.inputMode=ST.tecleando?"numeric":"none";s.placeholder=ST.tecleando?"Escribí el código y Enter":"Escaneá el producto";b.classList.toggle("btn-primary",ST.tecleando);s.blur();setTimeout(()=>s.focus(),50);break}
     case"super":pedirPin();break;
+    case"sup-logout":supCerrarSesion();break;
     case"salir-super":ST.vista=ST.yo?vistaInicio():"ingreso";render();break;
     case"stab":ST.superTab=b.dataset.v;render();break;
     case"ver-ped":verPedido(id);break;
@@ -1383,14 +1384,24 @@ const SUPERVISORES=[
   {nombre:"Ricardo",mails:["richar.31507@gmail.com"]}];
 const TORRE_CFG={apiKey:"AIzaSyCLP890Q5hyuqSs82vyF0rk9VhEg0pBlCA",authDomain:"ecommerce-e7ab2.firebaseapp.com",projectId:"ecommerce-e7ab2",storageBucket:"ecommerce-e7ab2.firebasestorage.app",messagingSenderId:"237845351422",appId:"1:237845351422:web:6350a5c3e103b088cf4eaf"};
 const supDe=mail=>{mail=String(mail||"").trim().toLowerCase();return SUPERVISORES.find(x=>x.mails.includes(mail))};
-let SUP_AUTH=null;
-function supAuth(){if(SUP_AUTH)return SUP_AUTH;let app;try{app=firebase.app("torre")}catch(e){app=firebase.initializeApp(TORRE_CFG,"torre")}SUP_AUTH=app.auth();try{SUP_AUTH.setPersistence(firebase.auth.Auth.Persistence.NONE)}catch(e){}return SUP_AUTH}
+/* 2026-11-18: el INGRESO a Supervisión pide Google UNA sola vez por celular: la sesión queda guardada (app "torre", persistencia LOCAL,
+   la misma que usa la Torre en este sitio). Las AUTORIZACIONES en el celular del controlador (exceso, sobrantes, «mismo pickeador»)
+   piden Google cada vez: usan otra app ("torre-aut") sin persistencia y cierran la sesión al instante. «Cerrar sesión» en Supervisión la borra. */
+let SUP_AUTH=null,SUP_AUT1=null;
+function supAuth(){if(SUP_AUTH)return SUP_AUTH;let app;try{app=firebase.app("torre")}catch(e){app=firebase.initializeApp(TORRE_CFG,"torre")}SUP_AUTH=app.auth();try{SUP_AUTH.setPersistence(firebase.auth.Auth.Persistence.LOCAL)}catch(e){}return SUP_AUTH}
+function supAuthUnaVez(){if(SUP_AUT1)return SUP_AUT1;let app;try{app=firebase.app("torre-aut")}catch(e){app=firebase.initializeApp(TORRE_CFG,"torre-aut")}SUP_AUT1=app.auth();try{SUP_AUT1.setPersistence(firebase.auth.Auth.Persistence.NONE)}catch(e){}return SUP_AUT1}
+const supListo=()=>new Promise(res=>{let a;try{a=supAuth()}catch(e){res(null);return}const off=a.onAuthStateChanged(u=>{off();res(u)},()=>{off();res(null)});setTimeout(()=>res(a.currentUser),4000)});
+const supEntrar=sp=>{ST.supNombre=sp.nombre;ST.superOk=true;ST.vista="super";render();window.scrollTo(0,0)};
+async function supCerrarSesion(){try{await supAuth().signOut()}catch(e){}ST.superOk=false;ST.supNombre="";ST.vista="ingreso";render();toast("Sesión de Supervisión cerrada","info")}
 function pedirPin(cb){   // (nombre histórico) pide la cuenta de Google de un supervisor autorizado
+  if(!cb&&!pedirPin.ya){pedirPin.ya=1;supListo().then(u=>{pedirPin.ya=0;const sp=u&&supDe(u.email);if(sp){senal("ok","Hola, "+sp.nombre);supEntrar(sp)}else pedirPin.modal(cb)});return}
+  pedirPin.modal(cb)}
+pedirPin.modal=function(cb){
   const m=modal(cb?"Autorización de Supervisión":"Supervisión",'<p class="small muted" style="margin-top:0">Solo pueden '+(cb?"autorizar":"entrar")+' '+SUPERVISORES.map(x=>x.nombre).join(", ").replace(/, ([^,]*)$/," y $1")+', con su cuenta de Google.</p><div id="sup-err" class="small" style="color:var(--rose);min-height:1.2em"></div><div class="m-acc"><button class="btn" data-a="m-cerrar">Cancelar</button><button class="btn btn-primary" id="sup-g">Ingresar con Google</button></div>');
   m.querySelector("#sup-g").onclick=async()=>{const er=m.querySelector("#sup-err"),b=m.querySelector("#sup-g");er.textContent="";b.disabled=true;
-    try{const a=supAuth(),p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});const r=await a.signInWithPopup(p),mail=String((r.user&&r.user.email)||"").toLowerCase(),sp=supDe(mail);try{await a.signOut()}catch(e){}
+    try{const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});const a=cb?supAuthUnaVez():supAuth(),r=await a.signInWithPopup(p),mail=String((r.user&&r.user.email)||"").toLowerCase(),sp=supDe(mail);if(cb||!sp){try{await a.signOut()}catch(e){}}
       if(!sp){er.textContent="La cuenta "+mail+" no está autorizada para Supervisión.";senal("err");b.disabled=false;return}
-      ST.supNombre=sp.nombre;cerrarModal();senal("ok","Hola, "+sp.nombre);if(cb){cb(sp.nombre);return}ST.superOk=true;ST.vista="super";render();window.scrollTo(0,0)}
+      ST.supNombre=sp.nombre;cerrarModal();senal("ok","Hola, "+sp.nombre);if(cb){cb(sp.nombre);return}supEntrar(sp)}
     catch(e){b.disabled=false;er.textContent=/popup-closed|cancelled-popup/.test(e.code||"")?"Se cerró la ventana de Google.":"No se pudo entrar: "+(e.message||e.code)}}}
 
 /* =====================================================================
