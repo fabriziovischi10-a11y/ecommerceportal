@@ -669,13 +669,28 @@ function vCtlPedidos(){const yo=ST.yo,L=ctlEspera();
       +'<div class="fila entre small" style="margin-bottom:6px"><span>'+hechos+' de '+Ls.length+' controlados</span></div>'
       +'<div class="bar"><i style="width:'+(Ls.length?Math.round(hechos/Ls.length*100):0)+'%;background:var(--violeta)"></i></div>'
       +(otro?'<div class="small" style="margin-top:8px;color:var(--amber)">Lo está controlando <b>'+esc(cs.controlador)+'</b></div>':"")
+      +(ctlPiqueoYo(x).length&&!ctlAutorizado(x,s)?'<div class="small" style="margin-top:8px;color:var(--rose)">Piqueaste '+esc(ctlPiqueoYo(x).join(", "))+': lo tiene que controlar otra persona</div>':"")
       +'<div style="margin-top:12px">'+(mio?'<button class="btn btn-primary btn-lg btn-block" data-a="ctl-abrir" data-id="'+esc(x.id)+'">Seguir controlando</button>'
         :otro?'<button class="btn btn-block" data-a="ctl-tomar" data-id="'+esc(x.id)+'" data-otro="1">Ayudar / tomarlo yo</button>'
         :'<button class="btn btn-primary btn-lg btn-block" data-a="ctl-tomar" data-id="'+esc(x.id)+'">'+(hechos?"Seguir el control":"Empezar control")+'</button>')+'</div></div>'}).join("")+'</div>'+pie}
+/* SEGURIDAD DEL CONTROL (2026-11-18): (1) nunca sale más de lo pedido sin PIN del supervisor; (2) quien piqueó un pasillo del pedido no lo controla
+   (salvo que el supervisor lo autorice con su PIN: queda en control/<s>/autorizaciones). Se compara por nombre (pickers y controladores son listas aparte). */
+const nomN=t=>String(t||"").trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ");
+function ctlPiqueoYo(x){if(!x||!ST.yo)return[];const yo=nomN(ST.yo.nombre),P=[];
+  pasillosDePed(x).forEach(p=>{const pp=x.pasillos[p]||{},N=[pp.picker,pp.terminadoPor].concat(Object.values(pp.tramos||{}).map(t=>t&&t.picker)).concat(activas(pp).map(l=>l.por));
+    if(N.some(n=>n&&nomN(n)===yo))P.push(pasDe(p).nombre)});return P}
+function ctlAutorizado(x,s){const A=(((x.control||{})[s]||{}).autorizaciones)||{};return Object.values(A).some(a=>a&&a.tipo==="mismo"&&a.controladorId===ST.yo.id)}
+function ctlBloqueoMismo(id,seguir){const x=ST.pedidos[id],s=x&&ctlS(x);if(!s)return false;const P=ctlPiqueoYo(x);if(!P.length||ctlAutorizado(x,s))return false;
+  const m=modal("Lo piqueaste vos",'<div class="ctl-alerta ambar" role="alert"><div class="gr">No podés controlar este pedido</div><p style="margin:.5rem 0 0;font-weight:700">Piqueaste '+esc(P.join(", "))+'. El control lo tiene que hacer otra persona.</p></div>'
+    +'<p class="small muted">Si no hay otro controlador, el supervisor lo puede autorizar con su PIN. Queda registrado.</p><div class="m-col"><button class="btn btn-lg btn-primary" data-a="m-cerrar">Entendido</button><button class="btn" id="aut-mismo">Autorizar con PIN del supervisor</button></div>',{fijo:true});
+  m.querySelector("#aut-mismo").onclick=()=>{cerrarModal();pedirPin(()=>{guardar(ctlPath(id)+"/control/"+s+"/autorizaciones/"+nuevoId(),{tipo:"mismo",controlador:ST.yo.nombre,controladorId:ST.yo.id,pasillos:P,at:ahora()});
+    const c=(x.control=x.control||{}),cs=(c[s]=c[s]||{});cs.autorizaciones=cs.autorizaciones||{};cs.autorizaciones["l"+Date.now()]={tipo:"mismo",controladorId:ST.yo.id};toast("Autorizado por el supervisor","ok");seguir()})};
+  return true}
 function ctlTomar(id,otro){const x=ST.pedidos[id],s=x&&ctlS(x);if(!s){toast("Este pedido ya no espera control","info");return}const cs=(x.control||{})[s]||{};
+  if(ctlBloqueoMismo(id,()=>ctlTomar(id,otro)))return;
   const hacer=()=>{ctlArrancar(id,true);ctlAbrir(id,true)};
   if(otro)confirmar("Tomar el control","Este control lo tiene <b>"+esc(cs.controlador)+"</b>. Si lo tomás, queda a tu nombre (lo que ya controló no se pierde) y el tiempo corre a tu nombre desde ahora.","Tomarlo",hacer);else hacer()}
-function ctlAbrir(id,ya){const x=ST.pedidos[id],s=x&&ctlS(x);if(!s)return;ST.pedidoId=id;ST.ctlS=s;ST.sel=null;ST.vista="control";if(!ya)ctlArrancar(id,false);render();window.scrollTo(0,0);despierto(true)}
+function ctlAbrir(id,ya){const x=ST.pedidos[id],s=x&&ctlS(x);if(!s)return;if(!ya&&ctlBloqueoMismo(id,()=>ctlAbrir(id,ya)))return;ST.pedidoId=id;ST.ctlS=s;ST.sel=null;ST.vista="control";if(!ya)ctlArrancar(id,false);render();window.scrollTo(0,0);despierto(true)}
 /* deja la etapa «en curso» con el reloj corriendo a nombre del controlador (mismos tramos/pausas que el picking) */
 function ctlArrancar(id,forzar){const x=ST.pedidos[id],s=x&&ctlS(x);if(!s)return;const cs=(x.control||{})[s]||{};
   if(!forzar&&(tramoAbierto(cs)||(cs.estado==="en curso"&&cs.controladorId&&cs.controladorId!==ST.yo.id)))return;
@@ -795,10 +810,21 @@ function ctlContar(l,conteos){let v="";
   setTimeout(()=>{try{inp.focus({preventScroll:true})}catch(e){}},60)}
 /* compara SIEMPRE contra lo piqueado (tomado, ya corregido), nunca contra lo pedido */
 function ctlConfirmar(l,n,conteos){const A=ctlActual();if(!A)return;const cur=A.L.find(z=>z.k===l.k)||l,piq=Number(cur.tomado)||0;conteos=conteos.concat([n]);
+  if(n===piq&&piq>(Number(cur.q)||0)){senal("err");ctlExceso(cur,n,piq,conteos);return}
   if(n===piq){ctlRegistrar(A,cur,{contado:n,piqueado:piq,ok:true,intentos:conteos.length,conteos,accion:conteos.length>1?"recontado":"ok"});
     senal("ok",conteos.length>1?"✓ Ahora sí: correcto":"✓ Correcto");setTimeout(ctlSiguiente,60);return}
   senal("err");if(conteos.length===1)ctlNoCoincide(cur,n,piq,conteos);else ctlRevelar(cur,n,piq,conteos)}
 /* 1.er conteo distinto: alerta SIN revelar lo piqueado, solo si sobra o falta */
+/* lo piqueado ya era más de lo pedido y el conteo coincide: hay que sacar el excedente o autorizarlo con PIN */
+function ctlExceso(l,n,piq,conteos){const q=Number(l.q)||0,ex=n-q;
+  const m=modal("Hay más de lo pedido",'<div class="ctl-alerta" role="alert"><div class="small" style="font-weight:700;margin-bottom:.3rem">'+esc(l.d)+'</div><div class="gr">Sobran '+fN(ex)+'</div>'
+    +'<div class="ctl-cmp"><div><span class="small muted">Pedido</span><b>'+fN(q)+'</b></div><div><span class="small muted">Contaste</span><b>'+fN(n)+'</b></div></div></div>'
+    +'<p class="small muted">No puede salir más de lo pedido. Sacá las '+fN(ex)+' unidades de más y devolvelas a su lugar.</p>'
+    +'<div class="m-col"><button class="btn btn-lg btn-primary" id="ex-ok">Listo: dejé '+fN(q)+' y saqué '+fN(ex)+'</button><button class="btn" id="ex-pin">Autorizar '+fN(n)+' con PIN del supervisor</button><button class="btn" id="ex-re">↻ Volver a contar</button></div>',{fijo:true});
+  const fin=(extra,cor)=>{cerrarModal();const A=ctlActual();if(!A)return;ctlRegistrar(A,l,Object.assign({contado:n,piqueado:piq,ok:false,intentos:conteos.length,conteos,accion:"corregido",excedente:ex},extra),cor);setTimeout(ctlSiguiente,60)};
+  m.querySelector("#ex-ok").onclick=()=>{fin({excedenteRetirado:true},q);senal("ok","Queda en "+fN(q))};
+  m.querySelector("#ex-pin").onclick=()=>{cerrarModal();pedirPin(()=>{fin({excesoAutorizado:true,autorizadoAt:ahora()},null);senal("ok","Exceso autorizado por el supervisor")})};
+  m.querySelector("#ex-re").onclick=()=>{cerrarModal();ctlContar(l,conteos)}}
 function ctlNoCoincide(l,n,piq,conteos){const mas=n>piq;
   const m=modal("No coincide",'<div class="ctl-alerta'+(mas?" ambar":"")+'" role="alert"><div class="gr">No coincide</div><div style="margin:.5rem 0 .1rem;font-weight:800">Contaste</div><div class="q">'+fN(n)+'</div>'
     +'<div style="font:900 1.35rem var(--f-disp);margin-top:.5rem">Hay '+(mas?"DE MÁS":"DE MENOS")+'</div><div class="small" style="margin-top:.2rem">'+(mas?"Contaste más unidades de las que se piquearon":"Contaste menos unidades de las que se piquearon")+'</div></div>'
@@ -811,11 +837,15 @@ function ctlRevelar(l,n,piq,conteos){const d=n-piq;
   const m=modal("Diferencia",'<div class="ctl-alerta'+(d>0?" ambar":"")+'" role="alert"><div class="small" style="font-weight:700;margin-bottom:.3rem">'+esc(l.d)+'</div><div class="gr">'+(d>0?"Hay "+fN(d)+" de más":"Faltan "+fN(-d))+'</div>'
     +'<div class="ctl-cmp"><div><span class="small muted">Piqueado</span><b>'+fN(piq)+'</b></div><div><span class="small muted">Contaste</span><b>'+fN(n)+'</b></div></div>'
     +(conteos.length>1?'<div class="small">Tus conteos: '+conteos.map(fN).join(" · ")+'</div>':"")+'</div>'
-    +'<div class="m-col"><button class="btn btn-lg btn-primary" id="rv-cor">Corregir lo piqueado a '+fN(n)+'</button>'
+    +(n>(Number(l.q)||0)?'<div class="hint" style="background:rgba(224,38,28,.12);color:var(--rose)">Pidieron '+fN(l.q)+': no puede salir más de lo pedido sin autorización.</div>':"")
+    +'<div class="m-col">'+(n>(Number(l.q)||0)?'<button class="btn btn-lg btn-primary" id="rv-tope">Dejar '+fN(l.q)+' (lo pedido) y sacar '+fN(n-(Number(l.q)||0))+' de más</button><button class="btn" id="rv-pin">Autorizar '+fN(n)+' con PIN del supervisor</button>':'<button class="btn btn-lg btn-primary" id="rv-cor">Corregir lo piqueado a '+fN(n)+'</button>')
     +'<button class="btn btn-lg" id="rv-dej" style="border-color:rgba(224,38,28,.6);color:var(--rose)">Dejar como estaba (queda con diferencia)</button>'
     +'<button class="btn" id="rv-re">↻ Volver a contar otra vez</button></div>',{fijo:true});
   const fin=(accion,cor)=>{cerrarModal();const A=ctlActual();if(!A)return;ctlRegistrar(A,l,{contado:n,piqueado:piq,ok:false,intentos:conteos.length,conteos,accion},cor);setTimeout(ctlSiguiente,60)};
-  m.querySelector("#rv-cor").onclick=()=>{fin("corregido",n);senal("ok","Piqueado corregido a "+fN(n))};
+  const qP=Number(l.q)||0,finX=(extra,cor)=>{cerrarModal();const A=ctlActual();if(!A)return;ctlRegistrar(A,l,Object.assign({contado:n,piqueado:piq,ok:false,intentos:conteos.length,conteos,accion:"corregido"},extra),cor);setTimeout(ctlSiguiente,60)};
+  if(m.querySelector("#rv-cor"))m.querySelector("#rv-cor").onclick=()=>{fin("corregido",n);senal("ok","Piqueado corregido a "+fN(n))};
+  if(m.querySelector("#rv-tope"))m.querySelector("#rv-tope").onclick=()=>{finX({excedente:n-qP,excedenteRetirado:true},qP);senal("ok","Queda en "+fN(qP)+": sacá "+fN(n-qP)+" de más")};
+  if(m.querySelector("#rv-pin"))m.querySelector("#rv-pin").onclick=()=>{cerrarModal();pedirPin(()=>{finX({excedente:n-qP,excesoAutorizado:true,autorizadoAt:ahora()},n);senal("ok","Exceso autorizado por el supervisor")})};
   m.querySelector("#rv-dej").onclick=()=>{fin("diferencia");senal("info","Queda con diferencia para el supervisor")};
   m.querySelector("#rv-re").onclick=()=>{cerrarModal();ctlContar(l,conteos)}}
 /* guarda el renglón del control y, si corresponde, corrige lo piqueado (con historial). Un solo update: todo o nada.
@@ -956,23 +986,25 @@ function sPedidos(){const L=Object.values(ST.pedidos).sort((a,b)=>String(b.fecha
 /* INCIDENCIAS DEL CONTROL (2026-11-17): lo que el control encontró, para el detalle del pedido.
    recontado = el controlador contó mal y al recontar coincidió (mal contado) · corregido = lo piqueado estaba mal y se corrigió (mal piqueado)
    diferencia = no coincidió y quedó sin corregir · sobrante = apareció un producto que no estaba en el pedido */
-const CTL_INC={recontado:["Mal contado","t-amber"],corregido:["Mal piqueado","t-rose"],diferencia:["Diferencia sin resolver","t-rose"],sobrante:["Sobrante no pedido","t-amber"]};
+const CTL_INC={exceso:["Más de lo pedido","t-rose"],recontado:["Mal contado","t-amber"],corregido:["Mal piqueado","t-rose"],diferencia:["Diferencia sin resolver","t-rose"],sobrante:["Sobrante no pedido","t-amber"]};
 function ctlIncidencias(x){const c=(x&&x.control)||{},L={},R=[];ctlLineas(x).forEach(l=>{L[l.k]=l});
   CTL_ETAPAS.forEach(s=>{const cs=c[s]||{};
     Object.keys(cs.lineas||{}).forEach(k=>{const r=cs.lineas[k];if(!r||!CTL_INC[r.accion])return;const l=L[k]||{k,c:k,d:"Código "+k,partes:[]};
       const pk=[...new Set(l.partes.map(pt=>pt.l.por||(x.pasillos[pt.p]||{}).terminadoPor||(x.pasillos[pt.p]||{}).picker).filter(Boolean))];
       const piq=Number(r.piqueado)||0,cont=Number(r.contado)||0,dif=cont-piq,cn=(r.conteos||[]).map(fN);
       let det;
-      if(r.accion==="recontado")det="Contó "+cn.slice(0,-1).join(" y ")+" · al recontar dio "+fN(cont)+", igual a lo piqueado";
+      if(r.excedente&&r.excedenteRetirado)det="Pedido "+fN(l.q||0)+" · contó "+fN(cont)+" → se sacaron "+fN(r.excedente)+" de más y quedó en lo pedido"+(cn.length>1?" · conteos: "+cn.join(" · "):"");
+      else if(r.excedente&&r.excesoAutorizado)det="Pedido "+fN(l.q||0)+" · salen "+fN(cont)+": "+fN(r.excedente)+" de más AUTORIZADO con PIN del supervisor";
+      else if(r.accion==="recontado")det="Contó "+cn.slice(0,-1).join(" y ")+" · al recontar dio "+fN(cont)+", igual a lo piqueado";
       else det="Piqueado "+fN(piq)+" · contado "+fN(cont)+" → "+(dif>0?"había "+fN(dif)+" de más":(-dif===1?"faltaba 1":"faltaban "+fN(-dif)))+(r.accion==="corregido"?" · se corrigió a "+fN(cont):" · quedó como estaba")+(cn.length>1?" · conteos: "+cn.join(" · "):"");
-      R.push({s,k,tipo:r.accion,l,det,pk,ctl:r.por||cs.terminadoPor||cs.controlador||"",at:r.at})});
+      R.push({s,k,tipo:r.excedente?"exceso":r.accion,l,det,pk,ctl:r.por||cs.terminadoPor||cs.controlador||"",at:r.at})});
     Object.values(cs.sobrantes||{}).forEach(o=>R.push({s,k:"+"+o.cod,tipo:"sobrante",l:{c:o.cod,d:o.d||"Código "+o.cod,partes:[]},det:fN(o.cantidad)+" u que no estaban en el pedido",pk:[],ctl:o.por||"",at:o.at}))});
-  const ord={corregido:0,diferencia:1,recontado:2,sobrante:3};return R.sort((a,b)=>ord[a.tipo]-ord[b.tipo])}
+  const ord={exceso:0,corregido:1,diferencia:2,recontado:3,sobrante:4};return R.sort((a,b)=>ord[a.tipo]-ord[b.tipo])}
 function ctlIncidenciasHtml(x){const c=(x&&x.control)||{};if(!CTL_ETAPAS.some(s=>c[s]&&c[s].inicio))return"";const R=ctlIncidencias(x);
   const n=t=>R.filter(r=>r.tipo===t).length;
   let h='<h3 style="margin-top:.8rem;color:#d9c4ff">Incidencias del control'+(R.length?' · '+R.length:"")+'</h3>';
   if(!R.length)return h+'<p class="small" style="color:var(--emerald);margin:.2rem 0 .6rem">✓ Sin incidencias: todo lo controlado coincidió al primer conteo.</p>';
-  h+='<p class="small muted" style="margin:.1rem 0 .4rem">'+[["corregido","mal piqueado","mal piqueados"],["diferencia","sin resolver","sin resolver"],["recontado","mal contado","mal contados"],["sobrante","sobrante","sobrantes"]].filter(([t])=>n(t)).map(([t,a,b])=>'<b>'+n(t)+'</b> '+(n(t)===1?a:b)).join(" · ")+'</p>';
+  h+='<p class="small muted" style="margin:.1rem 0 .4rem">'+[["exceso","con más de lo pedido","con más de lo pedido"],["corregido","mal piqueado","mal piqueados"],["diferencia","sin resolver","sin resolver"],["recontado","mal contado","mal contados"],["sobrante","sobrante","sobrantes"]].filter(([t])=>n(t)).map(([t,a,b])=>'<b>'+n(t)+'</b> '+(n(t)===1?a:b)).join(" · ")+'</p>';
   return h+'<table class="tabla"><thead><tr><th>Producto</th><th>Incidencia</th></tr></thead><tbody>'+R.map(r=>'<tr><td>'+esc(r.l.d)+'<div class="small muted mono">'+esc(r.l.c)+(r.l.partes.length?' · '+esc(r.l.partes.map(pt=>pasDe(pt.p).nombre).join(" + ")):"")+'</div></td>'
     +'<td><span class="badge '+CTL_INC[r.tipo][1]+'">'+CTL_INC[r.tipo][0]+'</span><div class="small" style="margin-top:3px">'+esc(r.det)+'</div>'
     +'<div class="small muted">'+(r.pk.length&&r.tipo!=="recontado"&&r.tipo!=="sobrante"?'Piqueó '+esc(r.pk.join(", "))+' · ':"")+(r.ctl?'Controló '+esc(r.ctl):"")+(r.at?' · '+esc(fHM(r.at)):"")+'</div></td></tr>').join("")+'</tbody></table>'}
