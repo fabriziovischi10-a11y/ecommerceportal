@@ -2029,14 +2029,16 @@ const pkQuien=()=>{try{const u=firebase.auth().currentUser;return(u&&(u.displayN
 async function pkMaestro(){if(PK.maestro&&Date.now()-PK.maestro.t<10*60e3)return PK.maestro;
   const r=await Promise.all([pkJ("/catalogo/items"),pkJ("/pasillos")]);PK.maestro={t:Date.now(),cat:r[0]||{},pas:r[1]||{}};return PK.maestro}
 /* pasillo de un producto: primero "catA>catB", después "catA"; si no hay, "sinpasillo" (lo ve y reasigna el supervisor) */
-function pkPasilloDe(catA,catB,pas){const m={};Object.keys(pas||{}).forEach(id=>((pas[id]||{}).cats||[]).forEach(c=>{m[String(c).trim().toLowerCase()]=id}));
+/* 2026-11-19: un pasillo puede tener su propia lista de códigos (pasillos/<id>/codigos, ej. Cuartito): esa lista manda sobre la categoría */
+function pkPasilloDe(catA,catB,pas,cod){const c0=String(cod==null?"":cod).trim();if(c0)for(const id of Object.keys(pas||{})){const L=(pas[id]||{}).codigos;if(L&&(L[c0]||L[pkKey(c0)]))return id}
+  const m={};Object.keys(pas||{}).forEach(id=>((pas[id]||{}).cats||[]).forEach(c=>{m[String(c).trim().toLowerCase()]=id}));
   const a=String(catA||"").trim().toLowerCase(),b=String(catB||"").trim().toLowerCase();return m[a+">"+b]||m[a]||"sinpasillo"}
 /* consolidado puro (sin red): lineas [{c,q,d?,r?,sr?}] → {pasilloId:{codigoKey:{c,d,q,ean,equi,cat}}} sumando unidades por código */
 function pkConsolidar(lineas,cat,pas){const suma={},out={};
   (lineas||[]).forEach(i=>{const c=String(i.c==null?"":i.c).trim(),q=Number(i.q)||0;if(!c||!q)return;const k=pkKey(c);
     if(!suma[k])suma[k]={c,q:0,d:i.d||"",r:i.r||"",sr:i.sr||""};suma[k].q+=q});
   Object.keys(suma).forEach(k=>{const x=suma[k],it=(cat||{})[x.c]||(cat||{})[k];
-    const cA=it?it[2]:x.r,cB=it?it[3]:x.sr,p=pkPasilloDe(cA,cB,pas);
+    const cA=it?it[2]:x.r,cB=it?it[3]:x.sr,p=pkPasilloDe(cA,cB,pas,x.c);
     (out[p]=out[p]||{})[k]={c:x.c,d:(it&&it[1])||x.d||x.c,q:x.q,ean:it?String(it[0]||""):"",equi:it?(Number(it[5])||1):1,cat:[cA,cB].filter(Boolean).join(">")}});
   return out}
 /* arma el PATCH multi-ruta contra el pedido previo (o null). Devuelve {upd, nuevas, quitadas, cambiadas} */

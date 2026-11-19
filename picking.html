@@ -473,9 +473,10 @@ function actualizarScanbar(){const ver=(ST.vista==="picking"||ST.vista==="contro
   if(ver&&document.activeElement!==$("#scan")&&!ST.tecleando)setTimeout(()=>{if(document.body.classList.contains("ver-scan")&&!ST.modalAbierto)$("#scan").focus({preventScroll:true})},30)}
 
 /* a) Ingreso: pasillo */
-function vIngreso(){const P=listaPasillos();
+/* 2026-11-19: un pasillo fusionado (fusionadoEn) solo aparece mientras le queden pedidos sin terminar (los anteriores a la fusión) */
+function vIngreso(){const P=listaPasillos().filter(p=>!p.fusionadoEn||pedidosDe(p.id).length);
   return'<div class="paso">Paso 1 de 2</div><h1>¿En qué pasillo trabajás?</h1><p class="muted" style="margin:.2rem 0 0">Tocá tu pasillo y después tu nombre.</p>'
-    +ctlTarjeta()+supTarjeta()+'<div class="pasillos">'+P.map(p=>{const n=pedidosDe(p.id).length;return'<button class="pas" style="--c:'+esc(p.color||"#2f6bd1")+'" data-a="elegir-pas" data-id="'+esc(p.id)+'"><span class="n">'+esc(p.nombre)+'</span><span class="u">'+esc(p.ubicacion||"")+'</span><span class="cnt"><b>'+n+'</b>'+(n===1?"pedido":"pedidos")+'</span></button>'}).join("")+'</div>'
+    +ctlTarjeta()+supTarjeta()+'<div class="pasillos">'+P.map(p=>{const n=pedidosDe(p.id).length;return'<button class="pas" style="--c:'+esc(p.color||"#2f6bd1")+'" data-a="elegir-pas" data-id="'+esc(p.id)+'"><span class="n">'+esc(p.nombre)+'</span><span class="u">'+esc(p.fusionadoEn?"Pedidos anteriores · ahora va en "+pasDe(p.fusionadoEn).nombre:(p.ubicacion||""))+'</span><span class="cnt"><b>'+n+'</b>'+(n===1?"pedido":"pedidos")+'</span></button>'}).join("")+'</div>'
     +'<div style="text-align:center;margin-top:28px"><button class="btn btn-ghost btn-sm muted" data-a="super">Supervisión</button></div>'}
 /* a2) Ingreso: integrante */
 function vIntegrantes(){const p=pasDe(ST.pasSel),I=Object.keys(p.integrantes||{}).map(id=>Object.assign({id},p.integrantes[id])).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre)));
@@ -1058,7 +1059,7 @@ function sIntegrantes(){return ctlIntegrantesCard()+listaPasillos().map(p=>{cons
 function pasilloDeCat(a,b){const m={};listaPasillos().forEach(p=>(p.cats||[]).forEach(c=>{m[String(c).trim().toLowerCase()]=p.id}));const A=String(a||"").trim().toLowerCase(),B=String(b||"").trim().toLowerCase();return m[A+">"+B]||m[A]||null}
 function sCategorias(){const P=listaPasillos();
   let h='<p class="small muted" style="margin-top:0">Cada producto va al pasillo que tenga su «Categoría>Subcategoría»; si no, el que tenga su «Categoría». Tocá una categoría para moverla o quitarla. Afecta a los próximos envíos desde el TMS (lo que ya está en un pasillo se queda ahí).</p>';
-  h+=P.map(p=>'<div class="card" style="margin-bottom:10px;border-left:6px solid '+esc(p.color)+'"><h3>'+esc(p.nombre)+'</h3><div>'+((p.cats||[]).map((c,i)=>'<span class="catchip" data-a="cat-mov" data-p="'+esc(p.id)+'" data-i="'+i+'">'+esc(c)+' ✎</span>').join("")||'<span class="small muted">Sin categorías</span>')+'</div></div>').join("");
+  h+=P.map(p=>'<div class="card" style="margin-bottom:10px;border-left:6px solid '+esc(p.color)+'"><h3>'+esc(p.nombre)+'</h3>'+(p.codigos?'<div class="small" style="margin:-4px 0 6px;color:var(--amber)">+ '+fN(Object.keys(p.codigos).length)+' productos por código (lista propia: van a este pasillo sin importar su categoría)</div>':"")+(p.fusionadoEn?'<div class="small muted" style="margin:-4px 0 6px">Fusionado en '+esc(pasDe(p.fusionadoEn).nombre)+': solo quedan los pedidos anteriores</div>':"")+'<div>'+((p.cats||[]).map((c,i)=>'<span class="catchip" data-a="cat-mov" data-p="'+esc(p.id)+'" data-i="'+i+'">'+esc(c)+' ✎</span>').join("")||'<span class="small muted">Sin categorías</span>')+'</div></div>').join("");
   if(!ST.cat)return h+'<div class="vacio">Cargando catálogo…</div>';
   const sin={};Object.values(ST.cat).forEach(it=>{if(!pasilloDeCat(it[2],it[3])){const k=(it[2]||"(sin categoría)")+(it[3]?">"+it[3]:"");sin[k]=(sin[k]||0)+1}});
   const ks=Object.keys(sin).sort((a,b)=>sin[b]-sin[a]);
