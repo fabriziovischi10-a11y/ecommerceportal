@@ -2390,11 +2390,19 @@ function pkEstTxt(p){const r=pkResumen(p),s=p.ordenId&&get("salidas",p.ordenId);
 function pkDurTxt(sg){sg=Math.max(0,Math.round(Number(sg)||0));const h=Math.floor(sg/3600),m=Math.floor(sg%3600/60);return h?h+" h "+String(m).padStart(2,"0")+" min":m?m+" min":sg+" s"}
 function pkPasTiempo(pp){if(!pp||!pp.inicio)return"";if(pp.estado==="listo"&&pp.duracionSeg!=null)return"⏱ "+pkDurTxt(pp.duracionSeg)+(Number(pp.pausasSeg)>0?" (+"+pkDurTxt(pp.pausasSeg)+" en pausa)":"");
   const d=new Date(pp.inicio);return isNaN(d)?"":"⏱ en curso hace "+pkDurTxt((Date.now()-d)/1000)}
+/* TIEMPO NETO (2026-11-19): tiempo real de reloj trabajado, sin pausas y sin contar dos veces los ratos en que se piqueaban varios pasillos a la vez.
+   segActivos(pp) = tramos activos de un pasillo (tramos o inicio→fin, menos las pausas); netoUnion = unión de los tramos de varios pasillos, en segundos. */
+function segActivos(pp,now){pp=pp||{};now=now==null?Date.now():now;const ms=v=>{const t=Date.parse(v);return isNaN(t)?null:t};const listo=pp.estado==="listo",fin=ms(pp.fin),tope=listo&&fin?fin:now;
+  let iv=Object.values(pp.tramos||{}).map(t=>[ms(t&&t.desde),t&&t.hasta?ms(t.hasta):tope]).filter(a=>a[0]!=null&&a[1]!=null&&a[1]>a[0]);
+  if(!iv.length&&ms(pp.inicio)!=null){const a=[ms(pp.inicio),tope];if(a[1]>a[0])iv=[a]}
+  Object.values(pp.pausas||{}).map(p=>[ms(p&&p.desde),p&&p.hasta?ms(p.hasta):tope]).filter(a=>a[0]!=null&&a[1]!=null&&a[1]>a[0])
+    .forEach(([pd,ph])=>{iv=iv.flatMap(([d,h])=>{if(ph<=d||pd>=h)return[[d,h]];const r=[];if(pd>d)r.push([d,pd]);if(ph<h)r.push([ph,h]);return r})});return iv}
+function netoUnion(L){const a=[].concat(...L).sort((x,y)=>x[0]-y[0]);let t=0,cd=null,ch=null;a.forEach(([d,h])=>{if(cd==null){cd=d;ch=h}else if(d<=ch)ch=Math.max(ch,h);else{t+=ch-cd;cd=d;ch=h}});if(cd!=null)t+=ch-cd;return t/1000}
 /* 2026-11-19: Papel + Bazar + Limpieza sumados (se piquean juntos) */
 function pkGrupoTiempo(p){const ids=["papel","bazar","limpieza"].filter(id=>p&&p.pasillos&&p.pasillos[id]);if(ids.length<2)return"";let seg=0,pau=0,ok=0,emp=0;
   ids.forEach(id=>{const pp=p.pasillos[id];if(!pp.inicio)return;emp++;if(pp.estado==="listo"&&pp.duracionSeg!=null){seg+=Number(pp.duracionSeg)||0;pau+=Number(pp.pausasSeg)||0;ok++}else{const d=new Date(pp.inicio);if(!isNaN(d))seg+=(Date.now()-d)/1000}});
-  if(!emp)return"";const M=PK.maestro,nm=id=>((M&&M.pas[id]||{}).nombre||id);
-  return'<div class="banner" style="margin:8px 0">⏱ <span><b>'+esc(ids.map(nm).join(" + "))+'</b>: <b>'+esc(pkDurTxt(seg))+'</b>'+(ok<ids.length?' <span class="mu">('+ok+' de '+ids.length+' terminados)</span>':"")+(pau>0?' <span class="mu">· pausas '+esc(pkDurTxt(pau))+'</span>':"")+'</span></div>'}
+  if(!emp)return"";const M=PK.maestro,nm=id=>((M&&M.pas[id]||{}).nombre||id),neto=netoUnion(ids.map(id=>segActivos(p.pasillos[id])));
+  return'<div class="banner" style="margin:8px 0">⏱ <span><b>'+esc(ids.map(nm).join(" + "))+'</b>: suma <b>'+esc(pkDurTxt(seg))+'</b> · neto <b style="color:var(--ok)">'+esc(pkDurTxt(neto))+'</b>'+(ok<ids.length?' <span class="mu">('+ok+' de '+ids.length+' terminados)</span>':"")+(pau>0?' <span class="mu">· pausas '+esc(pkDurTxt(pau))+'</span>':"")+'</span></div>'}
 function formPkVer(p){const r=pkResumen(p),e=pkEstTxt(p),M=PK.maestro;
   const rows=Object.keys(p.pasillos||{}).sort((a,b)=>((M&&M.pas[a]||{}).orden||99)-((M&&M.pas[b]||{}).orden||99)).map(pid=>{const pp=p.pasillos[pid]||{},L=Object.values(pp.lineas||{}).filter(l=>l&&!l.quitada);if(!L.length)return"";
     const nm=pid==="sinpasillo"?"Sin pasillo":((M&&M.pas[pid]||{}).nombre||pid);
