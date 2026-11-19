@@ -2386,10 +2386,14 @@ function pkEstTxt(p){const r=pkResumen(p),s=p.ordenId&&get("salidas",p.ordenId);
   if(p.ordenId)return s&&s.estado!=="Anulada"?{t:"Cargado en orden N° "+nro(s),c:"info",k:"orden"}:{t:"Su orden N° "+(p.ordenNro||"?")+" ya no existe",c:"bad",k:"huerfano"};
   if(r.controlado)return{t:"Controlado · esperando orden",c:"ok",k:"listo"};if(r.listo)return{t:pkCtlTxt(r),c:"vio",k:"control"};
   if(r.curso)return{t:"En picking · "+r.N+" de "+r.M+" pasillos",c:"warn",k:"curso"};return{t:"Pendiente de picking",c:"mute",k:"pend"}}
+/* 2026-11-19: tiempo de picking de cada pasillo (duracionSeg = sin pausas, lo guarda la app al terminar; si sigue abierto, desde el inicio) */
+function pkDurTxt(sg){sg=Math.max(0,Math.round(Number(sg)||0));const h=Math.floor(sg/3600),m=Math.floor(sg%3600/60);return h?h+" h "+String(m).padStart(2,"0")+" min":m?m+" min":sg+" s"}
+function pkPasTiempo(pp){if(!pp||!pp.inicio)return"";if(pp.estado==="listo"&&pp.duracionSeg!=null)return"⏱ "+pkDurTxt(pp.duracionSeg)+(Number(pp.pausasSeg)>0?" (+"+pkDurTxt(pp.pausasSeg)+" en pausa)":"");
+  const d=new Date(pp.inicio);return isNaN(d)?"":"⏱ en curso hace "+pkDurTxt((Date.now()-d)/1000)}
 function formPkVer(p){const r=pkResumen(p),e=pkEstTxt(p),M=PK.maestro;
   const rows=Object.keys(p.pasillos||{}).sort((a,b)=>((M&&M.pas[a]||{}).orden||99)-((M&&M.pas[b]||{}).orden||99)).map(pid=>{const pp=p.pasillos[pid]||{},L=Object.values(pp.lineas||{}).filter(l=>l&&!l.quitada);if(!L.length)return"";
     const nm=pid==="sinpasillo"?"Sin pasillo":((M&&M.pas[pid]||{}).nombre||pid);
-    return'<tr class="locrow"><td colspan="4" style="--rt:var(--c-nov)">'+esc(nm)+' <span class="mu">· '+esc(pp.estado||"pendiente")+(pp.picker?" · "+esc(pp.picker):"")+' · '+pl(L.length,"renglón","renglones")+'</span></td></tr>'
+    return'<tr class="locrow"><td colspan="4" style="--rt:var(--c-nov)">'+esc(nm)+' <span class="mu">· '+esc(pp.estado||"pendiente")+(pp.picker?" · "+esc(pp.picker):"")+' · '+pl(L.length,"renglón","renglones")+(pkPasTiempo(pp)?' · <b>'+esc(pkPasTiempo(pp))+'</b>':"")+'</span></td></tr>'
       +L.sort((a,b)=>String(a.d).localeCompare(String(b.d))).map(l=>{const hay=l.tomado!=null||l.estado==="faltante",t=Number(l.tomado)||0,q=Number(l.q)||0;
         return'<tr><td>'+esc(l.d)+'<div class="sub mono">'+esc(l.c)+'</div></td><td class="num mono">'+fN(q)+'</td><td class="num mono">'+(hay?fN(t):"—")+'</td><td>'+(!hay?chip("Sin piquear","mute"):t>=q?chip("Completo","ok"):t>0?chip("Parcial","warn"):chip("Faltante","bad"))+(l.motivo?'<div class="sub">'+esc(l.motivo)+'</div>':"")+'</td></tr>'}).join("")}).join("");
   const btns=[];if(canWrite){btns.push('<button type="button" class="btn" id="pkRe">'+IC.up+'Re-enviar con otro Excel</button>');if(e.k==="huerfano")btns.push('<button type="button" class="btn" id="pkLib">Liberar (ofrecer en otra orden)</button>')}
