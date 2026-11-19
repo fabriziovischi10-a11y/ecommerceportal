@@ -507,11 +507,12 @@ function vPedidos(){if(ST.yo&&ST.yo.rol==="control"){ST.vista="ctl-pedidos";retu
         :'<button class="btn btn-primary btn-lg btn-block" data-a="tomar" data-id="'+esc(x.id)+'">Tomar pedido</button>')+'</div></div>'}).join("")+'</div>'+pie}
 
 /* c) Picking del pedido */
-function lineasOrdenadas(pp){const A=activas(pp).sort((a,b)=>claveRec(a).localeCompare(claveRec(b)));
+/* ORDEN DEL PICKEADOR (2026-11-19): por recorrido (ubicación) o alfabético (A-Z); se recuerda en el teléfono (pk-orden) */
+function lineasOrdenadas(pp,az){const A=activas(pp).sort(az?(a,b)=>String(a.d||"").localeCompare(String(b.d||""),"es",{sensitivity:"base",numeric:true}):(a,b)=>claveRec(a).localeCompare(claveRec(b)));
   const Q=Object.keys(pp.lineas||{}).filter(k=>pp.lineas[k].quitada).map(k=>Object.assign({k},pp.lineas[k]));return{A,Q}}
 function pedidoActual(){const x=ST.pedidos[ST.pedidoId];if(!x||!x.pasillos||!x.pasillos[ST.yo.pasillo])return null;return x}
 function vPicking(){const x=pedidoActual();if(!x){ST.vista="pedidos";return vPedidos()}
-  const p=pasDe(ST.yo.pasillo),pp=x.pasillos[ST.yo.pasillo],a=avance(pp),{A,Q}=lineasOrdenadas(pp);
+  const p=pasDe(ST.yo.pasillo),pp=x.pasillos[ST.yo.pasillo],a=avance(pp),{A,Q}=lineasOrdenadas(pp,LS.get("pk-orden","rec")==="az");
   if(!ST.sel||!A.some(l=>l.k===ST.sel)){const pend=A.find(l=>!resuelta(est(l)));ST.sel=pend?pend.k:(A[0]&&A[0].k)}
   const l=A.find(z=>z.k===ST.sel),pct=a.tot?Math.round(a.res/a.tot*100):0,listo=a.tot&&a.res===a.tot,tm=tiempos(pp);
   let h='<div class="pk-cab"><div class="r1"><button class="btn btn-ghost btn-sm" data-a="ir" data-v="pedidos" aria-label="Volver">‹</button><span class="t">'+esc(x.nro?pedTit(x)+" · "+(x.destinos||[]).join(", "):pedTit(x)+" · "+fFecha(x.fecha))+'</span><span class="p">'+a.res+'/'+a.tot+'</span></div>'
@@ -534,7 +535,9 @@ function vPicking(){const x=pedidoActual();if(!x){ST.vista="pedidos";return vPed
       +'<div class="acc"><button class="btn btn-lg" data-a="no-hay" style="border-color:rgba(224,38,28,.6);color:var(--rose)">No hay</button>'
       +(resuelta(e)?'<button class="btn btn-lg" data-a="cantidad">Corregir</button>':l.ean?'<button class="btn btn-lg" data-a="saltar">Saltear ›</button>':'<button class="btn btn-lg btn-primary" data-a="sin-escanear">Ingresar código</button>')+'</div></div>'}
   if(listo&&pp.estado!=="listo")h+='<button class="btn btn-success btn-lg btn-block" style="margin-top:14px;min-height:66px;font-size:1.2rem" data-a="terminar">✓ Terminar pasillo</button>';
-  h+='<div class="sep">Recorrido · '+pl(A.length,"renglón","renglones")+' · '+fN(a.uni)+' u</div><div class="lista" style="margin-top:0;gap:8px">'
+  const AZ=LS.get("pk-orden","rec")==="az";
+  h+='<div class="sep" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap"><span>'+(AZ?"De la A a la Z":"Recorrido")+' · '+pl(A.length,"renglón","renglones")+' · '+fN(a.uni)+' u</span>'
+    +'<span class="fila" style="gap:6px"><button class="btn btn-sm'+(AZ?"":" btn-primary")+'" data-a="pk-orden" data-v="rec" aria-pressed="'+!AZ+'">Recorrido</button><button class="btn btn-sm'+(AZ?" btn-primary":"")+'" data-a="pk-orden" data-v="az" aria-pressed="'+AZ+'">A → Z</button></span></div><div class="lista" style="margin-top:0;gap:8px">'
     +A.map(z=>{const e=est(z);return'<button class="lin '+e+(z.k===ST.sel?" sel":"")+'" data-a="sel" data-id="'+esc(z.k)+'"><span class="ic">'+EST_IC[e]+'</span><span class="tx"><span class="t">'+esc(z.d)+'</span><span class="d mono">'+esc(ubiCorta(z))+' · '+esc(z.c)+'</span></span><span class="q">'+(resuelta(e)||e==="cambio"?fN(z.tomado||0)+'/':"")+fN(z.q)+'</span></button>'}).join("")+'</div>';
   if(Q.length)h+='<div class="sep">Quitadas del pedido</div><div class="lista" style="margin-top:0;gap:8px">'+Q.map(z=>'<div class="lin quitada"><span class="ic">–</span><span class="tx"><span class="t">'+esc(z.d)+'</span><span class="d">'+(Number(z.tomado)>0?"Ya tomaste "+fN(z.tomado)+": devolvelo a su lugar":"Ya no va en este pedido")+'</span></span></div>').join("")+'</div>';
   if(!listo&&a.tot)h+='<p class="muted small" style="text-align:center;margin-top:18px">Faltan '+pl(a.tot-a.res,"renglón","renglones")+' para terminar el pasillo</p>';
@@ -546,7 +549,7 @@ function guardarLinea(l,tomado,estado,motivo){const pp=pedidoActual().pasillos[S
   const t=ahora(),obj={tomado:Number(tomado)||0,estado,por:ST.yo.nombre,porId:ST.yo.id,at:t,at1:l.at1||l.at||t,qVista:Number(l.q)||0,motivo:motivo||null};
   guardar(rutaLinea(l.k),obj);
   if(pp.estado!=="listo")arrancarTiempo(ST.pedidoId,!pp.estado||pp.estado==="pendiente")}
-function siguiente(){const x=pedidoActual();if(!x)return;const {A}=lineasOrdenadas(x.pasillos[ST.yo.pasillo]);const i=A.findIndex(l=>l.k===ST.sel);
+function siguiente(){const x=pedidoActual();if(!x)return;const {A}=lineasOrdenadas(x.pasillos[ST.yo.pasillo],LS.get("pk-orden","rec")==="az");const i=A.findIndex(l=>l.k===ST.sel);
   const sig=A.slice(i+1).concat(A.slice(0,i)).find(l=>!resuelta(est(l)));ST.sel=sig?sig.k:ST.sel;render();window.scrollTo({top:0,behavior:"smooth"})}
 function lineaSel(){const x=pedidoActual();if(!x)return null;return activas(x.pasillos[ST.yo.pasillo]).find(l=>l.k===ST.sel)||null}
 /* escaneo: EAN o código interno */
@@ -786,7 +789,7 @@ function vControl(){const A=ctlActual();if(!A){ST.vista="ctl-pedidos";ST.pedidoI
       +(r?'<div class="small" style="margin-top:6px">'+(e==="ok"?"Controlado":e==="corregido"?"Corregiste lo piqueado":"Quedó con diferencia para el supervisor")+(r.por?' · '+esc(r.por):"")+' · '+esc(fHM(r.at))+'</div>'
         :'')+(r?ctlMotivoHtml(l,r):(''))+(r?'':'<div class="hint" style="background:var(--violeta-bg);color:#d9c4ff">'+SVG_SCAN+(l.ean?"Escaneá el producto y contá las unidades":"Sin código de barras: ingresá el código interno del producto")+'</div>')
       +'<div class="acc"><button class="btn btn-lg" data-a="ctl-nohay" style="border-color:rgba(224,38,28,.6);color:var(--rose)">No hay</button>'
-      +'<button class="btn btn-lg'+(r||l.ean?"":" btn-primary")+'" data-a="ctl-contar">'+(r?"↻ Volver a contar":l.ean?"Contar ›":"Ingresar código ›")+'</button></div></div>'}
+      +'<button class="btn btn-lg'+(r||l.ean?"":" btn-primary")+'" data-a="ctl-contar">'+(r?"✓ Ya controlado":l.ean?"Contar ›":"Ingresar código ›")+'</button></div></div>'}
   const PARC=ctlSinMotivo(L,cs);
   if(listo&&!enPk.length&&PARC.length)h+='<div class="ctl-parc"><b>⚠ Antes de terminar, definí '+(PARC.length===1?'el parcial':'los '+PARC.length+' parciales')+'</b><div class="small" style="margin:4px 0 8px">Hay productos que van con menos de lo pedido. Elegí qué pasó con cada uno.</div>'+PARC.map(z=>'<div class="ctl-parc-it"><div style="font-weight:800">'+esc(z.d)+' <span class="small muted mono">'+esc(z.c)+'</span></div>'+ctlMotivoHtml(z,reg(z.k))+'</div>').join("")+'</div>';
   const SOB=ctlSobPend(x,s);
@@ -805,8 +808,17 @@ function vControl(){const A=ctlActual();if(!A){ST.vista="ctl-pedidos";ST.pedidoI
 function ctlProcesarCodigo(cod){const A=ctlActual();if(!A)return;const n=normCod(cod),co=z=>(z.ean&&normCod(z.ean)===n)||normCod(z.c)===n;
   const sel=A.L.find(z=>z.k===ST.sel),l=sel&&co(sel)?sel:A.L.find(co);
   if(l&&!l.pk&&!(A.cs.lineas||{})[l.k]){senal("err");toast("Ese producto todavía se está piqueando en "+l.partes.filter(pt=>!ctlPkParte(A.x,pt)).map(pt=>pasDe(pt.p).nombre).join(", ")+": se habilita cuando lo confirmen","err");return}
-  if(l){const r=(A.cs.lineas||{})[l.k];if(l.k!==ST.sel){ST.sel=l.k;render();window.scrollTo({top:0})}senal("ok",r?"Ya estaba controlado: lo volvés a contar":null);ctlContar(l,[]);return}
+  if(l){const r=(A.cs.lineas||{})[l.k];if(l.k!==ST.sel){ST.sel=l.k;render();window.scrollTo({top:0})}if(r){ctlYaControlado(l,r);return}senal("ok",null);ctlContar(l,[]);return}
   const ck=ST.eanIdx[n]||(ST.cat&&ST.cat[cod]?cod:null),it=ck&&ST.cat[ck];senal("err");ctlNoEsta(cod,ck,it)}
+/* YA CONTROLADO (2026-11-19): si el controlador vuelve a escanear (o tocar Contar / No hay) un producto que ya controló,
+   no lo deja seguir: salta la alerta. Solo se puede volver a contar si lo autoriza un supervisor (Google). */
+function ctlYaControlado(l,r){senal("err");try{navigator.vibrate&&navigator.vibrate([200,80,200])}catch(e){}
+  const m=modal("Ya controlado",'<div class="ctl-alerta" role="alert"><div style="font-size:2.4rem;line-height:1">⚠</div><div class="gr">Ya controlaste esta mercadería</div>'
+    +'<p style="margin:.5rem 0 0;font-weight:700">'+esc(l.d)+'<br><span class="small muted mono">Cód. '+esc(l.c)+(l.ean?' · '+esc(l.ean):"")+'</span></p>'
+    +'<p class="small" style="margin:.4rem 0 0">Controlado'+(r.por?' por <b>'+esc(r.por)+'</b>':"")+(r.at?' a las '+esc(fHM(r.at)):"")+'</p></div>'
+    +'<p class="small muted">No se puede volver a contar. Seguí con otro producto. Si hubo un error, el supervisor lo puede autorizar.</p>'
+    +'<div class="m-col"><button class="btn btn-lg btn-primary" data-a="m-cerrar">Entendido, sigo con otro</button><button class="btn" id="yc-sup">Volver a contar (autoriza el supervisor)</button></div>',{fijo:true});
+  m.querySelector("#yc-sup").onclick=()=>{cerrarModal();pedirPin(()=>ctlContar(l,[]))}}
 function ctlNoEsta(cod,ck,it){
   const m=modal("No está en el pedido",'<div class="ctl-alerta" role="alert"><div style="font-size:2.4rem;line-height:1">✕</div><div class="gr">Este producto no está en el pedido</div>'
     +'<p style="margin:.5rem 0 0;font-weight:700">'+(it?esc(it[1])+'<br><span class="small muted mono">Cód. '+esc(ck)+(it[0]?' · '+esc(it[0]):"")+'</span>':'Código <span class="mono">'+esc(cod)+'</span> (no está en el catálogo)')+'</p></div>'
@@ -1355,9 +1367,10 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]")
     case"ctl-abrir":ctlAbrir(id);break;
     case"ctl-sel":ST.sel=id;ST.ctlQ="";render();window.scrollTo({top:0,behavior:"smooth"});break;
     case"ctl-buscar":{const i=document.getElementById("ctl-q");if(i){i.scrollIntoView({behavior:"smooth",block:"start"});setTimeout(()=>{try{i.focus({preventScroll:true})}catch(e){}},250)}break}
-    case"ctl-contar":{const l=ctlLineaSel();if(!l)break;const A=ctlActual(),r=A&&(A.cs.lineas||{})[l.k];if(!l.ean&&!r)pedirCodInterno(l,()=>ctlContar(l,[]));else ctlContar(l,[]);break}
-    case"ctl-nohay":{const l=ctlLineaSel();if(l)ctlConfirmar(l,0,[]);break}
+    case"ctl-contar":{const l=ctlLineaSel();if(!l)break;const A=ctlActual(),r=A&&(A.cs.lineas||{})[l.k];if(r){ctlYaControlado(l,r);break}if(!l.ean&&!r)pedirCodInterno(l,()=>ctlContar(l,[]));else ctlContar(l,[]);break}
+    case"ctl-nohay":{const l=ctlLineaSel();if(!l)break;const A=ctlActual(),r=A&&(A.cs.lineas||{})[l.k];if(r){ctlYaControlado(l,r);break}ctlConfirmar(l,0,[]);break}
     case"ctl-terminar":ctlTerminar();break;
+    case"pk-orden":LS.set("pk-orden",b.dataset.v==="az"?"az":"rec");render();break;
     case"ctl-motivo":ctlGuardarMotivo(id,b.dataset.m);break;
     case"ctl-sob-pin":ctlAprobarSob(id,true);break;
     case"ctl-sob-ok":ctlAprobarSob(id,false);break;
