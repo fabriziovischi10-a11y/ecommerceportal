@@ -557,12 +557,23 @@ function lineaSel(){const x=pedidoActual();if(!x)return null;return activas(x.pa
 function procesarCodigo(cod){cod=String(cod||"").trim();if(!cod)return;if(ST.vista==="control"){ctlProcesarCodigo(cod);return}const x=pedidoActual();if(!x)return;
   const n=normCod(cod),A=activas(x.pasillos[ST.yo.pasillo]),l=lineaSel();
   const coincide=z=>(z.ean&&normCod(z.ean)===n)||normCod(z.c)===n;
-  if(l&&coincide(l)){senal("ok");pedirCantidad(l);return}
+  if(l&&coincide(l)){if(yaPiqueado(l)){pkYaPiqueado(l);return}senal("ok");pedirCantidad(l);return}
   const otra=A.find(coincide);
+  if(otra&&yaPiqueado(otra)){ST.sel=otra.k;render();window.scrollTo({top:0});pkYaPiqueado(otra);return}
   if(otra){ST.sel=otra.k;render();window.scrollTo({top:0});senal("info","Es otro renglón del pedido: «"+otra.d+"»");pedirCantidad(otra);return}
   const ck=ST.eanIdx[n]||(ST.cat&&ST.cat[cod]?cod:null),it=ck&&ST.cat[ck];
   const enOtroPas=Object.keys(x.pasillos).find(p=>p!==ST.yo.pasillo&&activas(x.pasillos[p]).some(coincide));
   senal("err",it?"✕ Ese es «"+it[1]+"»"+(enOtroPas?" (va en "+pasDe(enOtroPas).nombre+")":" y no está en este pedido"):"✕ Código "+cod+" no corresponde a este pedido")}
+/* YA PIQUEADO (2026-11-19): si el pickeador vuelve a escanear un producto que ya sacó (tomado > 0), no lo deja volver a sacarlo:
+   salta la alerta. Si de verdad hay que cambiar la cantidad, está el botón «Corregir» del renglón. Si el TMS cambió lo pedido («cambio») o
+   lo había marcado «No hay» (0), sí deja piquearlo. */
+const yaPiqueado=l=>l&&Number(l.tomado)>0&&est(l)!=="cambio";
+function pkYaPiqueado(l){senal("err");try{navigator.vibrate&&navigator.vibrate([200,80,200])}catch(e){}
+  modal("Ya piqueado",'<div class="ctl-alerta" role="alert"><div style="font-size:2.4rem;line-height:1">⚠</div><div class="gr">Ya sacaste este producto</div>'
+    +'<p style="margin:.5rem 0 0;font-weight:700">'+esc(l.d)+'<br><span class="small muted mono">Cód. '+esc(l.c)+(l.ean?' · '+esc(l.ean):"")+'</span></p>'
+    +'<p style="margin:.4rem 0 0">Ya tomaste <b>'+fN(l.tomado)+'</b> de '+fN(l.q)+(l.por?' · '+esc(l.por):"")+(l.at?' · '+esc(fHM(l.at)):"")+'</p></div>'
+    +'<p class="small muted">No lo vuelvas a sacar: dejalo en su lugar y seguí con el próximo producto. Si te equivocaste en la cantidad, tocá «Corregir» en el producto.</p>'
+    +'<div class="m-col"><button class="btn btn-lg btn-primary" data-a="m-cerrar">Entendido, sigo con otro</button></div>',{fijo:true})}
 /* hoja de cantidad tomada */
 function pedirCantidad(l){const q=Number(l.q)||0,equi=Number(l.equi)||1;let n=l.tomado!=null&&est(l)!=="cambio"?Number(l.tomado):q;
   const m=modal("¿Cuántas tomaste?",'<div class="small muted mono">Cód. '+esc(l.c)+'</div><div style="font:800 1.1rem/1.25 var(--f-disp);margin:.2rem 0 .4rem">'+esc(l.d)+'</div>'
