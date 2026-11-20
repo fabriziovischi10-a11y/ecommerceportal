@@ -534,12 +534,14 @@ function vPicking(){const x=pedidoActual();if(!x){ST.vista="pedidos";return vPed
       +(l.tomado!=null||l.estado==="faltante"?'<div class="small" style="margin-top:4px">Tomaste <b>'+fN(l.tomado||0)+'</b>'+(l.motivo?' · '+esc(l.motivo):"")+(l.por?' · '+esc(l.por):"")+(e==="cambio"?' · <b style="color:var(--orange)">ahora piden '+fN(l.q)+' (antes '+fN(l.qVista)+')</b>':"")+'</div>':"")
       +(resuelta(e)?"":'<div class="hint"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M11 8v8M15 8v8"/></svg>'+(l.ean?"Escaneá el producto para verificarlo":"Sin código de barras: ingresá el código interno del producto")+'</div>')
       +'<div class="acc"><button class="btn btn-lg" data-a="no-hay" style="border-color:rgba(224,38,28,.6);color:var(--rose)">No hay</button>'
-      +(resuelta(e)?'<button class="btn btn-lg" data-a="cantidad">Corregir</button>':l.ean?'<button class="btn btn-lg" data-a="saltar">Saltear ›</button>':'<button class="btn btn-lg btn-primary" data-a="sin-escanear">Ingresar código</button>')+'</div></div>'}
+      +(resuelta(e)?'<button class="btn btn-lg" data-a="cantidad">Corregir</button>':l.ean?'<button class="btn btn-lg" data-a="saltar">Saltear ›</button>':'<button class="btn btn-lg btn-primary" data-a="sin-escanear">Ingresar código</button>')+'</div>'
+      +(puedeACuartito(l)?'<button class="btn btn-block" data-a="a-cuartito" style="margin-top:10px;border-color:'+esc(pasDe("cuartito").color||"#9b5de5")+';color:'+esc(pasDe("cuartito").color||"#9b5de5")+';font-weight:800">📦 No lo encuentro: mandar al Cuartito</button>':"")
+      +(l.derivado?'<div class="small" style="margin-top:8px;color:'+esc(pasDe("cuartito").color||"#9b5de5")+';font-weight:700">↪ Lo mandó '+esc(l.derivado.por||"")+' desde '+esc(pasDe(l.derivado.desde).nombre)+(l.derivado.at?' · '+esc(fHM(l.derivado.at)):"")+'</div>':"")+'</div>'}
   if(listo&&pp.estado!=="listo")h+='<button class="btn btn-success btn-lg btn-block" style="margin-top:14px;min-height:66px;font-size:1.2rem" data-a="terminar">✓ Terminar pasillo</button>';
   const AZ=LS.get("pk-orden","rec")==="az";
   h+='<div class="sep" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap"><span>'+(AZ?"De la A a la Z":"Recorrido")+' · '+pl(A.length,"renglón","renglones")+' · '+fN(a.uni)+' u</span>'
     +'<span class="fila" style="gap:6px"><button class="btn btn-sm'+(AZ?"":" btn-primary")+'" data-a="pk-orden" data-v="rec" aria-pressed="'+!AZ+'">Recorrido</button><button class="btn btn-sm'+(AZ?" btn-primary":"")+'" data-a="pk-orden" data-v="az" aria-pressed="'+AZ+'">A → Z</button></span></div><div class="lista" style="margin-top:0;gap:8px">'
-    +A.map(z=>{const e=est(z);return'<button class="lin '+e+(z.k===ST.sel?" sel":"")+'" data-a="sel" data-id="'+esc(z.k)+'"><span class="ic">'+EST_IC[e]+'</span><span class="tx"><span class="t">'+esc(z.d)+'</span><span class="d mono">'+esc(ubiCorta(z))+' · '+esc(z.c)+'</span></span><span class="q">'+(resuelta(e)||e==="cambio"?fN(z.tomado||0)+'/':"")+fN(z.q)+'</span></button>'}).join("")+'</div>';
+    +A.map(z=>{const e=est(z);return'<button class="lin '+e+(z.k===ST.sel?" sel":"")+'" data-a="sel" data-id="'+esc(z.k)+'"><span class="ic">'+EST_IC[e]+'</span><span class="tx"><span class="t">'+esc(z.d)+'</span><span class="d mono">'+esc(ubiCorta(z))+' · '+esc(z.c)+(z.derivado?' · ↪ de '+esc(pasDe(z.derivado.desde).nombre):"")+'</span></span><span class="q">'+(resuelta(e)||e==="cambio"?fN(z.tomado||0)+'/':"")+fN(z.q)+'</span></button>'}).join("")+'</div>';
   if(Q.length)h+='<div class="sep">Quitadas del pedido</div><div class="lista" style="margin-top:0;gap:8px">'+Q.map(z=>'<div class="lin quitada"><span class="ic">–</span><span class="tx"><span class="t">'+esc(z.d)+'</span><span class="d">'+(Number(z.tomado)>0?"Ya tomaste "+fN(z.tomado)+": devolvelo a su lugar":"Ya no va en este pedido")+'</span></span></div>').join("")+'</div>';
   if(!listo&&a.tot)h+='<p class="muted small" style="text-align:center;margin-top:18px">Faltan '+pl(a.tot-a.res,"renglón","renglones")+' para terminar el pasillo</p>';
   return h}
@@ -564,6 +566,24 @@ function procesarCodigo(cod){cod=String(cod||"").trim();if(!cod)return;if(ST.vis
   const ck=ST.eanIdx[n]||(ST.cat&&ST.cat[cod]?cod:null),it=ck&&ST.cat[ck];
   const enOtroPas=Object.keys(x.pasillos).find(p=>p!==ST.yo.pasillo&&activas(x.pasillos[p]).some(coincide));
   senal("err",it?"✕ Ese es «"+it[1]+"»"+(enOtroPas?" (va en "+pasDe(enOtroPas).nombre+")":" y no está en este pedido"):"✕ Código "+cod+" no corresponde a este pedido")}
+/* MANDAR AL CUARTITO (2026-11-20): si el pickeador no encuentra un producto en su pasillo y está en el Cuartito, lo manda al pasillo
+   Cuartito DEL MISMO PEDIDO (misma zona / orden): la línea pasa a pasillos/cuartito/lineas/<cod> con derivado={desde,por,porId,at} y le aparece a
+   quien piquea el Cuartito. Solo si todavía no lo sacó (sin unidades tomadas). Si el Cuartito ya estaba terminado en ese pedido, se reabre. */
+const puedeACuartito=l=>!!(l&&ST.pasillos.cuartito&&ST.yo&&ST.yo.pasillo!=="cuartito"&&!(Number(l.tomado)>0));
+function mandarACuartito(l){const x=pedidoActual();if(!x)return;const p=ST.yo.pasillo,cu=pasDe("cuartito");
+  const m=modal("Mandar al Cuartito",'<div style="font:800 1.1rem/1.25 var(--f-disp);margin:0 0 .3rem">'+esc(l.d)+'</div><div class="small muted mono">Cód. '+esc(l.c)+(l.ean?' · '+esc(l.ean):"")+' · '+fN(l.q)+' u</div>'
+    +'<p style="margin:.7rem 0 0">Este producto se va a piquear en el <b style="color:'+esc(cu.color||"#9b5de5")+'">Cuartito</b>, dentro del mismo pedido:</p><p style="margin:.3rem 0 0;font-weight:800">'+esc(pedTit(x))+(x.nro?' · '+esc((x.destinos||[]).join(", ")):"")+'</p>'
+    +'<p class="small muted">Sale de tu lista y le aparece a '+esc(Object.values(cu.integrantes||{}).map(i=>i.nombre).join(", ")||"quien piquee el Cuartito")+'.</p>'
+    +'<div class="m-col"><button class="btn btn-lg btn-primary" id="acu-ok">📦 Mandar al Cuartito</button><button class="btn" data-a="m-cerrar">Cancelar</button></div>');
+  m.querySelector("#acu-ok").onclick=async()=>{const b=m.querySelector("#acu-ok");b.disabled=true;
+    const src=Object.assign({},(x.pasillos[p].lineas||{})[l.k]||{});["tomado","estado","por","porId","at","at1","motivo","qVista","correcciones"].forEach(k=>delete src[k]);
+    const dst=x.pasillos.cuartito,ya=dst&&(dst.lineas||{})[l.k]&&!dst.lineas[l.k].quitada?dst.lineas[l.k]:null,upd={};
+    if(ya)upd["pasillos/cuartito/lineas/"+l.k+"/q"]=(Number(ya.q)||0)+(Number(src.q)||0);
+    else upd["pasillos/cuartito/lineas/"+l.k]=Object.assign(src,{derivado:{desde:p,por:ST.yo.nombre,porId:ST.yo.id,at:ahora()}});
+    upd["pasillos/"+p+"/lineas/"+l.k]=null;
+    if(!dst){upd["pasillos/cuartito/estado"]="pendiente";upd["pasillos/cuartito/creado"]=ahora()}
+    else if(dst.estado==="listo"){upd["pasillos/cuartito/estado"]=dst.picker?"en curso":"pendiente";upd["pasillos/cuartito/fin"]=null}
+    try{await db.ref("picking/pedidos/"+x.id).update(upd);cerrarModal();ST.sel=null;senal("ok","Mandado al Cuartito: «"+l.d+"»");render()}catch(e){b.disabled=false;toast("No se pudo: "+e.message,"err")}}}
 /* YA PIQUEADO (2026-11-19): si el pickeador vuelve a escanear un producto que ya sacó (tomado > 0), no lo deja volver a sacarlo:
    salta la alerta. Si de verdad hay que cambiar la cantidad, está el botón «Corregir» del renglón. Si el TMS cambió lo pedido («cambio») o
    lo había marcado «No hay» (0), sí deja piquearlo. */
@@ -1369,6 +1389,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]")
     case"cantidad":{const l=lineaSel();if(l)pedirCantidad(l);break}
     case"sin-escanear":{const l=lineaSel();if(l)pedirCodInterno(l,()=>pedirCantidad(l));break}
     case"no-hay":{const l=lineaSel();if(l)noHay(l);break}
+    case"a-cuartito":{const l=lineaSel();if(l)mandarACuartito(l);break}
     case"terminar":terminar();break;
     case"pausa":pausar();break;
     case"reanudar":reanudar();break;
