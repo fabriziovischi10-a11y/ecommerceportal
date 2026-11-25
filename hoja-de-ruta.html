@@ -2611,9 +2611,64 @@ function formRec(r){
       MF.ok="Recepción grabada en "+d.deposito}});
 }
 
+/* ================= CONTROL DEL REMITO CONTRA EL WMS (2026-11-25) =================
+   La PC del depósito registra cada 10 min lo que se etiquetó en el WMS (pallets nuevos y aumentos en PAS01, sin pallet)
+   en la RTDB pública: wms_etiquetado/<día>/<clave> = {t,u,d,s?,i:[{c,n,q,l,v}]}.
+   Acá quien recibe compara esa lista con el remito en papel y marca cada producto: coincide / diferencia / no es de este remito.
+   Se guarda en la recepción (controlWms). Lo que ya se asignó a otra recepción no se vuelve a ofrecer. */
+const WMS_DB="https://portal-logistica-2c88c-default-rtdb.firebaseio.com/wms_etiquetado/";
+const wmsDepK=d=>{const s=String(d||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();return/15/.test(s)?"15":/parque|centro|\b3\b/.test(s)?"3":/\b1\b/.test(s)?"1":""};
+function wmsChip(r){const c=r.controlWms;if(c)return c.resultado==="ok"?'<span class="tag" style="background:#16a34a;color:#fff;border-color:transparent">✓ WMS controlado</span>':'<span class="tag" style="background:#dc2626;color:#fff;border-color:transparent">✗ Diferencia con WMS</span>';
+  return r.fecha>="2026-11-25"?'<span class="tag" style="opacity:.75">WMS sin controlar</span>':""}
+async function wmsCandidatos(r){const dk=wmsDepK(r.deposito),dias=[r.fecha,addD(r.fecha,1)],out={};
+  const tomadas=new Set();S.recepciones.forEach(o=>{if(o.id!==r.id&&o.controlWms)(o.controlWms.items||[]).forEach(it=>{if(it.estado!=="otro")(it.claves||[]).forEach(k=>tomadas.add(k))})});
+  for(const dia of dias){let d=null;try{const res=await fetch(WMS_DB+dia+".json");d=res.ok?await res.json():null}catch(e){d=null}
+    Object.entries(d||{}).forEach(([k,p])=>{if(!p||(dk&&p.d!==dk))return;const key=dia+"/"+k;if(tomadas.has(key))return;
+      (p.i||[]).forEach(it=>{const g=out[it.c]||(out[it.c]={c:String(it.c),n:it.n||"",pal:0,q:0,claves:[],sinPallet:false,t:p.t||"",dia,u:new Set()});
+        if(!g.claves.includes(key)){g.claves.push(key);if(p.s)g.sinPallet=true;else g.pal++}g.q+=Number(it.q)||0;if((p.t||"")<g.t)g.t=p.t;g.u.add(p.u)})})}
+  return Object.values(out).sort((a,b)=>String(a.t).localeCompare(String(b.t)))}
+function wmsResumenHtml(r){const c=r.controlWms;
+  if(!c)return'<div class="wamsg" style="margin-top:10px"><small>Control contra el WMS</small>'+(r.fecha>="2026-11-25"?'Todavía no se controló este remito contra lo etiquetado en el WMS.':'Sin control (el registro del WMS empezó el 25/11/2026).')+'</div>';
+  const dif=(c.items||[]).filter(i=>i.estado==="dif"),fal=c.faltantes||[];
+  return'<div class="wamsg" style="margin-top:10px;border-left:4px solid '+(c.resultado==="ok"?"#16a34a":"#dc2626")+'"><small>Control contra el WMS · '+esc(c.por||"")+' · '+new Date(c.at).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"})+'</small>'
+    +(c.resultado==="ok"?'<b style="color:#16a34a">✓ Todo lo etiquetado coincide con el remito</b> ('+pl((c.items||[]).filter(i=>i.estado==="ok").length,"producto","productos")+')'
+      :'<b style="color:#dc2626">✗ Hay diferencias</b>'+(dif.length?'<ul style="margin:6px 0 0 18px">'+dif.map(i=>'<li>'+esc(i.n)+' ('+esc(i.c)+'): WMS <b>'+fN(i.q)+'</b> u. · remito <b>'+fN(i.qRem)+'</b> u.</li>').join("")+'</ul>':"")
+        +(fal.length?'<div style="margin-top:6px">En el remito y <b>no etiquetado</b>:<ul style="margin:4px 0 0 18px">'+fal.map(x=>'<li>'+esc(x.d)+(x.q!=null?' · '+fN(x.q)+' u.':"")+'</li>').join("")+'</ul></div>':""))
+    +(c.obs?'<div class="sub" style="margin-top:6px">'+esc(c.obs)+'</div>':"")+'</div>'}
+function formCtlWms(r){let CW=null,fal=(r.controlWms&&r.controlWms.faltantes||[]).map(x=>Object.assign({},x));const prev={};((r.controlWms||{}).items||[]).forEach(i=>prev[i.c]=i);
+  openForm({title:"Controlar con el WMS · "+(r.proveedor||"Recepción")+(r.remitoNro?" · "+r.remitoNro:""),color:"c-caja",wide:true,saveLabel:"Guardar control",ok:"Control guardado",
+    fields:[{k:"cw",type:"html",cls:"gdet"},{k:"obs",label:"Observaciones del control",type:"textarea",full:true,ph:"Ej.: faltó 1 pallet, vino roto…"}],values:{obs:(r.controlWms||{}).obs||""},
+    after:async F=>{const box=$("f_cw");box.innerHTML='<span class="mu">Buscando lo etiquetado en el WMS…</span>';
+      CW=await wmsCandidatos(r);CW.forEach(g=>{const p=prev[g.c];g.estado=p?p.estado:"";g.qRem=p&&p.qRem!=null?p.qRem:null});
+      const draw=()=>{box.innerHTML='<p class="mu" style="margin:0 0 8px">Lo que se etiquetó en el WMS en <b>'+esc(r.deposito||"el depósito")+'</b> el '+fDL(r.fecha)+' y el día siguiente. Compará cada producto con el remito en papel y marcalo.</p>'
+        +(CW.length?'<div class="tw"><table class="wide" style="min-width:640px"><thead><tr><th>Producto etiquetado</th><th class="num">Pallets</th><th class="num">Unidades WMS</th><th>Contra el remito</th></tr></thead><tbody>'
+          +CW.map((g,i)=>'<tr><td><b>'+esc(g.n)+'</b><div class="sub mono">'+esc(g.c)+' · '+esc([...g.u].slice(0,3).join(", "))+(g.dia!==r.fecha?' · día siguiente':'')+' · '+esc(String(g.t).slice(11,16))+'</div></td>'
+            +'<td class="num mono">'+(g.pal||"")+(g.sinPallet?'<div class="sub">'+(g.pal?"+ ":"")+'sin pallet</div>':"")+'</td><td class="num mono"><b>'+fN(g.q)+'</b></td>'
+            +'<td><div class="seg" style="display:flex;gap:4px;flex-wrap:wrap">'+[["ok","✓ Coincide","#16a34a"],["dif","✗ Diferencia","#dc2626"],["otro","No es de este remito","#64748b"]].map(([v,t,col])=>'<button type="button" class="btn sm" data-cw="'+i+'" data-v="'+v+'" style="'+(g.estado===v?"background:"+col+";color:#fff;border-color:"+col:"")+'">'+t+'</button>').join("")+'</div>'
+            +(g.estado==="dif"?'<label class="sub" style="display:block;margin-top:6px">Unidades según remito <input type="number" min="0" step="any" data-cwq="'+i+'" value="'+(g.qRem??"")+'" style="width:110px"></label>':"")+'</td></tr>').join("")+'</tbody></table></div>'
+          +'<div style="margin:8px 0"><button type="button" class="btn sm" id="cwAll">✓ Marcar todo lo sin marcar como «Coincide»</button></div>'
+          :'<div class="none">No se encontró nada etiquetado en el WMS para este depósito ese día (o ya se asignó a otras recepciones). Si el remito trae productos, cargalos abajo como «no etiquetado».</div>')
+        +'<div class="fsec" style="margin-top:12px">En el remito y NO etiquetado en el WMS</div>'
+        +fal.map((x,i)=>'<div style="display:flex;gap:6px;margin-bottom:6px"><input data-fd="'+i+'" value="'+esc(x.d||"")+'" placeholder="Producto del remito" style="flex:1"><input type="number" min="0" step="any" data-fq="'+i+'" value="'+(x.q??"")+'" placeholder="Unid." style="width:100px"><button type="button" class="btn sm ghost" data-fdel="'+i+'" aria-label="Quitar">'+IC.x+'</button></div>').join("")
+        +'<button type="button" class="btn sm" id="cwAdd">+ Agregar producto no etiquetado</button>'};
+      draw();
+      box.addEventListener("click",e=>{const b=e.target.closest("[data-cw]");if(b){const g=CW[+b.dataset.cw];g.estado=g.estado===b.dataset.v?"":b.dataset.v;draw();return}
+        if(e.target.closest("#cwAll")){CW.forEach(g=>{if(!g.estado)g.estado="ok"});draw();return}
+        if(e.target.closest("#cwAdd")){fal.push({d:"",q:null});draw();return}
+        const d=e.target.closest("[data-fdel]");if(d){fal.splice(+d.dataset.fdel,1);draw()}});
+      box.addEventListener("input",e=>{const t=e.target;if(t.dataset.cwq!=null)CW[+t.dataset.cwq].qRem=t.value===""?null:Number(t.value);
+        if(t.dataset.fd!=null)fal[+t.dataset.fd].d=t.value;if(t.dataset.fq!=null)fal[+t.dataset.fq].q=t.value===""?null:Number(t.value)})},
+    save:async d=>{if(!CW)return ferr("Esperá a que cargue lo del WMS."),false;
+      const sin=CW.filter(g=>!g.estado);if(sin.length){ferr("Falta marcar "+pl(sin.length,"producto","productos")+" (coincide, diferencia o no es de este remito).");return false}
+      if(CW.some(g=>g.estado==="dif"&&g.qRem==null)){ferr("En las diferencias, poné las unidades que dice el remito.");return false}
+      const F2=fal.filter(x=>String(x.d||"").trim());
+      const items=CW.map(g=>({c:g.c,n:g.n,pal:g.pal,sinPallet:g.sinPallet,q:g.q,estado:g.estado,qRem:g.estado==="dif"?g.qRem:null,claves:g.claves}));
+      const resultado=items.some(i=>i.estado==="dif")||F2.length?"dif":"ok";
+      await write("recepciones",r.id,{controlWms:{at:new Date().toISOString(),por:pkQuien(),items,faltantes:F2.map(x=>({d:String(x.d).trim(),q:x.q??null})),obs:String(d.obs||"").trim(),resultado}});
+      MF.ok=resultado==="ok"?"Control guardado: todo coincide":"Control guardado con diferencias"}})}
 function verRec(r){
   openForm({title:(r.proveedor||"Recepción")+(r.remitoNro?" · "+r.remitoNro:""),color:"c-caja",noSave:true,meta:metaOf(r),fields:[{k:"rv",type:"html",cls:"gdet"}],
-    extra:(r.nFotos?'<button type="button" class="btn pri" id="rPdf" disabled>'+IC.dl+'Descargar PDF</button>':"")+(canWrite?'<button type="button" class="btn" id="rEdit">'+IC.edit+'Editar</button>':""),del:canWrite?(()=>delRec(r)):null,
+    extra:(r.nFotos?'<button type="button" class="btn pri" id="rPdf" disabled>'+IC.dl+'Descargar PDF</button>':"")+(canWrite?'<button type="button" class="btn" id="rWms">'+IC.check+'Controlar con WMS</button><button type="button" class="btn" id="rEdit">'+IC.edit+'Editar</button>':""),del:canWrite?(()=>delRec(r)):null,
     after:async()=>{const v=$("f_rv");
       v.innerHTML='<div class="doc-grid" style="margin-bottom:10px"><div><small>Depósito</small><b>'+depTag(r.deposito)+'</b></div><div><small>Recepción</small><b>'+fDL(r.fecha)+'</b>'+(r.fechaRemito?'<div class="sub">remito del '+fDY(r.fechaRemito)+'</div>':"")+'</div><div><small>Pallets · bultos</small><b>'+(r.pallets!=null?fN(r.pallets):"—")+' · '+(r.bultos!=null?fN(r.bultos):"—")+'</b>'+(r.palletTipo?'<div class="sub">'+esc(r.palletTipo)+(r.palletCant!=null&&r.palletCant!==""?': '+fN(r.palletCant):"")+'</div>':"")+(r.transportista?'<div class="sub">'+esc(r.transportista)+'</div>':"")+'</div><div><small>Firma de recibido</small><b>'+firmaChip(r)+'</b>'+(r.recibioId?'<div class="sub">recibió '+esc((persT(r.recibioId)||r.recibioId))+'</div>':"")+'</div></div>'
         +(r.pedido||r.cuit?'<p class="mu">'+[r.cuit?"CUIT "+esc(r.cuit):"",r.pedido?"Pedido "+esc(r.pedido):""].filter(Boolean).join(" · ")+'</p>':"")
@@ -2622,8 +2677,8 @@ function verRec(r){
         +'<div class="recfotos" id="rFotos">'+(r.nFotos?'<span class="mu">Cargando foto del remito…</span>':'<span class="mu">Sin foto</span>')+'</div>'
         +'<div class="tw"><table class="wide" style="min-width:480px"><thead><tr><th class="num" style="width:80px">Cant.</th><th>Producto</th><th>Código</th></tr></thead><tbody>'
         +((r.items||[]).map(i=>'<tr><td class="num mono"><b>'+fN(i.q)+'</b> <span class="mu">'+esc(i.u||"")+'</span></td><td>'+esc(i.d)+(i.n?'<div class="sub">✍ '+esc(i.n)+'</div>':"")+'</td><td class="mono">'+esc(i.c||"")+'</td></tr>').join("")||'<tr><td colspan="3" class="mu">Sin productos cargados</td></tr>')
-        +'</tbody><tfoot><tr><td class="num mono"><b>'+fN(recUnid(r))+'</b></td><td colspan="2"><b>'+pl((r.items||[]).length,"producto","productos")+'</b></td></tr></tfoot></table></div>';
-      const e=$("rEdit");if(e)e.onclick=()=>{closeForm();formRec(r)};
+        +'</tbody><tfoot><tr><td class="num mono"><b>'+fN(recUnid(r))+'</b></td><td colspan="2"><b>'+pl((r.items||[]).length,"producto","productos")+'</b></td></tr></tfoot></table></div>'+wmsResumenHtml(r);
+      const e=$("rEdit");if(e)e.onclick=()=>{closeForm();formRec(r)};const cw=$("rWms");if(cw)cw.onclick=()=>{closeForm();formCtlWms(r)};
       if(r.nFotos){const fb=$("rFotos");let h="";const pages=[];for(let i=0;i<r.nFotos;i++){try{const sn=await FOTOS().doc(r.id+"_f"+i).get();const dd=sn.exists&&sn.data();if(dd&&dd.data){let w=dd.w,hh=dd.h;if(!w){const im=await loadImg(dd.data);w=im.naturalWidth;hh=im.naturalHeight}pages.push({data:dd.data,w,h:hh});h+='<a href="'+dd.data+'" target="_blank" rel="noopener" title="Abrir la página"><img src="'+dd.data+'" alt="Remito página '+(i+1)+'"></a>'}}catch(x){}}
         if(fb)fb.innerHTML=h||'<span class="mu">No se pudo cargar la foto.</span>';
         const pb=$("rPdf");if(pb&&pages.length){pb.disabled=false;pb.onclick=async()=>{if(!downloads){toast("La descarga no está disponible en esta vista");return}
@@ -2644,7 +2699,7 @@ VIEWS.recepcion=function(){
   h+='<div class="flt"><input class="q" id="r_q" type="search" data-ui="rec.q" value="'+esc(F.q)+'" placeholder="Buscar proveedor, remito, producto…" aria-label="Buscar"><select id="r_dep" data-ui="rec.dep" aria-label="Depósito">'+opts([["","Todos los depósitos"]].concat(DEPOS),F.dep)+'</select><label>Desde <input type="date" id="r_desde" data-ui="rec.desde" value="'+F.desde+'"></label><label>Hasta <input type="date" id="r_hasta" data-ui="rec.hasta" value="'+F.hasta+'"></label></div>';
   h+='<section class="pn"><div class="pnh"><h2><span class="sw" style="--sw:var(--c-caja)"></span>'+pl(list.length,"recepción","recepciones")+'</h2><span class="s">'+fN(list.reduce((t,r)=>t+recPal(r),0))+' pallets · '+list.filter(r=>!r.firmado).length+' sin firma</span></div>'
     +(list.length?'<div class="tw"><table class="wide"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Remito</th><th>Depósito</th><th class="num">Pallets</th><th>Productos</th><th>Firma</th><th></th><th></th></tr></thead><tbody>'
-      +list.map(r=>'<tr class="ck" data-act="r-ver" data-id="'+r.id+'"><td class="mono">'+fDL(r.fecha)+'</td><td><b>'+esc(r.proveedor||"—")+'</b>'+(r.recibioId?'<div class="sub">recibió '+esc((persT(r.recibioId)||r.recibioId))+'</div>':"")+'</td><td class="mono">'+esc(r.remitoNro||"—")+'</td><td>'+depTag(r.deposito)+'</td><td class="num mono"><b>'+(r.pallets!=null?fN(r.pallets):"—")+'</b>'+(r.palletTipo?'<div class="sub">'+esc(r.palletTipo)+(r.palletCant!=null&&r.palletCant!==""?': '+fN(r.palletCant):"")+'</div>':"")+'</td><td>'+pl((r.items||[]).length,"producto","productos")+'<div class="sub">'+fN(recUnid(r))+' u.'+((r.items||[])[0]?" · "+esc(String(r.items[0].d).slice(0,40))+((r.items||[]).length>1?"…":""):"")+'</div></td><td>'+firmaChip(r)+'</td><td>'+(r.nFotos?'<span class="tag">📷 '+r.nFotos+'</span>':"")+(r.obs?' '+chip("Obs.","warn"):"")+'</td><td class="r">'+(canWrite?'<button class="btn sm ghost" data-act="r-edit" data-id="'+r.id+'" title="Editar" aria-label="Editar">'+IC.edit+'</button><button class="btn sm ghost dng" data-act="r-del" data-id="'+r.id+'" title="Eliminar" aria-label="Eliminar">'+IC.trash+'</button>':"")+'</td></tr>').join("")+'</tbody></table></div>'
+      +list.map(r=>'<tr class="ck" data-act="r-ver" data-id="'+r.id+'"><td class="mono">'+fDL(r.fecha)+'</td><td><b>'+esc(r.proveedor||"—")+'</b> '+wmsChip(r)+(r.recibioId?'<div class="sub">recibió '+esc((persT(r.recibioId)||r.recibioId))+'</div>':"")+'</td><td class="mono">'+esc(r.remitoNro||"—")+'</td><td>'+depTag(r.deposito)+'</td><td class="num mono"><b>'+(r.pallets!=null?fN(r.pallets):"—")+'</b>'+(r.palletTipo?'<div class="sub">'+esc(r.palletTipo)+(r.palletCant!=null&&r.palletCant!==""?': '+fN(r.palletCant):"")+'</div>':"")+'</td><td>'+pl((r.items||[]).length,"producto","productos")+'<div class="sub">'+fN(recUnid(r))+' u.'+((r.items||[])[0]?" · "+esc(String(r.items[0].d).slice(0,40))+((r.items||[]).length>1?"…":""):"")+'</div></td><td>'+firmaChip(r)+'</td><td>'+(r.nFotos?'<span class="tag">📷 '+r.nFotos+'</span>':"")+(r.obs?' '+chip("Obs.","warn"):"")+'</td><td class="r">'+(canWrite?'<button class="btn sm ghost" data-act="r-edit" data-id="'+r.id+'" title="Editar" aria-label="Editar">'+IC.edit+'</button><button class="btn sm ghost dng" data-act="r-del" data-id="'+r.id+'" title="Eliminar" aria-label="Eliminar">'+IC.trash+'</button>':"")+'</td></tr>').join("")+'</tbody></table></div>'
       :'<div class="none">No hay recepciones con este filtro.</div>')+'</section>';
   return h;
 };
@@ -3390,7 +3445,7 @@ const recBase=dep=>S.recepciones.filter(r=>r.fecha&&(!UI.rec.desde||r.fecha>=UI.
 const recPer=()=>(UI.rec.desde?fDL(UI.rec.desde):"el inicio")+" al "+fDL(UI.rec.hasta||today());
 /** problemas de un remito: lo que hay que mirar */
 function recProbs(r){const p=[];if(r.obs&&String(r.obs).trim())p.push(["obs","Observación"]);if(!r.firmado)p.push(["firma","Sin firma"]);if(recDif(r))p.push(["dif","Diferencia de cantidad"]);
-  if((r.items||[]).some(i=>i.n&&String(i.n).trim()))p.push(["nota","Notas a mano"]);if(r.pallets==null||r.pallets==="")p.push(["pal","Sin pallets"]);return p}
+  if((r.items||[]).some(i=>i.n&&String(i.n).trim()))p.push(["nota","Notas a mano"]);if(r.pallets==null||r.pallets==="")p.push(["pal","Sin pallets"]);if(r.controlWms&&r.controlWms.resultado==="dif")p.push(["wms","Diferencia con el WMS"]);return p}
 const recHora=r=>{const t=r.createdAt&&new Date(r.createdAt);return t&&!isNaN(t)?t.getHours():null};
 /* un gráfico con el motor de informes: filas {l,v} */
 function rChart(rows,t,type,unit){if(!rows.length||!rows.some(x=>x.v))return'<div class="none">Sin datos en el período.</div>';
@@ -3432,7 +3487,7 @@ function recTablero(){const R=recBase(),PR=(()=>{const pp=prevPer({desde:UI.rec.
   return h}
 
 function recDepositos(){const tot=sum(S.recepciones.filter(r=>r.fecha&&(!UI.rec.desde||r.fecha>=UI.rec.desde)&&(!UI.rec.hasta||r.fecha<=UI.rec.hasta)),recPal);
-  return'<div class="rgrid">'+DEPOS.map(d=>{const R=recBase(d),pal=sum(R,recPal),pv=recProvs(R).slice(0,5),pend=R.filter(r=>recProbs(r).some(p=>["obs","firma","dif"].includes(p[0]))&&!r.obsRev).length;
+  return'<div class="rgrid">'+DEPOS.map(d=>{const R=recBase(d),pal=sum(R,recPal),pv=recProvs(R).slice(0,5),pend=R.filter(r=>recProbs(r).some(p=>["obs","firma","dif","wms"].includes(p[0]))&&!r.obsRev).length;
     return'<section class="pn rdep" style="--dc:'+DEPC[d]+'"><div class="pnh"><h2><span class="sw" style="--sw:'+DEPC[d]+'"></span>'+esc(d)+'</h2><button class="btn sm" data-act="r-pdf" data-v="'+esc(d)+'">'+IC.file+'Informe PDF</button></div><div class="pnb">'
       +'<div class="rdk"><div><small>Pallets</small><b style="color:'+DEPC[d]+'">'+fN(pal)+'</b><span>'+pct(pal,tot)+' del total</span></div><div><small>Recepciones</small><b>'+fN(R.length)+'</b><span>'+fN(sum(R,recUnid))+' unidades</span></div><div><small>Sin firma</small><b'+(R.filter(r=>!r.firmado).length?' style="color:var(--warn)"':"")+'>'+R.filter(r=>!r.firmado).length+'</b><span>'+pct(R.filter(r=>!r.firmado).length,R.length)+'</span></div><div class="ck" data-act="r-obsdep" data-v="'+esc(d)+'" style="cursor:pointer"><small>A revisar</small><b'+(pend?' style="color:var(--bad)"':"")+'>'+pend+'</b><span>ver observaciones</span></div></div>'
       +(R.length?'<div class="secl" style="margin:12px 0 4px">Pallets por día</div>'+rChart(recSerie(R),"Pallets","columnas")
@@ -3477,7 +3532,7 @@ function recPdf(dep){const R=dep?recBase(dep):recBase(),L=recProvs(R),t="Recepci
   const head='<header class="p-head">'+P_LOGO+'<div class="p-wm"><b>PORTAL</b><i>DISTRIBUIDORA</i></div><div class="p-doc"><small>INFORME</small><b style="font-size:18px">'+esc(t)+'</b><span>'+esc(recPer())+'</span></div></header><div class="p-stripe"><i></i><i></i><i></i></div>';
   const tb=(cols,rows)=>'<table class="p-t"><thead><tr>'+cols.map(c=>'<th'+(c[1]?' style="text-align:right"':"")+'>'+c[0]+'</th>').join("")+'</tr></thead><tbody>'+rows.map(r=>'<tr class="r">'+r.map((v,i)=>'<td'+(cols[i][1]?' style="text-align:right"':"")+'>'+v+'</td>').join("")+'</tr>').join("")+'</tbody></table>';
   const ch=(tt,rows,ty)=>{const c=rChart(rows,tt,ty);return'<h3>'+esc(tt)+'</h3><div style="margin:4px 0 12px;break-inside:avoid">'+c+'</div>'};
-  const pend=R.filter(r=>recProbs(r).some(p=>["obs","firma","dif"].includes(p[0])));
+  const pend=R.filter(r=>recProbs(r).some(p=>["obs","firma","dif","wms"].includes(p[0])));
   let inner=head+'<div class="p-tot">'+[["Recepciones",fN(R.length)],["Pallets",fN(sum(R,recPal))],["Unidades",fN(sum(R,recUnid))],["Proveedores",String(L.length)],["Sin firma",String(R.filter(r=>!r.firmado).length)],["Con observación",String(R.filter(r=>r.obs&&String(r.obs).trim()).length)]].map(([l,v],i)=>pK(l,esc(v),["#1f4a9b","#e0261c","#2b8a3e","#6f42d6","#f08c00","#0b8f7c"][i])).join("")+'</div>'+VZ_PRINT
     +ch("Pallets por día",recSerie(R),"columnas")+(!dep&&!UI.rec.dep?ch("Pallets por depósito",DEPOS.map(d=>({l:d,v:sum(R.filter(r=>r.deposito===d),recPal)})),"dona"):"")
     +'<h3>Por proveedor</h3>'+tb([["Proveedor"],["Remitos",1],["Pallets",1],["Unidades",1],["Sin firma",1],["Con obs.",1],["Dif.",1],["En orden",1]],L.map(p=>[esc(p.k),p.rec,fN(p.pal),fN(p.uni),p.sf,p.obs,p.dif,p.ok!=null?p.ok+"%":""]))
@@ -3490,13 +3545,13 @@ function recPdf(dep){const R=dep?recBase(dep):recBase(),L=recProvs(R),t="Recepci
 const recLista=VIEWS.recepcion;
 VIEWS.recepcion=function(){const F=UI.rec;
   if(F.tab==="lista"||!S.recepciones.length){const h=recLista();return S.recepciones.length?h.replace('<div class="kpis">',recTabs()+'<div class="kpis">'):h}
-  const pend=recBase().filter(r=>recProbs(r).some(p=>["obs","firma","dif","nota"].includes(p[0]))&&!r.obsRev).length;
+  const pend=recBase().filter(r=>recProbs(r).some(p=>["obs","firma","dif","nota","wms"].includes(p[0]))&&!r.obsRev).length;
   let h=ph(crumb(["Inicio","inicio"],["Recepción"]),"Recepción de mercadería",'<button class="btn w" data-act="r-pdf" data-v="">'+IC.file+'Informe PDF</button><button class="btn green w" data-act="r-new">'+IC.up+'Cargar remito (foto)</button>',"box");
   h+=recTabs(pend);
   h+='<div class="flt"><div class="seg2">'+[["7","7 días"],["30","30 días"],["mes","Este mes"],["mesant","Mes anterior"],["todo","Todo"]].map(([k,t])=>'<button data-act="r-rango" data-v="'+k+'">'+t+'</button>').join("")+'</div>'
     +(F.tab==="depositos"?"":'<select data-ui="rec.dep" aria-label="Depósito">'+opts([["","Todos los depósitos"]].concat(DEPOS),F.dep)+'</select>')+'<label>Desde <input type="date" data-ui="rec.desde" value="'+F.desde+'"></label><label>Hasta <input type="date" data-ui="rec.hasta" value="'+F.hasta+'"></label></div>';
   return h+(F.tab==="tablero"?recTablero():F.tab==="depositos"?recDepositos():F.tab==="proveedores"?recProveedores():recObsLista())};
-function recTabs(pend){if(pend===undefined)pend=recBase().filter(r=>recProbs(r).some(p=>["obs","firma","dif","nota"].includes(p[0]))&&!r.obsRev).length;
+function recTabs(pend){if(pend===undefined)pend=recBase().filter(r=>recProbs(r).some(p=>["obs","firma","dif","nota","wms"].includes(p[0]))&&!r.obsRev).length;
   return'<div class="seg2 rtabs" role="tablist">'+REC_TABS.map(([k,t])=>'<button role="tab" class="'+(UI.rec.tab===k?"on":"")+'" data-act="r-tab" data-v="'+k+'">'+t+(k==="obs"&&pend?'<span class="cnt">'+pend+'</span>':"")+'</button>').join("")+'</div>'}
 Object.assign(GACT,{
   "r-tab":el=>{UI.rec.tab=el.dataset.v;render();scrollTo(0,0)},
