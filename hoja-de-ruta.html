@@ -2626,7 +2626,34 @@ async function wmsCandidatos(r){const dk=wmsDepK(r.deposito),dias=[r.fecha,addD(
     Object.entries(d||{}).forEach(([k,p])=>{if(!p||(dk&&p.d!==dk))return;const key=dia+"/"+k;if(tomadas.has(key))return;
       (p.i||[]).forEach(it=>{const g=out[it.c]||(out[it.c]={c:String(it.c),n:it.n||"",pal:0,q:0,claves:[],sinPallet:false,t:p.t||"",dia,u:new Set()});
         if(!g.claves.includes(key)){g.claves.push(key);if(p.s)g.sinPallet=true;else g.pal++}g.q+=Number(it.q)||0;if((p.t||"")<g.t)g.t=p.t;g.u.add(p.u)})})}
+  for(const n of(r.etiquetas||[])){const p=await wmsBuscarEtq(n,r.fecha);if(!p||tomadas.has(p.key))continue;
+    (p.i||[]).forEach(it=>{const g=out[it.c]||(out[it.c]={c:String(it.c),n:it.n||"",pal:0,q:0,claves:[],sinPallet:false,t:p.t||"",dia:p.dia,u:new Set()});
+      if(!g.claves.includes(p.key)){g.claves.push(p.key);g.pal++;g.q+=Number(it.q)||0;g.u.add(p.u);g.etq=true}})}
   return Object.values(out).sort((a,b)=>String(a.t).localeCompare(String(b.t)))}
+/* Números de etiqueta (pallet del WMS) asociados a un remito (2026-11-25): se cargan a mano o con lector.
+   Se busca el pallet en wms_etiquetado (desde el día anterior hasta 3 días después de la recepción). */
+const etqNum=v=>String(v||"").replace(/\D/g,"").replace(/^0+/,"");
+async function wmsBuscarEtq(n,fecha){for(const k of[0,1,-1,2,3]){const dia=addD(fecha,k);try{const res=await fetch(WMS_DB+dia+"/p"+n+".json");const p=res.ok?await res.json():null;if(p)return Object.assign({dia,key:dia+"/p"+n},p)}catch(e){}}return null}
+function etqOtraRec(n,r){return S.recepciones.find(o=>o.id!==r.id&&(o.etiquetas||[]).includes(n))}
+function etqFilaHtml(x,i){const p=x.p;return'<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line,#ddd);border-radius:8px;margin-bottom:6px"><b class="mono" style="min-width:80px">'+esc(x.n)+'</b><span style="flex:1;min-width:0">'
+  +(x.buscando?'<span class="mu">Buscando en el WMS…</span>':p?esc((p.i||[]).map(it=>it.n+" · "+fN(it.q)+" u.").join(" / "))+'<div class="sub">'+esc(p.u||"")+' · Dep. '+esc(p.d||"?")+' · '+fDL(p.dia)+' '+esc(String(p.t||"").slice(11,16))+'</div>':'<span style="color:var(--warn)">Todavía no aparece en el WMS</span><div class="sub">Se registra cada 10 minutos: si se acaba de etiquetar, va a aparecer después.</div>')
+  +(x.otra?'<div class="sub" style="color:var(--bad)">Ojo: esta etiqueta ya está cargada en '+esc(x.otra.proveedor||"otra recepción")+(x.otra.remitoNro?" · "+esc(x.otra.remitoNro):"")+'</div>':"")
+  +'</span><button type="button" class="btn sm ghost" data-etqdel="'+i+'" aria-label="Quitar etiqueta">'+IC.x+'</button></div>'}
+/** caja para cargar etiquetas: devuelve {lista()} ; onCambio se llama al agregar/quitar */
+function etqCaja(box,r,inicial,onCambio){const L=(inicial||[]).map(n=>({n,buscando:true}));
+  const draw=()=>{box.innerHTML='<div style="display:flex;gap:6px;margin-bottom:8px"><input id="etqIn" inputmode="numeric" placeholder="N° de etiqueta del pallet (o escaneala)" style="flex:1"><button type="button" class="btn" id="etqAdd">+ Agregar</button></div>'+L.map(etqFilaHtml).join("")};
+  const buscar=async x=>{x.p=await wmsBuscarEtq(x.n,r.fecha);x.otra=etqOtraRec(x.n,r);x.buscando=false;draw();if(onCambio)onCambio(L)};
+  const agregar=()=>{const inp=$("etqIn"),n=etqNum(inp&&inp.value);if(!n){toast("Escribí el número de etiqueta");return}
+    if(L.some(x=>x.n===n)){toast("Esa etiqueta ya está en la lista");inp.value="";return}const x={n,buscando:true};L.push(x);draw();buscar(x);setTimeout(()=>{const i=$("etqIn");if(i)i.focus()},30)};
+  box.addEventListener("click",e=>{if(e.target.closest("#etqAdd"))return agregar();const d=e.target.closest("[data-etqdel]");if(d){L.splice(+d.dataset.etqdel,1);draw();if(onCambio)onCambio(L)}});
+  box.addEventListener("keydown",e=>{if(e.target.id==="etqIn"&&e.key==="Enter"){e.preventDefault();agregar()}});
+  draw();L.forEach(buscar);return{lista:()=>L}}
+function formEtqRec(r){let caja=null;
+  openForm({title:"Etiquetas del remito · "+(r.proveedor||"Recepción")+(r.remitoNro?" · "+r.remitoNro:""),color:"c-caja",saveLabel:"Guardar etiquetas",ok:"Etiquetas guardadas",
+    fields:[{k:"etq",type:"html",cls:"gdet"}],
+    after:()=>{caja=etqCaja($("f_etq"),r,r.etiquetas||[])},
+    save:async()=>{const L=caja.lista().map(x=>x.n);await write("recepciones",r.id,{etiquetas:L});MF.ok=pl(L.length,"etiqueta guardada","etiquetas guardadas")}})}
+function etqResumenHtml(r){const L=r.etiquetas||[];return'<div class="wamsg" style="margin-top:10px"><small>Etiquetas de pallets del remito</small>'+(L.length?'<span class="mono">'+L.map(esc).join(" · ")+'</span> <span class="mu">('+pl(L.length,"etiqueta","etiquetas")+')</span>':'<span class="mu">Sin etiquetas cargadas.</span>')+'</div>'}
 function wmsResumenHtml(r){const c=r.controlWms;
   if(!c)return'<div class="wamsg" style="margin-top:10px"><small>Control contra el WMS</small>'+(r.fecha>="2026-11-25"?'Todavía no se controló este remito contra lo etiquetado en el WMS.':'Sin control (el registro del WMS empezó el 25/11/2026).')+'</div>';
   const dif=(c.items||[]).filter(i=>i.estado==="dif"),fal=c.faltantes||[];
@@ -2635,14 +2662,19 @@ function wmsResumenHtml(r){const c=r.controlWms;
       :'<b style="color:#dc2626">✗ Hay diferencias</b>'+(dif.length?'<ul style="margin:6px 0 0 18px">'+dif.map(i=>'<li>'+esc(i.n)+' ('+esc(i.c)+'): WMS <b>'+fN(i.q)+'</b> u. · remito <b>'+fN(i.qRem)+'</b> u.</li>').join("")+'</ul>':"")
         +(fal.length?'<div style="margin-top:6px">En el remito y <b>no etiquetado</b>:<ul style="margin:4px 0 0 18px">'+fal.map(x=>'<li>'+esc(x.d)+(x.q!=null?' · '+fN(x.q)+' u.':"")+'</li>').join("")+'</ul></div>':""))
     +(c.obs?'<div class="sub" style="margin-top:6px">'+esc(c.obs)+'</div>':"")+'</div>'}
-function formCtlWms(r){let CW=null,fal=(r.controlWms&&r.controlWms.faltantes||[]).map(x=>Object.assign({},x));const prev={};((r.controlWms||{}).items||[]).forEach(i=>prev[i.c]=i);
+function formCtlWms(r){let CW=null,caja=null,draw=()=>{},fal=(r.controlWms&&r.controlWms.faltantes||[]).map(x=>Object.assign({},x));const prev={};((r.controlWms||{}).items||[]).forEach(i=>prev[i.c]=i);
   openForm({title:"Controlar con el WMS · "+(r.proveedor||"Recepción")+(r.remitoNro?" · "+r.remitoNro:""),color:"c-caja",wide:true,saveLabel:"Guardar control",ok:"Control guardado",
-    fields:[{k:"cw",type:"html",cls:"gdet"},{k:"obs",label:"Observaciones del control",type:"textarea",full:true,ph:"Ej.: faltó 1 pallet, vino roto…"}],values:{obs:(r.controlWms||{}).obs||""},
+    fields:[{k:"etqc",type:"html",cls:"gdet"},{k:"cw",type:"html",cls:"gdet"},{k:"obs",label:"Observaciones del control",type:"textarea",full:true,ph:"Ej.: faltó 1 pallet, vino roto…"}],values:{obs:(r.controlWms||{}).obs||""},
     after:async F=>{const box=$("f_cw");box.innerHTML='<span class="mu">Buscando lo etiquetado en el WMS…</span>';
+      const eb=$("f_etqc");eb.insertAdjacentHTML("beforebegin",'<div class="fsec" style="grid-column:1/-1">Números de etiqueta de este remito</div>');
+      let etqs=(r.etiquetas||[]).slice();
+      const recargar=async()=>{const marc={};(CW||[]).forEach(g=>{if(g.estado)marc[g.c]={estado:g.estado,qRem:g.qRem}});
+        CW=await wmsCandidatos(Object.assign({},r,{etiquetas:etqs}));CW.forEach(g=>{const p=marc[g.c]||prev[g.c];g.estado=p?p.estado:"";g.qRem=p&&p.qRem!=null?p.qRem:null});draw()};
+      caja=etqCaja(eb,r,etqs,L=>{if(L.some(x=>x.buscando))return;const nv=L.map(x=>x.n);if(nv.join()!==etqs.join()){etqs=nv;recargar()}});
       CW=await wmsCandidatos(r);CW.forEach(g=>{const p=prev[g.c];g.estado=p?p.estado:"";g.qRem=p&&p.qRem!=null?p.qRem:null});
-      const draw=()=>{box.innerHTML='<p class="mu" style="margin:0 0 8px">Lo que se etiquetó en el WMS en <b>'+esc(r.deposito||"el depósito")+'</b> el '+fDL(r.fecha)+' y el día siguiente. Compará cada producto con el remito en papel y marcalo.</p>'
+      draw=()=>{box.innerHTML='<p class="mu" style="margin:0 0 8px">Lo que se etiquetó en el WMS en <b>'+esc(r.deposito||"el depósito")+'</b> el '+fDL(r.fecha)+' y el día siguiente. Compará cada producto con el remito en papel y marcalo.</p>'
         +(CW.length?'<div class="tw"><table class="wide" style="min-width:640px"><thead><tr><th>Producto etiquetado</th><th class="num">Pallets</th><th class="num">Unidades WMS</th><th>Contra el remito</th></tr></thead><tbody>'
-          +CW.map((g,i)=>'<tr><td><b>'+esc(g.n)+'</b><div class="sub mono">'+esc(g.c)+' · '+esc([...g.u].slice(0,3).join(", "))+(g.dia!==r.fecha?' · día siguiente':'')+' · '+esc(String(g.t).slice(11,16))+'</div></td>'
+          +CW.map((g,i)=>'<tr><td><b>'+esc(g.n)+'</b><div class="sub mono">'+esc(g.c)+' · '+esc([...g.u].slice(0,3).join(", "))+(g.etq?' · por etiqueta':g.dia!==r.fecha?' · día siguiente':'')+' · '+esc(String(g.t).slice(11,16))+'</div></td>'
             +'<td class="num mono">'+(g.pal||"")+(g.sinPallet?'<div class="sub">'+(g.pal?"+ ":"")+'sin pallet</div>':"")+'</td><td class="num mono"><b>'+fN(g.q)+'</b></td>'
             +'<td><div class="seg" style="display:flex;gap:4px;flex-wrap:wrap">'+[["ok","✓ Coincide","#16a34a"],["dif","✗ Diferencia","#dc2626"],["otro","No es de este remito","#64748b"]].map(([v,t,col])=>'<button type="button" class="btn sm" data-cw="'+i+'" data-v="'+v+'" style="'+(g.estado===v?"background:"+col+";color:#fff;border-color:"+col:"")+'">'+t+'</button>').join("")+'</div>'
             +(g.estado==="dif"?'<label class="sub" style="display:block;margin-top:6px">Unidades según remito <input type="number" min="0" step="any" data-cwq="'+i+'" value="'+(g.qRem??"")+'" style="width:110px"></label>':"")+'</td></tr>').join("")+'</tbody></table></div>'
@@ -2664,11 +2696,11 @@ function formCtlWms(r){let CW=null,fal=(r.controlWms&&r.controlWms.faltantes||[]
       const F2=fal.filter(x=>String(x.d||"").trim());
       const items=CW.map(g=>({c:g.c,n:g.n,pal:g.pal,sinPallet:g.sinPallet,q:g.q,estado:g.estado,qRem:g.estado==="dif"?g.qRem:null,claves:g.claves}));
       const resultado=items.some(i=>i.estado==="dif")||F2.length?"dif":"ok";
-      await write("recepciones",r.id,{controlWms:{at:new Date().toISOString(),por:pkQuien(),items,faltantes:F2.map(x=>({d:String(x.d).trim(),q:x.q??null})),obs:String(d.obs||"").trim(),resultado}});
+      await write("recepciones",r.id,{etiquetas:caja?caja.lista().map(x=>x.n):(r.etiquetas||[]),controlWms:{at:new Date().toISOString(),por:pkQuien(),items,faltantes:F2.map(x=>({d:String(x.d).trim(),q:x.q??null})),obs:String(d.obs||"").trim(),resultado}});
       MF.ok=resultado==="ok"?"Control guardado: todo coincide":"Control guardado con diferencias"}})}
 function verRec(r){
   openForm({title:(r.proveedor||"Recepción")+(r.remitoNro?" · "+r.remitoNro:""),color:"c-caja",noSave:true,meta:metaOf(r),fields:[{k:"rv",type:"html",cls:"gdet"}],
-    extra:(r.nFotos?'<button type="button" class="btn pri" id="rPdf" disabled>'+IC.dl+'Descargar PDF</button>':"")+(canWrite?'<button type="button" class="btn" id="rWms">'+IC.check+'Controlar con WMS</button><button type="button" class="btn" id="rEdit">'+IC.edit+'Editar</button>':""),del:canWrite?(()=>delRec(r)):null,
+    extra:(r.nFotos?'<button type="button" class="btn pri" id="rPdf" disabled>'+IC.dl+'Descargar PDF</button>':"")+(canWrite?'<button type="button" class="btn" id="rEtq">🏷 Etiquetas</button><button type="button" class="btn" id="rWms">'+IC.check+'Controlar con WMS</button><button type="button" class="btn" id="rEdit">'+IC.edit+'Editar</button>':""),del:canWrite?(()=>delRec(r)):null,
     after:async()=>{const v=$("f_rv");
       v.innerHTML='<div class="doc-grid" style="margin-bottom:10px"><div><small>Depósito</small><b>'+depTag(r.deposito)+'</b></div><div><small>Recepción</small><b>'+fDL(r.fecha)+'</b>'+(r.fechaRemito?'<div class="sub">remito del '+fDY(r.fechaRemito)+'</div>':"")+'</div><div><small>Pallets · bultos</small><b>'+(r.pallets!=null?fN(r.pallets):"—")+' · '+(r.bultos!=null?fN(r.bultos):"—")+'</b>'+(r.palletTipo?'<div class="sub">'+esc(r.palletTipo)+(r.palletCant!=null&&r.palletCant!==""?': '+fN(r.palletCant):"")+'</div>':"")+(r.transportista?'<div class="sub">'+esc(r.transportista)+'</div>':"")+'</div><div><small>Firma de recibido</small><b>'+firmaChip(r)+'</b>'+(r.recibioId?'<div class="sub">recibió '+esc((persT(r.recibioId)||r.recibioId))+'</div>':"")+'</div></div>'
         +(r.pedido||r.cuit?'<p class="mu">'+[r.cuit?"CUIT "+esc(r.cuit):"",r.pedido?"Pedido "+esc(r.pedido):""].filter(Boolean).join(" · ")+'</p>':"")
@@ -2677,8 +2709,8 @@ function verRec(r){
         +'<div class="recfotos" id="rFotos">'+(r.nFotos?'<span class="mu">Cargando foto del remito…</span>':'<span class="mu">Sin foto</span>')+'</div>'
         +'<div class="tw"><table class="wide" style="min-width:480px"><thead><tr><th class="num" style="width:80px">Cant.</th><th>Producto</th><th>Código</th></tr></thead><tbody>'
         +((r.items||[]).map(i=>'<tr><td class="num mono"><b>'+fN(i.q)+'</b> <span class="mu">'+esc(i.u||"")+'</span></td><td>'+esc(i.d)+(i.n?'<div class="sub">✍ '+esc(i.n)+'</div>':"")+'</td><td class="mono">'+esc(i.c||"")+'</td></tr>').join("")||'<tr><td colspan="3" class="mu">Sin productos cargados</td></tr>')
-        +'</tbody><tfoot><tr><td class="num mono"><b>'+fN(recUnid(r))+'</b></td><td colspan="2"><b>'+pl((r.items||[]).length,"producto","productos")+'</b></td></tr></tfoot></table></div>'+wmsResumenHtml(r);
-      const e=$("rEdit");if(e)e.onclick=()=>{closeForm();formRec(r)};const cw=$("rWms");if(cw)cw.onclick=()=>{closeForm();formCtlWms(r)};
+        +'</tbody><tfoot><tr><td class="num mono"><b>'+fN(recUnid(r))+'</b></td><td colspan="2"><b>'+pl((r.items||[]).length,"producto","productos")+'</b></td></tr></tfoot></table></div>'+etqResumenHtml(r)+wmsResumenHtml(r);
+      const e=$("rEdit");if(e)e.onclick=()=>{closeForm();formRec(r)};const cw=$("rWms");if(cw)cw.onclick=()=>{closeForm();formCtlWms(r)};const ce=$("rEtq");if(ce)ce.onclick=()=>{closeForm();formEtqRec(r)};
       if(r.nFotos){const fb=$("rFotos");let h="";const pages=[];for(let i=0;i<r.nFotos;i++){try{const sn=await FOTOS().doc(r.id+"_f"+i).get();const dd=sn.exists&&sn.data();if(dd&&dd.data){let w=dd.w,hh=dd.h;if(!w){const im=await loadImg(dd.data);w=im.naturalWidth;hh=im.naturalHeight}pages.push({data:dd.data,w,h:hh});h+='<a href="'+dd.data+'" target="_blank" rel="noopener" title="Abrir la página"><img src="'+dd.data+'" alt="Remito página '+(i+1)+'"></a>'}}catch(x){}}
         if(fb)fb.innerHTML=h||'<span class="mu">No se pudo cargar la foto.</span>';
         const pb=$("rPdf");if(pb&&pages.length){pb.disabled=false;pb.onclick=async()=>{if(!downloads){toast("La descarga no está disponible en esta vista");return}
