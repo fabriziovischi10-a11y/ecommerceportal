@@ -272,7 +272,7 @@ let FS=null;
 const tms=c=>FS.collection("hojaruta").doc("datos").collection(c);
 const mia=c=>FS.collection("vehiculos").doc("datos").collection(c);
 async function conectar(){
-  if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+  if(!firebase.apps.some(function(a){return a.name==="[DEFAULT]"}))firebase.initializeApp(firebaseConfig);
   await firebase.auth().signInAnonymously();
   const app=firebase.app();
   const modular=app._delegate.container.getProvider("firestore").getImmediate({identifier:FIRESTORE_DATABASE_ID});
