@@ -6307,7 +6307,7 @@ function envolverCol(col){return{
   orderBy:(...a)=>col.orderBy(...a),limit:n=>col.limit(n),where:(...a)=>col.where(...a),onSnapshot:(...a)=>col.onSnapshot(...a),get:()=>col.get(),
   add:d=>col.add(d)}}
 async function conectarFirebase(){
-  if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+  if(!firebase.apps.some(function(a){return a.name==="[DEFAULT]"}))firebase.initializeApp(firebaseConfig);
   await firebase.auth().signInAnonymously();
   const app=firebase.app();
   const modular=app._delegate.container.getProvider("firestore").getImmediate({identifier:FIRESTORE_DATABASE_ID});
