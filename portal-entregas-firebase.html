@@ -787,7 +787,7 @@ function useDb() {
     let alive = true;
     (async () => {
       try {
-        if (!firebase.apps.length) {
+        if (!firebase.apps.some(function(a){return a.name==="[DEFAULT]"})) {
           firebase.initializeApp(firebaseConfig);
         }
         await firebase.auth().signInAnonymously();
