@@ -4004,12 +4004,75 @@ function costoSec(s){if(s.estado==="Anulada")return"";const c=costoViaje(s),pv=s
     +(cfHay()?"":'<p class="mu" style="margin:8px 0 0">Faltan sueldos, amortización, GPS y mantenimiento: cargalos en <a href="#costosfijos">Base de datos › Costos de los viajes</a>.</p>')+'</section>'}
 
 /* ---- salida: hora y odómetro ---- */
+/* ================= TMS → GESTIENTREGA (2026-11-26) =================
+   Al marcar la salida de una orden de Preventa, se pasa sola a GestiEntrega (proyecto gestientrega-portal, entregas/datos/…):
+   una ruta por zona (importKey "TMS-<salida>-<zona>") con su cobrador (por legajo, o el chofer si no hay cobrador), la caja chica,
+   el camión, y las facturas del Excel de la hoja (los clientes y zonas que no existan se crean, marcados origen:"tms").
+   Las facturas que ya existen en GestiEntrega (mismo número) no se duplican. Se puede reenviar desde el menú ⋯ del viaje.
+   IDs numéricos como en GestiEntrega (GE.nuevoId). Prueba: window.HRGE.prueba(<salidaId>) escribe en entregas_prueba. */
+const GE_CFG={apiKey:"AIzaSyCbz7XLb9jLjlvwEz-NG_jyEPdFwWob7SM",authDomain:"gestientrega-portal.firebaseapp.com",projectId:"gestientrega-portal",storageBucket:"gestientrega-portal.firebasestorage.app",messagingSenderId:"639729899204",appId:"1:639729899204:web:3609e16c548801e1821b91"};
+let geDbP=null,geUlt=0;
+function geDb(){return geDbP||(geDbP=(async()=>{const app=firebase.apps.find(a=>a.name==="entregas")||firebase.initializeApp(GE_CFG,"entregas");if(!app.auth().currentUser)await app.auth().signInAnonymously();return app.firestore()})().catch(e=>{geDbP=null;throw e}))}
+const geId=()=>{let n=Date.now()*1000+Math.floor(Math.random()*1000);if(n<=geUlt)n=geUlt+1;geUlt=n;return n};
+const geNorm=x=>String(x??"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-zA-Z0-9]+/g," ").trim().toLowerCase();
+const gePad=c=>{c=String(c??"").trim();return/^\d{1,3}$/.test(c)?String(Number(c)).padStart(2,"0"):c};
+async function geEnIn(col,campo,vals){const out=[],U=[...new Set(vals.filter(v=>v!==""&&v!=null))];for(let i=0;i<U.length;i+=30){const sn=await col.where(campo,"in",U.slice(i,i+30)).get();sn.docs.forEach(d=>out.push(d.data()))}return out}
+async function geEnviarSalida(s,op={}){
+  if(s.canal!=="Preventa")return{omitido:"solo se pasan las órdenes de Preventa"};
+  const cs=cargasDe(s).filter(c=>(c.items||[]).length);if(!cs.length)return{omitido:"la hoja no tiene el Excel de facturas cargado"};
+  const db2=await geDb(),R=db2.collection(op.prueba?"entregas_prueba":"entregas").doc("datos"),col=n=>R.collection(n),ahora=new Date().toISOString(),tag={origen:"tms",tmsSalidaId:s.id};
+  // cobrador de Soy Chofer: el cobrador de la orden (o el chofer), buscado por legajo y después por nombre; si no existe se crea
+  const pid=s.cobradorId||s.choferId,p=get("choferes",pid);let drv=null,drvNuevo=false;
+  if(p){const leg=String(p.legajo||"").trim().toUpperCase();
+    if(leg){const x=await col("drivers").where("code","==",leg).get();if(!x.empty)drv=x.docs[0].data()}
+    if(!drv){const all=(await col("drivers").get()).docs.map(d=>d.data());drv=all.find(d=>geNorm(d.name)===geNorm(p.nombre))||null}
+    if(!drv){drv=Object.assign({id:geId(),code:leg||("TMS-"+pid),name:p.nombre,phone:p.telefono||null,active:true,createdAt:ahora},tag);await col("drivers").doc(String(drv.id)).set(drv);drvNuevo=true}}
+  const cam=get("camiones",s.camionId),pat=cam?cam.patente:"",chof=get("choferes",s.choferId);
+  const zT=cs.map(c=>({c,z:get("zonas",c.zonaId)}));
+  const zBy={};(await geEnIn(col("zones"),"code",zT.map(x=>gePad(x.z?x.z.codigo:"")))).forEach(z=>zBy[gePad(z.code)]=z);
+  const cBy={};(await geEnIn(col("clients"),"code",cs.flatMap(c=>c.items.map(it=>String(it.codcli||"").trim().toUpperCase())))).forEach(x=>cBy[String(x.code).trim().toUpperCase()]=x);
+  const fBy={};(await geEnIn(col("invoices"),"invoiceNumber",cs.flatMap(c=>c.items.flatMap(it=>(it.facturas||[]).map(f=>String(f.id||"").trim()))))).forEach(f=>fBy[String(f.invoiceNumber).trim().toUpperCase()]=f);
+  const ops=[];let nRutas=0,nFac=0,nOmit=0,nCli=0,nZon=0,total=0;
+  for(const{c,z}of zT){
+    const code=gePad(z?z.codigo:""),zNom=z?(z.nombre||""):"";
+    let gz=code&&zBy[code];
+    if(!gz){gz=Object.assign({id:geId(),code,name:"Zona "+(code||zNom||"?"),description:"Creada desde el TMS",active:true,createdAt:ahora,updatedAt:ahora},tag);ops.push([col("zones").doc(String(gz.id)),gz]);if(code)zBy[code]=gz;nZon++}
+    const key="TMS-"+s.id+"-"+c.zonaId,ex=await col("routes").where("importKey","==",key).get();let ru=ex.empty?null:ex.docs[0].data();
+    const dr={driverId:drv?drv.id:null,driverName:drv?drv.name:null,pettyCashAmount:Number(s.cajaChica)||0,vehicleCode:cam?(cam.modelo||null):null,vehiclePlate:pat||null,
+      notes:"Desde el TMS · Orden N° "+nro(s)+(chof?" · chofer "+chof.nombre:"")+(pat?" · camión "+pat:""),updatedAt:ahora};
+    if(!ru){ru=Object.assign({id:geId(),name:gz.name+(zNom&&geNorm(zNom)!==geNorm(gz.name)?" · "+zNom:"")+" · Orden "+nro(s)+" · "+s.fecha,zoneId:gz.id,zoneName:gz.name,zoneCode:code||null,serviceDate:s.fecha,status:"scheduled",closedAt:null,importKey:key,sourceFile:c.archivo||"TMS",vehicleId:null,createdAt:ahora},dr,tag);ops.push([col("routes").doc(String(ru.id)),ru]);nRutas++}
+    else if(ru.status!=="completed"){Object.assign(ru,dr);ops.push([col("routes").doc(String(ru.id)),dr,1]);
+      (await col("invoices").where("routeId","==",ru.id).get()).docs.forEach(d=>ops.push([d.ref,{driverId:dr.driverId,driverName:dr.driverName},1]))}
+    else continue; // ruta ya cerrada en GestiEntrega: no se toca
+    for(const it of c.items){const cc=String(it.codcli||"").trim().toUpperCase();let cl=cc&&cBy[cc];
+      if(!cl){cl=Object.assign({id:geId(),code:cc,businessName:it.nombre||cc,contactName:null,phone:null,address:null,active:true,zoneId:gz.id,createdAt:ahora,updatedAt:ahora},tag);ops.push([col("clients").doc(String(cl.id)),cl]);if(cc)cBy[cc]=cl;nCli++}
+      for(const f of(it.facturas||[])){const num=String(f.id||"").trim();if(!num)continue;const k=num.toUpperCase();if(fBy[k]){nOmit++;continue}
+        const amt=Math.round((Number(f.total)||0)*100)/100;
+        const inv=Object.assign({id:geId(),invoiceNumber:num,amount:amt,source:"tms",description:null,status:"pending",rejectionReason:null,rejectionNotes:null,rejectedAt:null,deliveryType:null,paymentMethod:null,
+          accountAmount:amt<0?amt:null,accountPaidAmount:0,cashAmount:null,checkAmounts:null,transferAmount:null,discountPercent:0,discountAmount:0,netAmount:null,paymentNotes:null,deliveredAt:null,
+          deliveredLatitude:null,deliveredLongitude:null,deliveredAccuracyMeters:null,locationCapturedAt:null,createdAt:ahora,clientId:cl.id,clientName:cl.businessName,clientCode:cl.code||null,clientAddress:cl.address||null,
+          routeId:ru.id,routeName:ru.name,serviceDate:ru.serviceDate,zoneName:ru.zoneName,driverId:ru.driverId==null?null:ru.driverId,driverName:ru.driverName||null,
+          punctualityRating:null,productConditionRating:null,serviceRating:null,communicationRating:null,overallRating:null},tag);
+        fBy[k]=inv;ops.push([col("invoices").doc(String(inv.id)),inv]);nFac++;total+=amt}}}
+  for(let i=0;i<ops.length;i+=400){const b=db2.batch();ops.slice(i,i+400).forEach(([r,d,merge])=>merge?b.set(r,d,{merge:true}):b.set(r,d));await b.commit()}
+  const res={at:ahora,rutas:cs.length,rutasNuevas:nRutas,facturas:nFac,omitidas:nOmit,clientesNuevos:nCli,zonasNuevas:nZon,total:Math.round(total*100)/100,cobrador:drv?drv.name:null,cobradorNuevo:drvNuevo,prueba:!!op.prueba};
+  if(!op.prueba)try{await C("salidas").doc(s.id).update({ge:res})}catch(e){console.warn("ge estado",e)}
+  return res}
+function geResTxt(r){if(!r)return"";if(r.omitido)return"No se pasó a GestiEntrega: "+r.omitido;
+  return"En GestiEntrega: "+pl(r.rutas,"zona","zonas")+" · "+pl(r.facturas,"factura nueva","facturas nuevas")+(r.omitidas?" ("+r.omitidas+" ya estaban)":"")+(r.cobrador?" · cobra "+r.cobrador:" · sin cobrador")}
+async function geEnviarYAvisar(s){try{const r=await geEnviarSalida(s);toast(geResTxt(r));return r}
+  catch(e){console.error("GestiEntrega",e);toast("No se pudo pasar a GestiEntrega ("+((e&&(e.code||e.message))||e)+"). Reintentá desde el menú ⋯ del viaje.");
+    try{await C("salidas").doc(s.id).update({ge:{at:new Date().toISOString(),error:String((e&&(e.code||e.message))||e).slice(0,200)}})}catch(x){}}}
+window.HRGE={prueba:async id=>{const s=get("salidas",id);if(!s)throw new Error("no existe la salida");return geEnviarSalida(s,{prueba:true})}};
+
 function formSalio(s){const prev=odoPrev(s),cm=cajaMatch(s);
   openForm({title:"Salida del viaje N° "+nro(s),color:"c-viaje",values:{horaSalida:s.horaSalida||nowHM(),kmSalida:hayN(s.kmSalida)?s.kmSalida:prev,cajaChica:hayN(s.cajaChica)?s.cajaChica:(cm.length?cajaAsig(s):null)},ok:"N° "+nro(s)+" en viaje",saveLabel:"Marcar salida",focus:"kmSalida",
     fields:[{k:"horaSalida",label:"Hora de salida",type:"time",req:true},{k:"kmSalida",label:"Odómetro al salir (km)",type:"number",help:(prev?"Último odómetro conocido de "+esc(camLbl(s.camionId))+": "+fN(prev)+" km. ":"")+"Si no lo tenés, dejalo vacío: el gasoil se estima con los km del viaje"},
       {k:"cajaChica",label:"Caja chica que se le entrega ($)",type:"number",full:true,help:cm.length?"Según la tabla: "+esc(cm.map(x=>x.nombre+" "+fM(x.monto)).join(" + ")):"No hay caja chica cargada para "+(s.canal==="Preventa"?"estas zonas":"estas sucursales")+" · la cargás en Base de datos › Caja chica"}],
     save:async d=>{if(prev&&d.kmSalida!=null&&d.kmSalida<prev-5&&!MF.okBajo){MF.okBajo=1;ferr("El odómetro es menor que el último conocido ("+fN(prev)+" km). Revisalo; si está bien, tocá «Marcar salida» otra vez.");return false}
       await C("salidas").doc(s.id).update(Object.assign(s.estado==="Programada"?cargadaCampos(s):{},{estado:"En ruta",horaSalida:d.horaSalida,salidaAt:today()+"T"+d.horaSalida,kmSalida:d.kmSalida,cajaChica:d.cajaChica,updatedAt:new Date().toISOString(),updatedBy:uid}));
+      /* 2026-11-26: Preventa → GestiEntrega (rutas, cobrador, caja chica, camión y facturas), sin esperar */
+      if(s.canal==="Preventa")setTimeout(()=>geEnviarYAvisar(Object.assign({},get("salidas",s.id)||s,{cajaChica:d.cajaChica})),1200);
       /* arranca solo el seguimiento satelital de la patente */
       if(ljCfg().accountId){setTimeout(gpsReqSync,800);MF.ok="N° "+nro(s)+" en viaje · seguimiento LoJack activado"}}})}
 
@@ -4113,6 +4176,7 @@ INF.splice(INF.findIndex(r=>r.id==="ordenes")+1,0,{id:"costos",cat:"Operación",
     return{kpis:kp,cols:[["N°","n","t"],["Fecha","f","t"],["Canal","canal","t"],["Camión","cam","t"],["Chofer","cho","t"],["Destinos","dest","t"],["Odómetro salida","ks","n"],["Km","km","km"],["Gasoil","gas","m"],["Caja chica","caja","m"],["Sueldos","pers","m"],["Amortización, GPS y fijos","fijo","m"],["Mantenimiento","mant","m"],["Otros","otros","m"],["Costo total","tot","m"],["Valor","val","m"],["Costo / valor %","pct","d1"],["$ por km","pkm","m"]],rows,chart:{lab:"n",val:"tot",t:"Costo de cada viaje",noSort:true}}}});
 
 Object.assign(GACT,{
+  "ge-env":(el,id)=>{const s=get("salidas",id);if(!s||!canWrite)return;toast("Enviando a GestiEntrega…");geEnviarYAvisar(s)},
   "salio":(el,id)=>{const s=get("salidas",id);if(s&&canWrite)formSalio(s);else if(!canWrite)toast("Acceso de solo lectura")},
   "costos":(el,id)=>{const s=get("salidas",id);if(!s)return;if(canWrite)formCostos(s);else{UI.hojaId=id;location.hash="#hoja"}},
   "nc":(el,id)=>{const s=get("salidas",id);if(!s)return;if(!canWrite){informeViaje(s);return}
@@ -5181,7 +5245,7 @@ function vjAcc(s){const anul=s.estado==="Anulada";let b="";
   if(canWrite&&!anul){if(porSalir(s))b='<button class="btn sm pri w" data-act="salio" data-id="'+s.id+'">'+IC.truck+'Marcar salida</button>';
     else if(s.estado==="En ruta")b='<button class="btn sm pri w" data-act="volvio" data-id="'+s.id+'">Cerrar viaje</button>';
     else if(s.estado==="Finalizada")b='<button class="btn sm" data-act="nc" data-id="'+s.id+'" title="Notas de crédito de la vuelta">'+IC.up+(ncList(s).length?"NC ("+ncList(s).length+")":"Cargar NC")+'</button><button class="btn sm" data-act="informe" data-id="'+s.id+'">Informe</button>'}
-  return b+dots([{a:"open-hoja",id:s.id,i:"file",t:"Abrir hoja de ruta",d:"N° "+nro(s)},{a:"open-orden",id:s.id,i:"edit",t:"Ver orden de carga"},{a:"edit-sal",id:s.id,i:"edit",t:"Editar viaje",w:1},{a:"costos",id:s.id,i:"plus",t:"Costos y combustible",w:1}].concat(s.estado==="Finalizada"?[{a:"nc",id:s.id,i:"up",t:"Notas de crédito",d:ncList(s).length?pl(ncList(s).length,"cargada","cargadas")+" · "+fM(ncTot(s)):"",w:1}]:[]).concat([{a:"informe",id:s.id,i:"file",t:"Informe del viaje"},
+  return b+dots([{a:"open-hoja",id:s.id,i:"file",t:"Abrir hoja de ruta",d:"N° "+nro(s)},{a:"open-orden",id:s.id,i:"edit",t:"Ver orden de carga"},{a:"edit-sal",id:s.id,i:"edit",t:"Editar viaje",w:1},{a:"costos",id:s.id,i:"plus",t:"Costos y combustible",w:1}].concat(s.estado==="Finalizada"?[{a:"nc",id:s.id,i:"up",t:"Notas de crédito",d:ncList(s).length?pl(ncList(s).length,"cargada","cargadas")+" · "+fM(ncTot(s)):"",w:1}]:[]).concat(s.canal==="Preventa"&&["En ruta","Finalizada"].includes(s.estado)?[{a:"ge-env",id:s.id,i:"up",t:s.ge&&!s.ge.error?"Reenviar a GestiEntrega":"Enviar a GestiEntrega",d:s.ge?(s.ge.error?"falló: reintentar":pl(s.ge.facturas||0,"factura","facturas")+" · "+fDL(String(s.ge.at).slice(0,10))):"",w:1}]:[]).concat([{a:"informe",id:s.id,i:"file",t:"Informe del viaje"},
     {a:"nov-sal",id:s.id,i:"alert",t:"Registrar novedad",w:1},"-",{a:"anular",id:s.id,i:"pause",t:"Anular",dng:1,w:1},{a:"del-x",v:"salida",id:s.id,i:"trash",t:"Eliminar",dng:1,w:1}]))}
 VIEWS.viajes=function(){const V=UI.vj,q=(V.q||"").trim(),inR=f=>(!V.desde||f>=V.desde)&&(!V.hasta||f<=V.hasta);
   /* van a Viajes desde que se graba la hoja de ruta: Por salir → En viaje → Volvieron */
