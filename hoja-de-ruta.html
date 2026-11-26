@@ -4063,7 +4063,7 @@ function geResTxt(r){if(!r)return"";if(r.omitido)return"No se pasó a GestiEntre
 async function geEnviarYAvisar(s){try{const r=await geEnviarSalida(s);toast(geResTxt(r));return r}
   catch(e){console.error("GestiEntrega",e);toast("No se pudo pasar a GestiEntrega ("+((e&&(e.code||e.message))||e)+"). Reintentá desde el menú ⋯ del viaje.");
     try{await C("salidas").doc(s.id).update({ge:{at:new Date().toISOString(),error:String((e&&(e.code||e.message))||e).slice(0,200)}})}catch(x){}}}
-window.HRGE={prueba:async id=>{const s=get("salidas",id);if(!s)throw new Error("no existe la salida");return geEnviarSalida(s,{prueba:true})}};
+window.HRGE={enviar:async id=>{const s=get("salidas",id);if(!s)throw new Error("no existe la salida");return geEnviarSalida(s)},enRuta:()=>S.salidas.filter(s=>s.canal==="Preventa"&&s.estado==="En ruta").map(s=>s.id),prueba:async id=>{const s=get("salidas",id);if(!s)throw new Error("no existe la salida");return geEnviarSalida(s,{prueba:true})}};
 
 function formSalio(s){const prev=odoPrev(s),cm=cajaMatch(s);
   openForm({title:"Salida del viaje N° "+nro(s),color:"c-viaje",values:{horaSalida:s.horaSalida||nowHM(),kmSalida:hayN(s.kmSalida)?s.kmSalida:prev,cajaChica:hayN(s.cajaChica)?s.cajaChica:(cm.length?cajaAsig(s):null)},ok:"N° "+nro(s)+" en viaje",saveLabel:"Marcar salida",focus:"kmSalida",
