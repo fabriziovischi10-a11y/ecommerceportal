@@ -149,6 +149,7 @@ body.caminando #escena canvas, #escena canvas { cursor: grab; }
     <button id="v-dep3">Depósito 3</button>
     <button id="v-dep15">Depósito 15</button>
     <button id="v-dep1">Depósito 1</button>
+    <button id="v-galpon">Galpón nuevo</button>
     <button id="v-playon3">Playón Dep. 3</button>
     <button id="v-flota">Flota</button>
     <button id="v-planta">Planta</button>
@@ -158,6 +159,7 @@ body.caminando #escena canvas, #escena canvas { cursor: grab; }
     <div><i style="background: var(--dep15)"></i> Depósito 15 · pasillos <b>A–J</b></div>
     <div><i style="background: var(--dep3)"></i> Depósito 3 · pasillos <b>K–AG</b></div>
     <div><i style="background: var(--dep1)"></i> Depósito 1 · pasillos <b>AH–AW</b></div>
+    <div><i style="background: #7A4FB5"></i> Galpón nuevo · caras <b>AX–BQ</b> (sin stock todavía)</div>
   </div>
   <label class="chk"><input type="checkbox" id="chk-etiquetas" checked> Mostrar letras de pasillo</label>
   <section class="playon" aria-labelledby="pl-titulo">
@@ -590,6 +592,88 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
   });
   parantes.count = iPar; largueros.count = iLar;
   [parantes, largueros].forEach((m) => { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; });
+
+  // ---- Galpón nuevo (Parque Industrial), al oeste del picking del Dep. 3 (pedido del usuario, 2026-11-26).
+  // Sale de la app galpon-racks: planta SOTIC (origen = esquina SO interior, x al Este, y al Norte, en metros) y racks de la
+  // «Modificación 1» del usuario (la misma del Excel Posiciones-galpon-D15.xlsx). Va a escala real (1 u ≈ 3,3 m), girado para
+  // que quede vertical: el muro de los portones (y = 0) mira al este, hacia el picking del Dep. 3, y el extremo oeste queda al sur.
+  // Caras AX…BO (filas), BP (muro Este) y BQ (muro Sur). Todavía no tiene stock del sistema: solo estructura.
+  {
+    const MT = 1 / 3.3;                              // metros → unidades
+    const ESTE_G = -128, SUR_G = 335;                // px del plano: muro de portones y extremo sur
+    const LARGO_G = 1.3;                             // estirado a lo largo (norte–sur), pedido del usuario 2026-11-26
+    const gw = ([x, y]) => [X(ESTE_G) - y * MT, Z(SUR_G) - x * MT * LARGO_G];   // (x, y) del galpón → (x, z) de la escena
+    const gpx = ([x, y]) => { const [wx, wz] = gw([x, y]); return [wx / S + 640, wz / S + 320]; };
+    const COLOR_G = 0x7A4FB5;
+    // Planta del galpón (muro Este inclinado y muro Norte con quiebre), igual que en galpon-racks
+    const xs = 64.03, kE = 0.352, jog = 46.9, sN = 0.086, y0 = 15.03, yj = y0 + sN * jog;
+    const xne = (xs - kE * (yj + 0.30 - sN * jog)) / (1 + kE * sN), yne = yj + 0.30 + sN * (xne - jog);
+    const POLY_G = [[0, 0], [xs, 0], [xne, yne], [jog, yj + 0.30], [jog, yj], [0, y0]];
+    playon(ESTE_G - 1, SUR_G - 64.03 * LARGO_G / 0.33 - 3, -100, SUR_G + 3);   // patio de maniobras frente a los portones (hasta el picking)
+    edificio(POLY_G.map(gpx), COLOR_G);
+    // Portones en el muro de y = 0 (centro a lo largo del muro, ancho 3,6 m)
+    [11.14, 30.48, 61.92].forEach((c, i) => { const [x, z] = gw([c, 0]); hacerPorton(x + 0.03, z, Math.PI / 2, i + 1, 3.6 * MT * LARGO_G, 4.6 * MT); });
+
+    // Racks (medidas SOTIC): bastidor 0,118 de ancho y 1,10 de fondo; espalda con espalda separados 0,05
+    const F = 0.118, D = 1.10, G = 0.05, PORTICO = 8.5;
+    const TIPOS = {
+      S: [[0, "P"], [2.3, "E"], [4.9, "E"], [6.5, "P"], [8.1, "P"]],
+      TV: [[2.6, "P"], [4.4, "P"], [6.2, "P"], [8.0, "P"]],
+      AX: [[0, "P"], [1.1, "P"], [2.2, "E"], [3.3, "P"], [5.2, "P"], [6.8, "P"]],
+      TAX: [[2.05, "P"], [3.65, "P"], [5.25, "P"], [6.85, "P"]],
+    };
+    const mods = (txt) => txt.split(",").map((s) => { const [t, w] = s.split("@"); return { t, w: w ? +w : 2.3 }; });
+    const RACKS_G = [
+      { id: "P1", x: 0.2, y: 0.25, ang: 0, doble: false, caras: ["BQ"], mods: mods("S,S,S,S,TV,S,S,S,S,S,S,S,TV,S,S,S,S,S,S,S,S,S,S,S,S,TV") },
+      { id: "E1", x: 62.13, y: 4.63, ang: 109.4, doble: false, caras: ["BP"], mods: mods("AX,AX,AX,AX") },
+    ];
+    const FILAS = ["AX,AX,TAX,AX", "AX,AX,TAX,AX", "AX,AX,TAX,AX,AX@1.2", "AX,AX,TAX,AX,AX@1.2", "AX,AX,TAX,AX,AX", "AX,AX,TAX,AX,AX",
+      "AX,AX,TAX,AX,AX", "AX,AX,TAX,AX,AX,AX@1.2", "AX,AX,TAX,AX,AX,AX"];
+    const letra = (n) => { let s = ""; while (n > 0) { const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - 1) / 26); } return s; };
+    FILAS.forEach((m, i) => RACKS_G.push({ id: "F" + (i + 1), x: 3.5 + 2 * D + G + 6 * i, y: 4.93, ang: 90, doble: true, caras: [letra(50 + 2 * i), letra(51 + 2 * i)], mods: mods(m) }));
+
+    // Bastidores (parantes) y largueros con InstancedMesh; los estantes de tablilla como placas finas
+    const postes = [], vigas = [], placas = [];
+    RACKS_G.forEach((r) => {
+      const a = r.ang * Math.PI / 180, u = [Math.cos(a), Math.sin(a)], n = [-Math.sin(a), Math.cos(a)];
+      const P = (s, d) => [r.x + s * u[0] + d * n[0], r.y + s * u[1] + d * n[1]];
+      const caras = r.doble ? [0, D + G] : [0];   // fondo donde empieza cada lado
+      let s = F; const ini = [];
+      r.mods.forEach((m) => { ini.push(s); s += m.w + F; });
+      const bast = ini.map((v) => v - F / 2).concat([s - F / 2]);
+      caras.forEach((d0) => [d0, d0 + D].forEach((d) => bast.forEach((sb) => postes.push(P(sb, d)))));
+      r.mods.forEach((m, mi) => caras.forEach((d0, k) => {
+        (TIPOS[m.t] || []).forEach(([h, tipoN]) => {
+          if (h === 0) return;   // pallet en el piso: no lleva larguero
+          [d0, d0 + D].forEach((d) => vigas.push({ a: P(ini[mi], d), b: P(ini[mi] + m.w, d), h }));
+          if (tipoN === "E") placas.push({ c: P(ini[mi] + m.w / 2, d0 + D / 2), w: m.w, h, ang: a });
+        });
+      }));
+      // Letras de las caras, en la punta del rack que da al pasillo central
+      const fin = P(s + 1.4, r.doble ? D + G / 2 : D / 2);
+      const [ex, ez] = gw(fin);
+      etiquetas.push(cartel(r.caras.join(" · "), COLOR_G, ex, PORTICO * MT + 0.35, ez, 0.8));
+    });
+    const altoP = PORTICO * MT;
+    const mPost = new THREE.InstancedMesh(new THREE.BoxGeometry(0.035, altoP, 0.035), new THREE.MeshLambertMaterial({ color: 0x2C3A44 }), postes.length);
+    postes.forEach((p, i) => { const [x, z] = gw(p); m4.makeTranslation(x, altoP / 2, z); mPost.setMatrixAt(i, m4); });
+    const mViga = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 0.035, 0.03), new THREE.MeshLambertMaterial({ color: COLOR_G }), vigas.length);
+    vigas.forEach((v, i) => {
+      const [ax, az] = gw(v.a), [bx, bz] = gw(v.b), len = Math.hypot(bx - ax, bz - az);
+      q.setFromAxisAngle(eje, -Math.atan2(bz - az, bx - ax));
+      m4.compose(pos.set((ax + bx) / 2, v.h * MT, (az + bz) / 2), q, esc.set(len, 1, 1)); mViga.setMatrixAt(i, m4);
+    });
+    const mPlaca = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 0.012, 1), new THREE.MeshLambertMaterial({ color: 0xC9B48A }), Math.max(1, placas.length));
+    placas.forEach((p, i) => {
+      const [x, z] = gw(p.c), [x2, z2] = gw([p.c[0] + Math.cos(p.ang), p.c[1] + Math.sin(p.ang)]);
+      q.setFromAxisAngle(eje, -Math.atan2(z2 - z, x2 - x));
+      m4.compose(pos.set(x, p.h * MT + 0.02, z), q, esc.set(p.w * MT * (Math.abs(Math.sin(p.ang)) > 0.7 ? 1 : LARGO_G), 1, D * MT * (Math.abs(Math.sin(p.ang)) > 0.7 ? LARGO_G : 1))); mPlaca.setMatrixAt(i, m4);
+    });
+    mPlaca.count = placas.length;
+    [mPost, mViga, mPlaca].forEach((m) => { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; m.instanceMatrix.needsUpdate = true; scene.add(m); });
+    const [cx, cz] = gw([32, 10]);
+    rotulos.push(cartel("Galpón nuevo · AX–BQ", COLOR_G, cx, ALTO_MURO + 2.4, cz, 2.2, true));
+  }
 
   // Playón del Dep. 3 (REBALDEXT, TRASBASE03, REBAL02); el de MERMA se sacó (2026-10-23). En estas zonas el sistema no tiene posiciones:
   // los pallets se apilan de a 3 y los que vencen primero quedan adelante (lado sur).
@@ -2069,6 +2153,7 @@ window.__iniciar3D = () => {   // en la web arranca cuando llega el stock de Fir
     dep3: { pos: [X(86) + 26, 22, Z(200) + 30], target: [X(86), 0, Z(190)] },
     dep15: { pos: [X(637) - 8, 30, Z(203) + 44], target: [X(637), 0, Z(203)] },
     dep1: { pos: [X(e1([1074, 520])[0]) - 12, 30, Z(e1([1074, 520])[1]) + 42], target: [X(e1([1074, 520])[0]), 0, Z(e1([1074, 520])[1])] },
+    galpon: { pos: [X(-160) + 26, 30, Z(210) + 34], target: [X(-160), 0, Z(210)] },
     playon3: { pos: [X(470), 26, Z(290) + 34], target: [X(470), 0, Z(286)] },
     flota: { pos: [X(1076), 30, Z(209) + 30], target: [X(1076), 0, Z(205)] },
     planta: { pos: [X(640), 210, Z(580) + 0.01], target: [X(640), 0, Z(580)] },
