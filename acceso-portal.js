@@ -22,6 +22,22 @@
   var app; try { app = firebase.app("torre"); } catch (e) { app = firebase.initializeApp(CFG, "torre"); }
   var auth = app.auth();
   var fs = null;
+  /* ---------- 2026-11-26 · Seguridad pasos 2 y 3: otros proyectos Firebase ----------
+     La RTDB del Parte diario/Picking (portal-logistica-2c88c) y GestiEntrega (gestientrega-portal) son otros proyectos:
+     la sesión de la Torre no vale ahí. Cada usuario los «conecta» UNA vez por equipo (popup de Google en ese proyecto;
+     queda guardado en el navegador). data-conecta="logistica,entregas" en el <script> indica qué necesita la página. */
+  var EXTRA = {
+    logistica: { nombre: "Parte diario y Picking", cfg: { apiKey: "AIzaSyAEbyF_utj5FRL2X9_BlMjpL4fiPCdXXOU", authDomain: "portal-logistica-2c88c.firebaseapp.com", databaseURL: "https://portal-logistica-2c88c-default-rtdb.firebaseio.com", projectId: "portal-logistica-2c88c", storageBucket: "portal-logistica-2c88c.firebasestorage.app", messagingSenderId: "97670600668", appId: "1:97670600668:web:697176824219e2b58b6119" } },
+    entregas: { nombre: "GestiEntrega", cfg: { apiKey: "AIzaSyCbz7XLb9jLjlvwEz-NG_jyEPdFwWob7SM", authDomain: "gestientrega-portal.firebaseapp.com", projectId: "gestientrega-portal", storageBucket: "gestientrega-portal.firebasestorage.app", messagingSenderId: "639729899204", appId: "1:639729899204:web:3609e16c548801e1821b91" } }
+  };
+  var NECESITA = String((script && script.dataset.conecta) || "").split(",").map(function (x) { return x.trim(); }).filter(function (x) { return EXTRA[x]; });
+  var NECESITA_ADMIN = String((script && script.dataset.conectaAdmin) || "").split(",").map(function (x) { return x.trim(); }).filter(function (x) { return EXTRA[x]; });
+  Object.keys(EXTRA).forEach(function (k) {
+    var X = EXTRA[k]; try { X.app = firebase.app("pa-" + k); } catch (e) { X.app = firebase.initializeApp(X.cfg, "pa-" + k); }
+    X.auth = X.app.auth();
+    X.listo = new Promise(function (ok) { var off = X.auth.onAuthStateChanged(function () { off(); ok(); }); });
+  });
+  var RTDB = EXTRA.logistica.cfg.databaseURL.replace(/^https?:\/\//, "");
   function db() {
     if (!fs) {
       var modular = app._delegate.container.getProvider("firestore").getImmediate({ identifier: "default" });
@@ -80,6 +96,22 @@
       + '<button class="pa-o" id="pa-otra">Entrar con otra cuenta</button>');
     document.getElementById("pa-otra").onclick = function () { auth.signOut().then(function () { pedirIngreso(); }); };
   }
+  /* Conecta la cuenta de Google en un proyecto extra (una vez por equipo). Devuelve true si ya quedó conectado. */
+  async function conectarExtra(k, mail) {
+    var X = EXTRA[k]; await X.listo;
+    var u = X.auth.currentUser; if (u && !u.isAnonymous && u.email) return true;
+    return new Promise(function (ok) {
+      pintar("<h2>Un paso más</h2><p>Conectá tu cuenta con <b>" + esc(X.nombre) + "</b>. Se hace una sola vez en este equipo.</p>"
+        + '<button class="pa-g" id="pa-x">' + G + "Conectar con Google</button>" + '<p class="pa-e" id="pa-xe"></p>');
+      document.getElementById("pa-x").onclick = function () {
+        var p = new firebase.auth.GoogleAuthProvider(); p.setCustomParameters({ prompt: "select_account", login_hint: mail || "" });
+        X.auth.signInWithPopup(p).then(function () { cargando(); barrer(); ok(true); }).catch(function (err) {
+          var c = err && err.code; if (c === "auth/popup-closed-by-user" || c === "auth/cancelled-popup-request") return;
+          var e = document.getElementById("pa-xe"); if (e) e.textContent = "No se pudo conectar: " + (err.message || c);
+        });
+      };
+    });
+  }
   function ingresar() {
     var p = new firebase.auth.GoogleAuthProvider(); p.setCustomParameters({ prompt: "select_account" });
     var e = document.getElementById("pa-err"); if (e) e.textContent = "";
@@ -110,6 +142,7 @@
       if (APP && APP !== "torre" && apps.indexOf(APP) < 0) { sinPermiso(u, { t: "No tenés acceso a " + nombreApp(APP), d: "El administrador no te habilitó esta aplicación." }); return; }
       try { db().collection("torre_usuarios").doc(mail).set({ ultimoIngreso: new Date().toISOString() }, { merge: true }); } catch (e) {}
     }
+    if (!SUAVE) { var pedir = NECESITA.concat(admin ? NECESITA_ADMIN : []); for (var i = 0; i < pedir.length; i++) { var okX = await conectarExtra(pedir[i], mail); if (!okX) return; } }
     velo.hidden = true;
     var datos = { app: app, db: db(), usuario: u, mail: mail, nombre: (perfil && perfil.nombre) || u.displayName || mail, perfil: perfil, admin: admin, apps: apps,
       secciones: (!admin && perfil && perfil.secciones && perfil.secciones[APP] && perfil.secciones[APP].length) ? perfil.secciones[APP] : null };
@@ -126,9 +159,82 @@
     anterior = m; verificar(u);
   });
 
+  /* ---------- 2026-11-26 · Seguridad (fase 2): las apps del mismo proyecto Firebase que todavía entran anónimas ----------
+     Cualquier Auth del proyecto ecommerce-e7ab2 (TMS, Ecommerce, Monitoreo, Premio, Asistencia, Vehículos, la conexión «tms»
+     del Parte diario…) toma la sesión de Google de la Torre en lugar de una anónima: se reemplaza signInAnonymously() y se
+     «barren» las sesiones anónimas ya guardadas (updateCurrentUser). Así cada app solo suma este script y las reglas de
+     Firestore pueden exigir un usuario habilitado. En modo suave, si nadie entró con Google, todo sigue anónimo como antes. */
+  // proyecto → Auth «gestora» que tiene la sesión de Google (Torre para ecommerce-e7ab2; pa-logistica / pa-entregas para los otros)
+  var GESTOR = {}; GESTOR[CFG.projectId] = auth; Object.keys(EXTRA).forEach(function (k) { GESTOR[EXTRA[k].cfg.projectId] = EXTRA[k].auth; });
+  var gestorDe = function (a) { try { var g = GESTOR[a.app.options.projectId]; return g && g !== a ? g : null; } catch (e) { return null; } };
+  var usuarioGoogle = function (g) { var u = (g || auth).currentUser; return u && !u.isAnonymous ? u : null; };
+  var mismaBase = function (a) { return !!gestorDe(a); };
+  function pasarSesion(a) {
+    var g = gestorDe(a), u = g && usuarioGoogle(g); if (!u) return Promise.resolve(null);
+    var cur = a.currentUser; if (cur && !cur.isAnonymous) return Promise.resolve(cur); // nunca pisar una sesión de Google existente (p. ej. supervisión de Picking)
+    return a.updateCurrentUser(u).then(function () { return a.currentUser; }).catch(function (e) { console.warn("PortalAcceso: no se pudo pasar la sesión", e); return null; });
+  }
+  function barrer() { firebase.apps.forEach(function (ap) { try { var a = ap.auth(); if (gestorDe(a)) pasarSesion(a); } catch (e) {} }); }
+  try {
+    var AP = firebase.auth.Auth.prototype;
+    if (AP && !AP.__paParche) {
+      AP.__paParche = true;
+      var origAnon = AP.signInAnonymously;
+      AP.signInAnonymously = function () {
+        var a = this, args = arguments;
+        if (!mismaBase(a)) return origAnon.apply(a, args);
+        var esperar = gestorDe(a) === auth ? listo : Promise.all([listo, (Object.keys(EXTRA).map(function (k) { return EXTRA[k]; }).filter(function (X) { return X.auth === gestorDe(a); })[0] || {}).listo]);
+        return esperar.then(function () {
+          if (!usuarioGoogle(gestorDe(a))) return origAnon.apply(a, args);
+          return pasarSesion(a).then(function (u) { return u ? { user: u, additionalUserInfo: null, credential: null, operationType: "signIn" } : origAnon.apply(a, args); });
+        });
+      };
+    }
+  } catch (e) { console.warn("PortalAcceso: sin parche de sesión", e); }
+  try {
+    var fetchOrig = window.fetch;
+    if (fetchOrig && !fetchOrig.__pa) {
+      var fx = function (input, init) {
+        var url = typeof input === "string" ? input : (input && input.url) || "";
+        if (url.indexOf(RTDB) < 0 || /[?&](auth|access_token)=/.test(url)) return fetchOrig.apply(this, arguments);
+        var self = this, args = arguments;
+        return EXTRA.logistica.listo.then(function () {
+          var u = usuarioGoogle(EXTRA.logistica.auth); if (!u) return fetchOrig.apply(self, args);
+          return u.getIdToken().then(function (t) {
+            var nuevo = url + (url.indexOf("?") < 0 ? "?" : "&") + "auth=" + encodeURIComponent(t);
+            return typeof input === "string" ? fetchOrig.call(self, nuevo, init) : fetchOrig.call(self, new Request(nuevo, input), init);
+          }, function () { return fetchOrig.apply(self, args); });
+        });
+      };
+      fx.__pa = true; window.fetch = fx;
+    }
+  } catch (e) { console.warn("PortalAcceso: sin token para la RTDB", e); }
+
+  /* Torre (administrador): copia la lista de mails habilitados a las otras dos bases, que es lo que miran sus reglas.
+     RTDB acceso/mails/<mail con , en vez de .> = true · GestiEntrega entregas/config.usuarios = [mails] */
+  var clave = function (m) { return String(m).toLowerCase().replace(/\./g, ","); };
+  function sincronizarListas() {
+    var d = PortalAcceso.actual; if (!d || !d.admin) return;
+    db().collection("torre_usuarios").get().then(function (sn) {
+      var mails = ADMINS.slice(); sn.docs.forEach(function (x) { var v = x.data() || {}; if (v.activo !== false && x.id.indexOf("@") > 0) mails.push(x.id.toLowerCase()); });
+      mails = mails.filter(function (m, i) { return mails.indexOf(m) === i; });
+      var L = usuarioGoogle(EXTRA.logistica.auth);
+      if (L) L.getIdToken().then(function (t) { var o = {}; mails.forEach(function (m) { o[clave(m)] = true; });
+        return fetchOrig.call(window, "https://" + RTDB + "/acceso/mails.json?auth=" + encodeURIComponent(t), { method: "PUT", body: JSON.stringify(o) }); })
+        .catch(function (e) { console.warn("PortalAcceso: lista RTDB", e); });
+      var E = usuarioGoogle(EXTRA.entregas.auth);
+      if (E) EXTRA.entregas.app.firestore().collection("entregas").doc("config").set({ usuarios: mails, usuariosAt: new Date().toISOString() }, { merge: true })
+        .catch(function (e) { console.warn("PortalAcceso: lista GestiEntrega", e); });
+    }).catch(function () {});
+  }
+  listo.then(function (d) { if (d && d.admin && APP === "torre") { sincronizarListas(); try { db().collection("torre_usuarios").onSnapshot(function () { sincronizarListas(); }); } catch (e) {} } });
+
+  listo.then(function (d) { if (!d) return; barrer(); var n = 0, t = setInterval(function () { barrer(); if (++n > 40) clearInterval(t); }, 1500); });
+  Object.keys(EXTRA).forEach(function (k) { EXTRA[k].auth.onAuthStateChanged(function () { barrer(); }); });
+
   window.PortalAcceso = {
     APP: APP, APPS: APPS, ADMINS: ADMINS, TORRE: TORRE, nombreApp: nombreApp,
     listo: listo, app: app, auth: auth, db: db, esAdmin: esAdmin, actual: null, alCambiar: null,
-    salir: function () { return auth.signOut().then(function () { location.reload(); }); }
+    salir: function () { return auth.signOut().then(function () { location.reload(); }); }, pasarSesion: pasarSesion, conectar: conectarExtra, extra: EXTRA
   };
 })();
