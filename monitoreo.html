@@ -1673,7 +1673,7 @@ const FIRESTORE_DATABASE_ID = "default";
 // Todo el monitoreo vive debajo de este documento, separado de los datos de entregas.
 const RAIZ = "monitoreo/datos/";
 async function conectarFirebase(){
-  if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  if(!firebase.apps.some(function(a){return a.name==="[DEFAULT]"})) firebase.initializeApp(firebaseConfig);
   await firebase.auth().signInAnonymously();
   const app=firebase.app();
   const modular=app._delegate.container.getProvider("firestore").getImmediate({identifier:FIRESTORE_DATABASE_ID});
