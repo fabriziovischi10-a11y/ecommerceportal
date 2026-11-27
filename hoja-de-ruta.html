@@ -2624,6 +2624,7 @@ function formRec(r){
    Acá quien recibe compara esa lista con el remito en papel y marca cada producto: coincide / diferencia / no es de este remito.
    Se guarda en la recepción (controlWms). Lo que ya se asignó a otra recepción no se vuelve a ofrecer. */
 const WMS_DB="https://portal-logistica-2c88c-default-rtdb.firebaseio.com/wms_etiquetado/";
+const WMS_PISO="https://portal-logistica-2c88c-default-rtdb.firebaseio.com/wms_piso";
 const wmsDepK=d=>{const s=String(d||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();return/15/.test(s)?"15":/parque|centro|\b3\b/.test(s)?"3":/\b1\b/.test(s)?"1":""};
 function wmsChip(r){const c=r.controlWms;if(c)return c.resultado==="ok"?'<span class="tag" style="background:#16a34a;color:#fff;border-color:transparent">✓ WMS controlado</span>':'<span class="tag" style="background:#dc2626;color:#fff;border-color:transparent">✗ Diferencia con WMS</span>';
   return r.fecha>="2026-11-25"?'<span class="tag" style="opacity:.75">WMS sin controlar</span>':""}
@@ -2648,25 +2649,38 @@ function etqFilaHtml(x,i){const p=x.p;return'<div style="display:flex;align-item
   +'</span><button type="button" class="btn sm ghost" data-etqdel="'+i+'" aria-label="Quitar etiqueta">'+IC.x+'</button></div>'}
 /** caja para cargar etiquetas (2026-11-27: 3 modos — del WMS, una por una, rango desde/hasta).
    r puede ser la recepción o un objeto con getters {id, fecha, deposito} (formulario nuevo). Devuelve {lista(), refrescar()} */
-function etqCaja(box,r,inicial,onCambio){const L=(inicial||[]).map(n=>({n,buscando:true}));let modo="wms",wmsLista=null,wmsCargando=false,wmsSel=new Set(),cache={};
+function etqCaja(box,r,inicial,onCambio){const L=(inicial||[]).map(n=>({n,buscando:true}));let modo="wms",wmsLista=null,wmsCargando=false,wmsSel=new Set(),cache={},piso=null,wmsFiltro="",pisoAt="";
   const dia=d=>cache[d]||(cache[d]=fetch(WMS_DB+d+".json").then(x=>x.ok?x.json():null).catch(()=>null));
-  const buscarN=async n=>{const f=r.fecha||today();for(const k of[0,1,-1,2,3]){const d=addD(f,k),o=await dia(d),p=o&&o["p"+n];if(p)return Object.assign({dia:d,key:d+"/p"+n},p)}return null};
+  const pisoP=(d,p)=>({i:p.i||[],d,u:p.u,dia:String(p.s||"").slice(0,10),t:p.s||"",piso:true});
+  const cargarPiso=()=>piso||(piso=fetch(WMS_PISO+".json").then(x=>x.ok?x.json():null).catch(()=>null));
+  const buscarN=async n=>{const f=r.fecha||today();for(const k of[0,1,-1,2,3]){const d=addD(f,k),o=await dia(d),p=o&&o["p"+n];if(p)return Object.assign({dia:d,key:d+"/p"+n},p)}
+    const P=await cargarPiso();for(const d of["15","1","3"]){const p=P&&P[d]&&P[d]["p"+n];if(p)return pisoP(d,p)}return null};
   const prods=p=>esc((p.i||[]).map(it=>it.n+" · "+fN(it.q)+" u.").join(" / "));
-  const wmsCargar=async()=>{wmsCargando=true;draw();const f=r.fecha||today(),dk=wmsDepK(r.deposito),out=[];
-    for(const d of[f,addD(f,1)]){const o=await dia(d);Object.entries(o||{}).forEach(([k,p])=>{if(!p||p.s||k[0]!=="p")return;if(dk&&p.d!==dk)return;const n=etqNum(k.slice(1));if(!n)return;
+  /* 2026-11-27: lo que está ahora en el piso de recepción del depósito (REBAL1501 / REBAL01 / REBAL02, lo publica la PC cada 10 min)
+     + los pallets nuevos etiquetados ese día y el siguiente. Lo más nuevo arriba. */
+  const wmsCargar=async()=>{wmsCargando=true;draw();const f=r.fecha||today(),dk=wmsDepK(r.deposito),out=[],ya=new Set();
+    const P=await cargarPiso();
+    ["15","1","3"].forEach(d=>{if(dk&&d!==dk)return;Object.entries((P&&P[d])||{}).forEach(([k,p])=>{const n=etqNum(k.slice(1));if(!n||ya.has(n))return;ya.add(n);out.push({n,p:pisoP(d,p),otra:etqOtraRec(n,r)})})});
+    for(const d of[f,addD(f,1)]){const o=await dia(d);Object.entries(o||{}).forEach(([k,p])=>{if(!p||p.s||k[0]!=="p")return;if(dk&&p.d!==dk)return;const n=etqNum(k.slice(1));if(!n||ya.has(n))return;ya.add(n);
       out.push({n,p:Object.assign({dia:d,key:d+"/"+k},p),otra:etqOtraRec(n,r)})})}
-    out.sort((a,b)=>String(a.p.dia+a.p.t).localeCompare(String(b.p.dia+b.p.t))||Number(a.n)-Number(b.n));wmsLista=out;wmsCargando=false;draw()};
+    out.sort((a,b)=>String(b.p.t).localeCompare(String(a.p.t))||Number(b.n)-Number(a.n));wmsLista=out;wmsCargando=false;draw()};
+  const PISO_UB={"15":"REBAL1501","1":"REBAL01","3":"REBAL02"};
+  const coincide=x=>{const q=wmsFiltro.trim().toLowerCase();if(!q)return true;return x.n.includes(q.replace(/\D/g,"")||"\u0000")||(x.p.i||[]).some(it=>String(it.n||"").toLowerCase().includes(q)||String(it.c)===q)};
   const tabB=(m,t)=>'<button type="button" class="btn sm'+(modo===m?" green":" ghost")+'" data-etqm="'+m+'">'+t+'</button>';
   const panel=()=>{
     if(modo==="man")return'<div style="display:flex;gap:6px;margin-bottom:8px"><input id="etqIn" inputmode="numeric" placeholder="N° de etiqueta del pallet (o escaneala)" style="flex:1"><button type="button" class="btn" id="etqAdd">+ Agregar</button></div>';
     if(modo==="rng")return'<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><span class="mu">Desde</span><input id="etqDe" inputmode="numeric" placeholder="N° de la primera" style="flex:1;min-width:120px"><span class="mu">hasta</span><input id="etqA" inputmode="numeric" placeholder="N° de la última" style="flex:1;min-width:120px"><button type="button" class="btn" id="etqRng">+ Agregar rango</button></div>';
-    const dk=wmsDepK(r.deposito),donde=(dk?"Dep. "+dk:"todos los depósitos")+" · "+fDL(r.fecha||today())+" y el día siguiente";
-    if(wmsCargando||!wmsLista)return'<div class="mu" style="margin-bottom:8px">Buscando pallets etiquetados en el WMS ('+esc(donde)+')…</div>';
-    const libres=wmsLista.filter(x=>!L.some(y=>y.n===x.n));
+    const dk=wmsDepK(r.deposito),donde=dk?"Dep. "+dk+" ("+PISO_UB[dk]+")":"todos los depósitos (REBAL1501, REBAL01 y REBAL02)";
+    if(wmsCargando||!wmsLista)return'<div class="mu" style="margin-bottom:8px">Buscando los pallets del piso de recepción en el WMS ('+esc(donde)+')…</div>';
+    const todos=wmsLista.filter(x=>!L.some(y=>y.n===x.n)),libres=todos.filter(coincide);
+    const busca='<input id="etqWBus" placeholder="Buscar por N° de pallet, producto o código" value="'+esc(wmsFiltro)+'" style="width:100%;margin-bottom:6px">';
     const nSel=[...wmsSel].filter(n=>libres.some(x=>x.n===n)).length;
     const pie='<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px">'+(libres.length?'<button type="button" class="btn sm green" id="etqWAdd">+ Agregar seleccionadas ('+nSel+')</button><button type="button" class="btn sm ghost" id="etqWTodas">Marcar todas</button>':"")+'<button type="button" class="btn sm ghost" id="etqWRef">↻ Actualizar</button></div>';
-    if(!libres.length)return'<div class="mu" style="margin-bottom:4px">No hay pallets etiquetados en el WMS para '+esc(donde)+(wmsLista.length?" que no estén ya en la lista":"")+'. El WMS se registra cada 10 minutos.</div>'+pie;
-    return'<div class="sub" style="margin-bottom:6px">Pallets nuevos del WMS · '+esc(donde)+'. Marcá los que son de este remito.</div><div style="max-height:260px;overflow:auto">'
+    if(!todos.length)return'<div class="mu" style="margin-bottom:4px">No hay pallets en el piso de recepción del WMS para '+esc(donde)+(wmsLista.length?" que no estén ya en la lista":"")+'. Se actualiza cada 10 minutos.</div>'+pie;
+    const enPiso=todos.filter(x=>x.p.piso).length,at=P_AT();
+    const cab='<div class="sub" style="margin-bottom:6px">'+pl(todos.length,"pallet","pallets")+' en el piso · '+esc(donde)+(at?' · WMS de las '+esc(at):"")+'. Lo más nuevo arriba: marcá los que son de este remito.</div>'+busca;
+    if(!libres.length)return cab+'<div class="mu" style="margin-bottom:4px">Ningún pallet coincide con la búsqueda.</div>'+pie;
+    return cab+'<div style="max-height:300px;overflow:auto">'
       +libres.map(x=>'<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line,#ddd);border-radius:8px;margin-bottom:6px;cursor:pointer"><input type="checkbox" data-etqw="'+esc(x.n)+'"'+(wmsSel.has(x.n)?" checked":"")+'><b class="mono" style="min-width:80px">'+esc(x.n)+'</b><span style="flex:1;min-width:0">'+prods(x.p)
         +'<div class="sub">'+esc(x.p.u||"")+' · Dep. '+esc(x.p.d||"?")+' · '+fDL(x.p.dia)+' '+esc(String(x.p.t||"").slice(11,16))+'</div>'+(x.otra?'<div class="sub" style="color:var(--bad)">Ya está cargada en '+esc(x.otra.proveedor||"otra recepción")+(x.otra.remitoNro?" · "+esc(x.otra.remitoNro):"")+'</div>':"")+'</span></label>').join("")+'</div>'+pie};
   const draw=()=>{box.innerHTML='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">'+tabB("wms","Del WMS")+tabB("man","Una por una")+tabB("rng","Rango desde / hasta")+'</div>'+panel()
@@ -2680,14 +2694,17 @@ function etqCaja(box,r,inicial,onCambio){const L=(inicial||[]).map(n=>({n,buscan
     if(!nuevos.length){toast("Esas etiquetas ya están en la lista");return}draw();toast(pl(nuevos.length,"etiqueta agregada","etiquetas agregadas"));nuevos.forEach(buscar)};
   box.addEventListener("click",e=>{const m=e.target.closest("[data-etqm]");if(m){modo=m.dataset.etqm;draw();if(modo==="wms"&&!wmsLista&&!wmsCargando)wmsCargar();setTimeout(()=>{const i=$(modo==="man"?"etqIn":"etqDe");if(i)i.focus()},30);return}
     if(e.target.closest("#etqAdd"))return agregar();if(e.target.closest("#etqRng"))return rango();
-    if(e.target.closest("#etqWRef")){cache={};wmsLista=null;wmsCargar();return}
-    if(e.target.closest("#etqWTodas")){(wmsLista||[]).forEach(x=>{if(!x.otra&&!L.some(y=>y.n===x.n))wmsSel.add(x.n)});draw();return}
+    if(e.target.closest("#etqWRef")){cache={};piso=null;wmsLista=null;wmsCargar();return}
+    if(e.target.closest("#etqWTodas")){(wmsLista||[]).forEach(x=>{if(!x.otra&&coincide(x)&&!L.some(y=>y.n===x.n))wmsSel.add(x.n)});draw();return}
     if(e.target.closest("#etqWAdd")){let k=0;(wmsLista||[]).forEach(x=>{if(wmsSel.has(x.n)&&!L.some(y=>y.n===x.n)){L.push({n:x.n,p:x.p,otra:x.otra,buscando:false});k++}});wmsSel.clear();
       if(!k){toast("Marcá al menos un pallet");return}draw();toast(pl(k,"etiqueta agregada","etiquetas agregadas"));if(onCambio)onCambio(L);return}
     const d=e.target.closest("[data-etqdel]");if(d){L.splice(+d.dataset.etqdel,1);draw();if(onCambio)onCambio(L)}});
+  box.addEventListener("input",e=>{if(e.target.id!=="etqWBus")return;wmsFiltro=e.target.value;draw();const i=$("etqWBus");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}});
   box.addEventListener("change",e=>{const c=e.target.closest("[data-etqw]");if(!c)return;if(c.checked)wmsSel.add(c.dataset.etqw);else wmsSel.delete(c.dataset.etqw);const b=$("etqWAdd");if(b)b.textContent="+ Agregar seleccionadas ("+wmsSel.size+")"});
-  box.addEventListener("keydown",e=>{if(e.key!=="Enter")return;if(e.target.id==="etqIn"){e.preventDefault();agregar()}else if(e.target.id==="etqDe"||e.target.id==="etqA"){e.preventDefault();rango()}});
+  box.addEventListener("keydown",e=>{if(e.key!=="Enter")return;if(e.target.id==="etqWBus"){e.preventDefault();return}if(e.target.id==="etqIn"){e.preventDefault();agregar()}else if(e.target.id==="etqDe"||e.target.id==="etqA"){e.preventDefault();rango()}});
   draw();wmsCargar();L.forEach(buscar);
+  cargarPiso().then(P=>{pisoAt=P&&P.at?String(P.at).slice(11,16):"";if(modo==="wms"&&wmsLista)draw()});
+  function P_AT(){return pisoAt}
   return{lista:()=>L,refrescar:()=>{wmsLista=null;wmsSel.clear();if(modo==="wms")wmsCargar();else draw()}}}
 function formEtqRec(r){let caja=null;
   openForm({title:"Etiquetas del remito · "+(r.proveedor||"Recepción")+(r.remitoNro?" · "+r.remitoNro:""),color:"c-caja",saveLabel:"Guardar etiquetas",ok:"Etiquetas guardadas",
