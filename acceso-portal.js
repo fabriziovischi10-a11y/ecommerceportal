@@ -191,6 +191,50 @@
       };
     }
   } catch (e) { console.warn("PortalAcceso: sin parche de sesión", e); }
+
+  /* ---------- 2026-11-27 · RTDB: escuchas rechazadas al arrancar ----------
+     Si la página empieza a escuchar la base (.on / .once) antes de que la sesión de Google pase a esa app, la RTDB la
+     rechaza por permiso y NO vuelve a intentar (p. ej. el calendario de Recepciones Programadas quedaba sin programadas).
+     Se reintenta sola cuando esa app ya tiene usuario (hasta 4 veces, con espera creciente). */
+  function esperarUsuarioRTDB(q) {
+    var a; try { a = q.ref.database.app.auth(); } catch (e) { return Promise.resolve(false); }
+    return new Promise(function (ok) { var hecho = false, off = a.onAuthStateChanged(function (u) { if (u && !hecho) { hecho = true; setTimeout(function () { off(); ok(true); }, 0); } }); });
+  }
+  var esPermiso = function (err) { return !!err && /permission/i.test(String(err.code || "") + " " + String(err.message || "")); };
+  function parcheRTDB() {
+    try {
+      var QP = firebase.database && firebase.database.Query && firebase.database.Query.prototype;
+      if (!QP || QP.__paParche) return;
+      QP.__paParche = true;
+      var origOn = QP.on, origOnce = QP.once;
+      QP.on = function (tipo, cb, cancel, ctx) {
+        var q = this, intentos = 0, cancelCb = typeof cancel === "function" ? cancel : null, ctxx = cancelCb ? ctx : cancel;
+        function alCancelar(err) {
+          if (esPermiso(err) && intentos < 4) {
+            intentos++;
+            esperarUsuarioRTDB(q).then(function () { setTimeout(function () { origOn.call(q, tipo, cb, alCancelar, ctxx); }, 1200 * intentos); });
+            return;
+          }
+          if (cancelCb) cancelCb.call(ctxx, err); else console.warn("PortalAcceso: escucha RTDB cancelada", err);
+        }
+        return origOn.call(q, tipo, cb, alCancelar, ctxx);
+      };
+      QP.once = function () {
+        var q = this, args = arguments, n = 0;
+        var intentar = function () {
+          return origOnce.apply(q, args).catch(function (err) {
+            if (!esPermiso(err) || n >= 3) throw err;
+            n++;
+            return esperarUsuarioRTDB(q).then(function () { return new Promise(function (r) { setTimeout(r, 1200 * n); }); }).then(intentar);
+          });
+        };
+        return intentar();
+      };
+    } catch (e) { console.warn("PortalAcceso: sin parche RTDB", e); }
+  }
+  parcheRTDB();
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", parcheRTDB);
+
   try {
     var fetchOrig = window.fetch;
     if (fetchOrig && !fetchOrig.__pa) {
